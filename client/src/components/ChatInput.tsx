@@ -1,0 +1,52 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Send } from "lucide-react";
+
+interface ChatInputProps {
+  onSend: (message: string) => void;
+  disabled?: boolean;
+}
+
+export default function ChatInput({ onSend, disabled }: ChatInputProps) {
+  const [message, setMessage] = useState("");
+
+  const handleSend = () => {
+    if (message.trim() && !disabled) {
+      onSend(message.trim());
+      setMessage("");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="border-t border-border bg-background p-4">
+      <div className="max-w-4xl mx-auto flex gap-2 items-end">
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask about your team, players, matchups..."
+          className="min-h-[56px] max-h-32 resize-none rounded-xl"
+          disabled={disabled}
+          data-testid="input-chat"
+        />
+        <Button
+          onClick={handleSend}
+          disabled={!message.trim() || disabled}
+          size="icon"
+          className="h-14 w-14 flex-shrink-0"
+          data-testid="button-send"
+        >
+          <Send className="w-5 h-5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
