@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { passport } from "./auth";
 
 const app = express();
 
@@ -9,6 +11,30 @@ declare module 'http' {
     rawBody: unknown
   }
 }
+
+// Session configuration
+const SESSION_SECRET = process.env.SESSION_SECRET || "fallback-secret-change-in-production";
+if (!process.env.SESSION_SECRET) {
+  console.warn("WARNING: SESSION_SECRET not set in environment. Using fallback secret.");
+}
+
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    },
+  })
+);
+
+// Passport initialization
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;

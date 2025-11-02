@@ -9,14 +9,109 @@ import {
   validateState,
   YahooAuthError
 } from "./yahoo-auth";
+import { registerAuthRoutes, requireAuth, getAuthenticatedUserId } from "./auth-routes";
+import { encrypt, decrypt } from "./encryption";
+import { z } from "zod";
+
+// Yahoo credentials schema for user input
+const yahooCredentialsInputSchema = z.object({
+  clientId: z.string().min(1, "Client ID is required"),
+  clientSecret: z.string().min(1, "Client Secret is required"),
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Yahoo OAuth Routes
-  app.get("/api/auth/yahoo", async (req: Request, res: Response) => {
+  // Register authentication routes
+  registerAuthRoutes(app);
+
+  // Yahoo Credentials Management Routes (Protected)
+  app.post("/api/settings/yahoo-credentials", requireAuth, async (req: Request, res: Response) => {
     try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const validatedData = yahooCredentialsInputSchema.parse(req.body);
+
+      // Encrypt credentials before storing
+      const encryptedClientId = encrypt(validatedData.clientId);
+      const encryptedClientSecret = encrypt(validatedData.clientSecret);
+
+      await storage.saveYahooCredentials({
+        userId,
+        encryptedClientId,
+        encryptedClientSecret,
+      });
+
+      res.json({ success: true, message: "Yahoo credentials saved successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid input", details: error.errors });
+      }
+      console.error("Failed to save Yahoo credentials:", error);
+      res.status(500).json({ error: "Failed to save credentials" });
+    }
+  });
+
+  app.get("/api/settings/yahoo-credentials", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const credentials = await storage.getYahooCredentials(userId);
+      
+      res.json({ 
+        hasCredentials: !!credentials,
+        updatedAt: credentials?.updatedAt || null,
+      });
+    } catch (error) {
+      console.error("Failed to check Yahoo credentials:", error);
+      res.status(500).json({ error: "Failed to check credentials" });
+    }
+  });
+
+  app.delete("/api/settings/yahoo-credentials", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      await storage.deleteYahooCredentials(userId);
+      await storage.deleteYahooToken(userId); // Also delete tokens
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete Yahoo credentials:", error);
+      res.status(500).json({ error: "Failed to delete credentials" });
+    }
+  });
+  
+  // Yahoo OAuth Routes (Protected)
+  app.get("/api/auth/yahoo", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Check if user has Yahoo credentials configured
+      const credentials = await storage.getYahooCredentials(userId);
+      if (!credentials) {
+        return res.status(400).json({ 
+          error: "Yahoo credentials not configured. Please add your Yahoo Client ID and Secret in Settings first." 
+        });
+      }
+
       const state = generateState();
-      const authUrl = getAuthorizationUrl(state);
+      
+      // Decrypt credentials and generate auth URL
+      const clientId = decrypt(credentials.encryptedClientId);
+      const authUrl = getAuthorizationUrl(state, clientId);
+      
       res.json({ authUrl });
     } catch (error) {
       console.error('Error generating auth URL:', error);
@@ -37,10 +132,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const tokens = await exchangeCodeForToken(code);
-      
-      // For now, use a default user ID since we don't have user auth yet
-      const userId = 'default-user';
+      // User must be logged in to complete OAuth
+      if (!req.isAuthenticated()) {
+        return res.redirect('/?error=not_authenticated');
+      }
+
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.redirect('/?error=not_authenticated');
+      }
+
+      // Get user's Yahoo credentials
+      const credentials = await storage.getYahooCredentials(userId);
+      if (!credentials) {
+        return res.redirect('/?error=credentials_not_found');
+      }
+
+      // Decrypt credentials
+      const clientId = decrypt(credentials.encryptedClientId);
+      const clientSecret = decrypt(credentials.encryptedClientSecret);
+
+      const tokens = await exchangeCodeForToken(code, clientId, clientSecret);
       
       const expiresAt = Math.floor(Date.now() / 1000) + tokens.expiresIn;
       
@@ -58,12 +170,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/auth/yahoo/status", async (req: Request, res: Response) => {
+  app.get("/api/auth/yahoo/status", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = 'default-user';
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
       const token = await storage.getYahooToken(userId);
+      const credentials = await storage.getYahooCredentials(userId);
       
       res.json({ 
+        hasCredentials: !!credentials,
         connected: !!token,
         hasValidToken: token ? token.expiresAt > Math.floor(Date.now() / 1000) : false
       });
@@ -72,9 +190,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/auth/yahoo", async (req: Request, res: Response) => {
+  app.delete("/api/auth/yahoo", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = 'default-user';
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
       await storage.deleteYahooToken(userId);
       res.json({ success: true });
     } catch (error) {

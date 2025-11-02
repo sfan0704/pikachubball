@@ -40,9 +40,9 @@ export function validateState(state: string): boolean {
   return true;
 }
 
-export function getAuthorizationUrl(state: string): string {
+export function getAuthorizationUrl(state: string, clientId: string): string {
   const params = new URLSearchParams({
-    client_id: CLIENT_ID,
+    client_id: clientId,
     redirect_uri: REDIRECT_URI,
     response_type: 'code',
     language: 'en-us',
@@ -56,8 +56,8 @@ export function getAuthorizationUrl(state: string): string {
   return `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
 }
 
-export async function exchangeCodeForToken(code: string) {
-  const authHeader = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+export async function exchangeCodeForToken(code: string, clientId: string, clientSecret: string) {
+  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
   
   try {
     const response = await axios({
@@ -68,8 +68,8 @@ export async function exchangeCodeForToken(code: string) {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       data: new URLSearchParams({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
+        client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: REDIRECT_URI,
         code: code,
         grant_type: 'authorization_code'
