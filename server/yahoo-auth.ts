@@ -49,9 +49,9 @@ export function getAuthorizationUrl(state: string): string {
     state: state
   });
   
-  // Note: Yahoo OAuth doesn't use the scope parameter in the same way as other OAuth providers
-  // Fantasy Sports permissions are granted at the app level when creating the app
-  // The access will be determined by the permissions configured in the Yahoo Developer Console
+  // Add the fspt-w scope for read/write access to Yahoo Fantasy Sports
+  // Use fspt-r for read-only access if write operations are not needed
+  params.append('scope', 'fspt-w');
   
   return `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
 }

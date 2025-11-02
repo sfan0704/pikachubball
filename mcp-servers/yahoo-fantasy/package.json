@@ -1,0 +1,20 @@
+{
+  "name": "yahoo-fantasy-mcp-server",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for Yahoo Fantasy Basketball",
+  "type": "module",
+  "bin": {
+    "yahoo-fantasy-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  }
+}
