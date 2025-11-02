@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import QuickActions from "@/components/QuickActions";
@@ -7,9 +7,11 @@ import TeamRoster from "@/components/TeamRoster";
 import ComparisonTable from "@/components/ComparisonTable";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import ThemeToggle from "@/components/ThemeToggle";
+import YahooConnect from "@/components/YahooConnect";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -30,6 +32,25 @@ export default function ChatPage() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('yahoo_connected') === 'true') {
+      toast({
+        title: "Yahoo Fantasy Connected",
+        description: "Successfully connected to your Yahoo Fantasy account.",
+      });
+      window.history.replaceState({}, '', '/');
+    } else if (params.get('error')) {
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect to Yahoo Fantasy. Please try again.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, '', '/');
+    }
+  }, [toast]);
 
   const mockRoster = [
     { name: "Nikola Jokic", position: "C", team: "DEN", status: "active" as const },
@@ -82,6 +103,7 @@ export default function ChatPage() {
       {showSidebar && (
         <aside className="w-80 border-r border-border bg-sidebar p-4 overflow-y-auto">
           <div className="space-y-4">
+            <YahooConnect />
             <TeamRoster players={mockRoster} />
             
             <div className="grid grid-cols-1 gap-4">

@@ -1,20 +1,23 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { type User, type InsertUser, type YahooToken, type InsertYahooToken } from "@shared/schema";
 import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  saveYahooToken(token: InsertYahooToken): Promise<YahooToken>;
+  getYahooToken(userId: string): Promise<YahooToken | undefined>;
+  deleteYahooToken(userId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
+  private yahooTokens: Map<string, YahooToken>;
 
   constructor() {
     this.users = new Map();
+    this.yahooTokens = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -32,6 +35,38 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+
+  async saveYahooToken(insertToken: InsertYahooToken): Promise<YahooToken> {
+    const existing = Array.from(this.yahooTokens.values()).find(
+      (token) => token.userId === insertToken.userId
+    );
+    
+    if (existing) {
+      const updated: YahooToken = { ...existing, ...insertToken };
+      this.yahooTokens.set(existing.id, updated);
+      return updated;
+    }
+    
+    const id = randomUUID();
+    const token: YahooToken = { id, ...insertToken };
+    this.yahooTokens.set(id, token);
+    return token;
+  }
+
+  async getYahooToken(userId: string): Promise<YahooToken | undefined> {
+    return Array.from(this.yahooTokens.values()).find(
+      (token) => token.userId === userId
+    );
+  }
+
+  async deleteYahooToken(userId: string): Promise<void> {
+    const token = Array.from(this.yahooTokens.values()).find(
+      (token) => token.userId === userId
+    );
+    if (token) {
+      this.yahooTokens.delete(token.id);
+    }
   }
 }
 
