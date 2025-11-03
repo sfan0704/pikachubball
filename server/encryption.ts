@@ -1,13 +1,18 @@
 import crypto from "crypto";
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+// ENCRYPTION_KEY MUST be set in production to securely persist user credentials
+// In development, we allow a fallback to a random key for convenience
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: ENCRYPTION_KEY environment variable must be set in production to securely store user credentials');
+  }
+  console.warn("WARNING: ENCRYPTION_KEY not set in environment. Using random key (data will not persist across restarts)");
+  return crypto.randomBytes(32).toString('hex');
+})();
+
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
-
-if (!process.env.ENCRYPTION_KEY) {
-  console.warn("WARNING: ENCRYPTION_KEY not set in environment. Using random key (data will not persist across restarts)");
-}
 
 export function encrypt(text: string): string {
   const iv = crypto.randomBytes(IV_LENGTH);

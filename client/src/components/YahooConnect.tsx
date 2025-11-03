@@ -1,126 +1,160 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-
-interface YahooStatus {
-  connected: boolean;
-  hasValidToken: boolean;
-}
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { CheckCircle2, XCircle, Loader2, Settings } from "lucide-react";
 
 export default function YahooConnect() {
   const { toast } = useToast();
-  
-  const { data: status, isLoading } = useQuery<YahooStatus>({
-    queryKey: ["/api/auth/yahoo/status"],
-    refetchInterval: 30000, // Check every 30 seconds
-  });
+  const [isConnecting, setIsConnecting] = useState(false);
 
-  const connectMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/auth/yahoo");
-      const data = await response.json();
-      window.location.href = data.authUrl;
-    },
-    onError: () => {
-      toast({
-        title: "Connection Error",
-        description: "Failed to initiate Yahoo connection. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const { data: status, isLoading } = useQuery<{
+    hasCredentials: boolean;
+    connected: boolean;
+    hasValidToken: boolean;
+  }>({
+    queryKey: ["/api/auth/yahoo/status"],
   });
 
   const disconnectMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/auth/yahoo", {
-        method: "DELETE",
-      });
-      return response.json();
+      return await apiRequest("/api/auth/yahoo", "DELETE");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/yahoo/status"] });
       toast({
-        title: "Disconnected",
-        description: "Yahoo Fantasy account has been disconnected.",
+        title: "Yahoo Fantasy Disconnected",
+        description: "Your Yahoo Fantasy account has been disconnected.",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/yahoo/status"] });
     },
-    onError: () => {
+  });
+
+  const handleConnect = async () => {
+    if (!status?.hasCredentials) {
       toast({
-        title: "Disconnection Error",
-        description: "Failed to disconnect Yahoo account. Please try again.",
+        title: "Credentials Required",
+        description: "Please add your Yahoo API credentials in Settings first.",
         variant: "destructive",
       });
+      return;
     }
-  });
+
+    setIsConnecting(true);
+    try {
+      const response = await fetch("/api/auth/yahoo", {
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to initiate authentication");
+      }
+
+      const data = await response.json();
+      
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to initiate Yahoo authentication",
+        variant: "destructive",
+      });
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnect = () => {
+    disconnectMutation.mutate();
+  };
 
   if (isLoading) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm">Checking connection...</span>
-        </div>
+      <Card>
+        <CardContent className="p-6 text-center">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+        </CardContent>
       </Card>
     );
   }
 
-  const isConnected = status?.connected && status?.hasValidToken;
-  const needsReauth = status?.connected && !status?.hasValidToken;
-
   return (
-    <Card className="p-4" data-testid="card-yahoo-connect">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1">
-          {isConnected ? (
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-          ) : needsReauth ? (
-            <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-          ) : (
-            <XCircle className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-          )}
-          <div className="min-w-0">
-            <p className="font-medium text-sm">Yahoo Fantasy</p>
-            <p className="text-xs text-muted-foreground truncate">
-              {isConnected ? "Connected" : needsReauth ? "Reconnect needed" : "Not connected"}
-            </p>
-          </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">Yahoo Fantasy</span>
+          <Badge
+            variant={status?.connected ? "default" : "secondary"}
+            data-testid="badge-connection-status"
+          >
+            {status?.connected ? (
+              <>
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Connected
+              </>
+            ) : (
+              <>
+                <XCircle className="h-3 w-3 mr-1" />
+                Not Connected
+              </>
+            )}
+          </Badge>
         </div>
-        
-        {isConnected ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => disconnectMutation.mutate()}
-            disabled={disconnectMutation.isPending}
-            data-testid="button-disconnect"
-          >
-            {disconnectMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              "Disconnect"
-            )}
-          </Button>
+      </CardHeader>
+      <CardContent>
+        {!status?.hasCredentials ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Add your Yahoo API credentials in Settings to connect your account.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              data-testid="button-setup-credentials"
+              disabled
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configure in Settings
+            </Button>
+          </div>
+        ) : status?.connected ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Your Yahoo Fantasy account is connected and ready to use.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDisconnect}
+              disabled={disconnectMutation.isPending}
+              className="w-full"
+              data-testid="button-disconnect-yahoo"
+            >
+              {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect"}
+            </Button>
+          </div>
         ) : (
-          <Button
-            variant={needsReauth ? "destructive" : "default"}
-            size="sm"
-            onClick={() => connectMutation.mutate()}
-            disabled={connectMutation.isPending}
-            data-testid="button-connect"
-          >
-            {connectMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : needsReauth ? (
-              "Reconnect"
-            ) : (
-              "Connect"
-            )}
-          </Button>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Connect your Yahoo Fantasy account to get personalized insights and team data.
+            </p>
+            <Button
+              onClick={handleConnect}
+              disabled={isConnecting}
+              size="sm"
+              className="w-full"
+              data-testid="button-connect-yahoo"
+            >
+              {isConnecting ? "Connecting..." : "Connect Yahoo"}
+            </Button>
+          </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 }

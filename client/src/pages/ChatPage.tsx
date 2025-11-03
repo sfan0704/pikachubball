@@ -8,9 +8,11 @@ import ComparisonTable from "@/components/ComparisonTable";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import ThemeToggle from "@/components/ThemeToggle";
 import YahooConnect from "@/components/YahooConnect";
+import SettingsDialog from "@/components/SettingsDialog";
+import { useAuth } from "@/lib/auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -33,6 +35,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const { toast } = useToast();
+  const { logout, user } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -144,7 +147,29 @@ export default function ChatPage() {
             </Button>
             <h1 className="text-xl font-semibold" data-testid="heading-app-title">Fantasy Basketball AI</h1>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            {user && (
+              <span className="text-sm text-muted-foreground mr-2" data-testid="text-username">
+                {user.username}
+              </span>
+            )}
+            <SettingsDialog />
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={async () => {
+                await logout();
+                toast({
+                  title: "Logged out",
+                  description: "You have been logged out successfully",
+                });
+              }}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </header>
 
         <QuickActions onActionClick={handleQuickAction} />
