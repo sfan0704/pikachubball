@@ -102,7 +102,7 @@ export default function SettingsDialog() {
           <Settings className="h-5 w-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Yahoo API Settings</DialogTitle>
           <DialogDescription>
@@ -157,19 +157,19 @@ export default function SettingsDialog() {
         )}
 
         <div className="space-y-4">
-          <div className="rounded-md border border-primary/20 bg-primary/5 p-4 text-sm">
-            <p className="font-semibold mb-2">📋 Your Redirect URI (Callback URL)</p>
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm space-y-2">
+            <p className="font-semibold text-xs">📋 Your Redirect URI</p>
             <div className="bg-background rounded p-2 font-mono text-xs break-all">
               {window.location.origin}/api/auth/yahoo/callback
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              ⚠️ You MUST add this exact URL to your Yahoo app's "Redirect URI(s)" field
+            <p className="text-xs text-muted-foreground">
+              Copy this URL for the "Redirect URI(s)" field in your Yahoo app
             </p>
           </div>
 
-          <div className="rounded-md bg-muted p-4 text-sm space-y-3">
-            <p className="font-medium">How to set up your Yahoo API app:</p>
-            <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+          <div className="rounded-md bg-muted p-3 text-sm space-y-2">
+            <p className="font-medium text-sm">Setup Guide:</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-muted-foreground">
               <li>
                 Go to{" "}
                 <a 
@@ -182,20 +182,10 @@ export default function SettingsDialog() {
                 </a>
               </li>
               <li>Click "Create an App"</li>
-              <li>
-                <strong>Application Name:</strong> Choose any name (e.g., "My Fantasy Basketball")
-              </li>
-              <li>
-                <strong>Application Type:</strong> Select "Web Application"
-              </li>
-              <li>
-                <strong>Redirect URI(s):</strong> Copy and paste the URL shown above
-              </li>
-              <li>
-                <strong>API Permissions:</strong> Check "Fantasy Sports" and select "Read/Write"
-              </li>
-              <li>After creating the app, copy your Client ID and Client Secret</li>
-              <li>Paste them in the form below</li>
+              <li>Set <strong>Application Type</strong> to "Web Application"</li>
+              <li>Paste the Redirect URI from above</li>
+              <li>Check <strong>Fantasy Sports</strong> with Read/Write permission</li>
+              <li>Copy your Client ID and Secret below</li>
             </ol>
           </div>
 
