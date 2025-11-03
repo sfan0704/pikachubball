@@ -45,6 +45,18 @@ Separate data layers following MCP architecture:
 
 ## Recent Changes
 
+### 2024-11-03: Multi-User Authentication with Per-User Yahoo Credentials
+**MAJOR UPDATE**: Converted from single-user demo to full multi-tenant application
+- **Database Migration**: Moved from in-memory storage to PostgreSQL with Drizzle ORM
+- **Custom Authentication**: Implemented Passport.js local strategy with bcrypt password hashing
+- **User Isolation**: Each user has their own encrypted Yahoo API credentials (no shared global credentials)
+- **Encryption**: AES-256-GCM encryption for storing Yahoo Client ID/Secret securely
+- **Session Management**: Express-session with configurable session secret
+- **Protected Routes**: All Yahoo and settings routes require authentication
+- **Frontend Auth**: Complete signup/login flow with react-hook-form and zod validation
+- **Settings UI**: Modal dialog for users to manage their Yahoo API credentials
+- **E2E Tested**: Verified multi-user isolation and complete authentication flow
+
 ### 2024-11-02: Yahoo Fantasy OAuth & MCP Implementation
 - Implemented Yahoo Fantasy OAuth 2.0 with `fspt-w` scope for read/write access
 - Added CSRF protection using cryptographic state parameter with 10-minute expiry
@@ -54,10 +66,12 @@ Separate data layers following MCP architecture:
 - Added YahooConnect component with reconnection affordances
 
 ### Security Features
-- CSRF protection via state parameter validation
-- Secure token storage with automatic refresh
-- 401/403 error handling with token cleanup
-- Environment-based secret management (YAHOO_CLIENT_ID, YAHOO_CLIENT_SECRET, ANTHROPIC_API_KEY)
+- **Authentication**: Session-based auth with Passport.js and bcrypt (10 salt rounds)
+- **Encryption**: AES-256-GCM with ENCRYPTION_KEY (required in production)
+- **CSRF Protection**: State parameter validation for Yahoo OAuth
+- **Credential Storage**: Per-user encrypted Yahoo credentials in PostgreSQL
+- **Token Management**: Secure token storage with automatic refresh
+- **Error Handling**: 401/403 handling with token cleanup and re-authentication prompts
 
 ## Data Sources
 1. **Yahoo Fantasy API**: Team rosters, league data, matchups (via MCP)
@@ -73,22 +87,47 @@ Separate data layers following MCP architecture:
 - APIs: Prefer free API endpoints over web scraping for reliability
 
 ## Key Files
-- `client/src/pages/ChatPage.tsx`: Main chat interface
-- `client/src/components/YahooConnect.tsx`: OAuth connection UI
-- `server/yahoo-auth.ts`: OAuth flow, token management, API requests
-- `server/routes.ts`: Backend API routes
+
+**Frontend:**
+- `client/src/App.tsx`: Main app with authentication routing
+- `client/src/pages/AuthPage.tsx`: Login/Signup page
+- `client/src/pages/ChatPage.tsx`: Main chat interface (protected route)
+- `client/src/lib/auth.tsx`: Authentication context and hooks
+- `client/src/components/SettingsDialog.tsx`: Yahoo credentials management UI
+- `client/src/components/YahooConnect.tsx`: OAuth connection status and controls
+
+**Backend:**
+- `server/index.ts`: Express server with session and Passport initialization
+- `server/auth.ts`: Passport.js configuration and password utilities
+- `server/auth-routes.ts`: Authentication API endpoints and middleware
+- `server/routes.ts`: Protected API routes (Yahoo OAuth, credentials, MCP)
+- `server/yahoo-auth.ts`: Per-user OAuth flow and token management
+- `server/encryption.ts`: AES-256-GCM encryption utilities
+- `server/storage.ts`: PostgreSQL storage interface with Drizzle ORM
+- `server/db.ts`: Database connection and Drizzle setup
 - `server/mcp-client.ts`: MCP client integration layer
+
+**MCP Servers:**
 - `mcp-servers/yahoo-fantasy/`: Standalone Yahoo Fantasy MCP server
-- `shared/schema.ts`: Data models and types
-- `server/storage.ts`: In-memory storage interface
+
+**Schema:**
+- `shared/schema.ts`: Database models (users, yahooCredentials, yahooTokens)
 
 ## Environment Variables
-- `YAHOO_CLIENT_ID`: Yahoo app client ID
-- `YAHOO_CLIENT_SECRET`: Yahoo app client secret
+**Required in Production:**
+- `DATABASE_URL`: PostgreSQL connection string (automatically provided by Replit)
+- `ENCRYPTION_KEY`: 64-character hex key for encrypting user credentials (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+- `SESSION_SECRET`: Random string for session signing
 - `ANTHROPIC_API_KEY`: Claude API key for AI responses
-- `SESSION_SECRET`: Express session secret
+
+**User-Provided (via Settings UI):**
+- Yahoo Client ID: Each user provides their own via Settings dialog
+- Yahoo Client Secret: Each user provides their own via Settings dialog
+
+**Note**: `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` environment variables are no longer used. Users provide their own credentials through the web interface.
 
 ## Development
 - Port 5000: Combined Express + Vite server
 - Workflow: `npm run dev` starts both backend and frontend
-- Storage: In-memory storage (MemStorage) for development
+- Database: PostgreSQL with Drizzle ORM (use `npm run db:push` to sync schema)
+- Migration: Never write manual SQL migrations - use `npm run db:push --force` if needed
