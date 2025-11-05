@@ -49,9 +49,9 @@ export function getAuthorizationUrl(state: string, clientId: string): string {
     state: state
   });
   
-  // Add the fspt-w scope for read/write access to Yahoo Fantasy Sports
-  // Use fspt-r for read-only access if write operations are not needed
-  params.append('scope', 'fspt-w');
+  // Use fspt-r scope for read-only access to Yahoo Fantasy Sports
+  // This is sufficient for analyzing data and providing recommendations
+  params.append('scope', 'fspt-r');
   
   return `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
 }
