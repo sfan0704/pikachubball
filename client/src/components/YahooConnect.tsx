@@ -56,9 +56,17 @@ export default function YahooConnect() {
       const data = await response.json();
       
       if (data.authUrl) {
-        window.location.href = data.authUrl;
+        console.log("Redirecting to Yahoo OAuth URL:", data.authUrl);
+        // Try opening in a new window first as a fallback
+        const newWindow = window.open(data.authUrl, '_blank');
+        if (!newWindow) {
+          // If popup blocked, try direct navigation
+          console.log("Popup blocked, using direct navigation");
+          window.location.href = data.authUrl;
+        }
       }
     } catch (error: any) {
+      console.error("Yahoo connect error:", error);
       toast({
         title: "Connection Failed",
         description: error.message || "Failed to initiate Yahoo authentication",
