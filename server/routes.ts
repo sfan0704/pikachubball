@@ -120,9 +120,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
-    const { code, state } = req.query;
+    const { code, state, error } = req.query;
+    
+    console.log('Yahoo OAuth callback received:', { 
+      hasCode: !!code, 
+      hasState: !!state, 
+      error: error,
+      isAuthenticated: req.isAuthenticated(),
+      query: req.query 
+    });
+    
+    // Check if Yahoo sent an error
+    if (error) {
+      console.error('Yahoo OAuth error:', error);
+      return res.redirect(`/?error=yahoo_oauth_error&details=${error}`);
+    }
     
     if (!code || typeof code !== 'string') {
+      console.error('Missing authorization code in callback');
       return res.redirect('/?error=missing_code');
     }
 
@@ -134,17 +149,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // User must be logged in to complete OAuth
       if (!req.isAuthenticated()) {
+        console.error('User not authenticated during OAuth callback');
         return res.redirect('/?error=not_authenticated');
       }
 
       const userId = getAuthenticatedUserId(req);
       if (!userId) {
+        console.error('Could not get authenticated user ID');
         return res.redirect('/?error=not_authenticated');
       }
+
+      console.log('Processing OAuth for user:', userId);
 
       // Get user's Yahoo credentials
       const credentials = await storage.getYahooCredentials(userId);
       if (!credentials) {
+        console.error('No Yahoo credentials found for user:', userId);
         return res.redirect('/?error=credentials_not_found');
       }
 
@@ -152,6 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientId = decrypt(credentials.encryptedClientId);
       const clientSecret = decrypt(credentials.encryptedClientSecret);
 
+      console.log('Exchanging code for token...');
       const tokens = await exchangeCodeForToken(code, clientId, clientSecret);
       
       const expiresAt = Math.floor(Date.now() / 1000) + tokens.expiresIn;
@@ -163,9 +184,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt: expiresAt
       });
 
+      console.log('Yahoo OAuth successful for user:', userId);
       res.redirect('/?yahoo_connected=true');
     } catch (error) {
       console.error('OAuth callback error:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message, error.stack);
+      }
       res.redirect('/?error=oauth_failed');
     }
   });
