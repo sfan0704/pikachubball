@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import ChatPage from "@/pages/ChatPage";
+import RankingsPage from "@/pages/RankingsPage";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
 
@@ -33,6 +34,9 @@ function Router() {
     <Switch>
       <Route path="/auth">
         {user ? <Redirect to="/" /> : <AuthPage />}
+      </Route>
+      <Route path="/rankings">
+        <ProtectedRoute component={RankingsPage} />
       </Route>
       <Route path="/">
         <ProtectedRoute component={ChatPage} />

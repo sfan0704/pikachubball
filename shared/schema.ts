@@ -50,3 +50,44 @@ export type YahooCredentials = typeof yahooCredentials.$inferSelect;
 export type InsertYahooCredentials = z.infer<typeof insertYahooCredentialsSchema>;
 export type YahooToken = typeof yahooTokens.$inferSelect;
 export type InsertYahooToken = z.infer<typeof insertYahooTokenSchema>;
+
+// Yahoo API Response Types
+export const leagueSchema = z.object({
+  leagueKey: z.string(),
+  leagueName: z.string(),
+  teamKey: z.string(),
+  teamName: z.string(),
+});
+
+export const playerSchema = z.object({
+  name: z.string(),
+  position: z.string(),
+  team: z.string(),
+  status: z.enum(["active", "injured", "out"]),
+  playerKey: z.string().optional(),
+});
+
+export const categoryStatsSchema = z.object({
+  fgPct: z.number(),
+  ftPct: z.number(),
+  tpm: z.number(),
+  pts: z.number(),
+  reb: z.number(),
+  ast: z.number(),
+  stl: z.number(),
+  blk: z.number(),
+  to: z.number(),
+});
+
+export const teamRankingSchema = z.object({
+  teamKey: z.string(),
+  teamName: z.string(),
+  stats: categoryStatsSchema,
+  categoryRanks: categoryStatsSchema,
+  totalRank: z.number(),
+});
+
+export type League = z.infer<typeof leagueSchema>;
+export type Player = z.infer<typeof playerSchema>;
+export type CategoryStats = z.infer<typeof categoryStatsSchema>;
+export type TeamRanking = z.infer<typeof teamRankingSchema>;

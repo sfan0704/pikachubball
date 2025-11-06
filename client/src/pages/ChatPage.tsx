@@ -4,7 +4,6 @@ import ChatInput from "@/components/ChatInput";
 import QuickActions from "@/components/QuickActions";
 import PlayerStatCard from "@/components/PlayerStatCard";
 import TeamRoster from "@/components/TeamRoster";
-import LeagueRankings from "@/components/LeagueRankings";
 import ComparisonTable from "@/components/ComparisonTable";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -14,9 +13,12 @@ import { useAuth } from "@/lib/auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Menu, X, LogOut } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Menu, X, LogOut, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
+import type { League, Player } from "@shared/schema";
 
 interface Message {
   id: string;
@@ -40,6 +42,7 @@ export default function ChatPage() {
   const [selectedTeamKey, setSelectedTeamKey] = useState<string | null>(null);
   const { toast } = useToast();
   const { logout, user } = useAuth();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,25 +51,20 @@ export default function ChatPage() {
         title: "Yahoo Fantasy Connected",
         description: "Successfully connected to your Yahoo Fantasy account.",
       });
-      window.history.replaceState({}, '', '/');
+      setLocation('/');
     } else if (params.get('error')) {
       toast({
         title: "Connection Failed",
         description: "Failed to connect to Yahoo Fantasy. Please try again.",
         variant: "destructive",
       });
-      window.history.replaceState({}, '', '/');
+      setLocation('/');
     }
-  }, [toast]);
+  }, [toast, setLocation]);
 
   // Fetch user's leagues
   const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
-    leagues: Array<{
-      leagueKey: string;
-      leagueName: string;
-      teamKey: string;
-      teamName: string;
-    }>;
+    leagues: League[];
   }>({
     queryKey: ["/api/yahoo/leagues"],
     retry: false,
@@ -81,13 +79,7 @@ export default function ChatPage() {
 
   // Fetch roster for selected team
   const { data: rosterData, isLoading: isLoadingRoster } = useQuery<{
-    roster: Array<{
-      name: string;
-      position: string;
-      team: string;
-      status: "active" | "injured" | "out";
-      playerKey?: string;
-    }>;
+    roster: Player[];
   }>({
     queryKey: ["/api/yahoo/roster-by-team", selectedTeamKey],
     enabled: !!selectedTeamKey,
@@ -95,44 +87,6 @@ export default function ChatPage() {
   });
 
   const roster = rosterData?.roster || [];
-  const selectedLeague = leaguesData?.leagues?.find(l => l.teamKey === selectedTeamKey);
-
-  // Fetch 9-cat rankings for selected league
-  const { data: rankingsData, isLoading: isLoadingRankings } = useQuery<{
-    rankings: Array<{
-      teamKey: string;
-      teamName: string;
-      stats: {
-        fgPct: number;
-        ftPct: number;
-        tpm: number;
-        pts: number;
-        reb: number;
-        ast: number;
-        stl: number;
-        blk: number;
-        to: number;
-      };
-      categoryRanks: {
-        fgPct: number;
-        ftPct: number;
-        tpm: number;
-        pts: number;
-        reb: number;
-        ast: number;
-        stl: number;
-        blk: number;
-        to: number;
-      };
-      totalRank: number;
-    }>;
-  }>({
-    queryKey: [`/api/yahoo/league-rankings/${selectedLeague?.leagueKey}`, selectedLeague?.leagueKey],
-    enabled: !!selectedLeague?.leagueKey,
-    retry: false,
-  });
-
-  const rankings = rankingsData?.rankings || [];
 
   const handleSendMessage = (content: string) => {
     const userMessage: Message = {
@@ -223,19 +177,6 @@ export default function ChatPage() {
                 No roster data available
               </div>
             ) : null}
-            
-            {/* 9-Cat League Rankings */}
-            {isLoadingRankings ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Loading rankings...
-              </div>
-            ) : rankings.length > 0 ? (
-              <LeagueRankings rankings={rankings} userTeamKey={selectedTeamKey || undefined} />
-            ) : selectedLeague ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                No rankings data available
-              </div>
-            ) : null}
           </div>
         </aside>
       )}
@@ -259,6 +200,18 @@ export default function ChatPage() {
                 {user.username}
               </span>
             )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/rankings">
+                  <Button variant="ghost" size="icon" data-testid="button-rankings">
+                    <TrendingUp className="h-5 w-5" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View 9-Cat Rankings</p>
+              </TooltipContent>
+            </Tooltip>
             <SettingsDialog />
             <ThemeToggle />
             <Button

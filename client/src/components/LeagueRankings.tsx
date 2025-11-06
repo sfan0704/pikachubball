@@ -8,34 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface TeamRanking {
-  teamKey: string;
-  teamName: string;
-  stats: {
-    fgPct: number;
-    ftPct: number;
-    tpm: number;
-    pts: number;
-    reb: number;
-    ast: number;
-    stl: number;
-    blk: number;
-    to: number;
-  };
-  categoryRanks: {
-    fgPct: number;
-    ftPct: number;
-    tpm: number;
-    pts: number;
-    reb: number;
-    ast: number;
-    stl: number;
-    blk: number;
-    to: number;
-  };
-  totalRank: number;
-}
+import type { TeamRanking } from "@shared/schema";
 
 interface LeagueRankingsProps {
   rankings: TeamRanking[];
@@ -51,9 +24,9 @@ export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankings
   };
 
   const getMasterRankBadge = (index: number) => {
-    if (index === 0) return <Badge className="bg-yellow-500">🥇 1st</Badge>;
-    if (index === 1) return <Badge className="bg-gray-400">🥈 2nd</Badge>;
-    if (index === 2) return <Badge className="bg-orange-600">🥉 3rd</Badge>;
+    if (index === 0) return <Badge className="bg-yellow-500 text-yellow-950">1st</Badge>;
+    if (index === 1) return <Badge className="bg-gray-400 text-gray-950">2nd</Badge>;
+    if (index === 2) return <Badge className="bg-orange-600 text-orange-950">3rd</Badge>;
     return <Badge variant="outline">{index + 1}</Badge>;
   };
 
