@@ -231,61 +231,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Yahoo Fantasy API Routes
-  app.get("/api/yahoo/games", async (req: Request, res: Response) => {
-    try {
-      const userId = 'default-user';
-      const data = await makeYahooApiRequest(userId, '/users;use_login=1/games');
-      res.json(data);
-    } catch (error) {
-      if (error instanceof YahooAuthError && error.needsReauth) {
-        return res.status(401).json({ error: error.message, needsReauth: true });
-      }
-      res.status(500).json({ error: 'Failed to fetch games data' });
-    }
-  });
-
-  app.get("/api/yahoo/leagues", async (req: Request, res: Response) => {
-    try {
-      const userId = 'default-user';
-      const data = await makeYahooApiRequest(userId, '/users;use_login=1/games;game_keys=nba/leagues');
-      res.json(data);
-    } catch (error) {
-      if (error instanceof YahooAuthError && error.needsReauth) {
-        return res.status(401).json({ error: error.message, needsReauth: true });
-      }
-      res.status(500).json({ error: 'Failed to fetch leagues data' });
-    }
-  });
-
-  app.get("/api/yahoo/team/:teamKey", async (req: Request, res: Response) => {
-    try {
-      const userId = 'default-user';
-      const { teamKey } = req.params;
-      const data = await makeYahooApiRequest(userId, `/team/${teamKey}`);
-      res.json(data);
-    } catch (error) {
-      if (error instanceof YahooAuthError && error.needsReauth) {
-        return res.status(401).json({ error: error.message, needsReauth: true });
-      }
-      res.status(500).json({ error: 'Failed to fetch team data' });
-    }
-  });
-
-  app.get("/api/yahoo/roster/:teamKey", async (req: Request, res: Response) => {
-    try {
-      const userId = 'default-user';
-      const { teamKey } = req.params;
-      const data = await makeYahooApiRequest(userId, `/team/${teamKey}/roster`);
-      res.json(data);
-    } catch (error) {
-      if (error instanceof YahooAuthError && error.needsReauth) {
-        return res.status(401).json({ error: error.message, needsReauth: true });
-      }
-      res.status(500).json({ error: 'Failed to fetch roster data' });
-    }
-  });
-
+  // Yahoo Fantasy API Routes - All require authentication
+  
   // Get all user's leagues and teams
   app.get("/api/yahoo/leagues", requireAuth, async (req: Request, res: Response) => {
     try {
