@@ -117,18 +117,25 @@ export async function refreshAccessToken(refreshToken: string) {
 }
 
 export async function getValidAccessToken(userId: string): Promise<string | null> {
+  console.log('Getting valid access token for user:', userId);
   const tokenData = await storage.getYahooToken(userId);
   
+  console.log('Token data retrieved:', tokenData ? 'exists' : 'null', tokenData ? `expires at ${tokenData.expiresAt}` : '');
+  
   if (!tokenData) {
+    console.log('No token data found for user');
     return null;
   }
 
   const now = Math.floor(Date.now() / 1000);
+  console.log('Current timestamp:', now, 'Token expires at:', tokenData.expiresAt, 'Time until expiry:', tokenData.expiresAt - now);
   
   if (tokenData.expiresAt > now + 300) {
+    console.log('Token is still valid, returning access token');
     return tokenData.accessToken;
   }
 
+  console.log('Token needs refresh, refreshing...');
   try {
     const newTokens = await refreshAccessToken(tokenData.refreshToken);
     
@@ -139,6 +146,7 @@ export async function getValidAccessToken(userId: string): Promise<string | null
       expiresAt: now + newTokens.expiresIn
     });
 
+    console.log('Token refreshed successfully');
     return newTokens.accessToken;
   } catch (error) {
     console.error('Failed to refresh token:', error);
