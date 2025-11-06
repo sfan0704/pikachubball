@@ -367,14 +367,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ roster: [], message: "No teams found in standings" });
       }
       
-      // Get first team (user's team should be here)
-      const firstTeamData = teams["0"]?.team;
-      const teamKey = firstTeamData?.[0]?.team_key;
+      // Get user's GUID to match with team manager
+      const userGuid = users["0"].user[0]?.guid;
+      console.log('User GUID:', userGuid);
       
-      console.log('Team key:', teamKey);
+      // Find the team that belongs to this user by matching GUID
+      let teamKey = null;
+      for (let i = 0; i < teams.count; i++) {
+        const teamData = teams[i.toString()]?.team;
+        if (teamData && Array.isArray(teamData)) {
+          // teamData[0] is an array of team properties
+          const teamProperties = teamData[0];
+          if (Array.isArray(teamProperties)) {
+            // Find team_key in the properties array
+            const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
+            const currentTeamKey = teamKeyObj?.team_key;
+            
+            // Find managers in the properties array
+            const managersObj = teamProperties.find((prop: any) => prop.managers);
+            const managers = managersObj?.managers;
+            
+            if (managers && Array.isArray(managers)) {
+              const manager = managers[0]?.manager;
+              if (manager?.guid === userGuid && currentTeamKey) {
+                teamKey = currentTeamKey;
+                console.log('Found user team:', teamKey);
+                break;
+              }
+            }
+          }
+        }
+      }
       
       if (!teamKey) {
-        return res.json({ roster: [], message: "No team key found", debug: { teams } });
+        return res.json({ roster: [], message: "Could not find your team in the league" });
       }
 
       // Get team roster
