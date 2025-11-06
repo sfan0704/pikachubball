@@ -26,14 +26,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="bg-background p-3 md:p-4">
-      <div className="max-w-4xl mx-auto flex gap-2 items-end">
+    <div className="bg-background p-3 md:p-4 w-full">
+      <div className="max-w-4xl mx-auto flex gap-2 items-end w-full">
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about your team, players, matchups..."
-          className="min-h-[48px] md:min-h-[56px] max-h-32 resize-none rounded-xl text-sm md:text-base"
+          className="flex-1 min-w-0 min-h-[48px] md:min-h-[56px] max-h-32 resize-none rounded-xl text-sm md:text-base"
           disabled={disabled}
           data-testid="input-chat"
         />

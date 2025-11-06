@@ -14,8 +14,9 @@ An agentic chatbot application for Yahoo Fantasy Basketball analysis that helps 
 
 ### Frontend (React + TypeScript)
 - **Chat Interface**: Real-time conversation with AI assistant
-- **Sidebar**: Team roster view, player stats cards, quick actions
+- **Sidebar**: Team roster view, player stats cards, quick actions (drawer-style on mobile < 768px)
 - **Rankings Page**: Dedicated page for 9-category master rankings analysis
+- **Responsive Design**: Mobile-first approach with breakpoint at 768px (md:)
 - **Theme Support**: Light/dark mode with system-based design
 - **Components**: ChatMessage, ChatInput, PlayerStatCard, TeamRoster, QuickActions, ComparisonTable, YahooConnect, LeagueRankings
 
@@ -45,6 +46,17 @@ Separate data layers following MCP architecture:
 - ESPN MCP Server: NBA news and analysis
 
 ## Recent Changes
+
+### 2024-11-06: Mobile-Responsive Design Overhaul
+**ENHANCEMENT**: Comprehensive mobile-first responsive design implementation
+- **Sidebar**: Converts to slide-in drawer with backdrop on mobile (< 768px)
+- **Rankings Table**: Horizontal scroll with sticky Rank/Team columns on mobile
+- **Chat Interface**: Responsive text sizing, spacing, and touch-friendly buttons
+- **Header**: Condensed layout on mobile (shortened title, hidden username on small screens)
+- **Typography**: Scaled down on mobile (text-xs/sm) for better readability
+- **Spacing**: Reduced padding and gaps on mobile throughout the app
+- **Breakpoint**: Uses md: (768px) as primary breakpoint for mobile vs desktop layouts
+- **Components Updated**: ChatPage, RankingsPage, LeagueRankings, ChatInput, ChatMessage, AuthPage
 
 ### 2024-11-06: 9-Category Master Rankings Page
 **NEW FEATURE**: Dedicated rankings page showing true team strength across all categories
