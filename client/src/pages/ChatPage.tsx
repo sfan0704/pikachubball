@@ -4,6 +4,7 @@ import ChatInput from "@/components/ChatInput";
 import QuickActions from "@/components/QuickActions";
 import PlayerStatCard from "@/components/PlayerStatCard";
 import TeamRoster from "@/components/TeamRoster";
+import LeagueRankings from "@/components/LeagueRankings";
 import ComparisonTable from "@/components/ComparisonTable";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -96,6 +97,43 @@ export default function ChatPage() {
   const roster = rosterData?.roster || [];
   const selectedLeague = leaguesData?.leagues?.find(l => l.teamKey === selectedTeamKey);
 
+  // Fetch 9-cat rankings for selected league
+  const { data: rankingsData, isLoading: isLoadingRankings } = useQuery<{
+    rankings: Array<{
+      teamKey: string;
+      teamName: string;
+      stats: {
+        fgPct: number;
+        ftPct: number;
+        tpm: number;
+        pts: number;
+        reb: number;
+        ast: number;
+        stl: number;
+        blk: number;
+        to: number;
+      };
+      categoryRanks: {
+        fgPct: number;
+        ftPct: number;
+        tpm: number;
+        pts: number;
+        reb: number;
+        ast: number;
+        stl: number;
+        blk: number;
+        to: number;
+      };
+      totalRank: number;
+    }>;
+  }>({
+    queryKey: [`/api/yahoo/league-rankings/${selectedLeague?.leagueKey}`, selectedLeague?.leagueKey],
+    enabled: !!selectedLeague?.leagueKey,
+    retry: false,
+  });
+
+  const rankings = rankingsData?.rankings || [];
+
   const handleSendMessage = (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -186,27 +224,18 @@ export default function ChatPage() {
               </div>
             ) : null}
             
-            <div className="grid grid-cols-1 gap-4">
-              <PlayerStatCard
-                name="Nikola Jokic"
-                position="C"
-                team="DEN"
-                stats={[
-                  { label: "PPG", value: "26.4" },
-                  { label: "RPG", value: "12.4" }
-                ]}
-                trend="up"
-              />
-            </div>
-
-            <ComparisonTable
-              title="League Leaders"
-              columns={["PPG"]}
-              data={[
-                { player: "Embiid", stats: { PPG: "33.1" } },
-                { player: "Doncic", stats: { PPG: "28.8" } },
-              ]}
-            />
+            {/* 9-Cat League Rankings */}
+            {isLoadingRankings ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                Loading rankings...
+              </div>
+            ) : rankings.length > 0 ? (
+              <LeagueRankings rankings={rankings} userTeamKey={selectedTeamKey || undefined} />
+            ) : selectedLeague ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No rankings data available
+              </div>
+            ) : null}
           </div>
         </aside>
       )}

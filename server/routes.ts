@@ -346,6 +346,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get 9-cat rankings for all teams in a league
+  app.get("/api/yahoo/league-rankings/:leagueKey", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { leagueKey } = req.params;
+      if (!leagueKey) {
+        return res.status(400).json({ error: "League key required" });
+      }
+
+      // Get user's Yahoo token
+      const token = await storage.getYahooToken(userId);
+      if (!token) {
+        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+      }
+
+      // Get and validate token
+      const accessToken = await getValidAccessToken(userId);
+      if (!accessToken) {
+        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+      }
+
+      // Get MCP client and set credentials
+      const mcpClient = await getMCPClient();
+      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+
+      // Get league standings which includes team stats
+      const standings = await mcpClient.getLeagueStandings(leagueKey);
+      
+      // Parse team stats from Yahoo's nested structure
+      const teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
+      if (!teams) {
+        return res.json({ rankings: [] });
+      }
+
+      // Extract all teams with their 9-cat stats
+      const teamStats: Array<{
+        teamKey: string;
+        teamName: string;
+        stats: {
+          fgPct: number;
+          ftPct: number;
+          tpm: number;
+          pts: number;
+          reb: number;
+          ast: number;
+          stl: number;
+          blk: number;
+          to: number;
+        };
+      }> = [];
+      for (let i = 0; i < teams.count; i++) {
+        const teamData = teams[i.toString()]?.team;
+        if (teamData && Array.isArray(teamData) && teamData[0] && Array.isArray(teamData[0])) {
+          const teamProperties = teamData[0];
+          const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
+          const teamNameObj = teamProperties.find((prop: any) => prop.name);
+          
+          // Find team_stats in teamData[1]
+          const statsData = teamData[1]?.team_stats;
+          if (statsData) {
+            const stats = statsData.stats;
+            const statMap: any = {};
+            
+            // Parse stats into a map
+            if (Array.isArray(stats)) {
+              stats.forEach((statObj: any) => {
+                if (statObj.stat) {
+                  statMap[statObj.stat.stat_id] = statObj.stat.value;
+                }
+              });
+            }
+            
+            teamStats.push({
+              teamKey: teamKeyObj?.team_key,
+              teamName: teamNameObj?.name,
+              stats: {
+                fgPct: parseFloat(statMap['5'] || '0'), // FG%
+                ftPct: parseFloat(statMap['8'] || '0'), // FT%
+                tpm: parseInt(statMap['10'] || '0'), // 3PM
+                pts: parseInt(statMap['12'] || '0'), // PTS
+                reb: parseInt(statMap['15'] || '0'), // REB
+                ast: parseInt(statMap['16'] || '0'), // AST
+                stl: parseInt(statMap['17'] || '0'), // STL
+                blk: parseInt(statMap['18'] || '0'), // BLK
+                to: parseInt(statMap['19'] || '0'), // TO
+              }
+            });
+          }
+        }
+      }
+
+      // Calculate rankings for each category
+      const categories = ['fgPct', 'ftPct', 'tpm', 'pts', 'reb', 'ast', 'stl', 'blk', 'to'];
+      const rankings = teamStats.map(team => ({
+        ...team,
+        categoryRanks: {} as any,
+        totalRank: 0
+      }));
+
+      // Rank each category
+      categories.forEach(cat => {
+        // Sort teams by this category (descending for most, ascending for TO)
+        const sorted = [...teamStats].sort((a, b) => {
+          if (cat === 'to') {
+            // Lower turnovers is better
+            return a.stats[cat] - b.stats[cat];
+          } else {
+            // Higher is better
+            return b.stats[cat] - a.stats[cat];
+          }
+        });
+
+        // Assign ranks
+        sorted.forEach((team, index) => {
+          const rankingTeam = rankings.find(r => r.teamKey === team.teamKey);
+          if (rankingTeam) {
+            rankingTeam.categoryRanks[cat] = index + 1;
+          }
+        });
+      });
+
+      // Calculate total rank (average of all category ranks)
+      rankings.forEach(team => {
+        const totalRank = categories.reduce((sum, cat) => sum + team.categoryRanks[cat], 0);
+        team.totalRank = totalRank / categories.length;
+      });
+
+      // Sort by master rank (lower is better)
+      rankings.sort((a, b) => a.totalRank - b.totalRank);
+
+      res.json({ rankings });
+    } catch (error: any) {
+      console.error('Error fetching league rankings:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch league rankings' });
+    }
+  });
+
   // Get roster for specific team
   app.get("/api/yahoo/roster-by-team/:teamKey", requireAuth, async (req: Request, res: Response) => {
     try {
