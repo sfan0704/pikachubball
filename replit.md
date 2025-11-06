@@ -15,8 +15,9 @@ An agentic chatbot application for Yahoo Fantasy Basketball analysis that helps 
 ### Frontend (React + TypeScript)
 - **Chat Interface**: Real-time conversation with AI assistant
 - **Sidebar**: Team roster view, player stats cards, quick actions
+- **Rankings Page**: Dedicated page for 9-category master rankings analysis
 - **Theme Support**: Light/dark mode with system-based design
-- **Components**: ChatMessage, ChatInput, PlayerStatCard, TeamRoster, QuickActions, ComparisonTable, YahooConnect
+- **Components**: ChatMessage, ChatInput, PlayerStatCard, TeamRoster, QuickActions, ComparisonTable, YahooConnect, LeagueRankings
 
 ### Backend (Express + Node.js)
 - **Yahoo OAuth 2.0**: Secure authentication with CSRF protection using state parameter
@@ -44,6 +45,16 @@ Separate data layers following MCP architecture:
 - ESPN MCP Server: NBA news and analysis
 
 ## Recent Changes
+
+### 2024-11-06: 9-Category Master Rankings Page
+**NEW FEATURE**: Dedicated rankings page showing true team strength across all categories
+- **Rankings Page**: Full-page view at `/rankings` for analyzing league standings by 9 categories (FG%, FT%, 3PM, PTS, REB, AST, STL, BLK, TO)
+- **Master Rank Algorithm**: Calculates overall team rank by averaging position across all 9 categories
+- **Visual Hierarchy**: Color-coded rankings (green/yellow/red), text badges for top 3 teams, highlighted user team
+- **API Endpoint**: `GET /api/yahoo/league-rankings/:leagueKey` fetches and calculates category ranks
+- **Shared Types**: League, Player, and TeamRanking types defined in `shared/schema.ts` with Zod validation
+- **Navigation**: Tooltip-accessible icon button in ChatPage header for easy access
+- **Routing**: Uses wouter for all navigation, no direct history manipulation
 
 ### 2024-11-03: Multi-User Authentication with Per-User Yahoo Credentials
 **MAJOR UPDATE**: Converted from single-user demo to full multi-tenant application
@@ -92,9 +103,11 @@ Separate data layers following MCP architecture:
 - `client/src/App.tsx`: Main app with authentication routing
 - `client/src/pages/AuthPage.tsx`: Login/Signup page
 - `client/src/pages/ChatPage.tsx`: Main chat interface (protected route)
+- `client/src/pages/RankingsPage.tsx`: 9-category master rankings page (protected route)
 - `client/src/lib/auth.tsx`: Authentication context and hooks
 - `client/src/components/SettingsDialog.tsx`: Yahoo credentials management UI
 - `client/src/components/YahooConnect.tsx`: OAuth connection status and controls
+- `client/src/components/LeagueRankings.tsx`: 9-cat rankings table with color-coded categories
 
 **Backend:**
 - `server/index.ts`: Express server with session and Passport initialization
@@ -111,7 +124,7 @@ Separate data layers following MCP architecture:
 - `mcp-servers/yahoo-fantasy/`: Standalone Yahoo Fantasy MCP server
 
 **Schema:**
-- `shared/schema.ts`: Database models (users, yahooCredentials, yahooTokens)
+- `shared/schema.ts`: Database models (users, yahooCredentials, yahooTokens) and API response types (League, Player, TeamRanking)
 
 ## Environment Variables
 **Required in Production:**
