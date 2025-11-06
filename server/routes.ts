@@ -311,29 +311,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
 
       // Get user's leagues
-      const leagues = await mcpClient.getUserLeagues();
+      const leaguesResponse = await mcpClient.getUserLeagues();
       
-      console.log('Leagues data:', JSON.stringify(leagues, null, 2));
+      console.log('Leagues response:', JSON.stringify(leaguesResponse, null, 2));
       
-      if (!leagues || leagues.length === 0) {
+      // Parse the deeply nested Yahoo API structure
+      const users = leaguesResponse?.fantasy_content?.users;
+      if (!users || !users["0"]) {
+        return res.json({ roster: [], message: "No user data found" });
+      }
+      
+      const userData = users["0"].user;
+      if (!userData || userData.length < 2) {
+        return res.json({ roster: [], message: "No games data found" });
+      }
+      
+      const gamesData = userData[1]?.games;
+      if (!gamesData || !gamesData["0"]) {
+        return res.json({ roster: [], message: "No games found" });
+      }
+      
+      const gameArray = gamesData["0"].game;
+      if (!gameArray || gameArray.length < 2) {
+        return res.json({ roster: [], message: "No game leagues found" });
+      }
+      
+      const leaguesData = gameArray[1]?.leagues;
+      if (!leaguesData || !leaguesData["0"]) {
         return res.json({ roster: [], message: "No leagues found" });
       }
-
-      // Get the first team from the first league
-      const firstLeague = leagues[0];
-      console.log('First league:', JSON.stringify(firstLeague, null, 2));
       
-      // Yahoo API structure: firstLeague might have a 'league' property
-      const leagueData = firstLeague.league || firstLeague;
-      const teams = leagueData.teams || [];
-      
-      if (!teams || teams.length === 0) {
-        return res.json({ roster: [], message: "No team found in league", debug: { firstLeague } });
+      const leagueArray = leaguesData["0"].league;
+      if (!leagueArray || leagueArray.length === 0) {
+        return res.json({ roster: [], message: "No league data found" });
       }
       
-      // Get first team - might be in different formats
-      const firstTeam = teams[0]?.team || teams[0];
-      const teamKey = firstTeam?.team_key;
+      // Get league key from the first league
+      const leagueKey = leagueArray[0]?.league_key;
+      console.log('League key:', leagueKey);
+      
+      if (!leagueKey) {
+        return res.json({ roster: [], message: "No league key found" });
+      }
+      
+      // Now get the team for this league - need to fetch teams separately
+      // For now, construct team key based on user's first team in the league
+      // Yahoo team keys are typically in format: {game_key}.l.{league_id}.t.{team_id}
+      // We'll need to get standings to find the user's team
+      const standings = await mcpClient.getLeagueStandings(leagueKey);
+      console.log('Standings:', JSON.stringify(standings, null, 2));
+      
+      // Find user's team from standings
+      const teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
+      if (!teams) {
+        return res.json({ roster: [], message: "No teams found in standings" });
+      }
+      
+      // Get first team (user's team should be here)
+      const firstTeamData = teams["0"]?.team;
+      const teamKey = firstTeamData?.[0]?.team_key;
       
       console.log('Team key:', teamKey);
       
