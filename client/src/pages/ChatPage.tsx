@@ -12,6 +12,7 @@ import SettingsDialog from "@/components/SettingsDialog";
 import { useAuth } from "@/lib/auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Menu, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ export default function ChatPage() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [selectedTeamKey, setSelectedTeamKey] = useState<string | null>(null);
   const { toast } = useToast();
   const { logout, user } = useAuth();
 
@@ -56,7 +58,27 @@ export default function ChatPage() {
     }
   }, [toast]);
 
-  // Fetch real roster data from Yahoo Fantasy
+  // Fetch user's leagues
+  const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
+    leagues: Array<{
+      leagueKey: string;
+      leagueName: string;
+      teamKey: string;
+      teamName: string;
+    }>;
+  }>({
+    queryKey: ["/api/yahoo/leagues"],
+    retry: false,
+  });
+
+  // Auto-select first team when leagues load
+  useEffect(() => {
+    if (leaguesData?.leagues && leaguesData.leagues.length > 0 && !selectedTeamKey) {
+      setSelectedTeamKey(leaguesData.leagues[0].teamKey);
+    }
+  }, [leaguesData, selectedTeamKey]);
+
+  // Fetch roster for selected team
   const { data: rosterData, isLoading: isLoadingRoster } = useQuery<{
     roster: Array<{
       name: string;
@@ -65,15 +87,14 @@ export default function ChatPage() {
       status: "active" | "injured" | "out";
       playerKey?: string;
     }>;
-    leagueName?: string;
-    teamName?: string;
   }>({
-    queryKey: ["/api/yahoo/my-roster"],
-    enabled: true, // Always try to fetch, backend will handle auth
+    queryKey: ["/api/yahoo/roster-by-team", selectedTeamKey],
+    enabled: !!selectedTeamKey,
     retry: false,
   });
 
   const roster = rosterData?.roster || [];
+  const selectedLeague = leaguesData?.leagues?.find(l => l.teamKey === selectedTeamKey);
 
   const handleSendMessage = (content: string) => {
     const userMessage: Message = {
@@ -118,13 +139,52 @@ export default function ChatPage() {
         <aside className="w-80 border-r border-border bg-sidebar p-4 overflow-y-auto">
           <div className="space-y-4">
             <YahooConnect />
+            
+            {/* Team Selector */}
+            {isLoadingLeagues ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                Loading leagues...
+              </div>
+            ) : leaguesData && leaguesData.leagues.length > 0 ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-sidebar-foreground">
+                  Select Team
+                </label>
+                <Select 
+                  value={selectedTeamKey || undefined} 
+                  onValueChange={setSelectedTeamKey}
+                  data-testid="select-team"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a team..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {leaguesData.leagues.map((league) => (
+                      <SelectItem 
+                        key={league.teamKey} 
+                        value={league.teamKey}
+                        data-testid={`select-item-${league.teamKey}`}
+                      >
+                        {league.teamName} ({league.leagueName})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+            
+            {/* Team Roster */}
             {isLoadingRoster ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
                 Loading roster...
               </div>
-            ) : (
+            ) : roster.length > 0 ? (
               <TeamRoster players={roster} />
-            )}
+            ) : selectedTeamKey ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No roster data available
+              </div>
+            ) : null}
             
             <div className="grid grid-cols-1 gap-4">
               <PlayerStatCard

@@ -286,7 +286,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user's roster via MCP
+  // Get all user's leagues and teams
+  app.get("/api/yahoo/leagues", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Get user's Yahoo token
+      const token = await storage.getYahooToken(userId);
+      if (!token) {
+        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+      }
+
+      // Get and validate token
+      const accessToken = await getValidAccessToken(userId);
+      if (!accessToken) {
+        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+      }
+
+      // Get MCP client and set credentials
+      const mcpClient = await getMCPClient();
+      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+
+      // Get user's leagues
+      const leaguesResponse = await mcpClient.getUserLeagues();
+      
+      // Parse the deeply nested Yahoo API structure
+      const users = leaguesResponse?.fantasy_content?.users;
+      if (!users || !users["0"]) {
+        return res.json({ leagues: [] });
+      }
+      
+      const userData = users["0"].user;
+      const userGuid = userData[0]?.guid;
+      
+      if (!userData || userData.length < 2) {
+        return res.json({ leagues: [] });
+      }
+      
+      const gamesData = userData[1]?.games;
+      if (!gamesData || !gamesData["0"]) {
+        return res.json({ leagues: [] });
+      }
+      
+      const gameArray = gamesData["0"].game;
+      if (!gameArray || gameArray.length < 2) {
+        return res.json({ leagues: [] });
+      }
+      
+      const leaguesData = gameArray[1]?.leagues;
+      if (!leaguesData) {
+        return res.json({ leagues: [] });
+      }
+      
+      // Extract all leagues
+      const leagues = [];
+      for (let i = 0; i < leaguesData.count; i++) {
+        const leagueArray = leaguesData[i.toString()]?.league;
+        if (leagueArray && Array.isArray(leagueArray) && leagueArray.length > 0) {
+          const leagueKey = leagueArray[0]?.league_key;
+          const leagueName = leagueArray[0]?.name;
+          
+          if (leagueKey) {
+            // Get standings to find user's team in this league
+            const standings = await mcpClient.getLeagueStandings(leagueKey);
+            const teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
+            
+            // Find user's team
+            let userTeam = null;
+            if (teams) {
+              for (let j = 0; j < teams.count; j++) {
+                const teamData = teams[j.toString()]?.team;
+                if (teamData && Array.isArray(teamData) && teamData[0] && Array.isArray(teamData[0])) {
+                  const teamProperties = teamData[0];
+                  const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
+                  const teamNameObj = teamProperties.find((prop: any) => prop.name);
+                  const managersObj = teamProperties.find((prop: any) => prop.managers);
+                  
+                  const managers = managersObj?.managers;
+                  if (managers && Array.isArray(managers)) {
+                    const manager = managers[0]?.manager;
+                    if (manager?.guid === userGuid) {
+                      userTeam = {
+                        teamKey: teamKeyObj?.team_key,
+                        teamName: teamNameObj?.name
+                      };
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+            
+            if (userTeam) {
+              leagues.push({
+                leagueKey,
+                leagueName,
+                teamKey: userTeam.teamKey,
+                teamName: userTeam.teamName
+              });
+            }
+          }
+        }
+      }
+
+      res.json({ leagues });
+    } catch (error: any) {
+      console.error('Error fetching leagues:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch leagues' });
+    }
+  });
+
+  // Get roster for specific team
+  app.get("/api/yahoo/roster-by-team/:teamKey", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { teamKey } = req.params;
+      if (!teamKey) {
+        return res.status(400).json({ error: "Team key required" });
+      }
+
+      // Get user's Yahoo token
+      const token = await storage.getYahooToken(userId);
+      if (!token) {
+        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+      }
+
+      // Get and validate token
+      const accessToken = await getValidAccessToken(userId);
+      if (!accessToken) {
+        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+      }
+
+      // Get MCP client and set credentials
+      const mcpClient = await getMCPClient();
+      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+
+      // Get team roster
+      const rosterData = await mcpClient.getTeamRoster(teamKey);
+      
+      // Parse roster data from Yahoo's nested structure
+      const playersData = rosterData?.fantasy_content?.team?.[1]?.roster?.[0]?.players;
+      if (!playersData) {
+        return res.json({ roster: [] });
+      }
+      
+      const roster = [];
+      for (let i = 0; i < playersData.count; i++) {
+        const playerArray = playersData[i.toString()]?.player;
+        if (playerArray && Array.isArray(playerArray) && playerArray[0]) {
+          const playerProperties = playerArray[0];
+          if (Array.isArray(playerProperties)) {
+            const nameObj = playerProperties.find((p: any) => p.name);
+            const posObj = playerProperties.find((p: any) => p.display_position);
+            const primaryPosObj = playerProperties.find((p: any) => p.primary_position);
+            const teamObj = playerProperties.find((p: any) => p.editorial_team_abbr);
+            const statusObj = playerProperties.find((p: any) => p.status);
+            const keyObj = playerProperties.find((p: any) => p.player_key);
+            
+            roster.push({
+              name: nameObj?.name?.full || "Unknown Player",
+              position: posObj?.display_position || primaryPosObj?.primary_position || "N/A",
+              team: teamObj?.editorial_team_abbr || "N/A",
+              status: !statusObj || statusObj.status === "" ? "active" : 
+                      statusObj.status === "IL" || statusObj.status === "IL+" ? "injured" :
+                      statusObj.status === "O" || statusObj.status === "GTD" || statusObj.status === "INJ" ? "out" : "active",
+              playerKey: keyObj?.player_key || "",
+            });
+          }
+        }
+      }
+
+      res.json({ roster });
+    } catch (error: any) {
+      console.error('Error fetching roster:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch roster' });
+    }
+  });
+
+  // Get user's roster via MCP (legacy endpoint - kept for compatibility)
   app.get("/api/yahoo/my-roster", requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = getAuthenticatedUserId(req);
@@ -407,18 +591,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rosterData = await mcpClient.getTeamRoster(teamKey);
       console.log('Roster data:', JSON.stringify(rosterData, null, 2));
       
-      // Transform roster data to match frontend format
-      const roster = rosterData.players?.map((player: any) => ({
-        name: player.name?.full || "Unknown Player",
-        position: player.display_position || player.primary_position || "N/A",
-        team: player.editorial_team_abbr || "N/A",
-        status: player.status === "Healthy" || player.status === "" ? "active" : 
-                player.status === "IL" || player.status === "IL+" ? "injured" :
-                player.status === "O" || player.status === "GTD" ? "out" : "active",
-        playerKey: player.player_key,
-      })) || [];
+      // Parse roster data from Yahoo's nested structure
+      const playersData = rosterData?.fantasy_content?.team?.[1]?.roster?.[0]?.players;
+      if (!playersData) {
+        return res.json({ roster: [], message: "No roster data found" });
+      }
+      
+      const roster = [];
+      for (let i = 0; i < playersData.count; i++) {
+        const playerArray = playersData[i.toString()]?.player;
+        if (playerArray && Array.isArray(playerArray) && playerArray[0]) {
+          const playerProperties = playerArray[0];
+          if (Array.isArray(playerProperties)) {
+            const nameObj = playerProperties.find((p: any) => p.name);
+            const posObj = playerProperties.find((p: any) => p.display_position);
+            const primaryPosObj = playerProperties.find((p: any) => p.primary_position);
+            const teamObj = playerProperties.find((p: any) => p.editorial_team_abbr);
+            const statusObj = playerProperties.find((p: any) => p.status);
+            const keyObj = playerProperties.find((p: any) => p.player_key);
+            
+            roster.push({
+              name: nameObj?.name?.full || "Unknown Player",
+              position: posObj?.display_position || primaryPosObj?.primary_position || "N/A",
+              team: teamObj?.editorial_team_abbr || "N/A",
+              status: !statusObj || statusObj.status === "" ? "active" : 
+                      statusObj.status === "IL" || statusObj.status === "IL+" ? "injured" :
+                      statusObj.status === "O" || statusObj.status === "GTD" || statusObj.status === "INJ" ? "out" : "active",
+              playerKey: keyObj?.player_key || "",
+            });
+          }
+        }
+      }
 
-      res.json({ roster, leagueName: firstLeague.name, teamName: firstLeague.teams?.[0]?.name });
+      res.json({ 
+        roster, 
+        leagueName: leagueArray[0]?.name || "Unknown League",
+        teamKey
+      });
     } catch (error: any) {
       console.error('Error fetching roster:', error);
       res.status(500).json({ error: error.message || 'Failed to fetch roster' });
