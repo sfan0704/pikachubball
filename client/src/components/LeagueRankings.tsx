@@ -32,29 +32,31 @@ export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankings
 
   return (
     <Card data-testid="card-league-rankings">
-      <CardHeader>
-        <CardTitle data-testid="heading-rankings">9-Cat Master Rankings</CardTitle>
-        <p className="text-sm text-muted-foreground">
+      <CardHeader className="p-4 md:p-6">
+        <CardTitle data-testid="heading-rankings" className="text-xl md:text-2xl">
+          9-Cat Master Rankings
+        </CardTitle>
+        <p className="text-xs md:text-sm text-muted-foreground">
           Teams ranked by average position across all 9 categories
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0 md:p-6">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="text-xs md:text-sm">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">Rank</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead className="text-center">FG%</TableHead>
-                <TableHead className="text-center">FT%</TableHead>
-                <TableHead className="text-center">3PM</TableHead>
-                <TableHead className="text-center">PTS</TableHead>
-                <TableHead className="text-center">REB</TableHead>
-                <TableHead className="text-center">AST</TableHead>
-                <TableHead className="text-center">STL</TableHead>
-                <TableHead className="text-center">BLK</TableHead>
-                <TableHead className="text-center">TO</TableHead>
-                <TableHead className="text-center">Avg</TableHead>
+                <TableHead className="sticky left-0 z-10 bg-card w-12 md:w-16">Rank</TableHead>
+                <TableHead className="sticky left-12 md:left-16 z-10 bg-card min-w-[120px] md:min-w-[160px]">Team</TableHead>
+                <TableHead className="text-center min-w-[60px]">FG%</TableHead>
+                <TableHead className="text-center min-w-[60px]">FT%</TableHead>
+                <TableHead className="text-center min-w-[60px]">3PM</TableHead>
+                <TableHead className="text-center min-w-[60px]">PTS</TableHead>
+                <TableHead className="text-center min-w-[60px]">REB</TableHead>
+                <TableHead className="text-center min-w-[60px]">AST</TableHead>
+                <TableHead className="text-center min-w-[60px]">STL</TableHead>
+                <TableHead className="text-center min-w-[60px]">BLK</TableHead>
+                <TableHead className="text-center min-w-[60px]">TO</TableHead>
+                <TableHead className="text-center min-w-[60px] bg-muted/50">Avg</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -66,10 +68,12 @@ export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankings
                     className={isUserTeam ? "bg-primary/5 font-medium" : ""}
                     data-testid={`row-ranking-${team.teamKey}`}
                   >
-                    <TableCell>{getMasterRankBadge(index)}</TableCell>
-                    <TableCell className="font-medium">
-                      {team.teamName}
-                      {isUserTeam && <span className="ml-2 text-primary">★</span>}
+                    <TableCell className="sticky left-0 z-10 bg-card">{getMasterRankBadge(index)}</TableCell>
+                    <TableCell className="sticky left-12 md:left-16 z-10 bg-card font-medium">
+                      <span className="line-clamp-1">
+                        {team.teamName}
+                        {isUserTeam && <span className="ml-1 text-primary">★</span>}
+                      </span>
                     </TableCell>
                     <TableCell className={`text-center ${getRankColor(team.categoryRanks.fgPct, rankings.length)}`}>
                       {team.categoryRanks.fgPct}
@@ -98,7 +102,7 @@ export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankings
                     <TableCell className={`text-center ${getRankColor(team.categoryRanks.to, rankings.length)}`}>
                       {team.categoryRanks.to}
                     </TableCell>
-                    <TableCell className="text-center font-semibold">
+                    <TableCell className="text-center font-semibold bg-muted/50">
                       {team.totalRank.toFixed(1)}
                     </TableCell>
                   </TableRow>

@@ -127,76 +127,91 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Mobile overlay sidebar */}
       {showSidebar && (
-        <aside className="w-80 border-r border-border bg-sidebar p-4 overflow-y-auto">
-          <div className="space-y-4">
-            <YahooConnect />
-            
-            {/* Team Selector */}
-            {isLoadingLeagues ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Loading leagues...
-              </div>
-            ) : leaguesData && leaguesData.leagues.length > 0 ? (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-sidebar-foreground">
-                  Select Team
-                </label>
-                <Select 
-                  value={selectedTeamKey || undefined} 
-                  onValueChange={setSelectedTeamKey}
-                  data-testid="select-team"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a team..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leaguesData.leagues.map((league) => (
-                      <SelectItem 
-                        key={league.teamKey} 
-                        value={league.teamKey}
-                        data-testid={`select-item-${league.teamKey}`}
-                      >
-                        {league.teamName} ({league.leagueName})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-            
-            {/* Team Roster */}
-            {isLoadingRoster ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Loading roster...
-              </div>
-            ) : roster.length > 0 ? (
-              <TeamRoster players={roster} />
-            ) : selectedTeamKey ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                No roster data available
-              </div>
-            ) : null}
-          </div>
-        </aside>
+        <>
+          {/* Backdrop for mobile */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setShowSidebar(false)}
+            data-testid="sidebar-backdrop"
+          />
+          
+          {/* Sidebar - drawer on mobile, fixed column on desktop */}
+          <aside className="fixed md:relative inset-y-0 left-0 z-50 w-80 border-r border-border bg-sidebar p-4 overflow-y-auto md:z-auto">
+            <div className="space-y-4">
+              <YahooConnect />
+              
+              {/* Team Selector */}
+              {isLoadingLeagues ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Loading leagues...
+                </div>
+              ) : leaguesData && leaguesData.leagues.length > 0 ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-sidebar-foreground">
+                    Select Team
+                  </label>
+                  <Select 
+                    value={selectedTeamKey || undefined} 
+                    onValueChange={setSelectedTeamKey}
+                    data-testid="select-team"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a team..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {leaguesData.leagues.map((league) => (
+                        <SelectItem 
+                          key={league.teamKey} 
+                          value={league.teamKey}
+                          data-testid={`select-item-${league.teamKey}`}
+                        >
+                          {league.teamName} ({league.leagueName})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+              
+              {/* Team Roster */}
+              {isLoadingRoster ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Loading roster...
+                </div>
+              ) : roster.length > 0 ? (
+                <TeamRoster players={roster} />
+              ) : selectedTeamKey ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  No roster data available
+                </div>
+              ) : null}
+            </div>
+          </aside>
+        </>
       )}
 
-      <main className="flex-1 flex flex-col">
-        <header className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
+      <main className="flex-1 flex flex-col min-w-0">
+        <header className="flex items-center justify-between gap-2 p-3 md:p-4 border-b border-border">
+          <div className="flex items-center gap-2 min-w-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowSidebar(!showSidebar)}
               data-testid="button-sidebar-toggle"
+              className="shrink-0"
             >
               {showSidebar ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
-            <h1 className="text-xl font-semibold" data-testid="heading-app-title">Fantasy Basketball AI</h1>
+            <h1 className="text-lg md:text-xl font-semibold truncate" data-testid="heading-app-title">
+              <span className="hidden sm:inline">Fantasy Basketball AI</span>
+              <span className="sm:hidden">Fantasy BB AI</span>
+            </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2 shrink-0">
             {user && (
-              <span className="text-sm text-muted-foreground mr-2" data-testid="text-username">
+              <span className="hidden lg:inline text-sm text-muted-foreground mr-2" data-testid="text-username">
                 {user.username}
               </span>
             )}
@@ -234,7 +249,7 @@ export default function ChatPage() {
         <QuickActions onActionClick={handleQuickAction} />
 
         <ScrollArea className="flex-1">
-          <div className="max-w-4xl mx-auto p-6">
+          <div className="max-w-4xl mx-auto p-4 md:p-6">
             {messages.map(msg => (
               <ChatMessage key={msg.id} {...msg} />
             ))}
@@ -242,7 +257,9 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+        <div className="border-t border-border">
+          <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+        </div>
       </main>
     </div>
   );

@@ -26,14 +26,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t border-border bg-background p-4">
+    <div className="bg-background p-3 md:p-4">
       <div className="max-w-4xl mx-auto flex gap-2 items-end">
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about your team, players, matchups..."
-          className="min-h-[56px] max-h-32 resize-none rounded-xl"
+          className="min-h-[48px] md:min-h-[56px] max-h-32 resize-none rounded-xl text-sm md:text-base"
           disabled={disabled}
           data-testid="input-chat"
         />
@@ -41,10 +41,10 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           onClick={handleSend}
           disabled={!message.trim() || disabled}
           size="icon"
-          className="h-14 w-14 flex-shrink-0"
+          className="h-12 w-12 md:h-14 md:w-14 flex-shrink-0"
           data-testid="button-send"
         >
-          <Send className="w-5 h-5" />
+          <Send className="w-4 h-4 md:w-5 md:h-5" />
         </Button>
       </div>
     </div>

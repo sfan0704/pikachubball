@@ -73,9 +73,9 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Yahoo Fantasy Basketball</CardTitle>
-          <CardDescription>Sign in or create an account to get started</CardDescription>
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-xl md:text-2xl">Yahoo Fantasy Basketball</CardTitle>
+          <CardDescription className="text-sm">Sign in or create an account to get started</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
