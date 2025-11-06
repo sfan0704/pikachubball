@@ -313,20 +313,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user's leagues
       const leagues = await mcpClient.getUserLeagues();
       
+      console.log('Leagues data:', JSON.stringify(leagues, null, 2));
+      
       if (!leagues || leagues.length === 0) {
         return res.json({ roster: [], message: "No leagues found" });
       }
 
       // Get the first team from the first league
       const firstLeague = leagues[0];
-      const teamKey = firstLeague.teams?.[0]?.team_key;
+      console.log('First league:', JSON.stringify(firstLeague, null, 2));
+      
+      // Yahoo API structure: firstLeague might have a 'league' property
+      const leagueData = firstLeague.league || firstLeague;
+      const teams = leagueData.teams || [];
+      
+      if (!teams || teams.length === 0) {
+        return res.json({ roster: [], message: "No team found in league", debug: { firstLeague } });
+      }
+      
+      // Get first team - might be in different formats
+      const firstTeam = teams[0]?.team || teams[0];
+      const teamKey = firstTeam?.team_key;
+      
+      console.log('Team key:', teamKey);
       
       if (!teamKey) {
-        return res.json({ roster: [], message: "No team found in league" });
+        return res.json({ roster: [], message: "No team key found", debug: { teams } });
       }
 
       // Get team roster
       const rosterData = await mcpClient.getTeamRoster(teamKey);
+      console.log('Roster data:', JSON.stringify(rosterData, null, 2));
       
       // Transform roster data to match frontend format
       const roster = rosterData.players?.map((player: any) => ({
