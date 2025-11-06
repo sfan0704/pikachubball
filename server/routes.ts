@@ -7,11 +7,13 @@ import {
   makeYahooApiRequest,
   generateState,
   validateState,
-  YahooAuthError
+  YahooAuthError,
+  getValidAccessToken
 } from "./yahoo-auth";
 import { registerAuthRoutes, requireAuth, getAuthenticatedUserId } from "./auth-routes";
 import { encrypt, decrypt } from "./encryption";
 import { z } from "zod";
+import { getMCPClient } from "./mcp-client";
 
 // Yahoo credentials schema for user input
 const yahooCredentialsInputSchema = z.object({
@@ -281,6 +283,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: error.message, needsReauth: true });
       }
       res.status(500).json({ error: 'Failed to fetch roster data' });
+    }
+  });
+
+  // Get user's roster via MCP
+  app.get("/api/yahoo/my-roster", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Get user's Yahoo token
+      const token = await storage.getYahooToken(userId);
+      if (!token) {
+        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+      }
+
+      // Get and validate token
+      const accessToken = await getValidAccessToken(userId);
+      if (!accessToken) {
+        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+      }
+
+      // Get MCP client and set credentials
+      const mcpClient = await getMCPClient();
+      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+
+      // Get user's leagues
+      const leagues = await mcpClient.getUserLeagues();
+      
+      if (!leagues || leagues.length === 0) {
+        return res.json({ roster: [], message: "No leagues found" });
+      }
+
+      // Get the first team from the first league
+      const firstLeague = leagues[0];
+      const teamKey = firstLeague.teams?.[0]?.team_key;
+      
+      if (!teamKey) {
+        return res.json({ roster: [], message: "No team found in league" });
+      }
+
+      // Get team roster
+      const rosterData = await mcpClient.getTeamRoster(teamKey);
+      
+      // Transform roster data to match frontend format
+      const roster = rosterData.players?.map((player: any) => ({
+        name: player.name?.full || "Unknown Player",
+        position: player.display_position || player.primary_position || "N/A",
+        team: player.editorial_team_abbr || "N/A",
+        status: player.status === "Healthy" || player.status === "" ? "active" : 
+                player.status === "IL" || player.status === "IL+" ? "injured" :
+                player.status === "O" || player.status === "GTD" ? "out" : "active",
+        playerKey: player.player_key,
+      })) || [];
+
+      res.json({ roster, leagueName: firstLeague.name, teamName: firstLeague.teams?.[0]?.name });
+    } catch (error: any) {
+      console.error('Error fetching roster:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch roster' });
     }
   });
 

@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 interface Message {
   id: string;
@@ -55,14 +56,24 @@ export default function ChatPage() {
     }
   }, [toast]);
 
-  const mockRoster = [
-    { name: "Nikola Jokic", position: "C", team: "DEN", status: "active" as const },
-    { name: "Luka Doncic", position: "PG", team: "DAL", status: "active" as const },
-    { name: "Joel Embiid", position: "C", team: "PHI", status: "injured" as const },
-    { name: "Jayson Tatum", position: "SF", team: "BOS", status: "active" as const },
-    { name: "Damian Lillard", position: "PG", team: "MIL", status: "active" as const },
-    { name: "Anthony Edwards", position: "SG", team: "MIN", status: "active" as const },
-  ];
+  // Fetch real roster data from Yahoo Fantasy
+  const { data: rosterData, isLoading: isLoadingRoster } = useQuery<{
+    roster: Array<{
+      name: string;
+      position: string;
+      team: string;
+      status: "active" | "injured" | "out";
+      playerKey?: string;
+    }>;
+    leagueName?: string;
+    teamName?: string;
+  }>({
+    queryKey: ["/api/yahoo/my-roster"],
+    enabled: true, // Always try to fetch, backend will handle auth
+    retry: false,
+  });
+
+  const roster = rosterData?.roster || [];
 
   const handleSendMessage = (content: string) => {
     const userMessage: Message = {
@@ -107,7 +118,13 @@ export default function ChatPage() {
         <aside className="w-80 border-r border-border bg-sidebar p-4 overflow-y-auto">
           <div className="space-y-4">
             <YahooConnect />
-            <TeamRoster players={mockRoster} />
+            {isLoadingRoster ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                Loading roster...
+              </div>
+            ) : (
+              <TeamRoster players={roster} />
+            )}
             
             <div className="grid grid-cols-1 gap-4">
               <PlayerStatCard
