@@ -389,9 +389,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get league settings for metadata
       const settingsData = await mcpClient.getLeagueSettings(leagueKey);
+      console.log('Settings data:', JSON.stringify(settingsData, null, 2));
       const leagueSettings = settingsData?.fantasy_content?.league?.[1]?.settings?.[0];
+      console.log('League settings:', JSON.stringify(leagueSettings, null, 2));
       const currentWeek = parseInt(leagueSettings?.current_week || '1');
       const endWeek = parseInt(leagueSettings?.end_week || '20');
+      console.log('Parsed currentWeek:', currentWeek, 'endWeek:', endWeek);
 
       // Validate week parameter
       if (week !== undefined && (week < 1 || week > endWeek)) {
