@@ -24,7 +24,7 @@ export default function RankingsPage() {
   const { data: rankingsData, isLoading: isLoadingRankings } = useQuery<{
     rankings: TeamRanking[];
   }>({
-    queryKey: [`/api/yahoo/league-rankings/${selectedLeagueKey}`, selectedLeagueKey],
+    queryKey: ['/api/yahoo/league-rankings', selectedLeagueKey],
     enabled: !!selectedLeagueKey,
     retry: false,
   });
