@@ -47,6 +47,17 @@ Separate data layers following MCP architecture:
 
 ## Recent Changes
 
+### 2024-11-07: Sortable Rankings Table with Gradient Colors
+**NEW FEATURE**: Enhanced rankings table with full sorting and visual performance indicators
+- **Sortable Columns**: All 9 category columns plus Avg are now clickable to sort
+- **Smart Sort Defaults**: Rankings view defaults to ascending (lower rank = better), Stats view defaults to descending (higher = better), except TO which inverts
+- **Sort Indicators**: Visual arrows show current sort column and direction (up/down/neutral)
+- **Gradient Colors**: When showing actual stats, values are color-coded: green (top 33%), yellow (middle 33%), red (bottom 33%)
+- **TO Inversion**: Turnovers use inverse logic - lower is better for both sorting and colors
+- **Persistent Badges**: Master rank badges (1st, 2nd, 3rd) always reflect true overall standing, never change based on current sort
+- **View-Aware Sorting**: Toggle between Rankings and Actual Stats preserves intuitive ordering in both modes
+- **Mobile-Friendly**: Hover effects and clickable headers work well on touch devices
+
 ### 2024-11-06: Mobile-Responsive Design Overhaul
 **ENHANCEMENT**: Comprehensive mobile-first responsive design implementation
 - **Sidebar**: Converts to slide-in drawer with backdrop on mobile (< 768px)
