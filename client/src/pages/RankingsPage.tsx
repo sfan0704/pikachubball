@@ -4,14 +4,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import LeagueRankings from "@/components/LeagueRankings";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation, useSearch } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { useLocation, useSearch } from "wouter";
+import { LogOut } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
+import ThemeToggle from "@/components/ThemeToggle";
+import SettingsDialog from "@/components/SettingsDialog";
 import type { League, RankingsResponse } from "@shared/schema";
 
 export default function RankingsPage() {
   const [selectedLeagueKey, setSelectedLeagueKey] = useState<string>("");
   const [location, setLocation] = useLocation();
   const searchParams = useSearch();
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
 
   // Parse week from URL query params using useMemo to avoid redundant parsing
   const selectedWeek = useMemo(() => {
@@ -83,21 +89,51 @@ export default function RankingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <div className="flex items-center gap-3 md:gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" data-testid="button-back" className="shrink-0">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold truncate" data-testid="heading-rankings-page">
-              9-Cat Master Rankings
-            </h1>
-            <p className="text-sm md:text-base text-muted-foreground truncate">
-              See where every team truly stands across all categories
-            </p>
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex items-center justify-between gap-2 py-3 md:py-4">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-xl font-semibold truncate" data-testid="heading-app-title">
+                <span className="hidden sm:inline">Fantasy Basketball Rankings</span>
+                <span className="sm:hidden">FB Rankings</span>
+              </h1>
+            </div>
+            <div className="flex items-center gap-1 md:gap-2 shrink-0">
+              {user && (
+                <span className="hidden lg:inline text-sm text-muted-foreground mr-2" data-testid="text-username">
+                  {user.username}
+                </span>
+              )}
+              <SettingsDialog />
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={async () => {
+                  await logout();
+                  toast({
+                    title: "Logged out",
+                    description: "You have been logged out successfully",
+                  });
+                }}
+                data-testid="button-logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-2xl md:text-3xl font-bold" data-testid="heading-rankings-page">
+            9-Cat Master Rankings
+          </h2>
+          <p className="text-sm md:text-base text-muted-foreground">
+            See where every team truly stands across all categories
+          </p>
         </div>
 
         {isLoadingLeagues ? (
