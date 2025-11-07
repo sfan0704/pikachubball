@@ -8,7 +8,6 @@ import { ChatProvider, useChat } from "@/lib/chat-context";
 import RankingsPage from "@/pages/RankingsPage";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
-import FloatingChatButton from "@/components/FloatingChatButton";
 import ChatDialog from "@/components/ChatDialog";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
@@ -54,10 +53,7 @@ function Router() {
       </Switch>
       
       {user && (
-        <>
-          <FloatingChatButton onClick={openChat} />
-          <ChatDialog open={isChatOpen} onOpenChange={handleChatOpenChange} />
-        </>
+        <ChatDialog open={isChatOpen} onOpenChange={handleChatOpenChange} />
       )}
     </>
   );

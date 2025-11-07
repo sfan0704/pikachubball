@@ -84,7 +84,7 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
 
   const roster = rosterData?.roster || [];
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -95,17 +95,65 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      // Get selected league key from leagues data
+      const selectedLeague = leaguesData?.leagues?.find(l => l.teamKey === selectedTeamKey);
+      
+      // Prepare conversation history (last 10 messages for context)
+      const conversationHistory = messages.slice(-10).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const response = await fetch("/api/chat/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: content,
+          teamKey: selectedTeamKey,
+          leagueKey: selectedLeague?.leagueKey,
+          conversationHistory,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        // Handle Yahoo connection errors
+        if (errorData.requiresYahooConnection) {
+          toast({
+            title: "Yahoo Fantasy Not Connected",
+            description: errorData.message || "Please connect your Yahoo Fantasy account first.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        throw new Error(errorData.message || "Failed to get response from AI");
+      }
+
+      const data = await response.json();
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "I've analyzed your request using multiple data sources. Based on current stats from BALLDONTLIE and insights from Reddit's r/fantasybaskeball, here's my recommendation...",
-        sources: ["BALLDONTLIE", "Reddit", "YouTube"],
+        content: data.message,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
+      
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleQuickAction = (action: string) => {

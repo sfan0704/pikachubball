@@ -14,6 +14,7 @@ import { registerAuthRoutes, requireAuth, getAuthenticatedUserId } from "./auth-
 import { encrypt, decrypt } from "./encryption";
 import { z } from "zod";
 import { getMCPClient } from "./mcp-client";
+import Anthropic from "@anthropic-ai/sdk";
 
 // Yahoo credentials schema for user input
 const yahooCredentialsInputSchema = z.object({
@@ -785,6 +786,271 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching roster:', error);
       res.status(500).json({ error: error.message || 'Failed to fetch roster' });
+    }
+  });
+
+  // Chat API endpoint with Anthropic + MCP integration
+  app.post("/api/chat/message", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { message, teamKey, leagueKey, conversationHistory } = req.body;
+      
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Check if user has Yahoo connection first
+      const tokenData = await storage.getYahooToken(userId);
+      if (!tokenData) {
+        return res.status(400).json({ 
+          error: "Yahoo Fantasy not connected",
+          requiresYahooConnection: true,
+          message: "Please connect your Yahoo Fantasy account to use the AI assistant." 
+        });
+      }
+
+      // Get valid access token (will throw if token is invalid/expired)
+      let accessToken: string | null;
+      try {
+        accessToken = await getValidAccessToken(userId);
+      } catch (error: any) {
+        return res.status(400).json({ 
+          error: "Yahoo Fantasy connection expired",
+          requiresYahooConnection: true,
+          message: "Your Yahoo Fantasy connection has expired. Please reconnect your account." 
+        });
+      }
+
+      if (!accessToken) {
+        return res.status(400).json({ 
+          error: "Yahoo Fantasy connection invalid",
+          requiresYahooConnection: true,
+          message: "Could not get valid Yahoo Fantasy credentials. Please reconnect your account." 
+        });
+      }
+
+      // Initialize Anthropic client
+      const anthropic = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+
+      // Get MCP client for tool access
+      const mcpClient = await getMCPClient();
+      
+      // Set up user's Yahoo credentials in MCP server
+      await mcpClient.setCredentials(
+        accessToken,
+        tokenData.refreshToken,
+        tokenData.expiresAt
+      );
+
+      // Define MCP tools as Anthropic function calling tools
+      const tools: Anthropic.Tool[] = [
+        {
+          name: "get_user_leagues",
+          description: "Get all fantasy basketball leagues for the authenticated user",
+          input_schema: {
+            type: "object",
+            properties: {},
+          }
+        },
+        {
+          name: "get_league_standings",
+          description: "Get current standings for a specific league",
+          input_schema: {
+            type: "object",
+            properties: {
+              leagueKey: { type: "string", description: "The league key (e.g., '466.l.29849')" }
+            },
+            required: ["leagueKey"]
+          }
+        },
+        {
+          name: "get_team_roster",
+          description: "Get the roster for a specific team",
+          input_schema: {
+            type: "object",
+            properties: {
+              teamKey: { type: "string", description: "The team key (e.g., '466.l.29849.t.10')" }
+            },
+            required: ["teamKey"]
+          }
+        },
+        {
+          name: "get_league_scoreboard",
+          description: "Get matchups and scores for a specific week",
+          input_schema: {
+            type: "object",
+            properties: {
+              leagueKey: { type: "string", description: "The league key" },
+              week: { type: "number", description: "Week number (optional, defaults to current week)" }
+            },
+            required: ["leagueKey"]
+          }
+        },
+        {
+          name: "get_player_stats",
+          description: "Get detailed stats for specific players",
+          input_schema: {
+            type: "object",
+            properties: {
+              playerKeys: { 
+                type: "array", 
+                items: { type: "string" },
+                description: "Array of player keys" 
+              }
+            },
+            required: ["playerKeys"]
+          }
+        },
+        {
+          name: "get_free_agents",
+          description: "Search for available free agents in a league",
+          input_schema: {
+            type: "object",
+            properties: {
+              leagueKey: { type: "string", description: "The league key" },
+              position: { type: "string", description: "Filter by position (optional)" },
+              status: { type: "string", description: "Filter by player status (optional)" },
+              sort: { type: "string", description: "Sort criteria (optional)" },
+              count: { type: "number", description: "Number of results (optional, default 25)" }
+            },
+            required: ["leagueKey"]
+          }
+        }
+      ];
+
+      // Build system message with context
+      const systemMessage = `You are an expert Fantasy Basketball AI assistant. You help users optimize their fantasy teams through intelligent analysis of Yahoo Fantasy Basketball data.
+
+Your capabilities:
+- Analyze team rosters and player stats
+- Suggest start/sit decisions based on matchups and recent performance
+- Recommend waiver wire pickups
+- Evaluate trade opportunities
+- Identify team strengths and weaknesses
+
+Current context:
+${teamKey ? `- User's team: ${teamKey}` : ''}
+${leagueKey ? `- User's league: ${leagueKey}` : ''}
+
+Provide actionable, data-driven advice. When making recommendations, explain your reasoning based on the stats and data you retrieve.`;
+
+      // Build messages array
+      const messages: Anthropic.MessageParam[] = [
+        ...(conversationHistory || []),
+        {
+          role: "user",
+          content: message
+        }
+      ];
+
+      // Call Anthropic API with tool use
+      let response = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4096,
+        system: systemMessage,
+        tools,
+        messages
+      });
+
+      // Handle tool use in a loop
+      while (response.stop_reason === "tool_use") {
+        const toolUseBlock = response.content.find(
+          (block): block is Anthropic.ToolUseBlock => block.type === "tool_use"
+        );
+
+        if (!toolUseBlock) break;
+
+        // Execute the MCP tool
+        let toolResult: any;
+        try {
+          const input = toolUseBlock.input as any; // Cast for type safety
+          
+          switch (toolUseBlock.name) {
+            case "get_user_leagues":
+              toolResult = await mcpClient.getUserLeagues();
+              break;
+            case "get_league_standings":
+              toolResult = await mcpClient.getLeagueStandings(input.leagueKey);
+              break;
+            case "get_team_roster":
+              toolResult = await mcpClient.getTeamRoster(input.teamKey);
+              break;
+            case "get_league_scoreboard":
+              toolResult = await mcpClient.getLeagueScoreboard(
+                input.leagueKey,
+                input.week
+              );
+              break;
+            case "get_player_stats":
+              toolResult = await mcpClient.getPlayerStats(input.playerKeys);
+              break;
+            case "get_free_agents":
+              toolResult = await mcpClient.getFreeAgents(
+                input.leagueKey,
+                {
+                  position: input.position,
+                  status: input.status,
+                  sort: input.sort,
+                  count: input.count
+                }
+              );
+              break;
+            default:
+              toolResult = { error: "Unknown tool" };
+          }
+        } catch (error: any) {
+          toolResult = { error: error.message };
+        }
+
+        // Continue conversation with tool result
+        messages.push({
+          role: "assistant",
+          content: response.content
+        });
+
+        messages.push({
+          role: "user",
+          content: [
+            {
+              type: "tool_result",
+              tool_use_id: toolUseBlock.id,
+              content: JSON.stringify(toolResult)
+            }
+          ]
+        });
+
+        // Get next response
+        response = await anthropic.messages.create({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 4096,
+          system: systemMessage,
+          tools,
+          messages
+        });
+      }
+
+      // Extract text response
+      const textContent = response.content.find(
+        (block): block is Anthropic.TextBlock => block.type === "text"
+      );
+
+      res.json({
+        message: textContent?.text || "I apologize, but I couldn't generate a response.",
+        conversationHistory: messages.slice(conversationHistory?.length || 0)
+      });
+
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      res.status(500).json({ 
+        error: "Failed to process chat message",
+        details: error.message 
+      });
     }
   });
 
