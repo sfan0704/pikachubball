@@ -442,10 +442,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate rankings for each category
-      const categories = ['fgPct', 'ftPct', 'tpm', 'pts', 'reb', 'ast', 'stl', 'blk', 'to'];
+      const categories = ['fgPct', 'ftPct', 'tpm', 'pts', 'reb', 'ast', 'stl', 'blk', 'to'] as const;
+      type CategoryKey = typeof categories[number];
+      
       const rankings = teamStats.map(team => ({
         ...team,
-        categoryRanks: {} as any,
+        categoryRanks: {} as Record<CategoryKey, number>,
         totalRank: 0
       }));
 

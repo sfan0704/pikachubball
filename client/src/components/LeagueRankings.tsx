@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -9,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { TeamRanking } from "@shared/schema";
+import { useState } from "react";
 
 interface LeagueRankingsProps {
   rankings: TeamRanking[];
@@ -16,6 +19,7 @@ interface LeagueRankingsProps {
 }
 
 export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankingsProps) {
+  const [showStats, setShowStats] = useState(false);
   const getRankColor = (rank: number, total: number) => {
     const pct = rank / total;
     if (pct <= 0.33) return "text-green-600 dark:text-green-400";
@@ -30,15 +34,37 @@ export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankings
     return <Badge variant="outline">{index + 1}</Badge>;
   };
 
+  const formatStat = (key: keyof TeamRanking['stats'], value: number) => {
+    if (key === 'fgPct' || key === 'ftPct') {
+      return (value * 100).toFixed(1) + '%';
+    }
+    return value.toString();
+  };
+
   return (
     <Card data-testid="card-league-rankings">
       <CardHeader className="p-4 md:p-6">
-        <CardTitle data-testid="heading-rankings" className="text-xl md:text-2xl">
-          9-Cat Master Rankings
-        </CardTitle>
-        <p className="text-xs md:text-sm text-muted-foreground">
-          Teams ranked by average position across all 9 categories
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+          <div className="min-w-0">
+            <CardTitle data-testid="heading-rankings" className="text-xl md:text-2xl">
+              9-Cat Master Rankings
+            </CardTitle>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              Teams ranked by average position across all 9 categories
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Switch
+              id="view-toggle"
+              checked={showStats}
+              onCheckedChange={setShowStats}
+              data-testid="switch-view-toggle"
+            />
+            <Label htmlFor="view-toggle" className="text-xs md:text-sm cursor-pointer">
+              {showStats ? "Actual Stats" : "Rankings"}
+            </Label>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0 md:p-6">
         <div className="overflow-x-auto">
@@ -75,32 +101,32 @@ export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankings
                         {isUserTeam && <span className="ml-1 text-primary">★</span>}
                       </span>
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.fgPct, rankings.length)}`}>
-                      {team.categoryRanks.fgPct}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.fgPct, rankings.length) : ''}`}>
+                      {showStats ? formatStat('fgPct', team.stats.fgPct) : team.categoryRanks.fgPct}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.ftPct, rankings.length)}`}>
-                      {team.categoryRanks.ftPct}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.ftPct, rankings.length) : ''}`}>
+                      {showStats ? formatStat('ftPct', team.stats.ftPct) : team.categoryRanks.ftPct}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.tpm, rankings.length)}`}>
-                      {team.categoryRanks.tpm}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.tpm, rankings.length) : ''}`}>
+                      {showStats ? formatStat('tpm', team.stats.tpm) : team.categoryRanks.tpm}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.pts, rankings.length)}`}>
-                      {team.categoryRanks.pts}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.pts, rankings.length) : ''}`}>
+                      {showStats ? formatStat('pts', team.stats.pts) : team.categoryRanks.pts}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.reb, rankings.length)}`}>
-                      {team.categoryRanks.reb}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.reb, rankings.length) : ''}`}>
+                      {showStats ? formatStat('reb', team.stats.reb) : team.categoryRanks.reb}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.ast, rankings.length)}`}>
-                      {team.categoryRanks.ast}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.ast, rankings.length) : ''}`}>
+                      {showStats ? formatStat('ast', team.stats.ast) : team.categoryRanks.ast}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.stl, rankings.length)}`}>
-                      {team.categoryRanks.stl}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.stl, rankings.length) : ''}`}>
+                      {showStats ? formatStat('stl', team.stats.stl) : team.categoryRanks.stl}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.blk, rankings.length)}`}>
-                      {team.categoryRanks.blk}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.blk, rankings.length) : ''}`}>
+                      {showStats ? formatStat('blk', team.stats.blk) : team.categoryRanks.blk}
                     </TableCell>
-                    <TableCell className={`text-center ${getRankColor(team.categoryRanks.to, rankings.length)}`}>
-                      {team.categoryRanks.to}
+                    <TableCell className={`text-center ${!showStats ? getRankColor(team.categoryRanks.to, rankings.length) : ''}`}>
+                      {showStats ? formatStat('to', team.stats.to) : team.categoryRanks.to}
                     </TableCell>
                     <TableCell className="text-center font-semibold bg-muted/50">
                       {team.totalRank.toFixed(1)}
