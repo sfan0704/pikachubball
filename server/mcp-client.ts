@@ -91,14 +91,32 @@ export class YahooFantasyMCPClient {
     return this.parseToolResult(result);
   }
 
-  async getLeagueScoreboard(leagueKey: string): Promise<any> {
+  async getLeagueSettings(leagueKey: string): Promise<any> {
     if (!this.client) {
       throw new Error("MCP client not connected");
     }
 
     const result = await this.client.callTool({
-      name: "get_league_scoreboard",
+      name: "get_league_settings",
       arguments: { leagueKey },
+    });
+
+    return this.parseToolResult(result);
+  }
+
+  async getLeagueScoreboard(leagueKey: string, week?: number): Promise<any> {
+    if (!this.client) {
+      throw new Error("MCP client not connected");
+    }
+
+    const args: any = { leagueKey };
+    if (week !== undefined) {
+      args.week = week;
+    }
+
+    const result = await this.client.callTool({
+      name: "get_league_scoreboard",
+      arguments: args,
     });
 
     return this.parseToolResult(result);

@@ -355,8 +355,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { leagueKey } = req.params;
+      const weekParam = req.query.week;
+      let week: number | undefined;
+      
       if (!leagueKey) {
         return res.status(400).json({ error: "League key required" });
+      }
+
+      // Parse and validate week parameter
+      if (weekParam) {
+        const parsed = parseInt(weekParam as string, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+          return res.status(400).json({ error: "Week must be a positive integer" });
+        }
+        week = parsed;
       }
 
       // Get user's Yahoo token
@@ -375,13 +387,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mcpClient = await getMCPClient();
       await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
 
-      // Get league standings which includes team stats
-      const standings = await mcpClient.getLeagueStandings(leagueKey);
-      
-      // Parse team stats from Yahoo's nested structure
-      const teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
-      if (!teams) {
-        return res.json({ rankings: [] });
+      // Get league settings for metadata
+      const settingsData = await mcpClient.getLeagueSettings(leagueKey);
+      const leagueSettings = settingsData?.fantasy_content?.league?.[1]?.settings?.[0];
+      const currentWeek = parseInt(leagueSettings?.current_week || '1');
+      const endWeek = parseInt(leagueSettings?.end_week || '20');
+
+      // Validate week parameter
+      if (week !== undefined && (week < 1 || week > endWeek)) {
+        return res.status(400).json({ error: `Week must be between 1 and ${endWeek}` });
+      }
+
+      // Get league standings or scoreboard based on week parameter
+      let teams: any;
+      if (week !== undefined) {
+        // Get scoreboard for specific week
+        const scoreboard = await mcpClient.getLeagueScoreboard(leagueKey, week);
+        const matchups = scoreboard?.fantasy_content?.league?.[1]?.scoreboard?.[0]?.matchups;
+        
+        // Extract teams from matchups
+        teams = { count: 0 } as any;
+        if (matchups) {
+          let teamIndex = 0;
+          for (let i = 0; i < matchups.count; i++) {
+            const matchup = matchups[i.toString()]?.matchup;
+            if (matchup && matchup['0']?.teams) {
+              const matchupTeams = matchup['0'].teams;
+              for (let j = 0; j < matchupTeams.count; j++) {
+                teams[teamIndex.toString()] = matchupTeams[j.toString()];
+                teamIndex++;
+              }
+            }
+          }
+          teams.count = teamIndex;
+        }
+      } else {
+        // Get standings for season totals
+        const standings = await mcpClient.getLeagueStandings(leagueKey);
+        teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
+      }
+
+      if (!teams || teams.count === 0) {
+        return res.json({ 
+          rankings: [],
+          metadata: {
+            scope: week !== undefined ? 'week' : 'season',
+            week,
+            currentWeek,
+            totalWeeks: endWeek
+          }
+        });
       }
 
       // Extract all teams with their 9-cat stats
@@ -482,7 +537,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sort by master rank (lower is better)
       rankings.sort((a, b) => a.totalRank - b.totalRank);
 
-      res.json({ rankings });
+      res.json({ 
+        rankings,
+        metadata: {
+          scope: week !== undefined ? 'week' as const : 'season' as const,
+          week,
+          currentWeek,
+          totalWeeks: endWeek
+        }
+      });
     } catch (error: any) {
       console.error('Error fetching league rankings:', error);
       res.status(500).json({ error: error.message || 'Failed to fetch league rankings' });

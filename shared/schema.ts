@@ -87,7 +87,21 @@ export const teamRankingSchema = z.object({
   totalRank: z.number(),
 });
 
+export const rankingsMetadataSchema = z.object({
+  scope: z.enum(['season', 'week']),
+  week: z.number().optional(),
+  currentWeek: z.number(),
+  totalWeeks: z.number(),
+});
+
+export const rankingsResponseSchema = z.object({
+  rankings: z.array(teamRankingSchema),
+  metadata: rankingsMetadataSchema,
+});
+
 export type League = z.infer<typeof leagueSchema>;
 export type Player = z.infer<typeof playerSchema>;
 export type CategoryStats = z.infer<typeof categoryStatsSchema>;
 export type TeamRanking = z.infer<typeof teamRankingSchema>;
+export type RankingsMetadata = z.infer<typeof rankingsMetadataSchema>;
+export type RankingsResponse = z.infer<typeof rankingsResponseSchema>;

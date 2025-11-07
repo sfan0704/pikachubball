@@ -2,14 +2,44 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LeagueRankings from "@/components/LeagueRankings";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { ArrowLeft } from "lucide-react";
-import type { League, TeamRanking } from "@shared/schema";
+import type { League, RankingsResponse } from "@shared/schema";
 
 export default function RankingsPage() {
   const [selectedLeagueKey, setSelectedLeagueKey] = useState<string>("");
+  const [location, setLocation] = useLocation();
+  const searchParams = useSearch();
+
+  // Parse week from URL query params using useMemo to avoid redundant parsing
+  const selectedWeek = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const weekParam = params.get('week');
+    if (!weekParam) return null;
+    
+    const parsed = parseInt(weekParam, 10);
+    return (Number.isFinite(parsed) && parsed > 0) ? parsed : null;
+  }, [searchParams]);
+
+  // Clean up invalid week from URL if needed (runs once per invalid value)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const weekParam = params.get('week');
+    
+    if (weekParam) {
+      const parsed = parseInt(weekParam, 10);
+      if (!Number.isFinite(parsed) || parsed < 1) {
+        // Invalid week - remove from URL once
+        params.delete('week');
+        const path = location.split('?')[0];
+        const newSearch = params.toString();
+        setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
+      }
+    }
+    // Only run when searchParams changes, not on every render
+  }, [searchParams, location, setLocation]);
 
   const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
     leagues: League[];
@@ -21,15 +51,35 @@ export default function RankingsPage() {
   const leagues = leaguesData?.leagues || [];
   const selectedLeague = leagues.find(l => l.leagueKey === selectedLeagueKey);
 
-  const { data: rankingsData, isLoading: isLoadingRankings } = useQuery<{
-    rankings: TeamRanking[];
-  }>({
-    queryKey: ['/api/yahoo/league-rankings', selectedLeagueKey],
-    enabled: !!selectedLeagueKey,
+  // Build query URL with week parameter
+  const rankingsUrl = useMemo(() => {
+    if (!selectedLeagueKey) return null;
+    return selectedWeek 
+      ? `/api/yahoo/league-rankings/${selectedLeagueKey}?week=${selectedWeek}`
+      : `/api/yahoo/league-rankings/${selectedLeagueKey}`;
+  }, [selectedLeagueKey, selectedWeek]);
+
+  const { data: rankingsData, isLoading: isLoadingRankings } = useQuery<RankingsResponse>({
+    queryKey: [rankingsUrl],
+    enabled: !!rankingsUrl,
     retry: false,
   });
 
   const rankings = rankingsData?.rankings || [];
+  const metadata = rankingsData?.metadata;
+
+  const handleWeekChange = (week: number | null) => {
+    // Use fresh params from window.location to avoid stale state
+    const params = new URLSearchParams(window.location.search);
+    if (week !== null) {
+      params.set('week', week.toString());
+    } else {
+      params.delete('week');
+    }
+    const path = location.split('?')[0];
+    const newSearch = params.toString();
+    setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,8 +142,14 @@ export default function RankingsPage() {
               </div>
             )}
 
-            {rankings.length > 0 && selectedLeague && (
-              <LeagueRankings rankings={rankings} userTeamKey={selectedLeague.teamKey} />
+            {rankings.length > 0 && selectedLeague && metadata && (
+              <LeagueRankings 
+                rankings={rankings} 
+                metadata={metadata}
+                userTeamKey={selectedLeague.teamKey}
+                selectedWeek={selectedWeek}
+                onWeekChange={handleWeekChange}
+              />
             )}
 
             {!selectedLeagueKey && (
