@@ -1,5 +1,7 @@
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 
 interface FloatingChatButtonProps {
   onClick: () => void;
@@ -7,11 +9,22 @@ interface FloatingChatButtonProps {
 }
 
 export default function FloatingChatButton({ onClick, unreadCount }: FloatingChatButtonProps) {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  const button = (
     <Button
       onClick={onClick}
       size="icon"
-      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+      className="fixed bottom-4 right-4 md:bottom-6 md:right-6 h-14 w-14 rounded-full shadow-lg z-[9999]"
+      style={{
+        bottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
+        right: 'max(1rem, env(safe-area-inset-right, 1rem))',
+      }}
       data-testid="button-floating-chat"
     >
       <MessageSquare className="h-6 w-6" />
@@ -22,4 +35,8 @@ export default function FloatingChatButton({ onClick, unreadCount }: FloatingCha
       )}
     </Button>
   );
+
+  if (!mounted) return null;
+  
+  return createPortal(button, document.body);
 }

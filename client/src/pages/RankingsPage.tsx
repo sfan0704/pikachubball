@@ -5,8 +5,9 @@ import LeagueRankings from "@/components/LeagueRankings";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useSearch } from "wouter";
-import { LogOut } from "lucide-react";
+import { LogOut, MessageSquare } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useChat } from "@/lib/chat-context";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import SettingsDialog from "@/components/SettingsDialog";
@@ -17,6 +18,7 @@ export default function RankingsPage() {
   const [location, setLocation] = useLocation();
   const searchParams = useSearch();
   const { user, logout } = useAuth();
+  const { openChat } = useChat();
   const { toast } = useToast();
 
   // Parse week from URL query params using useMemo to avoid redundant parsing
@@ -105,6 +107,14 @@ export default function RankingsPage() {
                   {user.username}
                 </span>
               )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={openChat}
+                data-testid="button-header-chat"
+              >
+                <MessageSquare className="h-5 w-5" />
+              </Button>
               <SettingsDialog />
               <ThemeToggle />
               <Button
@@ -126,7 +136,7 @@ export default function RankingsPage() {
         </div>
       </header>
 
-      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="container mx-auto p-4 md:p-6 pb-24 md:pb-28 space-y-4 md:space-y-6">
         <div className="space-y-2">
           <h2 className="text-2xl md:text-3xl font-bold" data-testid="heading-rankings-page">
             9-Cat Master Rankings
