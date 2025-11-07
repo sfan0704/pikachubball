@@ -136,14 +136,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 },
             },
             {
-                name: "get_league_scoreboard",
-                description: "Get current week's matchups and scores for a league",
+                name: "get_league_settings",
+                description: "Get league settings including current week, total weeks, and playoff information",
                 inputSchema: {
                     type: "object",
                     properties: {
                         leagueKey: {
                             type: "string",
                             description: "Yahoo league key (format: nba.l.XXXXX)",
+                        },
+                    },
+                    required: ["leagueKey"],
+                },
+            },
+            {
+                name: "get_league_scoreboard",
+                description: "Get matchups and scores for a league (optionally for a specific week)",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        leagueKey: {
+                            type: "string",
+                            description: "Yahoo league key (format: nba.l.XXXXX)",
+                        },
+                        week: {
+                            type: "number",
+                            description: "Week number (optional, defaults to current week)",
                         },
                     },
                     required: ["leagueKey"],
@@ -271,9 +289,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     ],
                 };
             }
-            case "get_league_scoreboard": {
+            case "get_league_settings": {
                 const { leagueKey } = args;
-                const response = await fetch(`https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/scoreboard?format=json`, {
+                const response = await fetch(`https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/settings?format=json`, {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+                if (!response.ok) {
+                    throw new Error(`Yahoo API error: ${response.status} ${response.statusText}`);
+                }
+                const data = await response.json();
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: JSON.stringify(data, null, 2),
+                        },
+                    ],
+                };
+            }
+            case "get_league_scoreboard": {
+                const { leagueKey, week } = args;
+                let url = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/scoreboard`;
+                if (week !== undefined) {
+                    url += `;week=${week}`;
+                }
+                url += "?format=json";
+                const response = await fetch(url, {
                     headers: { Authorization: `Bearer ${accessToken}` },
                 });
                 if (!response.ok) {
