@@ -100,19 +100,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      // Check if user has Yahoo credentials configured
-      const credentials = await storage.getYahooCredentials(userId);
-      if (!credentials) {
-        return res.status(400).json({ 
-          error: "Yahoo credentials not configured. Please add your Yahoo Client ID and Secret in Settings first." 
+      // Check if Yahoo credentials are configured in environment
+      if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
+        return res.status(500).json({ 
+          error: "Yahoo API credentials not configured. Please contact the administrator." 
         });
       }
 
       const state = generateState();
-      
-      // Decrypt credentials and generate auth URL
-      const clientId = decrypt(credentials.encryptedClientId);
-      const authUrl = getAuthorizationUrl(state, clientId);
+      const authUrl = getAuthorizationUrl(state, process.env.YAHOO_CLIENT_ID);
       
       res.json({ authUrl });
     } catch (error) {
