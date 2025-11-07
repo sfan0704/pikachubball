@@ -64,6 +64,10 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
+  /* Safe area insets for mobile devices */
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+
   /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -255,5 +259,11 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+
+  /* Floating chat button with safe-area support */
+  .floating-chat-button {
+    bottom: calc(1.5rem + var(--safe-area-bottom)) !important;
+    right: calc(1.5rem + var(--safe-area-right)) !important;
   }
 }
