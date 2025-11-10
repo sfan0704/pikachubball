@@ -47,15 +47,25 @@ Separate data layers following MCP architecture:
 
 ## Recent Changes
 
+### 2024-11-10: User-Provided OpenAI API Keys
+**MAJOR UPDATE**: Switched from Replit-funded AI to user-provided OpenAI API keys
+- **User Responsibility**: Each user must provide their own OpenAI API key (shifts cost from developer to user)
+- **Encrypted Storage**: OpenAI API keys stored encrypted (AES-256-GCM) per-user in PostgreSQL
+- **Settings UI**: Updated Settings dialog to manage both Yahoo and OpenAI credentials
+- **API Validation**: Chat endpoint now requires both Yahoo connection AND OpenAI API key
+- **Database Schema**: Added `openaiCredentials` table with encrypted key storage
+- **API Endpoints**: POST/GET/DELETE `/api/settings/openai-credentials` for key management
+- **Error Handling**: Clear error messages when API key is missing or invalid
+- **Security**: Same encryption approach as Yahoo credentials - keys never exposed to client unencrypted
+- **OpenAI GPT-5**: Still using latest GPT-5 model, but with user's own API key
+
 ### 2024-11-10: Migrated from Anthropic to OpenAI GPT-5
-**MIGRATION**: Switched AI provider from Anthropic Claude to OpenAI GPT-5 using Replit AI Integrations
+**MIGRATION**: Switched AI provider from Anthropic Claude to OpenAI GPT-5
 - **Provider**: OpenAI GPT-5 (latest model)
-- **Integration**: Replit AI Integrations - no API key needed, billed to credits
 - **Function Calling**: All 6 MCP tools converted to OpenAI function calling format
 - **Tool Execution**: Updated loop to handle OpenAI's tool_calls response structure
 - **Message Flow**: System message now included in messages array (OpenAI format)
 - **Performance**: GPT-5 provides faster responses and better reasoning capabilities
-- **Environment Variables**: Uses AI_INTEGRATIONS_OPENAI_API_KEY and AI_INTEGRATIONS_OPENAI_BASE_URL
 - **Backward Compatibility**: Conversation history and context passing preserved
 
 ### 2024-11-07: Sortable Rankings Table with Gradient Colors
@@ -158,21 +168,20 @@ Separate data layers following MCP architecture:
 - `mcp-servers/yahoo-fantasy/`: Standalone Yahoo Fantasy MCP server
 
 **Schema:**
-- `shared/schema.ts`: Database models (users, yahooCredentials, yahooTokens) and API response types (League, Player, TeamRanking)
+- `shared/schema.ts`: Database models (users, yahooCredentials, yahooTokens, openaiCredentials) and API response types (League, Player, TeamRanking)
 
 ## Environment Variables
 **Required in Production:**
 - `DATABASE_URL`: PostgreSQL connection string (automatically provided by Replit)
 - `ENCRYPTION_KEY`: 64-character hex key for encrypting user credentials (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
 - `SESSION_SECRET`: Random string for session signing
-- `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API key (automatically provided by Replit AI Integrations)
-- `AI_INTEGRATIONS_OPENAI_BASE_URL`: OpenAI base URL (automatically provided by Replit AI Integrations)
 
 **User-Provided (via Settings UI):**
-- Yahoo Client ID: Each user provides their own via Settings dialog
-- Yahoo Client Secret: Each user provides their own via Settings dialog
+- **Yahoo Client ID**: Each user provides their own via Settings dialog
+- **Yahoo Client Secret**: Each user provides their own via Settings dialog
+- **OpenAI API Key**: Each user provides their own OpenAI API key via Settings dialog
 
-**Note**: `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` environment variables are no longer used. Users provide their own credentials through the web interface. AI responses now use OpenAI GPT-5 via Replit AI Integrations - no separate API key needed, billed to credits.
+**Note**: All credentials (Yahoo and OpenAI) are user-provided through the web interface. No global API keys or secrets are stored in environment variables. Each user pays for their own OpenAI usage.
 
 ## Development
 - Port 5000: Combined Express + Vite server

@@ -19,32 +19,49 @@ import { Input } from "@/components/ui/input";
 import { Settings, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-const credentialsSchema = z.object({
+const yahooCredentialsSchema = z.object({
   clientId: z.string().min(1, "Client ID is required"),
   clientSecret: z.string().min(1, "Client Secret is required"),
 });
 
-type CredentialsFormData = z.infer<typeof credentialsSchema>;
+const openaiCredentialsSchema = z.object({
+  apiKey: z.string().min(1, "OpenAI API key is required"),
+});
+
+type YahooCredentialsFormData = z.infer<typeof yahooCredentialsSchema>;
+type OpenaiCredentialsFormData = z.infer<typeof openaiCredentialsSchema>;
 
 export default function SettingsDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: credentialsStatus } = useQuery<{ hasCredentials: boolean; updatedAt: string | null }>({
+  const { data: yahooCredentialsStatus } = useQuery<{ hasCredentials: boolean; updatedAt: string | null }>({
     queryKey: ["/api/settings/yahoo-credentials"],
     enabled: open,
   });
 
-  const form = useForm<CredentialsFormData>({
-    resolver: zodResolver(credentialsSchema),
+  const { data: openaiCredentialsStatus } = useQuery<{ hasCredentials: boolean; updatedAt: string | null }>({
+    queryKey: ["/api/settings/openai-credentials"],
+    enabled: open,
+  });
+
+  const yahooForm = useForm<YahooCredentialsFormData>({
+    resolver: zodResolver(yahooCredentialsSchema),
     defaultValues: {
       clientId: "",
       clientSecret: "",
     },
   });
 
-  const saveMutation = useMutation({
-    mutationFn: async (data: CredentialsFormData) => {
+  const openaiForm = useForm<OpenaiCredentialsFormData>({
+    resolver: zodResolver(openaiCredentialsSchema),
+    defaultValues: {
+      apiKey: "",
+    },
+  });
+
+  const saveYahooMutation = useMutation({
+    mutationFn: async (data: YahooCredentialsFormData) => {
       return await apiRequest("/api/settings/yahoo-credentials", "POST", data);
     },
     onSuccess: () => {
@@ -54,8 +71,7 @@ export default function SettingsDialog() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/settings/yahoo-credentials"] });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/yahoo/status"] });
-      form.reset();
-      setOpen(false);
+      yahooForm.reset();
     },
     onError: (error: any) => {
       toast({
@@ -66,7 +82,7 @@ export default function SettingsDialog() {
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteYahooMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("/api/settings/yahoo-credentials", "DELETE");
     },
@@ -87,12 +103,61 @@ export default function SettingsDialog() {
     },
   });
 
-  const handleSubmit = (data: CredentialsFormData) => {
-    saveMutation.mutate(data);
+  const saveOpenaiMutation = useMutation({
+    mutationFn: async (data: OpenaiCredentialsFormData) => {
+      return await apiRequest("/api/settings/openai-credentials", "POST", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "OpenAI API key saved successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/openai-credentials"] });
+      openaiForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save API key",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteOpenaiMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/settings/openai-credentials", "DELETE");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "OpenAI API key deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/openai-credentials"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete API key",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleYahooSubmit = (data: YahooCredentialsFormData) => {
+    saveYahooMutation.mutate(data);
   };
 
-  const handleDelete = () => {
-    deleteMutation.mutate();
+  const handleYahooDelete = () => {
+    deleteYahooMutation.mutate();
+  };
+
+  const handleOpenaiSubmit = (data: OpenaiCredentialsFormData) => {
+    saveOpenaiMutation.mutate(data);
+  };
+
+  const handleOpenaiDelete = () => {
+    deleteOpenaiMutation.mutate();
   };
 
   return (
@@ -104,59 +169,170 @@ export default function SettingsDialog() {
       </DialogTrigger>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Yahoo API Settings</DialogTitle>
+          <DialogTitle>API Settings</DialogTitle>
           <DialogDescription>
-            Configure your Yahoo API credentials to connect to your Fantasy Basketball account.
+            Configure your Yahoo and OpenAI API credentials to use the fantasy basketball assistant.
           </DialogDescription>
         </DialogHeader>
 
-        {credentialsStatus?.hasCredentials && (
-          <div className="rounded-md bg-muted p-4 space-y-2">
-            <p className="text-sm font-medium">Current Status</p>
-            <div className="text-sm text-muted-foreground">
-              <p>✓ Yahoo credentials configured</p>
-              {credentialsStatus.updatedAt && (
-                <p className="text-xs mt-1">
-                  Last updated: {new Date(credentialsStatus.updatedAt).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="w-full mt-2"
-                  data-testid="button-delete-credentials"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Credentials
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will delete your Yahoo API credentials and disconnect your Yahoo Fantasy account. 
-                    You'll need to re-enter your credentials to reconnect.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    data-testid="button-confirm-delete"
+        {/* OpenAI API Key Section */}
+        <div className="space-y-4 border-b pb-6">
+          <h3 className="font-semibold text-sm">OpenAI API Key</h3>
+          
+          {openaiCredentialsStatus?.hasCredentials && (
+            <div className="rounded-md bg-muted p-4 space-y-2">
+              <p className="text-sm font-medium">Current Status</p>
+              <div className="text-sm text-muted-foreground">
+                <p>✓ OpenAI API key configured</p>
+                {openaiCredentialsStatus.updatedAt && (
+                  <p className="text-xs mt-1">
+                    Last updated: {new Date(openaiCredentialsStatus.updatedAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full mt-2"
+                    data-testid="button-delete-openai-key"
                   >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete API Key
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will delete your OpenAI API key. 
+                      You won't be able to use the AI chat assistant until you add a new key.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-cancel-delete-openai">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleOpenaiDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="button-confirm-delete-openai"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
 
-        <div className="space-y-4">
+          <div className="rounded-md bg-muted p-3 text-sm space-y-2">
+            <p className="font-medium text-sm">How to get an API key:</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-muted-foreground">
+              <li>
+                Go to{" "}
+                <a 
+                  href="https://platform.openai.com/api-keys" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-medium"
+                >
+                  OpenAI API Keys
+                </a>
+              </li>
+              <li>Sign in or create an account</li>
+              <li>Click "Create new secret key"</li>
+              <li>Copy the key and paste it below</li>
+              <li>Note: You'll need to add billing info to use GPT-5</li>
+            </ol>
+          </div>
+
+          <Form {...openaiForm}>
+            <form onSubmit={openaiForm.handleSubmit(handleOpenaiSubmit)} className="space-y-4">
+              <FormField
+                control={openaiForm.control}
+                name="apiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>OpenAI API Key</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="sk-..."
+                        data-testid="input-openai-key"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Your OpenAI API key (starts with "sk-")
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={saveOpenaiMutation.isPending}
+                data-testid="button-save-openai-key"
+              >
+                {saveOpenaiMutation.isPending ? "Saving..." : "Save API Key"}
+              </Button>
+            </form>
+          </Form>
+        </div>
+
+        {/* Yahoo Credentials Section */}
+        <div className="space-y-4 pt-4">
+          <h3 className="font-semibold text-sm">Yahoo Fantasy API</h3>
+          
+          {yahooCredentialsStatus?.hasCredentials && (
+            <div className="rounded-md bg-muted p-4 space-y-2">
+              <p className="text-sm font-medium">Current Status</p>
+              <div className="text-sm text-muted-foreground">
+                <p>✓ Yahoo credentials configured</p>
+                {yahooCredentialsStatus.updatedAt && (
+                  <p className="text-xs mt-1">
+                    Last updated: {new Date(yahooCredentialsStatus.updatedAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full mt-2"
+                    data-testid="button-delete-yahoo-credentials"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Credentials
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will delete your Yahoo API credentials and disconnect your Yahoo Fantasy account. 
+                      You'll need to re-enter your credentials to reconnect.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-cancel-delete-yahoo">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleYahooDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="button-confirm-delete-yahoo"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
+          <div className="space-y-4">
           <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm space-y-2">
             <p className="font-semibold text-xs">📋 Your Redirect URI</p>
             <div className="bg-background rounded p-2 font-mono text-xs break-all">
@@ -189,61 +365,62 @@ export default function SettingsDialog() {
             </ol>
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="clientId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Yahoo Client ID</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter your Yahoo Client ID"
-                        data-testid="input-client-id"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Your Yahoo app's Client ID (also called Consumer Key)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <Form {...yahooForm}>
+              <form onSubmit={yahooForm.handleSubmit(handleYahooSubmit)} className="space-y-4">
+                <FormField
+                  control={yahooForm.control}
+                  name="clientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Yahoo Client ID</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Enter your Yahoo Client ID"
+                          data-testid="input-yahoo-client-id"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Your Yahoo app's Client ID (also called Consumer Key)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="clientSecret"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Yahoo Client Secret</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder="Enter your Yahoo Client Secret"
-                        data-testid="input-client-secret"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Your Yahoo app's Client Secret (also called Consumer Secret)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={yahooForm.control}
+                  name="clientSecret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Yahoo Client Secret</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder="Enter your Yahoo Client Secret"
+                          data-testid="input-yahoo-client-secret"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Your Yahoo app's Client Secret (also called Consumer Secret)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={saveMutation.isPending}
-                data-testid="button-save-credentials"
-              >
-                {saveMutation.isPending ? "Saving..." : "Save Credentials"}
-              </Button>
-            </form>
-          </Form>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={saveYahooMutation.isPending}
+                  data-testid="button-save-yahoo-credentials"
+                >
+                  {saveYahooMutation.isPending ? "Saving..." : "Save Credentials"}
+                </Button>
+              </form>
+            </Form>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

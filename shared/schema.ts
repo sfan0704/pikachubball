@@ -27,6 +27,14 @@ export const yahooTokens = pgTable("yahoo_tokens", {
   expiresAt: integer("expires_at").notNull(),
 });
 
+export const openaiCredentials = pgTable("openai_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  encryptedApiKey: text("encrypted_api_key").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -43,6 +51,12 @@ export const insertYahooTokenSchema = createInsertSchema(yahooTokens).omit({
   id: true,
 });
 
+export const insertOpenaiCredentialsSchema = createInsertSchema(openaiCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -50,6 +64,8 @@ export type YahooCredentials = typeof yahooCredentials.$inferSelect;
 export type InsertYahooCredentials = z.infer<typeof insertYahooCredentialsSchema>;
 export type YahooToken = typeof yahooTokens.$inferSelect;
 export type InsertYahooToken = z.infer<typeof insertYahooTokenSchema>;
+export type OpenaiCredentials = typeof openaiCredentials.$inferSelect;
+export type InsertOpenaiCredentials = z.infer<typeof insertOpenaiCredentialsSchema>;
 
 // Yahoo API Response Types
 export const leagueSchema = z.object({
