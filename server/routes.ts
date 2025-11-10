@@ -14,7 +14,7 @@ import { registerAuthRoutes, requireAuth, getAuthenticatedUserId } from "./auth-
 import { encrypt, decrypt } from "./encryption";
 import { z } from "zod";
 import { getMCPClient } from "./mcp-client";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 // Yahoo credentials schema for user input
 const yahooCredentialsInputSchema = z.object({
@@ -833,9 +833,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Initialize Anthropic client
-      const anthropic = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
+      // Initialize OpenAI client with Replit AI Integrations
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
       });
 
       // Get MCP client for tool access
@@ -848,78 +849,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tokenData.expiresAt
       );
 
-      // Define MCP tools as Anthropic function calling tools
-      const tools: Anthropic.Tool[] = [
+      // Define MCP tools as OpenAI function calling tools
+      const tools: OpenAI.ChatCompletionTool[] = [
         {
-          name: "get_user_leagues",
-          description: "Get all fantasy basketball leagues for the authenticated user",
-          input_schema: {
-            type: "object",
-            properties: {},
+          type: "function",
+          function: {
+            name: "get_user_leagues",
+            description: "Get all fantasy basketball leagues for the authenticated user",
+            parameters: {
+              type: "object",
+              properties: {},
+            }
           }
         },
         {
-          name: "get_league_standings",
-          description: "Get current standings for a specific league",
-          input_schema: {
-            type: "object",
-            properties: {
-              leagueKey: { type: "string", description: "The league key (e.g., '466.l.29849')" }
-            },
-            required: ["leagueKey"]
+          type: "function",
+          function: {
+            name: "get_league_standings",
+            description: "Get current standings for a specific league",
+            parameters: {
+              type: "object",
+              properties: {
+                leagueKey: { type: "string", description: "The league key (e.g., '466.l.29849')" }
+              },
+              required: ["leagueKey"]
+            }
           }
         },
         {
-          name: "get_team_roster",
-          description: "Get the roster for a specific team",
-          input_schema: {
-            type: "object",
-            properties: {
-              teamKey: { type: "string", description: "The team key (e.g., '466.l.29849.t.10')" }
-            },
-            required: ["teamKey"]
+          type: "function",
+          function: {
+            name: "get_team_roster",
+            description: "Get the roster for a specific team",
+            parameters: {
+              type: "object",
+              properties: {
+                teamKey: { type: "string", description: "The team key (e.g., '466.l.29849.t.10')" }
+              },
+              required: ["teamKey"]
+            }
           }
         },
         {
-          name: "get_league_scoreboard",
-          description: "Get matchups and scores for a specific week",
-          input_schema: {
-            type: "object",
-            properties: {
-              leagueKey: { type: "string", description: "The league key" },
-              week: { type: "number", description: "Week number (optional, defaults to current week)" }
-            },
-            required: ["leagueKey"]
+          type: "function",
+          function: {
+            name: "get_league_scoreboard",
+            description: "Get matchups and scores for a specific week",
+            parameters: {
+              type: "object",
+              properties: {
+                leagueKey: { type: "string", description: "The league key" },
+                week: { type: "number", description: "Week number (optional, defaults to current week)" }
+              },
+              required: ["leagueKey"]
+            }
           }
         },
         {
-          name: "get_player_stats",
-          description: "Get detailed stats for specific players",
-          input_schema: {
-            type: "object",
-            properties: {
-              playerKeys: { 
-                type: "array", 
-                items: { type: "string" },
-                description: "Array of player keys" 
-              }
-            },
-            required: ["playerKeys"]
+          type: "function",
+          function: {
+            name: "get_player_stats",
+            description: "Get detailed stats for specific players",
+            parameters: {
+              type: "object",
+              properties: {
+                playerKeys: { 
+                  type: "array", 
+                  items: { type: "string" },
+                  description: "Array of player keys" 
+                }
+              },
+              required: ["playerKeys"]
+            }
           }
         },
         {
-          name: "get_free_agents",
-          description: "Search for available free agents in a league",
-          input_schema: {
-            type: "object",
-            properties: {
-              leagueKey: { type: "string", description: "The league key" },
-              position: { type: "string", description: "Filter by position (optional)" },
-              status: { type: "string", description: "Filter by player status (optional)" },
-              sort: { type: "string", description: "Sort criteria (optional)" },
-              count: { type: "number", description: "Number of results (optional, default 25)" }
-            },
-            required: ["leagueKey"]
+          type: "function",
+          function: {
+            name: "get_free_agents",
+            description: "Search for available free agents in a league",
+            parameters: {
+              type: "object",
+              properties: {
+                leagueKey: { type: "string", description: "The league key" },
+                position: { type: "string", description: "Filter by position (optional)" },
+                status: { type: "string", description: "Filter by player status (optional)" },
+                sort: { type: "string", description: "Sort criteria (optional)" },
+                count: { type: "number", description: "Number of results (optional, default 25)" }
+              },
+              required: ["leagueKey"]
+            }
           }
         }
       ];
@@ -940,8 +959,12 @@ ${leagueKey ? `- User's league: ${leagueKey}` : ''}
 
 Provide actionable, data-driven advice. When making recommendations, explain your reasoning based on the stats and data you retrieve.`;
 
-      // Build messages array
-      const messages: Anthropic.MessageParam[] = [
+      // Build messages array for OpenAI
+      const messages: OpenAI.ChatCompletionMessageParam[] = [
+        {
+          role: "system",
+          content: systemMessage
+        },
         ...(conversationHistory || []),
         {
           role: "user",
@@ -949,29 +972,29 @@ Provide actionable, data-driven advice. When making recommendations, explain you
         }
       ];
 
-      // Call Anthropic API with tool use
-      let response = await anthropic.messages.create({
-        model: "claude-3-opus-20240229",
+      // Call OpenAI API with function calling
+      let response = await openai.chat.completions.create({
+        model: "gpt-5",
         max_tokens: 4096,
-        system: systemMessage,
         tools,
         messages
       });
 
-      // Handle tool use in a loop
-      while (response.stop_reason === "tool_use") {
-        const toolUseBlock = response.content.find(
-          (block): block is Anthropic.ToolUseBlock => block.type === "tool_use"
-        );
-
-        if (!toolUseBlock) break;
+      // Handle function calls in a loop
+      let choice = response.choices[0];
+      while (choice.finish_reason === "tool_calls" && choice.message.tool_calls) {
+        const toolCall = choice.message.tool_calls[0];
+        if (!toolCall) break;
 
         // Execute the MCP tool
         let toolResult: any;
         try {
-          const input = toolUseBlock.input as any; // Cast for type safety
+          // Type guard for function tool calls
+          if (toolCall.type !== "function") continue;
           
-          switch (toolUseBlock.name) {
+          const input = JSON.parse(toolCall.function.arguments);
+          
+          switch (toolCall.function.name) {
             case "get_user_leagues":
               toolResult = await mcpClient.getUserLeagues();
               break;
@@ -1008,41 +1031,33 @@ Provide actionable, data-driven advice. When making recommendations, explain you
           toolResult = { error: error.message };
         }
 
-        // Continue conversation with tool result
-        messages.push({
-          role: "assistant",
-          content: response.content
-        });
+        // Add assistant message with tool call
+        messages.push(choice.message);
 
+        // Add tool response
         messages.push({
-          role: "user",
-          content: [
-            {
-              type: "tool_result",
-              tool_use_id: toolUseBlock.id,
-              content: JSON.stringify(toolResult)
-            }
-          ]
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(toolResult)
         });
 
         // Get next response
-        response = await anthropic.messages.create({
-          model: "claude-3-5-sonnet-20241022",
+        response = await openai.chat.completions.create({
+          model: "gpt-5",
           max_tokens: 4096,
-          system: systemMessage,
           tools,
           messages
         });
+        
+        choice = response.choices[0];
       }
 
       // Extract text response
-      const textContent = response.content.find(
-        (block): block is Anthropic.TextBlock => block.type === "text"
-      );
+      const assistantMessage = choice.message.content || "I apologize, but I couldn't generate a response.";
 
       res.json({
-        message: textContent?.text || "I apologize, but I couldn't generate a response.",
-        conversationHistory: messages.slice(conversationHistory?.length || 0)
+        message: assistantMessage,
+        conversationHistory: messages.slice((conversationHistory?.length || 0) + 1) // Skip system message
       });
 
     } catch (error: any) {
