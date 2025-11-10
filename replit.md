@@ -47,6 +47,17 @@ Separate data layers following MCP architecture:
 
 ## Recent Changes
 
+### 2024-11-10: Migrated from Anthropic to OpenAI GPT-5
+**MIGRATION**: Switched AI provider from Anthropic Claude to OpenAI GPT-5 using Replit AI Integrations
+- **Provider**: OpenAI GPT-5 (latest model)
+- **Integration**: Replit AI Integrations - no API key needed, billed to credits
+- **Function Calling**: All 6 MCP tools converted to OpenAI function calling format
+- **Tool Execution**: Updated loop to handle OpenAI's tool_calls response structure
+- **Message Flow**: System message now included in messages array (OpenAI format)
+- **Performance**: GPT-5 provides faster responses and better reasoning capabilities
+- **Environment Variables**: Uses AI_INTEGRATIONS_OPENAI_API_KEY and AI_INTEGRATIONS_OPENAI_BASE_URL
+- **Backward Compatibility**: Conversation history and context passing preserved
+
 ### 2024-11-07: Sortable Rankings Table with Gradient Colors
 **NEW FEATURE**: Enhanced rankings table with full sorting and visual performance indicators
 - **Sortable Columns**: All 9 category columns plus Avg are now clickable to sort
@@ -154,13 +165,14 @@ Separate data layers following MCP architecture:
 - `DATABASE_URL`: PostgreSQL connection string (automatically provided by Replit)
 - `ENCRYPTION_KEY`: 64-character hex key for encrypting user credentials (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
 - `SESSION_SECRET`: Random string for session signing
-- `ANTHROPIC_API_KEY`: Claude API key for AI responses
+- `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API key (automatically provided by Replit AI Integrations)
+- `AI_INTEGRATIONS_OPENAI_BASE_URL`: OpenAI base URL (automatically provided by Replit AI Integrations)
 
 **User-Provided (via Settings UI):**
 - Yahoo Client ID: Each user provides their own via Settings dialog
 - Yahoo Client Secret: Each user provides their own via Settings dialog
 
-**Note**: `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` environment variables are no longer used. Users provide their own credentials through the web interface.
+**Note**: `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` environment variables are no longer used. Users provide their own credentials through the web interface. AI responses now use OpenAI GPT-5 via Replit AI Integrations - no separate API key needed, billed to credits.
 
 ## Development
 - Port 5000: Combined Express + Vite server
