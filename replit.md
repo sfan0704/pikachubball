@@ -1,5 +1,43 @@
 # Fantasy Basketball AI Assistant
 
+## What You've Built
+
+A **multi-user AI chatbot application** that helps users win their Yahoo Fantasy Basketball leagues through intelligent, data-driven recommendations. Each user provides their own API credentials (Yahoo + OpenAI), ensuring complete privacy and cost control.
+
+### Core Features
+
+**1. AI-Powered Chat Assistant**
+- Conversational interface powered by OpenAI GPT-5
+- Direct access to user's Yahoo Fantasy data through function calling
+- 6 integrated tools: leagues, standings, rosters, matchups, player stats, free agents
+- Intelligent recommendations for start/sit decisions, waiver pickups, and trade analysis
+
+**2. 9-Category Master Rankings**
+- Dedicated `/rankings` page analyzing team strength across all fantasy categories
+- Sortable columns: FG%, FT%, 3PM, PTS, REB, AST, STL, BLK, TO
+- Color-coded performance indicators (green/yellow/red gradients)
+- Master rank calculated by averaging position across all 9 categories
+- Mobile-responsive with horizontal scroll and sticky columns
+
+**3. Multi-User System**
+- Secure account creation with username/password authentication
+- Complete data isolation between users
+- Session-based authentication with Passport.js
+- Per-user encrypted credential storage (Yahoo + OpenAI)
+
+**4. User-Provided Credentials (Zero Developer Costs!)**
+- Each user provides their own Yahoo API credentials (Client ID/Secret)
+- Each user provides their own OpenAI API key
+- AES-256-GCM encryption for all credentials
+- No shared API keys or secrets
+- Users pay for their own OpenAI usage
+
+**5. Mobile-First Responsive Design**
+- Drawer-style sidebar on mobile (< 768px breakpoint)
+- Touch-friendly interfaces throughout
+- Responsive typography and spacing
+- Works seamlessly on phones, tablets, and desktop
+
 ## Overview
 An agentic chatbot application for Yahoo Fantasy Basketball analysis that helps users optimize their fantasy teams through AI-powered insights from multiple data sources.
 
