@@ -1,0 +1,154 @@
+import type { FantasyDataSource } from '../fantasy-data-source.js';
+import type { MatchupComparisonResponse, CategoryComparison } from '@shared/schema';
+import { CATEGORIES, type CategoryKey } from './league-viz.js';
+
+export async function getMatchupComparison(
+  dataSource: FantasyDataSource,
+  leagueKey: string,
+  teamKey: string,
+  week?: number
+): Promise<MatchupComparisonResponse> {
+  const settings = await dataSource.getLeagueSettings(leagueKey);
+  const leagueData = settings?.fantasy_content?.league?.[0];
+  const currentWeek = parseInt(leagueData?.current_week || '1');
+  const endWeek = parseInt(leagueData?.end_week || '22');
+  
+  const effectiveWeek = week || currentWeek;
+  
+  if (effectiveWeek < 1 || effectiveWeek > endWeek) {
+    throw new Error(`Week must be between 1 and ${endWeek}`);
+  }
+
+  const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, effectiveWeek);
+  const matchups = scoreboard?.fantasy_content?.league?.[1]?.scoreboard?.[0]?.matchups;
+  
+  if (!matchups || matchups.count === 0) {
+    throw new Error('No matchups found for this week');
+  }
+
+  let myTeam: any = null;
+  let opponent: any = null;
+  
+  for (let i = 0; i < matchups.count; i++) {
+    const matchup = matchups[i.toString()]?.matchup;
+    if (matchup && matchup['0']?.teams) {
+      const teams = matchup['0'].teams;
+      
+      for (let j = 0; j < teams.count; j++) {
+        const team = teams[j.toString()]?.team;
+        if (team && Array.isArray(team)) {
+          const teamProperties = team[0];
+          const teamKeyObj = teamProperties?.find((prop: any) => prop.team_key);
+          
+          if (teamKeyObj?.team_key === teamKey) {
+            myTeam = team;
+            const opponentIndex = j === 0 ? 1 : 0;
+            opponent = teams[opponentIndex.toString()]?.team;
+            break;
+          }
+        }
+      }
+      
+      if (myTeam && opponent) break;
+    }
+  }
+  
+  if (!myTeam || !opponent) {
+    throw new Error('Team or matchup not found');
+  }
+
+  const myTeamStats = extractTeamStatsFromMatchup(myTeam);
+  const opponentStats = extractTeamStatsFromMatchup(opponent);
+
+  const categories: CategoryComparison[] = CATEGORIES.map(cat => {
+    const myValue = myTeamStats.stats[cat];
+    const oppValue = opponentStats.stats[cat];
+    const difference = myValue - oppValue;
+    
+    let winning: boolean;
+    if (cat === 'to') {
+      winning = myValue < oppValue;
+    } else {
+      winning = myValue > oppValue;
+    }
+    
+    return {
+      category: cat,
+      myTeam: myValue,
+      opponent: oppValue,
+      difference,
+      winning
+    };
+  });
+
+  let wins = 0;
+  let losses = 0;
+  let ties = 0;
+  
+  categories.forEach(cat => {
+    if (cat.difference === 0) {
+      ties++;
+    } else if (cat.winning) {
+      wins++;
+    } else {
+      losses++;
+    }
+  });
+
+  return {
+    myTeam: {
+      teamKey: myTeamStats.teamKey,
+      teamName: myTeamStats.teamName
+    },
+    opponent: {
+      teamKey: opponentStats.teamKey,
+      teamName: opponentStats.teamName
+    },
+    categories,
+    score: { wins, losses, ties },
+    metadata: {
+      scope: 'week',
+      week: effectiveWeek,
+      currentWeek,
+      totalWeeks: endWeek
+    }
+  };
+}
+
+function extractTeamStatsFromMatchup(teamData: any): {
+  teamKey: string;
+  teamName: string;
+  stats: Record<CategoryKey, number>;
+} {
+  const teamProperties = teamData[0];
+  const teamKeyObj = teamProperties?.find((prop: any) => prop.team_key);
+  const teamNameObj = teamProperties?.find((prop: any) => prop.name);
+  
+  const statsData = teamData[1]?.team_stats;
+  const stats = statsData?.stats || [];
+  const statMap: any = {};
+  
+  if (Array.isArray(stats)) {
+    stats.forEach((statObj: any) => {
+      if (statObj.stat) {
+        statMap[statObj.stat.stat_id] = statObj.stat.value;
+      }
+    });
+  }
+  
+  return {
+    teamKey: teamKeyObj?.team_key || '',
+    teamName: teamNameObj?.name || '',
+    stats: {
+      fgPct: parseFloat(statMap['5'] || '0'),
+      ftPct: parseFloat(statMap['8'] || '0'),
+      tpm: parseInt(statMap['10'] || '0'),
+      pts: parseInt(statMap['12'] || '0'),
+      reb: parseInt(statMap['15'] || '0'),
+      ast: parseInt(statMap['16'] || '0'),
+      stl: parseInt(statMap['17'] || '0'),
+      blk: parseInt(statMap['18'] || '0'),
+      to: parseInt(statMap['19'] || '0'),
+    }
+  };
+}

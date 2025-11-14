@@ -15,6 +15,10 @@ import { encrypt, decrypt } from "./encryption";
 import { z } from "zod";
 import { getMCPClient } from "./mcp-client";
 import OpenAI from "openai";
+import { YahooMCPDataSource } from "./services/fantasy-data-source.js";
+import { getLeagueRankings, getLeagueHeatmap } from "./services/viz/league-viz.js";
+import { getMatchupComparison } from "./services/viz/matchup-viz.js";
+import { getScheduleMatrix } from "./services/viz/schedule-viz.js";
 
 // Yahoo credentials schema for user input
 const yahooCredentialsInputSchema = z.object({
@@ -456,169 +460,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mcpClient = await getMCPClient();
       await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
 
-      // Get league settings for metadata
-      const settingsData = await mcpClient.getLeagueSettings(leagueKey);
-      // current_week and end_week are at league[0] level, not in settings
-      const leagueData = settingsData?.fantasy_content?.league?.[0];
-      const currentWeek = parseInt(leagueData?.current_week || '1');
-      const endWeek = parseInt(leagueData?.end_week || '22');
+      // Use league-viz service to get rankings
+      const dataSource = new YahooMCPDataSource(mcpClient);
+      const response = await getLeagueRankings(dataSource, leagueKey, week);
 
-      // Validate week parameter
-      if (week !== undefined && (week < 1 || week > endWeek)) {
-        return res.status(400).json({ error: `Week must be between 1 and ${endWeek}` });
-      }
-
-      // Get league standings or scoreboard based on week parameter
-      let teams: any;
-      if (week !== undefined) {
-        // Get scoreboard for specific week
-        const scoreboard = await mcpClient.getLeagueScoreboard(leagueKey, week);
-        const matchups = scoreboard?.fantasy_content?.league?.[1]?.scoreboard?.[0]?.matchups;
-        
-        // Extract teams from matchups
-        teams = { count: 0 } as any;
-        if (matchups) {
-          let teamIndex = 0;
-          for (let i = 0; i < matchups.count; i++) {
-            const matchup = matchups[i.toString()]?.matchup;
-            if (matchup && matchup['0']?.teams) {
-              const matchupTeams = matchup['0'].teams;
-              for (let j = 0; j < matchupTeams.count; j++) {
-                teams[teamIndex.toString()] = matchupTeams[j.toString()];
-                teamIndex++;
-              }
-            }
-          }
-          teams.count = teamIndex;
-        }
-      } else {
-        // Get standings for season totals
-        const standings = await mcpClient.getLeagueStandings(leagueKey);
-        teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
-      }
-
-      if (!teams || teams.count === 0) {
-        return res.json({ 
-          rankings: [],
-          metadata: {
-            scope: week !== undefined ? 'week' : 'season',
-            week,
-            currentWeek,
-            totalWeeks: endWeek
-          }
-        });
-      }
-
-      // Extract all teams with their 9-cat stats
-      const teamStats: Array<{
-        teamKey: string;
-        teamName: string;
-        stats: {
-          fgPct: number;
-          ftPct: number;
-          tpm: number;
-          pts: number;
-          reb: number;
-          ast: number;
-          stl: number;
-          blk: number;
-          to: number;
-        };
-      }> = [];
-      for (let i = 0; i < teams.count; i++) {
-        const teamData = teams[i.toString()]?.team;
-        if (teamData && Array.isArray(teamData) && teamData[0] && Array.isArray(teamData[0])) {
-          const teamProperties = teamData[0];
-          const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
-          const teamNameObj = teamProperties.find((prop: any) => prop.name);
-          
-          // Find team_stats in teamData[1]
-          const statsData = teamData[1]?.team_stats;
-          if (statsData) {
-            const stats = statsData.stats;
-            const statMap: any = {};
-            
-            // Parse stats into a map
-            if (Array.isArray(stats)) {
-              stats.forEach((statObj: any) => {
-                if (statObj.stat) {
-                  statMap[statObj.stat.stat_id] = statObj.stat.value;
-                }
-              });
-            }
-            
-            teamStats.push({
-              teamKey: teamKeyObj?.team_key,
-              teamName: teamNameObj?.name,
-              stats: {
-                fgPct: parseFloat(statMap['5'] || '0'), // FG%
-                ftPct: parseFloat(statMap['8'] || '0'), // FT%
-                tpm: parseInt(statMap['10'] || '0'), // 3PM
-                pts: parseInt(statMap['12'] || '0'), // PTS
-                reb: parseInt(statMap['15'] || '0'), // REB
-                ast: parseInt(statMap['16'] || '0'), // AST
-                stl: parseInt(statMap['17'] || '0'), // STL
-                blk: parseInt(statMap['18'] || '0'), // BLK
-                to: parseInt(statMap['19'] || '0'), // TO
-              }
-            });
-          }
-        }
-      }
-
-      // Calculate rankings for each category
-      const categories = ['fgPct', 'ftPct', 'tpm', 'pts', 'reb', 'ast', 'stl', 'blk', 'to'] as const;
-      type CategoryKey = typeof categories[number];
-      
-      const rankings = teamStats.map(team => ({
-        ...team,
-        categoryRanks: {} as Record<CategoryKey, number>,
-        totalRank: 0
-      }));
-
-      // Rank each category
-      categories.forEach(cat => {
-        // Sort teams by this category (descending for most, ascending for TO)
-        const sorted = [...teamStats].sort((a, b) => {
-          if (cat === 'to') {
-            // Lower turnovers is better
-            return a.stats[cat] - b.stats[cat];
-          } else {
-            // Higher is better
-            return b.stats[cat] - a.stats[cat];
-          }
-        });
-
-        // Assign ranks
-        sorted.forEach((team, index) => {
-          const rankingTeam = rankings.find(r => r.teamKey === team.teamKey);
-          if (rankingTeam) {
-            rankingTeam.categoryRanks[cat] = index + 1;
-          }
-        });
-      });
-
-      // Calculate total rank (average of all category ranks)
-      rankings.forEach(team => {
-        const totalRank = categories.reduce((sum, cat) => sum + team.categoryRanks[cat], 0);
-        team.totalRank = totalRank / categories.length;
-      });
-
-      // Sort by master rank (lower is better)
-      rankings.sort((a, b) => a.totalRank - b.totalRank);
-
-      res.json({ 
-        rankings,
-        metadata: {
-          scope: week !== undefined ? 'week' as const : 'season' as const,
-          week,
-          currentWeek,
-          totalWeeks: endWeek
-        }
-      });
+      res.json(response);
     } catch (error: any) {
       console.error('Error fetching league rankings:', error);
       res.status(500).json({ error: error.message || 'Failed to fetch league rankings' });
+    }
+  });
+
+  // Get league heatmap visualization
+  app.get("/api/viz/heatmap/:leagueKey", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { leagueKey } = req.params;
+      const weekParam = req.query.week;
+      let week: number | undefined;
+      
+      if (!leagueKey) {
+        return res.status(400).json({ error: "League key required" });
+      }
+
+      if (weekParam) {
+        const parsed = parseInt(weekParam as string, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+          return res.status(400).json({ error: "Week must be a positive integer" });
+        }
+        week = parsed;
+      }
+
+      const token = await storage.getYahooToken(userId);
+      if (!token) {
+        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+      }
+
+      const accessToken = await getValidAccessToken(userId);
+      if (!accessToken) {
+        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+      }
+
+      const mcpClient = await getMCPClient();
+      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+
+      const dataSource = new YahooMCPDataSource(mcpClient);
+      const response = await getLeagueHeatmap(dataSource, leagueKey, week);
+
+      res.json(response);
+    } catch (error: any) {
+      console.error('Error fetching league heatmap:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch league heatmap' });
+    }
+  });
+
+  // Get matchup comparison visualization
+  app.get("/api/viz/matchup/:leagueKey/:teamKey", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { leagueKey, teamKey } = req.params;
+      const weekParam = req.query.week;
+      let week: number | undefined;
+      
+      if (!leagueKey || !teamKey) {
+        return res.status(400).json({ error: "League key and team key required" });
+      }
+
+      if (weekParam) {
+        const parsed = parseInt(weekParam as string, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+          return res.status(400).json({ error: "Week must be a positive integer" });
+        }
+        week = parsed;
+      }
+
+      const token = await storage.getYahooToken(userId);
+      if (!token) {
+        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+      }
+
+      const accessToken = await getValidAccessToken(userId);
+      if (!accessToken) {
+        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+      }
+
+      const mcpClient = await getMCPClient();
+      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+
+      const dataSource = new YahooMCPDataSource(mcpClient);
+      const response = await getMatchupComparison(dataSource, leagueKey, teamKey, week);
+
+      res.json(response);
+    } catch (error: any) {
+      console.error('Error fetching matchup comparison:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch matchup comparison' });
+    }
+  });
+
+  // Get games remaining schedule visualization
+  app.get("/api/viz/schedule/:leagueKey/:teamKey", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { leagueKey, teamKey } = req.params;
+      const weekParam = req.query.week;
+      const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
+      let week: number | undefined;
+      
+      if (!leagueKey || !teamKey) {
+        return res.status(400).json({ error: "League key and team key required" });
+      }
+
+      if (weekParam) {
+        const parsed = parseInt(weekParam as string, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+          return res.status(400).json({ error: "Week must be a positive integer" });
+        }
+        week = parsed;
+      }
+
+      const token = await storage.getYahooToken(userId);
+      if (!token) {
+        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+      }
+
+      const accessToken = await getValidAccessToken(userId);
+      if (!accessToken) {
+        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+      }
+
+      const mcpClient = await getMCPClient();
+      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+
+      const dataSource = new YahooMCPDataSource(mcpClient);
+      const response = await getScheduleMatrix(dataSource, leagueKey, teamKey, week, opponentTeamKey);
+
+      res.json(response);
+    } catch (error: any) {
+      console.error('Error fetching schedule matrix:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch schedule matrix' });
     }
   });
 

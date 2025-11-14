@@ -121,3 +121,98 @@ export type CategoryStats = z.infer<typeof categoryStatsSchema>;
 export type TeamRanking = z.infer<typeof teamRankingSchema>;
 export type RankingsMetadata = z.infer<typeof rankingsMetadataSchema>;
 export type RankingsResponse = z.infer<typeof rankingsResponseSchema>;
+
+// Visualization Response Types
+export const heatmapCellSchema = z.object({
+  value: z.number(),
+  rank: z.number(),
+  percentile: z.number(),
+});
+
+export const teamHeatmapDataSchema = z.object({
+  teamKey: z.string(),
+  teamName: z.string(),
+  categories: z.object({
+    fgPct: heatmapCellSchema,
+    ftPct: heatmapCellSchema,
+    tpm: heatmapCellSchema,
+    pts: heatmapCellSchema,
+    reb: heatmapCellSchema,
+    ast: heatmapCellSchema,
+    stl: heatmapCellSchema,
+    blk: heatmapCellSchema,
+    to: heatmapCellSchema,
+  }),
+});
+
+export const leagueHeatmapResponseSchema = z.object({
+  teams: z.array(teamHeatmapDataSchema),
+  metadata: rankingsMetadataSchema,
+});
+
+export const categoryComparisonSchema = z.object({
+  category: z.string(),
+  myTeam: z.number(),
+  opponent: z.number(),
+  difference: z.number(),
+  winning: z.boolean(),
+});
+
+export const matchupComparisonResponseSchema = z.object({
+  myTeam: z.object({
+    teamKey: z.string(),
+    teamName: z.string(),
+  }),
+  opponent: z.object({
+    teamKey: z.string(),
+    teamName: z.string(),
+  }),
+  categories: z.array(categoryComparisonSchema),
+  score: z.object({
+    wins: z.number(),
+    losses: z.number(),
+    ties: z.number(),
+  }),
+  metadata: rankingsMetadataSchema,
+});
+
+export const playerGameSchema = z.object({
+  playerKey: z.string(),
+  playerName: z.string(),
+  team: z.string(),
+  opponent: z.string().optional(),
+});
+
+export const dayScheduleSchema = z.object({
+  date: z.string(),
+  dayOfWeek: z.string(),
+  games: z.array(playerGameSchema),
+  gameCount: z.number(),
+});
+
+export const scheduleMatrixResponseSchema = z.object({
+  myTeam: z.object({
+    teamKey: z.string(),
+    teamName: z.string(),
+    schedule: z.array(dayScheduleSchema),
+    totalGames: z.number(),
+  }),
+  opponent: z.object({
+    teamKey: z.string(),
+    teamName: z.string(),
+    schedule: z.array(dayScheduleSchema),
+    totalGames: z.number(),
+  }).optional(),
+  metadata: rankingsMetadataSchema,
+  isPlaceholder: z.boolean(),
+  placeholderMessage: z.string().optional(),
+});
+
+export type HeatmapCell = z.infer<typeof heatmapCellSchema>;
+export type TeamHeatmapData = z.infer<typeof teamHeatmapDataSchema>;
+export type LeagueHeatmapResponse = z.infer<typeof leagueHeatmapResponseSchema>;
+export type CategoryComparison = z.infer<typeof categoryComparisonSchema>;
+export type MatchupComparisonResponse = z.infer<typeof matchupComparisonResponseSchema>;
+export type PlayerGame = z.infer<typeof playerGameSchema>;
+export type DaySchedule = z.infer<typeof dayScheduleSchema>;
+export type ScheduleMatrixResponse = z.infer<typeof scheduleMatrixResponseSchema>;
