@@ -201,6 +201,9 @@ function extractTeamStatsFromMatchup(teamData: any): {
     });
   }
   
+  console.log('Available stat IDs:', Object.keys(statMap).sort());
+  console.log('Full statMap:', statMap);
+  
   return {
     teamKey: teamKeyObj?.team_key || '',
     teamName: teamNameObj?.name || '',
