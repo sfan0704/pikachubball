@@ -65,12 +65,9 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
 
   const { myTeam, opponent, categories, score, metadata } = matchupData;
 
-  const formatValue = (value: number, category: string, cat?: any) => {
-    if (category === 'fgPct' && cat?.myTeamMakes !== undefined) {
-      return `${cat.myTeamMakes}/${cat.myTeamAttempts} (${(value * 100).toFixed(1)}%)`;
-    }
-    if (category === 'ftPct' && cat?.myTeamMakes !== undefined) {
-      return `${cat.myTeamMakes}/${cat.myTeamAttempts} (${(value * 100).toFixed(1)}%)`;
+  const formatValue = (value: number, category: string, makes?: number, attempts?: number) => {
+    if ((category === 'fgPct' || category === 'ftPct') && makes !== undefined && attempts !== undefined) {
+      return `${makes}/${attempts} (${(value * 100).toFixed(1)}%)`;
     }
     const isPct = category === 'fgPct' || category === 'ftPct';
     return isPct ? `${(value * 100).toFixed(1)}%` : Math.round(value).toString();
@@ -127,8 +124,8 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
                   data-testid={`matchup-category-${cat.category}`}
                 >
                   <td className="py-3 px-2 font-medium">{CATEGORY_LABELS[cat.category]}</td>
-                  <td className="text-center py-3 px-2">{formatValue(cat.myTeam, cat.category)}</td>
-                  <td className="text-center py-3 px-2">{formatValue(cat.opponent, cat.category)}</td>
+                  <td className="text-center py-3 px-2">{formatValue(cat.myTeam, cat.category, cat.myTeamMakes, cat.myTeamAttempts)}</td>
+                  <td className="text-center py-3 px-2">{formatValue(cat.opponent, cat.category, cat.opponentMakes, cat.opponentAttempts)}</td>
                   <td className="text-center py-3 px-2 font-semibold">
                     <span className={cat.winning ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                       {calculateDiff(cat.myTeam, cat.opponent, cat.category)}

@@ -284,10 +284,10 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey, select
                       </span>
                     </TableCell>
                     <TableCell className={`text-center ${showStats ? getStatGradientColor('fgPct', team.stats.fgPct, rankings) : getRankColor(team.categoryRanks.fgPct, rankings.length)}`}>
-                      {showStats ? formatStat('fgPct', team.stats.fgPct) : team.categoryRanks.fgPct}
+                      {showStats ? formatStat('fgPct', team.stats.fgPct, team) : team.categoryRanks.fgPct}
                     </TableCell>
                     <TableCell className={`text-center ${showStats ? getStatGradientColor('ftPct', team.stats.ftPct, rankings) : getRankColor(team.categoryRanks.ftPct, rankings.length)}`}>
-                      {showStats ? formatStat('ftPct', team.stats.ftPct) : team.categoryRanks.ftPct}
+                      {showStats ? formatStat('ftPct', team.stats.ftPct, team) : team.categoryRanks.ftPct}
                     </TableCell>
                     <TableCell className={`text-center ${showStats ? getStatGradientColor('tpm', team.stats.tpm, rankings) : getRankColor(team.categoryRanks.tpm, rankings.length)}`}>
                       {showStats ? formatStat('tpm', team.stats.tpm) : team.categoryRanks.tpm}
