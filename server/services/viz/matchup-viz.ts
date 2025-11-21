@@ -37,9 +37,22 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
-      // TODO: Extract games data from matchup - need to inspect actual API response structure
-      // Games data should be somewhere in matchup['0'], but field names and nesting are unknown
-      // For now, games data will be undefined and won't display
+      // DEBUG: Log the full matchup[0] structure to find games_played/remaining
+      if (i === 0) {
+        console.log('\n===== MATCHUP[0] DEBUG =====');
+        console.log('All keys:', Object.keys(matchup['0']));
+        
+        // Check each key to find games data
+        for (const key of Object.keys(matchup['0'])) {
+          const value = matchup['0'][key];
+          if (typeof value === 'number' || typeof value === 'string') {
+            console.log(`${key}: ${value}`);
+          } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            console.log(`${key}: ${JSON.stringify(value).substring(0, 200)}`);
+          }
+        }
+        console.log('===== END DEBUG =====\n');
+      }
       
       const teams = matchup['0'].teams;
       
