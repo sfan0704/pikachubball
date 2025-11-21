@@ -25,6 +25,22 @@ export default function RankingsPage() {
   const { openChat } = useChat();
   const { toast } = useToast();
 
+  // Auto-set to first league when leagues load
+  const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
+    leagues: League[];
+  }>({
+    queryKey: ["/api/yahoo/leagues"],
+    retry: false,
+  });
+
+  const leagues = leaguesData?.leagues || [];
+  
+  useEffect(() => {
+    if (leagues.length > 0 && !selectedLeagueKey) {
+      setSelectedLeagueKey(leagues[0].leagueKey);
+    }
+  }, [leagues, selectedLeagueKey]);
+
   // Parse week from URL query params using useMemo to avoid redundant parsing
   const selectedWeek = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -53,14 +69,6 @@ export default function RankingsPage() {
     // Only run when searchParams changes, not on every render
   }, [searchParams, location, setLocation]);
 
-  const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
-    leagues: League[];
-  }>({
-    queryKey: ["/api/yahoo/leagues"],
-    retry: false,
-  });
-
-  const leagues = leaguesData?.leagues || [];
   const selectedLeague = leagues.find(l => l.leagueKey === selectedLeagueKey);
 
   // Build query URL with week parameter
