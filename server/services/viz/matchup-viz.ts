@@ -37,21 +37,29 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
-      // Debug: Log all keys in matchup['0'] to find games data
-      if (i === 0) {
-        console.log('\n=== MATCHUP[0] KEYS ===');
-        console.log(Object.keys(matchup['0']));
-        console.log('\n=== MATCHUP[0] FULL OBJECT ===');
-        console.log(JSON.stringify(matchup['0'], null, 2));
+      // Extract games data from matchup coverage (Yahoo API stores this at coverage_type level)
+      // Coverage contains games_played and games_remaining for the week
+      const coverage = matchup['0']?.coverage;
+      if (coverage) {
+        if (coverage.games_played !== undefined && coverage.games_played !== null) {
+          matchupGamesPlayed = parseInt(coverage.games_played) || undefined;
+        }
+        if (coverage.games_remaining !== undefined && coverage.games_remaining !== null) {
+          matchupGamesRemaining = parseInt(coverage.games_remaining) || undefined;
+        }
       }
       
-      // Extract games played/remaining from matchup metadata
-      // Note: Yahoo returns these as numbers in the matchup object
-      if (matchup['0']?.games_played !== undefined && matchup['0']?.games_played !== null) {
-        matchupGamesPlayed = parseInt(matchup['0'].games_played) || undefined;
-      }
-      if (matchup['0']?.games_remaining !== undefined && matchup['0']?.games_remaining !== null) {
-        matchupGamesRemaining = parseInt(matchup['0'].games_remaining) || undefined;
+      // Fallback: check matchup_stats for games data
+      if (!matchupGamesPlayed && !matchupGamesRemaining) {
+        const matchupStats = matchup['0']?.matchup_stats;
+        if (matchupStats) {
+          if (matchupStats.games_played !== undefined) {
+            matchupGamesPlayed = parseInt(matchupStats.games_played) || undefined;
+          }
+          if (matchupStats.games_remaining !== undefined) {
+            matchupGamesRemaining = parseInt(matchupStats.games_remaining) || undefined;
+          }
+        }
       }
       
       const teams = matchup['0'].teams;
