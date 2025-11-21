@@ -99,156 +99,122 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
   const selectedTeamName = rankings.find(r => r.teamKey === selectedTeam)?.teamName || "Unknown";
 
   return (
-    <div className="space-y-4">
-      {isLoading && (
-        <Card data-testid="card-simulator-loading">
-          <CardHeader>
-            <CardTitle>Matchup Simulator</CardTitle>
-            <CardDescription>
-              See how any team would fare against all teams in the league
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Select Team</label>
-              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                <SelectTrigger data-testid="select-simulator-team">
-                  <SelectValue placeholder="Choose a team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rankings.map(team => (
-                    <SelectItem 
-                      key={team.teamKey} 
-                      value={team.teamKey}
-                      data-testid={`option-simulator-team-${team.teamKey}`}
-                    >
-                      {team.teamName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-2 font-semibold">Team</th>
-                    <th className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400">Wins</th>
-                    <th className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400">Ties</th>
-                    <th className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400">Losses</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...Array(5)].map((_, i) => (
-                    <tr key={i} className="border-b">
-                      <td className="py-2 px-2">
-                        <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
-                      </td>
-                      <td className="text-center py-2 px-2">
-                        <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
-                      </td>
-                      <td className="text-center py-2 px-2">
-                        <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
-                      </td>
-                      <td className="text-center py-2 px-2">
-                        <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+    <Card data-testid="card-simulator">
+      <CardHeader>
+        <CardTitle>Matchup Simulator</CardTitle>
+        <CardDescription>
+          See how any team would fare against all teams in the league
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <label className="text-sm font-medium">Select Team</label>
+          <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+            <SelectTrigger data-testid="select-simulator-team">
+              <SelectValue placeholder="Choose a team" />
+            </SelectTrigger>
+            <SelectContent>
+              {rankings.map(team => (
+                <SelectItem 
+                  key={team.teamKey} 
+                  value={team.teamKey}
+                  data-testid={`option-simulator-team-${team.teamKey}`}
+                >
+                  {team.teamName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {hasError && (
-        <Card>
-          <CardContent className="py-12">
-            <p className="text-center text-destructive">
-              Failed to load matchup data
-            </p>
-          </CardContent>
-        </Card>
-      )}
+        {hasError && (
+          <p className="text-center text-destructive py-8">
+            Failed to load matchup data
+          </p>
+        )}
 
-      {matchupRows.length > 0 && (
-        <Card data-testid="card-simulator-results">
-          <CardHeader>
-            <CardTitle>Matchup Simulator</CardTitle>
-            <CardDescription>
-              See how any team would fare against all teams in the league
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Select Team</label>
-              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                <SelectTrigger data-testid="select-simulator-team">
-                  <SelectValue placeholder="Choose a team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rankings.map(team => (
-                    <SelectItem 
-                      key={team.teamKey} 
-                      value={team.teamKey}
-                      data-testid={`option-simulator-team-${team.teamKey}`}
-                    >
-                      {team.teamName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th 
-                      className="text-left py-2 px-2 font-semibold cursor-pointer hover:bg-accent/50"
-                      onClick={() => handleSort("teamName")}
-                      data-testid="header-teamname"
-                    >
-                      Team <SortIndicator column="teamName" />
-                    </th>
-                    <th 
-                      className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400 cursor-pointer hover:bg-accent/50"
-                      onClick={() => handleSort("wins")}
-                      data-testid="header-wins"
-                    >
-                      Wins <SortIndicator column="wins" />
-                    </th>
-                    <th 
-                      className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400 cursor-pointer hover:bg-accent/50"
-                      onClick={() => handleSort("ties")}
-                      data-testid="header-ties"
-                    >
-                      Ties <SortIndicator column="ties" />
-                    </th>
-                    <th 
-                      className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400 cursor-pointer hover:bg-accent/50"
-                      onClick={() => handleSort("losses")}
-                      data-testid="header-losses"
-                    >
-                      Losses <SortIndicator column="losses" />
-                    </th>
+        {isLoading && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-2 font-semibold">Team</th>
+                  <th className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400">Wins</th>
+                  <th className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400">Ties</th>
+                  <th className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400">Losses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(5)].map((_, i) => (
+                  <tr key={i} className="border-b">
+                    <td className="py-2 px-2">
+                      <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
+                    </td>
+                    <td className="text-center py-2 px-2">
+                      <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
+                    </td>
+                    <td className="text-center py-2 px-2">
+                      <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
+                    </td>
+                    <td className="text-center py-2 px-2">
+                      <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {sortedRows.map(row => (
-                    <tr key={row.teamKey} className="border-b hover:bg-accent/50">
-                      <td className="py-2 px-2 font-medium">{row.teamName}</td>
-                      <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">{row.wins}</td>
-                      <td className="text-center py-2 px-2 text-yellow-600 dark:text-yellow-400 font-semibold">{row.ties}</td>
-                      <td className="text-center py-2 px-2 text-red-600 dark:text-red-400 font-semibold">{row.losses}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!isLoading && matchupRows.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th 
+                    className="text-left py-2 px-2 font-semibold cursor-pointer hover:bg-accent/50"
+                    onClick={() => handleSort("teamName")}
+                    data-testid="header-teamname"
+                  >
+                    Team <SortIndicator column="teamName" />
+                  </th>
+                  <th 
+                    className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400 cursor-pointer hover:bg-accent/50"
+                    onClick={() => handleSort("wins")}
+                    data-testid="header-wins"
+                  >
+                    Wins <SortIndicator column="wins" />
+                  </th>
+                  <th 
+                    className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400 cursor-pointer hover:bg-accent/50"
+                    onClick={() => handleSort("ties")}
+                    data-testid="header-ties"
+                  >
+                    Ties <SortIndicator column="ties" />
+                  </th>
+                  <th 
+                    className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400 cursor-pointer hover:bg-accent/50"
+                    onClick={() => handleSort("losses")}
+                    data-testid="header-losses"
+                  >
+                    Losses <SortIndicator column="losses" />
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedRows.map(row => (
+                  <tr key={row.teamKey} className="border-b hover:bg-accent/50">
+                    <td className="py-2 px-2 font-medium">{row.teamName}</td>
+                    <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">{row.wins}</td>
+                    <td className="text-center py-2 px-2 text-yellow-600 dark:text-yellow-400 font-semibold">{row.ties}</td>
+                    <td className="text-center py-2 px-2 text-red-600 dark:text-red-400 font-semibold">{row.losses}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
