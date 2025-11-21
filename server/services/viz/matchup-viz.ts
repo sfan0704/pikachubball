@@ -22,6 +22,8 @@ export async function getMatchupComparison(
 
   let myTeam: any = null;
   let opponent: any = null;
+  let matchupGamesPlayed: number | undefined;
+  let matchupGamesRemaining: number | undefined;
 
   // Get scoreboard to find teams
   const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, effectiveWeek);
@@ -35,6 +37,14 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
+      // Extract games played/remaining from matchup metadata
+      if (matchup['0'].games_played !== undefined) {
+        matchupGamesPlayed = matchup['0'].games_played;
+      }
+      if (matchup['0'].games_remaining !== undefined) {
+        matchupGamesRemaining = matchup['0'].games_remaining;
+      }
+      
       const teams = matchup['0'].teams;
       
       for (let j = 0; j < teams.count; j++) {
@@ -171,7 +181,9 @@ export async function getMatchupComparison(
       scope: 'week',
       week: effectiveWeek,
       currentWeek,
-      totalWeeks: endWeek
+      totalWeeks: endWeek,
+      gamesPlayed: matchupGamesPlayed,
+      gamesRemaining: matchupGamesRemaining
     }
   };
 }

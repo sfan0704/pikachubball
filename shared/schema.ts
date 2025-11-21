@@ -111,6 +111,8 @@ export const rankingsMetadataSchema = z.object({
   week: z.number().optional(),
   currentWeek: z.number(),
   totalWeeks: z.number(),
+  gamesPlayed: z.number().optional(),
+  gamesRemaining: z.number().optional(),
 });
 
 export const rankingsResponseSchema = z.object({

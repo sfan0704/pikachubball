@@ -189,14 +189,10 @@ async function extractTeamStats(
       let gamesPlayed: number | undefined;
       let gamesRemaining: number | undefined;
       
-      // Calculate games based on weekly matchups
-      // In Yahoo Fantasy Basketball, games refers to weekly matchups
-      if (week !== undefined) {
-        // For week view: show that specific week out of total weeks
-        gamesPlayed = week;
-        gamesRemaining = (endWeek || 22) - (week || 0);
-      } else if (currentWeek && endWeek) {
-        // For season view: show current week progress
+      // Games data comes from the matchup structure and contains actual NBA games played
+      // Will be populated if available from the API
+      // Default fallback: use week number if games data unavailable
+      if (currentWeek && endWeek && !week) {
         gamesPlayed = currentWeek;
         gamesRemaining = endWeek - currentWeek;
       }
