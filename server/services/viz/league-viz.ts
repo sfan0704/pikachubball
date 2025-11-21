@@ -22,12 +22,12 @@ export async function getLeagueRankings(
   leagueKey: string,
   week?: number
 ): Promise<RankingsResponse> {
-  const teamStats = await extractTeamStats(dataSource, leagueKey, week);
-  
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
   const currentWeek = parseInt(leagueData?.current_week || '1');
   const endWeek = parseInt(leagueData?.end_week || '22');
+  
+  const teamStats = await extractTeamStats(dataSource, leagueKey, week, currentWeek, endWeek);
   
   const rankings = teamStats.map(team => ({
     ...team,
@@ -75,12 +75,12 @@ export async function getLeagueHeatmap(
   leagueKey: string,
   week?: number
 ): Promise<LeagueHeatmapResponse> {
-  const teamStats = await extractTeamStats(dataSource, leagueKey, week);
-  
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
   const currentWeek = parseInt(leagueData?.current_week || '1');
   const endWeek = parseInt(leagueData?.end_week || '22');
+  
+  const teamStats = await extractTeamStats(dataSource, leagueKey, week, currentWeek, endWeek);
   
   const teams: TeamHeatmapData[] = [];
   
@@ -129,7 +129,9 @@ export async function getLeagueHeatmap(
 async function extractTeamStats(
   dataSource: FantasyDataSource,
   leagueKey: string,
-  week?: number
+  week?: number,
+  currentWeek?: number,
+  endWeek?: number
 ): Promise<TeamStats[]> {
   let teams: any;
   
@@ -187,6 +189,18 @@ async function extractTeamStats(
       let gamesPlayed: number | undefined;
       let gamesRemaining: number | undefined;
       
+      // Calculate games based on weekly matchups
+      // In Yahoo Fantasy Basketball, games refers to weekly matchups
+      if (week !== undefined) {
+        // For week view: show that specific week out of total weeks
+        gamesPlayed = week;
+        gamesRemaining = (endWeek || 22) - (week || 0);
+      } else if (currentWeek && endWeek) {
+        // For season view: show current week progress
+        gamesPlayed = currentWeek;
+        gamesRemaining = endWeek - currentWeek;
+      }
+      
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
         const stats = statsData.stats;
@@ -198,11 +212,6 @@ async function extractTeamStats(
               statMap[statObj.stat.stat_id] = statObj.stat.value;
             }
           });
-        }
-        
-        // Debug: Log all stat IDs for first team
-        if (i === 0) {
-          console.log('Available stat IDs:', Object.keys(statMap));
         }
         
         // Parse FG makes/attempts from stat 9004003 (format: "127/298")
@@ -221,25 +230,6 @@ async function extractTeamStats(
           const ftParts = statMap['9007006'].split('/');
           ftMakes = parseInt(ftParts[0]) || 0;
           ftAttempts = parseInt(ftParts[1]) || 0;
-        }
-        
-        // Games data in Yahoo Fantasy Basketball is tracked per matchup, not per stats
-        // For now, we'll try to extract from common stat IDs or calculate from matchups
-        // Stat 9004002 is typically games played, but may not be available
-        if (statMap['9004002']) {
-          gamesPlayed = parseInt(statMap['9004002']);
-        }
-        
-        // Alternative: look for games played in any stat that contains "game" or number patterns
-        if (!gamesPlayed) {
-          // Check if there's a stat that looks like games played
-          for (const [statId, value] of Object.entries(statMap)) {
-            // Some leagues might have different stat IDs for games played
-            if (statId === '26' || statId === '26.1' || statId === '25') {
-              gamesPlayed = parseInt(value as string);
-              break;
-            }
-          }
         }
         
         teamStats.push({
