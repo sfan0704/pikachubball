@@ -252,10 +252,17 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey }: Leag
                   >
                     <TableCell className="sticky left-0 z-10 bg-card">{getMasterRankBadge(team.teamKey)}</TableCell>
                     <TableCell className="sticky left-12 md:left-16 z-10 bg-card font-medium">
-                      <span className="line-clamp-1">
-                        {team.teamName}
-                        {isUserTeam && <span className="ml-1 text-primary">★</span>}
-                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="line-clamp-1">
+                          {team.teamName}
+                          {isUserTeam && <span className="ml-1 text-primary">★</span>}
+                        </span>
+                        {team.managerName && (
+                          <span className="text-xs text-muted-foreground font-normal line-clamp-1">
+                            {team.managerName}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className={`text-center ${showStats ? getStatGradientColor('fgPct', team.stats.fgPct, rankings) : getRankColor(team.categoryRanks.fgPct, rankings.length)}`}>
                       {showStats ? formatStat('fgPct', team.stats.fgPct, team) : team.categoryRanks.fgPct}
