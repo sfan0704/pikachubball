@@ -37,6 +37,12 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
+      // Debug: Log matchup structure for first matchup
+      if (i === 0) {
+        console.log('Matchup structure keys:', Object.keys(matchup['0']));
+        console.log('Full matchup[0]:', JSON.stringify(matchup['0'], null, 2).substring(0, 500));
+      }
+      
       // Extract games played/remaining from matchup metadata
       if (matchup['0'].games_played !== undefined) {
         matchupGamesPlayed = matchup['0'].games_played;
