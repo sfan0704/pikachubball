@@ -188,7 +188,7 @@ export default function RankingsPage() {
 
             {selectedLeagueKey ? (
               <Tabs defaultValue="rankings" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3" data-testid="tabs-visualizations">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4" data-testid="tabs-visualizations">
                   <TabsTrigger value="rankings" data-testid="tab-rankings" className="gap-2">
                     <BarChart3 className="h-4 w-4" />
                     <span>Rankings</span>
@@ -196,6 +196,10 @@ export default function RankingsPage() {
                   <TabsTrigger value="matchup" data-testid="tab-matchup" className="gap-2">
                     <BarChart3 className="h-4 w-4" />
                     <span>Matchup</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="simulator" data-testid="tab-simulator" className="gap-2">
+                    <Zap className="h-4 w-4" />
+                    <span>Simulator</span>
                   </TabsTrigger>
                   <TabsTrigger value="schedule" data-testid="tab-schedule" className="gap-2">
                     <Calendar className="h-4 w-4" />
@@ -237,6 +241,25 @@ export default function RankingsPage() {
                       <CardContent className="py-12">
                         <p className="text-center text-muted-foreground">
                           Select a league to view matchup comparison
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="simulator">
+                  {selectedLeague && rankings.length > 0 ? (
+                    <MatchupSimulator 
+                      leagueKey={selectedLeagueKey}
+                      userTeamKey={selectedLeague.teamKey}
+                      week={selectedWeek}
+                      rankings={rankings}
+                    />
+                  ) : (
+                    <Card>
+                      <CardContent className="py-12">
+                        <p className="text-center text-muted-foreground">
+                          Select a league to use matchup simulator
                         </p>
                       </CardContent>
                     </Card>
