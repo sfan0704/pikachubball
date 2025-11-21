@@ -200,6 +200,11 @@ async function extractTeamStats(
           });
         }
         
+        // Debug: Log all stat IDs for first team
+        if (i === 0) {
+          console.log('Available stat IDs:', Object.keys(statMap));
+        }
+        
         // Parse FG makes/attempts from stat 9004003 (format: "127/298")
         let fgMakes = 0;
         let fgAttempts = 0;
@@ -218,17 +223,23 @@ async function extractTeamStats(
           ftAttempts = parseInt(ftParts[1]) || 0;
         }
         
-        // Try to extract games played (stat_id 9004002 or check standings data)
+        // Games data in Yahoo Fantasy Basketball is tracked per matchup, not per stats
+        // For now, we'll try to extract from common stat IDs or calculate from matchups
+        // Stat 9004002 is typically games played, but may not be available
         if (statMap['9004002']) {
           gamesPlayed = parseInt(statMap['9004002']);
         }
         
-        // Calculate games remaining from league settings if available
-        const settings = await dataSource.getLeagueSettings(leagueKey);
-        const leagueData = settings?.fantasy_content?.league?.[0];
-        const totalGames = parseInt(leagueData?.game_type === 'full' ? leagueData?.end_week || '22' : leagueData?.end_week || '22');
-        if (gamesPlayed !== undefined && totalGames) {
-          gamesRemaining = (totalGames - (gamesPlayed || 0));
+        // Alternative: look for games played in any stat that contains "game" or number patterns
+        if (!gamesPlayed) {
+          // Check if there's a stat that looks like games played
+          for (const [statId, value] of Object.entries(statMap)) {
+            // Some leagues might have different stat IDs for games played
+            if (statId === '26' || statId === '26.1' || statId === '25') {
+              gamesPlayed = parseInt(value as string);
+              break;
+            }
+          }
         }
         
         teamStats.push({
