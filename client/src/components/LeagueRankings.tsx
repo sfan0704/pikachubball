@@ -115,7 +115,13 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey, select
     return <Badge variant="outline">{actualIndex + 1}</Badge>;
   };
 
-  const formatStat = (key: keyof TeamRanking['stats'], value: number) => {
+  const formatStat = (key: keyof TeamRanking['stats'], value: number, team?: any) => {
+    if (key === 'fgPct' && team?.fgMakes !== undefined) {
+      return `${team.fgMakes}/${team.fgAttempts} (${(value * 100).toFixed(1)}%)`;
+    }
+    if (key === 'ftPct' && team?.ftMakes !== undefined) {
+      return `${team.ftMakes}/${team.ftAttempts} (${(value * 100).toFixed(1)}%)`;
+    }
     if (key === 'fgPct' || key === 'ftPct') {
       return (value * 100).toFixed(1) + '%';
     }

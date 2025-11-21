@@ -8,6 +8,10 @@ export interface TeamStats {
   teamKey: string;
   teamName: string;
   stats: Record<CategoryKey, number>;
+  fgMakes?: number;
+  fgAttempts?: number;
+  ftMakes?: number;
+  ftAttempts?: number;
 }
 
 export async function getLeagueRankings(
@@ -193,7 +197,11 @@ async function extractTeamStats(
             stl: parseInt(statMap['17'] || '0'),
             blk: parseInt(statMap['18'] || '0'),
             to: parseInt(statMap['19'] || '0'),
-          }
+          },
+          fgMakes: parseInt(statMap['4'] || '0'),
+          fgAttempts: parseInt(statMap['3'] || '0'),
+          ftMakes: parseInt(statMap['7'] || '0'),
+          ftAttempts: parseInt(statMap['6'] || '0'),
         });
       }
     }
