@@ -185,8 +185,13 @@ async function extractTeamStats(
       }
       
       // Extract games played and remaining
+      const allKeys = Object.keys(teamProperties.reduce((acc: any, prop: any) => ({ ...acc, ...prop }), {}));
+      console.log('Team:', teamNameObj?.name, 'All Keys:', allKeys);
+      
       const gamesPlayedObj = teamProperties.find((prop: any) => prop.games_played);
       const gamesRemainingObj = teamProperties.find((prop: any) => prop.league_games_back);
+      console.log('GamesPlayedObj:', gamesPlayedObj, 'GamesRemainingObj:', gamesRemainingObj);
+      
       let gamesPlayed = gamesPlayedObj?.games_played ? parseInt(gamesPlayedObj.games_played) : undefined;
       let gamesRemaining = gamesRemainingObj?.league_games_back ? parseInt(gamesRemainingObj.league_games_back) : undefined;
       
