@@ -98,6 +98,16 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
 
   const selectedTeamName = rankings.find(r => r.teamKey === selectedTeam)?.teamName || "Unknown";
 
+  const getRowColor = (row: MatchupRow) => {
+    if (row.wins > row.losses) {
+      return "bg-green-500/5 dark:bg-green-500/5";
+    } else if (row.wins < row.losses) {
+      return "bg-red-500/5 dark:bg-red-500/5";
+    } else {
+      return "";
+    }
+  };
+
   return (
     <Card data-testid="card-simulator">
       <CardHeader>
@@ -203,7 +213,7 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
               </thead>
               <tbody>
                 {sortedRows.map(row => (
-                  <tr key={row.teamKey} className="border-b hover:bg-accent/50">
+                  <tr key={row.teamKey} className={`border-b hover:bg-accent/50 ${getRowColor(row)}`}>
                     <td className="py-2 px-2 font-medium">{row.teamName}</td>
                     <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">{row.wins}</td>
                     <td className="text-center py-2 px-2 text-yellow-600 dark:text-yellow-400 font-semibold">{row.ties}</td>
