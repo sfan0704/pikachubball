@@ -106,22 +106,63 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
           </div>
 
           {/* Mode-specific selectors */}
-          <div className="space-y-3">
-            {mode === "myTeam" ? (
+          {mode === "myTeam" ? (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Choose an opponent</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {rankings
+                  .filter(r => r.teamKey !== userTeamKey)
+                  .map(team => (
+                    <button
+                      key={team.teamKey}
+                      onClick={() => setSelectedOpponent(team.teamKey)}
+                      data-testid={`button-opponent-${team.teamKey}`}
+                      className={`p-3 rounded-md border transition-colors text-sm font-medium ${
+                        selectedOpponent === team.teamKey
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-card border-border hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      {team.teamName}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium">Select Opponent</label>
-                <Select value={selectedOpponent} onValueChange={setSelectedOpponent}>
-                  <SelectTrigger data-testid="select-opponent">
-                    <SelectValue placeholder="Choose a team to compare against" />
+                <label className="text-sm font-medium">Select First Team</label>
+                <Select value={selectedTeam1} onValueChange={setSelectedTeam1}>
+                  <SelectTrigger data-testid="select-team1">
+                    <SelectValue placeholder="Choose first team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rankings.map(team => (
+                      <SelectItem 
+                        key={team.teamKey} 
+                        value={team.teamKey}
+                        data-testid={`option-team1-${team.teamKey}`}
+                      >
+                        {team.teamName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Select Second Team</label>
+                <Select value={selectedTeam2} onValueChange={setSelectedTeam2}>
+                  <SelectTrigger data-testid="select-team2">
+                    <SelectValue placeholder="Choose second team" />
                   </SelectTrigger>
                   <SelectContent>
                     {rankings
-                      .filter(r => r.teamKey !== userTeamKey)
+                      .filter(r => r.teamKey !== selectedTeam1)
                       .map(team => (
                         <SelectItem 
                           key={team.teamKey} 
                           value={team.teamKey}
-                          data-testid={`option-opponent-${team.teamKey}`}
+                          data-testid={`option-team2-${team.teamKey}`}
                         >
                           {team.teamName}
                         </SelectItem>
@@ -129,51 +170,8 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
                   </SelectContent>
                 </Select>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">Select First Team</label>
-                  <Select value={selectedTeam1} onValueChange={setSelectedTeam1}>
-                    <SelectTrigger data-testid="select-team1">
-                      <SelectValue placeholder="Choose first team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rankings.map(team => (
-                        <SelectItem 
-                          key={team.teamKey} 
-                          value={team.teamKey}
-                          data-testid={`option-team1-${team.teamKey}`}
-                        >
-                          {team.teamName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Select Second Team</label>
-                  <Select value={selectedTeam2} onValueChange={setSelectedTeam2}>
-                    <SelectTrigger data-testid="select-team2">
-                      <SelectValue placeholder="Choose second team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rankings
-                        .filter(r => r.teamKey !== selectedTeam1)
-                        .map(team => (
-                          <SelectItem 
-                            key={team.teamKey} 
-                            value={team.teamKey}
-                            data-testid={`option-team2-${team.teamKey}`}
-                          >
-                            {team.teamName}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
