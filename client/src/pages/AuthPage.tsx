@@ -41,10 +41,6 @@ export default function AuthPage() {
   const handleLogin = async (data: AuthFormData) => {
     try {
       await login(data.username, data.password);
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      });
     } catch (error: any) {
       toast({
         title: "Error",
