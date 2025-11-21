@@ -70,6 +70,15 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
     return isPct ? `${(value * 100).toFixed(1)}%` : Math.round(value).toString();
   };
 
+  const calculateDiff = (myVal: number, oppVal: number, category: string) => {
+    const isPct = category === 'fgPct' || category === 'ftPct';
+    const diff = myVal - oppVal;
+    if (isPct) {
+      return `${(diff * 100).toFixed(1)}%`;
+    }
+    return (diff >= 0 ? '+' : '') + Math.round(diff).toString();
+  };
+
   return (
     <Card data-testid="card-matchup">
       <CardHeader>
@@ -101,7 +110,7 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
                 <th className="text-left py-3 px-2 font-semibold">Category</th>
                 <th className="text-center py-3 px-2 font-semibold">{myTeam.teamName}</th>
                 <th className="text-center py-3 px-2 font-semibold">{opponent.teamName}</th>
-                <th className="text-center py-3 px-2 font-semibold">Status</th>
+                <th className="text-center py-3 px-2 font-semibold">Diff</th>
               </tr>
             </thead>
             <tbody>
@@ -114,12 +123,10 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
                   <td className="py-3 px-2 font-medium">{CATEGORY_LABELS[cat.category]}</td>
                   <td className="text-center py-3 px-2">{formatValue(cat.myTeam, cat.category)}</td>
                   <td className="text-center py-3 px-2">{formatValue(cat.opponent, cat.category)}</td>
-                  <td className="text-center py-3 px-2">
-                    {cat.winning ? (
-                      <span className="font-semibold text-green-600 dark:text-green-400">W</span>
-                    ) : (
-                      <span className="font-semibold text-red-600 dark:text-red-400">L</span>
-                    )}
+                  <td className="text-center py-3 px-2 font-semibold">
+                    <span className={cat.winning ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                      {calculateDiff(cat.myTeam, cat.opponent, cat.category)}
+                    </span>
                   </td>
                 </tr>
               ))}
