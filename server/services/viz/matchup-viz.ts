@@ -31,7 +31,7 @@ export async function getMatchupComparison(
     throw new Error('No matchups found for this week');
   }
 
-  // Search scoreboard for my team and opponent
+  // Search scoreboard for my team
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
@@ -47,18 +47,47 @@ export async function getMatchupComparison(
           // Check if this is my team
           if (currentTeamKey === teamKey) {
             myTeam = team;
+            
+            // If no specific opponent is requested, use the other team in this matchup
+            if (!opponentTeamKey) {
+              const opponentIndex = j === 0 ? 1 : 0;
+              const opponentTeam = teams[opponentIndex.toString()]?.team;
+              if (opponentTeam && Array.isArray(opponentTeam)) {
+                opponent = opponentTeam;
+              }
+            }
+            break;
           }
-          
-          // Check if this is the opponent (either scheduled or simulated)
-          if (opponentTeamKey ? currentTeamKey === opponentTeamKey : j !== 0 && !opponent) {
-            opponent = team;
-          }
-          
-          if (myTeam && opponent) break;
         }
       }
       
-      if (myTeam && opponent) break;
+      if (myTeam) break;
+    }
+  }
+  
+  // If a specific opponent was requested, search for it
+  if (opponentTeamKey && !opponent) {
+    for (let i = 0; i < matchups.count; i++) {
+      const matchup = matchups[i.toString()]?.matchup;
+      if (matchup && matchup['0']?.teams) {
+        const teams = matchup['0'].teams;
+        
+        for (let j = 0; j < teams.count; j++) {
+          const team = teams[j.toString()]?.team;
+          if (team && Array.isArray(team)) {
+            const teamProperties = team[0];
+            const teamKeyObj = teamProperties?.find((prop: any) => prop.team_key);
+            const currentTeamKey = teamKeyObj?.team_key;
+            
+            if (currentTeamKey === opponentTeamKey) {
+              opponent = team;
+              break;
+            }
+          }
+        }
+        
+        if (opponent) break;
+      }
     }
   }
   
