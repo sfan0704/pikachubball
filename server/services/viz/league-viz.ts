@@ -175,6 +175,9 @@ async function extractTeamStats(
       
       // Extract manager name from nested managers array
       let managerName: string | undefined;
+      const allKeys = teamProperties.map((prop: any) => Object.keys(prop)[0]);
+      console.log('Keys in teamProperties:', allKeys);
+      
       if (managersObj?.managers && Array.isArray(managersObj.managers)) {
         const manager = managersObj.managers[0]?.manager;
         if (manager && Array.isArray(manager)) {
@@ -182,7 +185,7 @@ async function extractTeamStats(
           managerName = managerNameProp?.nickname;
         }
       }
-      console.log('Team:', teamNameObj?.name, 'Manager:', managerName);
+      console.log('Team:', teamNameObj?.name, 'Manager:', managerName, 'ManagersObj:', JSON.stringify(managersObj).substring(0, 200));
       
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
