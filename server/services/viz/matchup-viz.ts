@@ -47,7 +47,7 @@ export async function getMatchupComparison(
       }
       
       // Handle if coverage is keyed by string indices like Yahoo's other objects
-      if (coverage && typeof coverage === 'object' && !Array.isArray(coverage) && 'coverage_type' in coverage === false) {
+      if (coverage && typeof coverage === 'object' && !Array.isArray(coverage) && !('coverage_type' in coverage)) {
         // Check if it's a Yahoo-style numbered object: {'0': {...}, '1': {...}, count: 2}
         if ('0' in coverage) {
           coverage = coverage['0'];
