@@ -180,6 +180,10 @@ function extractTeamStatsFromMatchup(teamData: any): {
   teamKey: string;
   teamName: string;
   stats: Record<CategoryKey, number>;
+  fgMakes: number;
+  fgAttempts: number;
+  ftMakes: number;
+  ftAttempts: number;
 } {
   const teamProperties = teamData[0];
   const teamKeyObj = teamProperties?.find((prop: any) => prop.team_key);
@@ -210,6 +214,10 @@ function extractTeamStatsFromMatchup(teamData: any): {
       stl: parseInt(statMap['17'] || '0'),
       blk: parseInt(statMap['18'] || '0'),
       to: parseInt(statMap['19'] || '0'),
-    }
+    },
+    fgMakes: parseInt(statMap['4'] || '0'),
+    fgAttempts: parseInt(statMap['3'] || '0'),
+    ftMakes: parseInt(statMap['7'] || '0'),
+    ftAttempts: parseInt(statMap['6'] || '0'),
   };
 }
