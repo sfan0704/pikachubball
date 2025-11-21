@@ -223,74 +223,105 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
               </div>
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-4 mb-2 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }}></div>
-                <span>{matchupData.myTeam.teamName}</span>
+            {mode === "myTeam" ? (
+              /* Table for Simulate My Team mode */
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-2 font-semibold">Category</th>
+                      <th className="text-right py-2 px-2 font-semibold">{matchupData.myTeam.teamName}</th>
+                      <th className="text-right py-2 px-2 font-semibold">{matchupData.opponent.teamName}</th>
+                      <th className="text-center py-2 px-2 font-semibold">Result</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchupData.categories.map(cat => (
+                      <tr key={cat.category} className="border-b hover:bg-accent/50">
+                        <td className="py-2 px-2 font-medium">{CATEGORY_LABELS[cat.category]}</td>
+                        <td className="text-right py-2 px-2">{cat.myTeam.toFixed(1)}</td>
+                        <td className="text-right py-2 px-2">{cat.opponent.toFixed(1)}</td>
+                        <td className={`text-center py-2 px-2 font-semibold ${cat.winning ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {cat.winning ? '✓' : '✗'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-2))' }}></div>
-                <span>{matchupData.opponent.teamName}</span>
-              </div>
-            </div>
-
-            {/* Chart */}
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartData} layout="horizontal" margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="category" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length >= 2) {
-                      const data = payload[0].payload;
-                      const team1Value = typeof payload[0].value === 'number' ? payload[0].value : 0;
-                      const team2Value = typeof payload[1].value === 'number' ? payload[1].value : 0;
-                      return (
-                        <div className="bg-card border border-border p-3 rounded-lg shadow-lg">
-                          <p className="font-semibold mb-2">{data.category}</p>
-                          <div className="space-y-1">
-                            <p className="text-sm" style={{ color: 'hsl(var(--chart-1))' }}>
-                              {matchupData.myTeam.teamName}: {data.isPct ? `${team1Value.toFixed(1)}%` : team1Value}
-                            </p>
-                            <p className="text-sm" style={{ color: 'hsl(var(--chart-2))' }}>
-                              {matchupData.opponent.teamName}: {data.isPct ? `${team2Value.toFixed(1)}%` : team2Value}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {data.winning ? '✓ Winning' : '✗ Losing'}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar dataKey="team1" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="team2" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-
-            {/* Category Breakdown */}
-            <div>
-              <h4 className="font-semibold mb-2 text-sm">Category Breakdown:</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                {matchupData.categories.map(cat => (
-                  <div 
-                    key={cat.category} 
-                    className={`p-2 rounded border ${cat.winning ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}
-                    data-testid={`simulator-category-${cat.category}`}
-                  >
-                    <div className="font-semibold">{CATEGORY_LABELS[cat.category]}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {cat.myTeam.toFixed(1)} vs {cat.opponent.toFixed(1)}
-                      {cat.winning ? ' ✓' : ' ✗'}
-                    </div>
+            ) : (
+              /* Chart for Compare Any Teams mode */
+              <>
+                {/* Legend */}
+                <div className="flex items-center justify-center gap-4 mb-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }}></div>
+                    <span>{matchupData.myTeam.teamName}</span>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-2))' }}></div>
+                    <span>{matchupData.opponent.teamName}</span>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={chartData} layout="horizontal" margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="category" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length >= 2) {
+                          const data = payload[0].payload;
+                          const team1Value = typeof payload[0].value === 'number' ? payload[0].value : 0;
+                          const team2Value = typeof payload[1].value === 'number' ? payload[1].value : 0;
+                          return (
+                            <div className="bg-card border border-border p-3 rounded-lg shadow-lg">
+                              <p className="font-semibold mb-2">{data.category}</p>
+                              <div className="space-y-1">
+                                <p className="text-sm" style={{ color: 'hsl(var(--chart-1))' }}>
+                                  {matchupData.myTeam.teamName}: {data.isPct ? `${team1Value.toFixed(1)}%` : team1Value}
+                                </p>
+                                <p className="text-sm" style={{ color: 'hsl(var(--chart-2))' }}>
+                                  {matchupData.opponent.teamName}: {data.isPct ? `${team2Value.toFixed(1)}%` : team2Value}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {data.winning ? '✓ Winning' : '✗ Losing'}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="team1" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="team2" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+
+                {/* Category Breakdown */}
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm">Category Breakdown:</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                    {matchupData.categories.map(cat => (
+                      <div 
+                        key={cat.category} 
+                        className={`p-2 rounded border ${cat.winning ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}
+                        data-testid={`simulator-category-${cat.category}`}
+                      >
+                        <div className="font-semibold">{CATEGORY_LABELS[cat.category]}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {cat.myTeam.toFixed(1)} vs {cat.opponent.toFixed(1)}
+                          {cat.winning ? ' ✓' : ' ✗'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
