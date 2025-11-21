@@ -37,45 +37,51 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
-      // Log the full matchup[0] structure on first iteration to debug
-      if (i === 0) {
-        console.log('\n=== FULL MATCHUP[0] STRUCTURE ===');
-        console.log('Keys:', Object.keys(matchup['0']));
-        
-        // Check all possible locations for games data
-        console.log('coverage:', matchup['0']?.coverage);
-        console.log('matchup_stats:', matchup['0']?.matchup_stats);
-        console.log('Full matchup[0]:', JSON.stringify(matchup['0'], null, 2).substring(0, 2000));
+      // Extract games data from matchup - Yahoo stores this in coverage object
+      // Coverage can be at different nesting levels depending on API response structure
+      let coverage = matchup['0']?.coverage;
+      
+      // Handle if coverage is an array (Yahoo sometimes returns arrays)
+      if (Array.isArray(coverage) && coverage.length > 0) {
+        coverage = coverage[0];
       }
       
-      // Extract games data from matchup coverage (Yahoo API stores this at coverage_type level)
-      // Coverage contains games_played and games_remaining for the week
-      const coverage = matchup['0']?.coverage;
+      // Handle if coverage is keyed by string indices like Yahoo's other objects
+      if (coverage && typeof coverage === 'object' && !Array.isArray(coverage) && 'coverage_type' in coverage === false) {
+        // Check if it's a Yahoo-style numbered object: {'0': {...}, '1': {...}, count: 2}
+        if ('0' in coverage) {
+          coverage = coverage['0'];
+        }
+      }
+      
+      // Extract from coverage object
       if (coverage) {
-        if (coverage.games_played !== undefined && coverage.games_played !== null) {
-          matchupGamesPlayed = parseInt(coverage.games_played) || undefined;
+        // Try different field name patterns Yahoo might use
+        const gamesPlayedValue = coverage.games_played ?? coverage.gamesPlayed ?? coverage.games_matched;
+        const gamesRemainingValue = coverage.games_remaining ?? coverage.gamesRemaining ?? coverage.games_unmatched;
+        
+        if (gamesPlayedValue !== undefined && gamesPlayedValue !== null) {
+          matchupGamesPlayed = parseInt(gamesPlayedValue) || undefined;
         }
-        if (coverage.games_remaining !== undefined && coverage.games_remaining !== null) {
-          matchupGamesRemaining = parseInt(coverage.games_remaining) || undefined;
+        if (gamesRemainingValue !== undefined && gamesRemainingValue !== null) {
+          matchupGamesRemaining = parseInt(gamesRemainingValue) || undefined;
         }
       }
       
-      // Fallback: check matchup_stats for games data
-      if (!matchupGamesPlayed && !matchupGamesRemaining) {
+      // Fallback: check matchup_stats
+      if (!matchupGamesPlayed || !matchupGamesRemaining) {
         const matchupStats = matchup['0']?.matchup_stats;
         if (matchupStats) {
-          if (matchupStats.games_played !== undefined) {
-            matchupGamesPlayed = parseInt(matchupStats.games_played) || undefined;
+          const gamesPlayedValue = matchupStats.games_played ?? matchupStats.gamesPlayed;
+          const gamesRemainingValue = matchupStats.games_remaining ?? matchupStats.gamesRemaining;
+          
+          if (gamesPlayedValue !== undefined) {
+            matchupGamesPlayed = parseInt(gamesPlayedValue) || matchupGamesPlayed;
           }
-          if (matchupStats.games_remaining !== undefined) {
-            matchupGamesRemaining = parseInt(matchupStats.games_remaining) || undefined;
+          if (gamesRemainingValue !== undefined) {
+            matchupGamesRemaining = parseInt(gamesRemainingValue) || matchupGamesRemaining;
           }
         }
-      }
-      
-      // If we found games data, log it
-      if (matchupGamesPlayed !== undefined || matchupGamesRemaining !== undefined) {
-        console.log('✓ Games data extracted:', { matchupGamesPlayed, matchupGamesRemaining });
       }
       
       const teams = matchup['0'].teams;
