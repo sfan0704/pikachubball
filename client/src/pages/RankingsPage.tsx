@@ -4,11 +4,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeagueRankings from "@/components/LeagueRankings";
 import MatchupTab from "@/components/MatchupTab";
+import MatchupSimulator from "@/components/MatchupSimulator";
 import ScheduleTab from "@/components/ScheduleTab";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useSearch } from "wouter";
-import { LogOut, MessageSquare, BarChart3, Calendar } from "lucide-react";
+import { LogOut, MessageSquare, BarChart3, Calendar, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useChat } from "@/lib/chat-context";
 import { useToast } from "@/hooks/use-toast";
