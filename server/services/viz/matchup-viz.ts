@@ -37,6 +37,17 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
+      // Log the full matchup[0] structure on first iteration to debug
+      if (i === 0) {
+        console.log('\n=== FULL MATCHUP[0] STRUCTURE ===');
+        console.log('Keys:', Object.keys(matchup['0']));
+        
+        // Check all possible locations for games data
+        console.log('coverage:', matchup['0']?.coverage);
+        console.log('matchup_stats:', matchup['0']?.matchup_stats);
+        console.log('Full matchup[0]:', JSON.stringify(matchup['0'], null, 2).substring(0, 2000));
+      }
+      
       // Extract games data from matchup coverage (Yahoo API stores this at coverage_type level)
       // Coverage contains games_played and games_remaining for the week
       const coverage = matchup['0']?.coverage;
@@ -60,6 +71,11 @@ export async function getMatchupComparison(
             matchupGamesRemaining = parseInt(matchupStats.games_remaining) || undefined;
           }
         }
+      }
+      
+      // If we found games data, log it
+      if (matchupGamesPlayed !== undefined || matchupGamesRemaining !== undefined) {
+        console.log('✓ Games data extracted:', { matchupGamesPlayed, matchupGamesRemaining });
       }
       
       const teams = matchup['0'].teams;
