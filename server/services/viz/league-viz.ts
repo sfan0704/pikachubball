@@ -184,6 +184,24 @@ async function extractTeamStats(
           });
         }
         
+        // Parse FG makes/attempts from stat 9004003 (format: "127/298")
+        let fgMakes = 0;
+        let fgAttempts = 0;
+        if (statMap['9004003']) {
+          const fgParts = statMap['9004003'].split('/');
+          fgMakes = parseInt(fgParts[0]) || 0;
+          fgAttempts = parseInt(fgParts[1]) || 0;
+        }
+        
+        // Parse FT makes/attempts from stat 9007006 (format: "76/94")
+        let ftMakes = 0;
+        let ftAttempts = 0;
+        if (statMap['9007006']) {
+          const ftParts = statMap['9007006'].split('/');
+          ftMakes = parseInt(ftParts[0]) || 0;
+          ftAttempts = parseInt(ftParts[1]) || 0;
+        }
+        
         teamStats.push({
           teamKey: teamKeyObj?.team_key,
           teamName: teamNameObj?.name,
@@ -198,10 +216,10 @@ async function extractTeamStats(
             blk: parseInt(statMap['18'] || '0'),
             to: parseInt(statMap['19'] || '0'),
           },
-          fgMakes: parseInt(statMap['4'] || '0'),
-          fgAttempts: parseInt(statMap['3'] || '0'),
-          ftMakes: parseInt(statMap['7'] || '0'),
-          ftAttempts: parseInt(statMap['6'] || '0'),
+          fgMakes,
+          fgAttempts,
+          ftMakes,
+          ftAttempts,
         });
       }
     }
