@@ -37,7 +37,7 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
       params.append("opponentTeamKey", opponent.teamKey);
       if (week) params.append("week", week.toString());
       return {
-        queryKey: [`/api/viz/matchup/${leagueKey}/${selectedTeam}`, opponent.teamKey],
+        queryKey: [`/api/viz/matchup/${leagueKey}/${selectedTeam}`, opponent.teamKey, week],
         queryFn: async () => {
           const response = await fetch(`/api/viz/matchup/${leagueKey}/${selectedTeam}?${params.toString()}`);
           if (!response.ok) throw new Error('Failed to fetch matchup');
