@@ -35,10 +35,15 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 type SimulatorMode = "myTeam" | "anyTeams";
 
+type SortColumn = "teamName" | "wins" | "ties" | "losses";
+type SortDirection = "asc" | "desc";
+
 export default function MatchupSimulator({ leagueKey, userTeamKey, week, rankings }: MatchupSimulatorProps) {
   const [mode, setMode] = useState<SimulatorMode>("myTeam");
   const [selectedTeam1, setSelectedTeam1] = useState<string>("");
   const [selectedTeam2, setSelectedTeam2] = useState<string>("");
+  const [sortColumn, setSortColumn] = useState<SortColumn>("wins");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   // Fetch all matchups for myTeam mode
   const opponentTeams = rankings.filter(r => r.teamKey !== userTeamKey);
@@ -103,6 +108,36 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
 
   const isLoadingMatchups = matchupQueries.some(q => q.isLoading);
   const matchupError = matchupQueries.some(q => q.error);
+
+  // Sort function
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  };
+
+  // Apply sorting to matchup rows
+  const sortedRows = [...matchupRows].sort((a, b) => {
+    let aValue: string | number = a[sortColumn];
+    let bValue: string | number = b[sortColumn];
+
+    if (typeof aValue === "string") {
+      aValue = aValue.toLowerCase();
+      bValue = (bValue as string).toLowerCase();
+    }
+
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const SortIndicator = ({ column }: { column: SortColumn }) => {
+    if (sortColumn !== column) return <span className="text-muted-foreground ml-1">↕</span>;
+    return sortDirection === "asc" ? <span className="ml-1">↑</span> : <span className="ml-1">↓</span>;
+  };
 
   return (
     <div className="space-y-4">
@@ -219,14 +254,38 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2 px-2 font-semibold">Team</th>
-                        <th className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400">Wins</th>
-                        <th className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400">Ties</th>
-                        <th className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400">Losses</th>
+                        <th 
+                          className="text-left py-2 px-2 font-semibold cursor-pointer hover:bg-accent/50"
+                          onClick={() => handleSort("teamName")}
+                          data-testid="header-teamname"
+                        >
+                          Team <SortIndicator column="teamName" />
+                        </th>
+                        <th 
+                          className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400 cursor-pointer hover:bg-accent/50"
+                          onClick={() => handleSort("wins")}
+                          data-testid="header-wins"
+                        >
+                          Wins <SortIndicator column="wins" />
+                        </th>
+                        <th 
+                          className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400 cursor-pointer hover:bg-accent/50"
+                          onClick={() => handleSort("ties")}
+                          data-testid="header-ties"
+                        >
+                          Ties <SortIndicator column="ties" />
+                        </th>
+                        <th 
+                          className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400 cursor-pointer hover:bg-accent/50"
+                          onClick={() => handleSort("losses")}
+                          data-testid="header-losses"
+                        >
+                          Losses <SortIndicator column="losses" />
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {matchupRows.map(row => (
+                      {sortedRows.map(row => (
                         <tr key={row.teamKey} className="border-b hover:bg-accent/50">
                           <td className="py-2 px-2 font-medium">{row.teamName}</td>
                           <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">{row.wins}</td>
