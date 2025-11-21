@@ -57,13 +57,13 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
       return {
         teamKey: opponentTeam.teamKey,
         teamName: opponentTeam.teamName,
-        managerName: opponentTeam.managerName,
+        managerName: opponentTeam.managerName || undefined,
         wins: query.data.score.wins,
         losses: query.data.score.losses,
         ties: query.data.score.ties,
-      };
+      } as MatchupRow;
     })
-    .filter((row): row is MatchupRow => row !== null);
+    .filter((row) => row !== null) as MatchupRow[];
 
   const isLoading = matchupQueries.some(q => q.isLoading);
   const hasError = matchupQueries.some(q => q.error);

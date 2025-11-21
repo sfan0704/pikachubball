@@ -182,6 +182,7 @@ async function extractTeamStats(
           managerName = managerNameProp?.nickname;
         }
       }
+      console.log('Team:', teamNameObj?.name, 'Manager:', managerName);
       
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
