@@ -328,10 +328,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get MCP client and set credentials
       const mcpClient = await getMCPClient();
-      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+      try {
+        await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+      } catch (credError: any) {
+        console.error('Failed to set MCP credentials:', credError);
+        return res.status(400).json({ error: "Yahoo Fantasy credentials not properly configured. Please reconnect your Yahoo account." });
+      }
 
       // Get user's leagues
-      const leaguesResponse = await mcpClient.getUserLeagues();
+      let leaguesResponse;
+      try {
+        leaguesResponse = await mcpClient.getUserLeagues();
+      } catch (leagueError: any) {
+        console.error('Error calling getUserLeagues:', leagueError);
+        // If it's a credential/auth error, return 400 instead of 500
+        if (leagueError.message?.includes('credentials') || leagueError.message?.includes('refresh') || leagueError.message?.includes('token')) {
+          return res.status(400).json({ error: "Yahoo Fantasy credentials expired or invalid. Please reconnect your Yahoo account." });
+        }
+        throw leagueError;
+      }
       
       // Parse the deeply nested Yahoo API structure
       const users = leaguesResponse?.fantasy_content?.users;
