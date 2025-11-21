@@ -14,6 +14,7 @@ interface MatchupSimulatorProps {
 interface MatchupRow {
   teamKey: string;
   teamName: string;
+  managerName?: string;
   wins: number;
   losses: number;
   ties: number;
@@ -56,6 +57,7 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
       return {
         teamKey: opponentTeam.teamKey,
         teamName: opponentTeam.teamName,
+        managerName: opponentTeam.managerName,
         wins: query.data.score.wins,
         losses: query.data.score.losses,
         ties: query.data.score.ties,
@@ -214,7 +216,10 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
               <tbody>
                 {sortedRows.map(row => (
                   <tr key={row.teamKey} className={`border-b hover:bg-accent/50 ${getRowColor(row)}`}>
-                    <td className="py-2 px-2 font-medium">{row.teamName}</td>
+                    <td className="py-2 px-2">
+                      <div className="font-medium">{row.teamName}</div>
+                      {row.managerName && <div className="text-xs text-muted-foreground">{row.managerName}</div>}
+                    </td>
                     <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">{row.wins}</td>
                     <td className="text-center py-2 px-2 text-yellow-600 dark:text-yellow-400 font-semibold">{row.ties}</td>
                     <td className="text-center py-2 px-2 text-red-600 dark:text-red-400 font-semibold">{row.losses}</td>

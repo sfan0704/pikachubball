@@ -98,6 +98,7 @@ export const categoryStatsSchema = z.object({
 export const teamRankingSchema = z.object({
   teamKey: z.string(),
   teamName: z.string(),
+  managerName: z.string().optional(),
   stats: categoryStatsSchema,
   categoryRanks: categoryStatsSchema,
   totalRank: z.number(),

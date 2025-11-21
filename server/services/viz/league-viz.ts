@@ -7,6 +7,7 @@ export type CategoryKey = typeof CATEGORIES[number];
 export interface TeamStats {
   teamKey: string;
   teamName: string;
+  managerName?: string;
   stats: Record<CategoryKey, number>;
   fgMakes?: number;
   fgAttempts?: number;
@@ -170,6 +171,17 @@ async function extractTeamStats(
       const teamProperties = teamData[0];
       const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
       const teamNameObj = teamProperties.find((prop: any) => prop.name);
+      const managersObj = teamProperties.find((prop: any) => prop.managers);
+      
+      // Extract manager name from nested managers array
+      let managerName: string | undefined;
+      if (managersObj?.managers && Array.isArray(managersObj.managers)) {
+        const manager = managersObj.managers[0]?.manager;
+        if (manager && Array.isArray(manager)) {
+          const managerNameProp = manager.find((prop: any) => prop.nickname);
+          managerName = managerNameProp?.nickname;
+        }
+      }
       
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
@@ -205,6 +217,7 @@ async function extractTeamStats(
         teamStats.push({
           teamKey: teamKeyObj?.team_key,
           teamName: teamNameObj?.name,
+          managerName,
           stats: {
             fgPct: parseFloat(statMap['5'] || '0'),
             ftPct: parseFloat(statMap['8'] || '0'),
