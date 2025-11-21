@@ -118,13 +118,28 @@ export async function getMatchupComparison(
       winning = myValue > oppValue;
     }
     
-    return {
+    const comparison: CategoryComparison = {
       category: cat,
       myTeam: myValue,
       opponent: oppValue,
       difference,
       winning
     };
+    
+    // Add makes/attempts for FG and FT
+    if (cat === 'fgPct') {
+      comparison.myTeamMakes = myTeamStats.fgMakes;
+      comparison.myTeamAttempts = myTeamStats.fgAttempts;
+      comparison.opponentMakes = opponentStats.fgMakes;
+      comparison.opponentAttempts = opponentStats.fgAttempts;
+    } else if (cat === 'ftPct') {
+      comparison.myTeamMakes = myTeamStats.ftMakes;
+      comparison.myTeamAttempts = myTeamStats.ftAttempts;
+      comparison.opponentMakes = opponentStats.ftMakes;
+      comparison.opponentAttempts = opponentStats.ftAttempts;
+    }
+    
+    return comparison;
   });
 
   let wins = 0;

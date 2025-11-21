@@ -156,6 +156,10 @@ export const categoryComparisonSchema = z.object({
   opponent: z.number(),
   difference: z.number(),
   winning: z.boolean(),
+  myTeamMakes: z.number().optional(),
+  myTeamAttempts: z.number().optional(),
+  opponentMakes: z.number().optional(),
+  opponentAttempts: z.number().optional(),
 });
 
 export const matchupComparisonResponseSchema = z.object({
