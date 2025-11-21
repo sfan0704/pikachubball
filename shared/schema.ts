@@ -102,6 +102,8 @@ export const teamRankingSchema = z.object({
   stats: categoryStatsSchema,
   categoryRanks: categoryStatsSchema,
   totalRank: z.number(),
+  gamesPlayed: z.number().optional(),
+  gamesRemaining: z.number().optional(),
 });
 
 export const rankingsMetadataSchema = z.object({

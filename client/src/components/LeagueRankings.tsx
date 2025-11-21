@@ -257,11 +257,12 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey }: Leag
                           {team.teamName}
                           {isUserTeam && <span className="ml-1 text-primary">★</span>}
                         </span>
-                        {team.managerName && (
-                          <span className="text-xs text-muted-foreground font-normal line-clamp-1">
-                            {team.managerName}
-                          </span>
-                        )}
+                        <div className="text-xs text-muted-foreground font-normal">
+                          {team.managerName && <span className="line-clamp-1">{team.managerName}</span>}
+                          {team.gamesPlayed !== undefined && team.gamesRemaining !== undefined && (
+                            <span className="block">{team.gamesPlayed}/{team.gamesPlayed + team.gamesRemaining} GP</span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className={`text-center ${showStats ? getStatGradientColor('fgPct', team.stats.fgPct, rankings) : getRankColor(team.categoryRanks.fgPct, rankings.length)}`}>

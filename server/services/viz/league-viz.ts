@@ -13,6 +13,8 @@ export interface TeamStats {
   fgAttempts?: number;
   ftMakes?: number;
   ftAttempts?: number;
+  gamesPlayed?: number;
+  gamesRemaining?: number;
 }
 
 export async function getLeagueRankings(
@@ -182,6 +184,12 @@ async function extractTeamStats(
         }
       }
       
+      // Extract games played and remaining
+      const gamesPlayedObj = teamProperties.find((prop: any) => prop.games_played);
+      const gamesRemainingObj = teamProperties.find((prop: any) => prop.league_games_back);
+      let gamesPlayed = gamesPlayedObj?.games_played ? parseInt(gamesPlayedObj.games_played) : undefined;
+      let gamesRemaining = gamesRemainingObj?.league_games_back ? parseInt(gamesRemainingObj.league_games_back) : undefined;
+      
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
         const stats = statsData.stats;
@@ -232,6 +240,8 @@ async function extractTeamStats(
           fgAttempts,
           ftMakes,
           ftAttempts,
+          gamesPlayed,
+          gamesRemaining,
         });
       }
     }
