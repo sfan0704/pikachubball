@@ -37,52 +37,9 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
-      // Extract games data from matchup - Yahoo stores this in coverage object
-      // Coverage can be at different nesting levels depending on API response structure
-      let coverage = matchup['0']?.coverage;
-      
-      // Handle if coverage is an array (Yahoo sometimes returns arrays)
-      if (Array.isArray(coverage) && coverage.length > 0) {
-        coverage = coverage[0];
-      }
-      
-      // Handle if coverage is keyed by string indices like Yahoo's other objects
-      if (coverage && typeof coverage === 'object' && !Array.isArray(coverage) && !('coverage_type' in coverage)) {
-        // Check if it's a Yahoo-style numbered object: {'0': {...}, '1': {...}, count: 2}
-        if ('0' in coverage) {
-          coverage = coverage['0'];
-        }
-      }
-      
-      // Extract from coverage object
-      if (coverage) {
-        // Try different field name patterns Yahoo might use
-        const gamesPlayedValue = coverage.games_played ?? coverage.gamesPlayed ?? coverage.games_matched;
-        const gamesRemainingValue = coverage.games_remaining ?? coverage.gamesRemaining ?? coverage.games_unmatched;
-        
-        if (gamesPlayedValue !== undefined && gamesPlayedValue !== null) {
-          matchupGamesPlayed = parseInt(gamesPlayedValue) || undefined;
-        }
-        if (gamesRemainingValue !== undefined && gamesRemainingValue !== null) {
-          matchupGamesRemaining = parseInt(gamesRemainingValue) || undefined;
-        }
-      }
-      
-      // Fallback: check matchup_stats
-      if (!matchupGamesPlayed || !matchupGamesRemaining) {
-        const matchupStats = matchup['0']?.matchup_stats;
-        if (matchupStats) {
-          const gamesPlayedValue = matchupStats.games_played ?? matchupStats.gamesPlayed;
-          const gamesRemainingValue = matchupStats.games_remaining ?? matchupStats.gamesRemaining;
-          
-          if (gamesPlayedValue !== undefined) {
-            matchupGamesPlayed = parseInt(gamesPlayedValue) || matchupGamesPlayed;
-          }
-          if (gamesRemainingValue !== undefined) {
-            matchupGamesRemaining = parseInt(gamesRemainingValue) || matchupGamesRemaining;
-          }
-        }
-      }
+      // TODO: Extract games data from matchup - need to inspect actual API response structure
+      // Games data should be somewhere in matchup['0'], but field names and nesting are unknown
+      // For now, games data will be undefined and won't display
       
       const teams = matchup['0'].teams;
       
