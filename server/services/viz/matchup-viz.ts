@@ -37,18 +37,18 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
-      // Debug: Log matchup structure for first matchup
-      if (i === 0) {
-        console.log('Matchup structure keys:', Object.keys(matchup['0']));
-        console.log('Full matchup[0]:', JSON.stringify(matchup['0'], null, 2).substring(0, 500));
+      // Extract games played/remaining from matchup metadata
+      // Note: Yahoo returns these as numbers in the matchup object
+      if (matchup['0']?.games_played !== undefined && matchup['0']?.games_played !== null) {
+        matchupGamesPlayed = parseInt(matchup['0'].games_played) || undefined;
+      }
+      if (matchup['0']?.games_remaining !== undefined && matchup['0']?.games_remaining !== null) {
+        matchupGamesRemaining = parseInt(matchup['0'].games_remaining) || undefined;
       }
       
-      // Extract games played/remaining from matchup metadata
-      if (matchup['0'].games_played !== undefined) {
-        matchupGamesPlayed = matchup['0'].games_played;
-      }
-      if (matchup['0'].games_remaining !== undefined) {
-        matchupGamesRemaining = matchup['0'].games_remaining;
+      // Debug log
+      if (i === 0 && (matchupGamesPlayed !== undefined || matchupGamesRemaining !== undefined)) {
+        console.log('Games data extracted:', { matchupGamesPlayed, matchupGamesRemaining });
       }
       
       const teams = matchup['0'].teams;
