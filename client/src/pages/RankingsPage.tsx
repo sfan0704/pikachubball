@@ -172,25 +172,56 @@ export default function RankingsPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Select League</CardTitle>
+                <CardTitle>Select League & Time Period</CardTitle>
               </CardHeader>
               <CardContent>
-                <Select value={selectedLeagueKey} onValueChange={setSelectedLeagueKey}>
-                  <SelectTrigger data-testid="select-league">
-                    <SelectValue placeholder="Choose a league to view rankings" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leagues.map((league) => (
-                      <SelectItem
-                        key={league.leagueKey}
-                        value={league.leagueKey}
-                        data-testid={`option-league-${league.leagueKey}`}
+                <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                  <div className="flex-1">
+                    <label htmlFor="league-select" className="text-xs md:text-sm font-medium mb-2 block">
+                      League
+                    </label>
+                    <Select value={selectedLeagueKey} onValueChange={setSelectedLeagueKey}>
+                      <SelectTrigger id="league-select" data-testid="select-league">
+                        <SelectValue placeholder="Choose a league to view rankings" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {leagues.map((league) => (
+                          <SelectItem
+                            key={league.leagueKey}
+                            value={league.leagueKey}
+                            data-testid={`option-league-${league.leagueKey}`}
+                          >
+                            {league.leagueName} - {league.teamName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {metadata && (
+                    <div className="flex-1">
+                      <label htmlFor="week-select" className="text-xs md:text-sm font-medium mb-2 block">
+                        Time Period
+                      </label>
+                      <Select 
+                        value={selectedWeek?.toString() || "season"} 
+                        onValueChange={(value) => handleWeekChange(value === "season" ? null : parseInt(value))}
                       >
-                        {league.leagueName} - {league.teamName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        <SelectTrigger id="week-select" data-testid="select-week">
+                          <SelectValue placeholder="Select week" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
+                          {Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
+                            <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
+                              Week {week}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
