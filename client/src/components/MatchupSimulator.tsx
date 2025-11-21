@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,14 @@ interface MatchupSimulatorProps {
   userTeamKey: string;
   week: number | null;
   rankings: RankingsResponse['rankings'];
+}
+
+interface MatchupRow {
+  teamKey: string;
+  teamName: string;
+  wins: number;
+  losses: number;
+  ties: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -29,32 +37,45 @@ type SimulatorMode = "myTeam" | "anyTeams";
 
 export default function MatchupSimulator({ leagueKey, userTeamKey, week, rankings }: MatchupSimulatorProps) {
   const [mode, setMode] = useState<SimulatorMode>("myTeam");
-  const [selectedOpponent, setSelectedOpponent] = useState<string>("");
   const [selectedTeam1, setSelectedTeam1] = useState<string>("");
   const [selectedTeam2, setSelectedTeam2] = useState<string>("");
 
-  // Build the appropriate query URL
-  let matchupUrl: string | null = null;
+  // Fetch all matchups for myTeam mode
+  const opponentTeams = rankings.filter(r => r.teamKey !== userTeamKey);
   
-  if (mode === "myTeam" && selectedOpponent) {
-    const params = new URLSearchParams();
-    params.append("opponentTeamKey", selectedOpponent);
-    if (week) params.append("week", week.toString());
-    matchupUrl = `/api/viz/matchup/${leagueKey}/${userTeamKey}?${params.toString()}`;
-  } else if (mode === "anyTeams" && selectedTeam1 && selectedTeam2) {
+  const matchupQueries = useQueries({
+    queries: mode === "myTeam" ? opponentTeams.map(opponent => {
+      const params = new URLSearchParams();
+      params.append("opponentTeamKey", opponent.teamKey);
+      if (week) params.append("week", week.toString());
+      return {
+        queryKey: [`/api/viz/matchup/${leagueKey}/${userTeamKey}`, opponent.teamKey],
+        queryFn: async () => {
+          const response = await fetch(`/api/viz/matchup/${leagueKey}/${userTeamKey}?${params.toString()}`);
+          if (!response.ok) throw new Error('Failed to fetch matchup');
+          return response.json() as Promise<MatchupComparisonResponse>;
+        },
+        retry: false,
+      };
+    }) : [],
+  });
+
+  // For Compare Any Teams mode
+  let detailMatchupUrl: string | null = null;
+  if (mode === "anyTeams" && selectedTeam1 && selectedTeam2) {
     const params = new URLSearchParams();
     params.append("opponentTeamKey", selectedTeam2);
     if (week) params.append("week", week.toString());
-    matchupUrl = `/api/viz/matchup/${leagueKey}/${selectedTeam1}?${params.toString()}`;
+    detailMatchupUrl = `/api/viz/matchup/${leagueKey}/${selectedTeam1}?${params.toString()}`;
   }
 
-  const { data: matchupData, isLoading, error } = useQuery<MatchupComparisonResponse>({
-    queryKey: [matchupUrl],
-    enabled: !!matchupUrl,
+  const { data: detailMatchupData, isLoading: detailIsLoading, error: detailError } = useQuery<MatchupComparisonResponse>({
+    queryKey: [detailMatchupUrl],
+    enabled: !!detailMatchupUrl,
     retry: false,
   });
 
-  const chartData = matchupData?.categories.map(cat => {
+  const chartData = detailMatchupData?.categories.map(cat => {
     const isPct = cat.category === 'fgPct' || cat.category === 'ftPct';
     return {
       category: CATEGORY_LABELS[cat.category] || cat.category,
@@ -65,6 +86,24 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
     };
   }) || [];
 
+  // Build rows for Simulate My Team table
+  const matchupRows: MatchupRow[] = matchupQueries
+    .map((query, index) => {
+      const opponentTeam = opponentTeams[index];
+      if (!query.data) return null;
+      return {
+        teamKey: opponentTeam.teamKey,
+        teamName: opponentTeam.teamName,
+        wins: query.data.score.wins,
+        losses: query.data.score.losses,
+        ties: query.data.score.ties,
+      };
+    })
+    .filter((row): row is MatchupRow => row !== null);
+
+  const isLoadingMatchups = matchupQueries.some(q => q.isLoading);
+  const matchupError = matchupQueries.some(q => q.error);
+
   return (
     <div className="space-y-4">
       <Card>
@@ -72,7 +111,7 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
           <CardTitle>Matchup Simulator</CardTitle>
           <CardDescription>
             {mode === "myTeam" 
-              ? "See how your team would fare against any team in the league"
+              ? "See how your team would fare against all teams in the league"
               : "Compare any two teams in the league head-to-head"}
           </CardDescription>
         </CardHeader>
@@ -83,7 +122,6 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
               variant={mode === "myTeam" ? "default" : "outline"}
               onClick={() => {
                 setMode("myTeam");
-                setSelectedOpponent("");
                 setSelectedTeam1("");
                 setSelectedTeam2("");
               }}
@@ -95,7 +133,6 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
               variant={mode === "anyTeams" ? "default" : "outline"}
               onClick={() => {
                 setMode("anyTeams");
-                setSelectedOpponent("");
                 setSelectedTeam1("");
                 setSelectedTeam2("");
               }}
@@ -105,30 +142,8 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
             </Button>
           </div>
 
-          {/* Mode-specific selectors */}
-          {mode === "myTeam" ? (
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Choose an opponent</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                {rankings
-                  .filter(r => r.teamKey !== userTeamKey)
-                  .map(team => (
-                    <button
-                      key={team.teamKey}
-                      onClick={() => setSelectedOpponent(team.teamKey)}
-                      data-testid={`button-opponent-${team.teamKey}`}
-                      className={`p-3 rounded-md border transition-colors text-sm font-medium ${
-                        selectedOpponent === team.teamKey
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-card border-border hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    >
-                      {team.teamName}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          ) : (
+          {/* Compare Any Teams mode - selectors */}
+          {mode === "anyTeams" && (
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium">Select First Team</label>
@@ -175,92 +190,118 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
         </CardContent>
       </Card>
 
-      {/* Results */}
-      {isLoading && (
-        <div className="text-center py-12 text-muted-foreground">
-          Loading comparison...
-        </div>
-      )}
-
-      {error && (
-        <Card>
-          <CardContent className="py-12">
-            <p className="text-center text-destructive">
-              Failed to load matchup data
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {matchupData && (
-        <Card data-testid="card-simulator-results">
-          <CardHeader>
-            <CardTitle>Comparison Results</CardTitle>
-            <CardDescription>
-              {matchupData.myTeam.teamName} vs {matchupData.opponent.teamName}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* W/L/T Score */}
-            <div className="flex justify-center gap-8 text-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {matchupData.score.wins}
-                </div>
-                <div className="text-muted-foreground">Wins</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {matchupData.score.ties}
-                </div>
-                <div className="text-muted-foreground">Ties</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {matchupData.score.losses}
-                </div>
-                <div className="text-muted-foreground">Losses</div>
-              </div>
+      {/* Simulate My Team - Table Results */}
+      {mode === "myTeam" && (
+        <>
+          {isLoadingMatchups && (
+            <div className="text-center py-12 text-muted-foreground">
+              Loading all matchups...
             </div>
+          )}
 
-            {mode === "myTeam" ? (
-              /* Table for Simulate My Team mode */
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-2 font-semibold">Category</th>
-                      <th className="text-right py-2 px-2 font-semibold">{matchupData.myTeam.teamName}</th>
-                      <th className="text-right py-2 px-2 font-semibold">{matchupData.opponent.teamName}</th>
-                      <th className="text-center py-2 px-2 font-semibold">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {matchupData.categories.map(cat => (
-                      <tr key={cat.category} className="border-b hover:bg-accent/50">
-                        <td className="py-2 px-2 font-medium">{CATEGORY_LABELS[cat.category]}</td>
-                        <td className="text-right py-2 px-2">{cat.myTeam.toFixed(1)}</td>
-                        <td className="text-right py-2 px-2">{cat.opponent.toFixed(1)}</td>
-                        <td className={`text-center py-2 px-2 font-semibold ${cat.winning ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                          {cat.winning ? '✓' : '✗'}
-                        </td>
+          {matchupError && (
+            <Card>
+              <CardContent className="py-12">
+                <p className="text-center text-destructive">
+                  Failed to load some matchup data
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {matchupRows.length > 0 && (
+            <Card data-testid="card-simulator-results">
+              <CardHeader>
+                <CardTitle>Your Matchups Against All Teams</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2 font-semibold">Team</th>
+                        <th className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400">Wins</th>
+                        <th className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400">Ties</th>
+                        <th className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400">Losses</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              /* Chart for Compare Any Teams mode */
-              <>
+                    </thead>
+                    <tbody>
+                      {matchupRows.map(row => (
+                        <tr key={row.teamKey} className="border-b hover:bg-accent/50">
+                          <td className="py-2 px-2 font-medium">{row.teamName}</td>
+                          <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">{row.wins}</td>
+                          <td className="text-center py-2 px-2 text-yellow-600 dark:text-yellow-400 font-semibold">{row.ties}</td>
+                          <td className="text-center py-2 px-2 text-red-600 dark:text-red-400 font-semibold">{row.losses}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* Compare Any Teams - Chart Results */}
+      {mode === "anyTeams" && (
+        <>
+          {detailIsLoading && (
+            <div className="text-center py-12 text-muted-foreground">
+              Loading comparison...
+            </div>
+          )}
+
+          {detailError && (
+            <Card>
+              <CardContent className="py-12">
+                <p className="text-center text-destructive">
+                  Failed to load matchup data
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {detailMatchupData && (
+            <Card data-testid="card-simulator-results">
+              <CardHeader>
+                <CardTitle>Comparison Results</CardTitle>
+                <CardDescription>
+                  {detailMatchupData.myTeam.teamName} vs {detailMatchupData.opponent.teamName}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* W/L/T Score */}
+                <div className="flex justify-center gap-8 text-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {detailMatchupData.score.wins}
+                    </div>
+                    <div className="text-muted-foreground">Wins</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {detailMatchupData.score.ties}
+                    </div>
+                    <div className="text-muted-foreground">Ties</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      {detailMatchupData.score.losses}
+                    </div>
+                    <div className="text-muted-foreground">Losses</div>
+                  </div>
+                </div>
+
                 {/* Legend */}
                 <div className="flex items-center justify-center gap-4 mb-2 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }}></div>
-                    <span>{matchupData.myTeam.teamName}</span>
+                    <span>{detailMatchupData.myTeam.teamName}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-2))' }}></div>
-                    <span>{matchupData.opponent.teamName}</span>
+                    <span>{detailMatchupData.opponent.teamName}</span>
                   </div>
                 </div>
 
@@ -281,10 +322,10 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
                               <p className="font-semibold mb-2">{data.category}</p>
                               <div className="space-y-1">
                                 <p className="text-sm" style={{ color: 'hsl(var(--chart-1))' }}>
-                                  {matchupData.myTeam.teamName}: {data.isPct ? `${team1Value.toFixed(1)}%` : team1Value}
+                                  {detailMatchupData.myTeam.teamName}: {data.isPct ? `${team1Value.toFixed(1)}%` : team1Value}
                                 </p>
                                 <p className="text-sm" style={{ color: 'hsl(var(--chart-2))' }}>
-                                  {matchupData.opponent.teamName}: {data.isPct ? `${team2Value.toFixed(1)}%` : team2Value}
+                                  {detailMatchupData.opponent.teamName}: {data.isPct ? `${team2Value.toFixed(1)}%` : team2Value}
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-1">
                                   {data.winning ? '✓ Winning' : '✗ Losing'}
@@ -305,7 +346,7 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
                 <div>
                   <h4 className="font-semibold mb-2 text-sm">Category Breakdown:</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                    {matchupData.categories.map(cat => (
+                    {detailMatchupData.categories.map(cat => (
                       <div 
                         key={cat.category} 
                         className={`p-2 rounded border ${cat.winning ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}
@@ -320,10 +361,10 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
                     ))}
                   </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );
