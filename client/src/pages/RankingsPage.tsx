@@ -3,13 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeagueRankings from "@/components/LeagueRankings";
-import HeatmapTab from "@/components/HeatmapTab";
 import MatchupTab from "@/components/MatchupTab";
 import ScheduleTab from "@/components/ScheduleTab";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useSearch } from "wouter";
-import { LogOut, MessageSquare, BarChart3, Flame, Calendar } from "lucide-react";
+import { LogOut, MessageSquare, BarChart3, Calendar } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useChat } from "@/lib/chat-context";
 import { useToast } from "@/hooks/use-toast";
@@ -188,14 +187,10 @@ export default function RankingsPage() {
 
             {selectedLeagueKey ? (
               <Tabs defaultValue="rankings" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4" data-testid="tabs-visualizations">
+                <TabsList className="grid w-full grid-cols-3" data-testid="tabs-visualizations">
                   <TabsTrigger value="rankings" data-testid="tab-rankings" className="gap-2">
                     <BarChart3 className="h-4 w-4" />
                     <span>Rankings</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="heatmap" data-testid="tab-heatmap" className="gap-2">
-                    <Flame className="h-4 w-4" />
-                    <span>Heatmap</span>
                   </TabsTrigger>
                   <TabsTrigger value="matchup" data-testid="tab-matchup" className="gap-2">
                     <BarChart3 className="h-4 w-4" />
@@ -227,10 +222,6 @@ export default function RankingsPage() {
                       </CardContent>
                     </Card>
                   )}
-                </TabsContent>
-
-                <TabsContent value="heatmap">
-                  <HeatmapTab leagueKey={selectedLeagueKey} week={selectedWeek} />
                 </TabsContent>
 
                 <TabsContent value="matchup">
