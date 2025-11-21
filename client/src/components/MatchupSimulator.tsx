@@ -131,9 +131,43 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
       </Card>
 
       {isLoading && (
-        <div className="text-center py-12 text-muted-foreground">
-          Loading matchups...
-        </div>
+        <Card data-testid="card-simulator-loading">
+          <CardHeader>
+            <CardTitle>{selectedTeamName}'s Matchups Against All Teams</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-2 font-semibold">Team</th>
+                    <th className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400">Wins</th>
+                    <th className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400">Ties</th>
+                    <th className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400">Losses</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...Array(5)].map((_, i) => (
+                    <tr key={i} className="border-b">
+                      <td className="py-2 px-2">
+                        <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
+                      </td>
+                      <td className="text-center py-2 px-2">
+                        <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
+                      </td>
+                      <td className="text-center py-2 px-2">
+                        <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
+                      </td>
+                      <td className="text-center py-2 px-2">
+                        <div className="h-4 bg-muted rounded animate-pulse w-8 mx-auto"></div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {hasError && (
