@@ -65,7 +65,13 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
 
   const { myTeam, opponent, categories, score, metadata } = matchupData;
 
-  const formatValue = (value: number, category: string) => {
+  const formatValue = (value: number, category: string, cat?: any) => {
+    if (category === 'fgPct' && cat?.myTeamMakes !== undefined) {
+      return `${cat.myTeamMakes}/${cat.myTeamAttempts} (${(value * 100).toFixed(1)}%)`;
+    }
+    if (category === 'ftPct' && cat?.myTeamMakes !== undefined) {
+      return `${cat.myTeamMakes}/${cat.myTeamAttempts} (${(value * 100).toFixed(1)}%)`;
+    }
     const isPct = category === 'fgPct' || category === 'ftPct';
     return isPct ? `${(value * 100).toFixed(1)}%` : Math.round(value).toString();
   };
