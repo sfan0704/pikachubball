@@ -25,14 +25,12 @@ interface LeagueRankingsProps {
   rankings: TeamRanking[];
   metadata: RankingsMetadata;
   userTeamKey?: string;
-  selectedWeek: number | null;
-  onWeekChange: (week: number | null) => void;
 }
 
 type SortKey = 'fgPct' | 'ftPct' | 'tpm' | 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'to' | 'totalRank';
 type SortDirection = 'asc' | 'desc';
 
-export default function LeagueRankings({ rankings, metadata, userTeamKey, selectedWeek, onWeekChange }: LeagueRankingsProps) {
+export default function LeagueRankings({ rankings, metadata, userTeamKey }: LeagueRankingsProps) {
   const [showStats, setShowStats] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('totalRank');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -147,9 +145,7 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey, select
                 9-Cat Master Rankings
               </CardTitle>
               <p className="text-xs md:text-sm text-muted-foreground">
-                {selectedWeek 
-                  ? `Week ${selectedWeek} comparison` 
-                  : "Season totals - Teams ranked by average position across all 9 categories"}
+                Teams ranked by average position across all 9 categories
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -163,28 +159,6 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey, select
                 {showStats ? "Actual Stats" : "Rankings"}
               </Label>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Label htmlFor="week-select" className="text-xs md:text-sm whitespace-nowrap">
-              Time Period:
-            </Label>
-            <Select 
-              value={selectedWeek?.toString() || "season"} 
-              onValueChange={(value) => onWeekChange(value === "season" ? null : parseInt(value))}
-            >
-              <SelectTrigger id="week-select" className="w-full md:w-[200px]" data-testid="select-week">
-                <SelectValue placeholder="Select week" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
-                {Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
-                  <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
-                    Week {week}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </CardHeader>

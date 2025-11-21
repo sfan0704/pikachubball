@@ -198,7 +198,7 @@ export default function RankingsPage() {
                     </Select>
                   </div>
                   
-                  {metadata && (
+                  {selectedLeagueKey && (
                     <div className="flex-1">
                       <label htmlFor="week-select" className="text-xs md:text-sm font-medium mb-2 block">
                         Time Period
@@ -206,13 +206,14 @@ export default function RankingsPage() {
                       <Select 
                         value={selectedWeek?.toString() || "season"} 
                         onValueChange={(value) => handleWeekChange(value === "season" ? null : parseInt(value))}
+                        disabled={isLoadingRankings}
                       >
                         <SelectTrigger id="week-select" data-testid="select-week">
                           <SelectValue placeholder="Select week" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
-                          {Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
+                          {metadata && Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
                             <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
                               Week {week}
                             </SelectItem>
@@ -254,8 +255,6 @@ export default function RankingsPage() {
                       rankings={rankings} 
                       metadata={metadata}
                       userTeamKey={selectedLeague.teamKey}
-                      selectedWeek={selectedWeek}
-                      onWeekChange={handleWeekChange}
                     />
                   ) : (
                     <Card>
