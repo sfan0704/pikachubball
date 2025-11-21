@@ -184,16 +184,8 @@ async function extractTeamStats(
         }
       }
       
-      // Extract games played and remaining
-      const allKeys = Object.keys(teamProperties.reduce((acc: any, prop: any) => ({ ...acc, ...prop }), {}));
-      console.log('Team:', teamNameObj?.name, 'All Keys:', allKeys);
-      
-      const gamesPlayedObj = teamProperties.find((prop: any) => prop.games_played);
-      const gamesRemainingObj = teamProperties.find((prop: any) => prop.league_games_back);
-      console.log('GamesPlayedObj:', gamesPlayedObj, 'GamesRemainingObj:', gamesRemainingObj);
-      
-      let gamesPlayed = gamesPlayedObj?.games_played ? parseInt(gamesPlayedObj.games_played) : undefined;
-      let gamesRemaining = gamesRemainingObj?.league_games_back ? parseInt(gamesRemainingObj.league_games_back) : undefined;
+      let gamesPlayed: number | undefined;
+      let gamesRemaining: number | undefined;
       
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
@@ -224,6 +216,19 @@ async function extractTeamStats(
           const ftParts = statMap['9007006'].split('/');
           ftMakes = parseInt(ftParts[0]) || 0;
           ftAttempts = parseInt(ftParts[1]) || 0;
+        }
+        
+        // Try to extract games played (stat_id 9004002 or check standings data)
+        if (statMap['9004002']) {
+          gamesPlayed = parseInt(statMap['9004002']);
+        }
+        
+        // Calculate games remaining from league settings if available
+        const settings = await dataSource.getLeagueSettings(leagueKey);
+        const leagueData = settings?.fantasy_content?.league?.[0];
+        const totalGames = parseInt(leagueData?.game_type === 'full' ? leagueData?.end_week || '22' : leagueData?.end_week || '22');
+        if (gamesPlayed !== undefined && totalGames) {
+          gamesRemaining = (totalGames - (gamesPlayed || 0));
         }
         
         teamStats.push({
