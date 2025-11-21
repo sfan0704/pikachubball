@@ -100,42 +100,34 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Matchup Simulator</CardTitle>
-          <CardDescription>
-            See how any team would fare against all teams in the league
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Select Team</label>
-            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-              <SelectTrigger data-testid="select-simulator-team">
-                <SelectValue placeholder="Choose a team" />
-              </SelectTrigger>
-              <SelectContent>
-                {rankings.map(team => (
-                  <SelectItem 
-                    key={team.teamKey} 
-                    value={team.teamKey}
-                    data-testid={`option-simulator-team-${team.teamKey}`}
-                  >
-                    {team.teamName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
       {isLoading && (
         <Card data-testid="card-simulator-loading">
           <CardHeader>
-            <CardTitle>{selectedTeamName}'s Matchups Against All Teams</CardTitle>
+            <CardTitle>Matchup Simulator</CardTitle>
+            <CardDescription>
+              See how any team would fare against all teams in the league
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Select Team</label>
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                <SelectTrigger data-testid="select-simulator-team">
+                  <SelectValue placeholder="Choose a team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rankings.map(team => (
+                    <SelectItem 
+                      key={team.teamKey} 
+                      value={team.teamKey}
+                      data-testid={`option-simulator-team-${team.teamKey}`}
+                    >
+                      {team.teamName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -183,9 +175,31 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
       {matchupRows.length > 0 && (
         <Card data-testid="card-simulator-results">
           <CardHeader>
-            <CardTitle>{selectedTeamName}'s Matchups Against All Teams</CardTitle>
+            <CardTitle>Matchup Simulator</CardTitle>
+            <CardDescription>
+              See how any team would fare against all teams in the league
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Select Team</label>
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                <SelectTrigger data-testid="select-simulator-team">
+                  <SelectValue placeholder="Choose a team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rankings.map(team => (
+                    <SelectItem 
+                      key={team.teamKey} 
+                      value={team.teamKey}
+                      data-testid={`option-simulator-team-${team.teamKey}`}
+                    >
+                      {team.teamName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
