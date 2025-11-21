@@ -34,19 +34,19 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
   const [selectedTeam2, setSelectedTeam2] = useState<string>("");
 
   // Build the appropriate query URL
-  const team1Key = mode === "myTeam" ? userTeamKey : selectedTeam1;
-  const team2Key = mode === "myTeam" ? selectedOpponent : selectedTeam2;
-
-  const matchupUrl = 
-    mode === "myTeam" && selectedOpponent
-      ? week 
-        ? `/api/viz/matchup/${leagueKey}/${team1Key}/${team2Key}?week=${week}`
-        : `/api/viz/matchup/${leagueKey}/${team1Key}/${team2Key}`
-      : mode === "anyTeams" && selectedTeam1 && selectedTeam2
-      ? week
-        ? `/api/viz/matchup/${leagueKey}/${team1Key}/${team2Key}?week=${week}`
-        : `/api/viz/matchup/${leagueKey}/${team1Key}/${team2Key}`
-      : null;
+  let matchupUrl: string | null = null;
+  
+  if (mode === "myTeam" && selectedOpponent) {
+    const params = new URLSearchParams();
+    params.append("opponentTeamKey", selectedOpponent);
+    if (week) params.append("week", week.toString());
+    matchupUrl = `/api/viz/matchup/${leagueKey}/${userTeamKey}?${params.toString()}`;
+  } else if (mode === "anyTeams" && selectedTeam1 && selectedTeam2) {
+    const params = new URLSearchParams();
+    params.append("opponentTeamKey", selectedTeam2);
+    if (week) params.append("week", week.toString());
+    matchupUrl = `/api/viz/matchup/${leagueKey}/${selectedTeam1}?${params.toString()}`;
+  }
 
   const { data: matchupData, isLoading, error } = useQuery<MatchupComparisonResponse>({
     queryKey: [matchupUrl],

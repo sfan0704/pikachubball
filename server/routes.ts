@@ -543,6 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { leagueKey, teamKey } = req.params;
       const weekParam = req.query.week;
+      const opponentTeamKeyParam = req.query.opponentTeamKey as string | undefined;
       let week: number | undefined;
       
       if (!leagueKey || !teamKey) {
@@ -571,7 +572,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
 
       const dataSource = new YahooMCPDataSource(mcpClient);
-      const response = await getMatchupComparison(dataSource, leagueKey, teamKey, week);
+      // Use opponentTeamKey if provided (matchup simulator), otherwise use actual opponent for the week
+      const effectiveOpponentTeamKey = opponentTeamKeyParam || undefined;
+      const response = await getMatchupComparison(dataSource, leagueKey, teamKey, week, effectiveOpponentTeamKey);
 
       res.json(response);
     } catch (error: any) {
