@@ -22,8 +22,9 @@ export async function getMatchupComparison(
 
   let myTeam: any = null;
   let opponent: any = null;
-  let matchupGamesPlayed: number | undefined;
-  let matchupGamesRemaining: number | undefined;
+  // TODO: Games data extraction - commented out pending NBA API integration
+  // let matchupGamesPlayed: number | undefined;
+  // let matchupGamesRemaining: number | undefined;
 
   // Get scoreboard to find teams
   const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, effectiveWeek);
@@ -37,22 +38,22 @@ export async function getMatchupComparison(
   for (let i = 0; i < matchups.count; i++) {
     const matchup = matchups[i.toString()]?.matchup;
     if (matchup && matchup['0']?.teams) {
-      // DEBUG: Log the full matchup[0] structure to find games_played/remaining
-      if (i === 0) {
-        console.log('\n===== MATCHUP[0] DEBUG =====');
-        console.log('All keys:', Object.keys(matchup['0']));
-        
-        // Check each key to find games data
-        for (const key of Object.keys(matchup['0'])) {
-          const value = matchup['0'][key];
-          if (typeof value === 'number' || typeof value === 'string') {
-            console.log(`${key}: ${value}`);
-          } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-            console.log(`${key}: ${JSON.stringify(value).substring(0, 200)}`);
-          }
-        }
-        console.log('===== END DEBUG =====\n');
-      }
+      // TODO: DEBUG logging for games_played/remaining - commented out pending NBA API integration
+      // if (i === 0) {
+      //   console.log('\n===== MATCHUP[0] DEBUG =====');
+      //   console.log('All keys:', Object.keys(matchup['0']));
+      //   
+      //   // Check each key to find games data
+      //   for (const key of Object.keys(matchup['0'])) {
+      //     const value = matchup['0'][key];
+      //     if (typeof value === 'number' || typeof value === 'string') {
+      //       console.log(`${key}: ${value}`);
+      //     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      //       console.log(`${key}: ${JSON.stringify(value).substring(0, 200)}`);
+      //     }
+      //   }
+      //   console.log('===== END DEBUG =====\n');
+      // }
       
       const teams = matchup['0'].teams;
       
@@ -191,8 +192,8 @@ export async function getMatchupComparison(
       week: effectiveWeek,
       currentWeek,
       totalWeeks: endWeek,
-      gamesPlayed: matchupGamesPlayed,
-      gamesRemaining: matchupGamesRemaining
+      // gamesPlayed: matchupGamesPlayed,
+      // gamesRemaining: matchupGamesRemaining
     }
   };
 }

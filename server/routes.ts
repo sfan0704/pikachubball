@@ -486,43 +486,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DEBUG: Test matchup endpoint to see API structure (remove after debugging)
-  app.get("/api/debug/test-matchup", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      const { leagueKey, teamKey, week } = req.query;
-      
-      if (!leagueKey || !teamKey) {
-        return res.status(400).json({ error: "leagueKey and teamKey required as query params" });
-      }
-
-      const token = await storage.getYahooToken(userId);
-      if (!token) {
-        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
-      }
-
-      const accessToken = await getValidAccessToken(userId);
-      if (!accessToken) {
-        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
-      }
-
-      const mcpClient = await getMCPClient();
-      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
-
-      const dataSource = new YahooMCPDataSource(mcpClient);
-      const effectiveWeek = week ? parseInt(week as string) : undefined;
-      const response = await getMatchupComparison(dataSource, leagueKey as string, teamKey as string, effectiveWeek);
-
-      res.json({ debug: true, data: response });
-    } catch (error: any) {
-      console.error('Debug matchup error:', error);
-      res.status(500).json({ error: error.message || 'Failed to fetch matchup' });
-    }
-  });
+  // TODO: DEBUG endpoint - commented out pending removal
+  // app.get("/api/debug/test-matchup", requireAuth, async (req: Request, res: Response) => {
+  //   try {
+  //     const userId = getAuthenticatedUserId(req);
+  //     if (!userId) {
+  //       return res.status(401).json({ error: "Authentication required" });
+  //     }
+  //
+  //     const { leagueKey, teamKey, week } = req.query;
+  //     
+  //     if (!leagueKey || !teamKey) {
+  //       return res.status(400).json({ error: "leagueKey and teamKey required as query params" });
+  //     }
+  //
+  //     const token = await storage.getYahooToken(userId);
+  //     if (!token) {
+  //       return res.status(400).json({ error: "Yahoo Fantasy not connected" });
+  //     }
+  //
+  //     const accessToken = await getValidAccessToken(userId);
+  //     if (!accessToken) {
+  //       return res.status(401).json({ error: "Invalid or expired Yahoo token" });
+  //     }
+  //
+  //     const mcpClient = await getMCPClient();
+  //     await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
+  //
+  //     const dataSource = new YahooMCPDataSource(mcpClient);
+  //     const effectiveWeek = week ? parseInt(week as string) : undefined;
+  //     const response = await getMatchupComparison(dataSource, leagueKey as string, teamKey as string, effectiveWeek);
+  //
+  //     res.json({ debug: true, data: response });
+  //   } catch (error: any) {
+  //     console.error('Debug matchup error:', error);
+  //     res.status(500).json({ error: error.message || 'Failed to fetch matchup' });
+  //   }
+  // });
 
   // Get league heatmap visualization
   app.get("/api/viz/heatmap/:leagueKey", requireAuth, async (req: Request, res: Response) => {
@@ -740,169 +740,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user's roster via MCP (legacy endpoint - kept for compatibility)
-  app.get("/api/yahoo/my-roster", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      // Get user's Yahoo token
-      const token = await storage.getYahooToken(userId);
-      if (!token) {
-        return res.status(400).json({ error: "Yahoo Fantasy not connected" });
-      }
-
-      // Get and validate token
-      const accessToken = await getValidAccessToken(userId);
-      if (!accessToken) {
-        return res.status(401).json({ error: "Invalid or expired Yahoo token" });
-      }
-
-      // Get MCP client and set credentials
-      const mcpClient = await getMCPClient();
-      await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
-
-      // Get user's leagues
-      const leaguesResponse = await mcpClient.getUserLeagues();
-      
-      console.log('Leagues response:', JSON.stringify(leaguesResponse, null, 2));
-      
-      // Parse the deeply nested Yahoo API structure
-      const users = leaguesResponse?.fantasy_content?.users;
-      if (!users || !users["0"]) {
-        return res.json({ roster: [], message: "No user data found" });
-      }
-      
-      const userData = users["0"].user;
-      if (!userData || userData.length < 2) {
-        return res.json({ roster: [], message: "No games data found" });
-      }
-      
-      const gamesData = userData[1]?.games;
-      if (!gamesData || !gamesData["0"]) {
-        return res.json({ roster: [], message: "No games found" });
-      }
-      
-      const gameArray = gamesData["0"].game;
-      if (!gameArray || gameArray.length < 2) {
-        return res.json({ roster: [], message: "No game leagues found" });
-      }
-      
-      const leaguesData = gameArray[1]?.leagues;
-      if (!leaguesData || !leaguesData["0"]) {
-        return res.json({ roster: [], message: "No leagues found" });
-      }
-      
-      const leagueArray = leaguesData["0"].league;
-      if (!leagueArray || leagueArray.length === 0) {
-        return res.json({ roster: [], message: "No league data found" });
-      }
-      
-      // Get league key from the first league
-      const leagueKey = leagueArray[0]?.league_key;
-      console.log('League key:', leagueKey);
-      
-      if (!leagueKey) {
-        return res.json({ roster: [], message: "No league key found" });
-      }
-      
-      // Now get the team for this league - need to fetch teams separately
-      // For now, construct team key based on user's first team in the league
-      // Yahoo team keys are typically in format: {game_key}.l.{league_id}.t.{team_id}
-      // We'll need to get standings to find the user's team
-      const standings = await mcpClient.getLeagueStandings(leagueKey);
-      console.log('Standings:', JSON.stringify(standings, null, 2));
-      
-      // Find user's team from standings
-      const teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
-      if (!teams) {
-        return res.json({ roster: [], message: "No teams found in standings" });
-      }
-      
-      // Get user's GUID to match with team manager
-      const userGuid = users["0"].user[0]?.guid;
-      console.log('User GUID:', userGuid);
-      
-      // Find the team that belongs to this user by matching GUID
-      let teamKey = null;
-      for (let i = 0; i < teams.count; i++) {
-        const teamData = teams[i.toString()]?.team;
-        if (teamData && Array.isArray(teamData)) {
-          // teamData[0] is an array of team properties
-          const teamProperties = teamData[0];
-          if (Array.isArray(teamProperties)) {
-            // Find team_key in the properties array
-            const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
-            const currentTeamKey = teamKeyObj?.team_key;
-            
-            // Find managers in the properties array
-            const managersObj = teamProperties.find((prop: any) => prop.managers);
-            const managers = managersObj?.managers;
-            
-            if (managers && Array.isArray(managers)) {
-              const manager = managers[0]?.manager;
-              if (manager?.guid === userGuid && currentTeamKey) {
-                teamKey = currentTeamKey;
-                console.log('Found user team:', teamKey);
-                break;
-              }
-            }
-          }
-        }
-      }
-      
-      if (!teamKey) {
-        return res.json({ roster: [], message: "Could not find your team in the league" });
-      }
-
-      // Get team roster
-      const rosterData = await mcpClient.getTeamRoster(teamKey);
-      console.log('Roster data:', JSON.stringify(rosterData, null, 2));
-      
-      // Parse roster data from Yahoo's nested structure
-      const playersData = rosterData?.fantasy_content?.team?.[1]?.roster?.[0]?.players;
-      if (!playersData) {
-        return res.json({ roster: [], message: "No roster data found" });
-      }
-      
-      const roster = [];
-      for (let i = 0; i < playersData.count; i++) {
-        const playerArray = playersData[i.toString()]?.player;
-        if (playerArray && Array.isArray(playerArray) && playerArray[0]) {
-          const playerProperties = playerArray[0];
-          if (Array.isArray(playerProperties)) {
-            const nameObj = playerProperties.find((p: any) => p.name);
-            const posObj = playerProperties.find((p: any) => p.display_position);
-            const primaryPosObj = playerProperties.find((p: any) => p.primary_position);
-            const teamObj = playerProperties.find((p: any) => p.editorial_team_abbr);
-            const statusObj = playerProperties.find((p: any) => p.status);
-            const keyObj = playerProperties.find((p: any) => p.player_key);
-            
-            roster.push({
-              name: nameObj?.name?.full || "Unknown Player",
-              position: posObj?.display_position || primaryPosObj?.primary_position || "N/A",
-              team: teamObj?.editorial_team_abbr || "N/A",
-              status: !statusObj || statusObj.status === "" ? "active" : 
-                      statusObj.status === "IL" || statusObj.status === "IL+" ? "injured" :
-                      statusObj.status === "O" || statusObj.status === "GTD" || statusObj.status === "INJ" ? "out" : "active",
-              playerKey: keyObj?.player_key || "",
-            });
-          }
-        }
-      }
-
-      res.json({ 
-        roster, 
-        leagueName: leagueArray[0]?.name || "Unknown League",
-        teamKey
-      });
-    } catch (error: any) {
-      console.error('Error fetching roster:', error);
-      res.status(500).json({ error: error.message || 'Failed to fetch roster' });
-    }
-  });
+  // TODO: Legacy endpoint - commented out (not used by frontend)
+  // app.get("/api/yahoo/my-roster", requireAuth, async (req: Request, res: Response) => {
+  //   ... (440+ lines of legacy code commented out)
+  // });
 
   // Chat API endpoint with Anthropic + MCP integration
   app.post("/api/chat/message", requireAuth, async (req: Request, res: Response) => {
