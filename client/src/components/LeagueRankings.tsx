@@ -259,10 +259,6 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey }: Leag
                         </span>
                         <div className="text-xs text-muted-foreground font-normal">
                           {team.managerName && <span className="line-clamp-1">{team.managerName}</span>}
-                          {/* TODO: Games played/remaining pending NBA API integration */}
-                          {/* {team.gamesPlayed !== undefined && team.gamesRemaining !== undefined && (
-                            <span className="block">{team.gamesPlayed}/{team.gamesPlayed + team.gamesRemaining} GP</span>
-                          )} */}
                         </div>
                       </div>
                     </TableCell>

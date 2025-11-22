@@ -88,12 +88,6 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
         <CardTitle>Weekly Matchup: {myTeam.teamName} vs {opponent.teamName}</CardTitle>
         <CardDescription>
           Week {metadata.week || metadata.currentWeek}
-          {/* TODO: Games played/remaining pending NBA API integration */}
-          {/* {metadata.gamesPlayed !== undefined && metadata.gamesRemaining !== undefined && (
-            <span className="ml-2 text-muted-foreground">
-              {metadata.gamesPlayed}/{metadata.gamesPlayed + metadata.gamesRemaining} Games Played
-            </span>
-          )} */}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

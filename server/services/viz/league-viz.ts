@@ -13,8 +13,6 @@ export interface TeamStats {
   fgAttempts?: number;
   ftMakes?: number;
   ftAttempts?: number;
-  // gamesPlayed?: number;
-  // gamesRemaining?: number;
 }
 
 export async function getLeagueRankings(
@@ -186,18 +184,6 @@ async function extractTeamStats(
         }
       }
       
-      // TODO: Games data extraction - commented out pending NBA API integration
-      // let gamesPlayed: number | undefined;
-      // let gamesRemaining: number | undefined;
-      // 
-      // // Games data comes from the matchup structure and contains actual NBA games played
-      // // Will be populated if available from the API
-      // // Default fallback: use week number if games data unavailable
-      // if (currentWeek && endWeek && !week) {
-      //   gamesPlayed = currentWeek;
-      //   gamesRemaining = endWeek - currentWeek;
-      // }
-      
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
         const stats = statsData.stats;
@@ -248,8 +234,6 @@ async function extractTeamStats(
           fgAttempts,
           ftMakes,
           ftAttempts,
-          // gamesPlayed,
-          // gamesRemaining,
         });
       }
     }

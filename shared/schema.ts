@@ -102,8 +102,6 @@ export const teamRankingSchema = z.object({
   stats: categoryStatsSchema,
   categoryRanks: categoryStatsSchema,
   totalRank: z.number(),
-  // gamesPlayed: z.number().optional(),
-  // gamesRemaining: z.number().optional(),
 });
 
 export const rankingsMetadataSchema = z.object({
@@ -111,8 +109,6 @@ export const rankingsMetadataSchema = z.object({
   week: z.number().optional(),
   currentWeek: z.number(),
   totalWeeks: z.number(),
-  // gamesPlayed: z.number().optional(),
-  // gamesRemaining: z.number().optional(),
 });
 
 export const rankingsResponseSchema = z.object({

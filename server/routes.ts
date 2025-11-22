@@ -486,44 +486,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TODO: DEBUG endpoint - commented out pending removal
-  // app.get("/api/debug/test-matchup", requireAuth, async (req: Request, res: Response) => {
-  //   try {
-  //     const userId = getAuthenticatedUserId(req);
-  //     if (!userId) {
-  //       return res.status(401).json({ error: "Authentication required" });
-  //     }
-  //
-  //     const { leagueKey, teamKey, week } = req.query;
-  //     
-  //     if (!leagueKey || !teamKey) {
-  //       return res.status(400).json({ error: "leagueKey and teamKey required as query params" });
-  //     }
-  //
-  //     const token = await storage.getYahooToken(userId);
-  //     if (!token) {
-  //       return res.status(400).json({ error: "Yahoo Fantasy not connected" });
-  //     }
-  //
-  //     const accessToken = await getValidAccessToken(userId);
-  //     if (!accessToken) {
-  //       return res.status(401).json({ error: "Invalid or expired Yahoo token" });
-  //     }
-  //
-  //     const mcpClient = await getMCPClient();
-  //     await mcpClient.setCredentials(accessToken, token.refreshToken, token.expiresAt);
-  //
-  //     const dataSource = new YahooMCPDataSource(mcpClient);
-  //     const effectiveWeek = week ? parseInt(week as string) : undefined;
-  //     const response = await getMatchupComparison(dataSource, leagueKey as string, teamKey as string, effectiveWeek);
-  //
-  //     res.json({ debug: true, data: response });
-  //   } catch (error: any) {
-  //     console.error('Debug matchup error:', error);
-  //     res.status(500).json({ error: error.message || 'Failed to fetch matchup' });
-  //   }
-  // });
-
   // Get league heatmap visualization
   app.get("/api/viz/heatmap/:leagueKey", requireAuth, async (req: Request, res: Response) => {
     try {
@@ -739,11 +701,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message || 'Failed to fetch roster' });
     }
   });
-
-  // TODO: Legacy endpoint - commented out (not used by frontend)
-  // app.get("/api/yahoo/my-roster", requireAuth, async (req: Request, res: Response) => {
-  //   ... (440+ lines of legacy code commented out)
-  // });
 
   // Chat API endpoint with Anthropic + MCP integration
   app.post("/api/chat/message", requireAuth, async (req: Request, res: Response) => {
