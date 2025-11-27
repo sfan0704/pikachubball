@@ -143,7 +143,7 @@ export default function ChatPage() {
                 <div className="p-4 text-center text-sm text-muted-foreground">
                   Loading leagues...
                 </div>
-              ) : leaguesData && leaguesData.leagues.length > 0 ? (
+              ) : leaguesList && leaguesList.length > 0 ? (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-sidebar-foreground">
                     Select Team
@@ -157,7 +157,7 @@ export default function ChatPage() {
                       <SelectValue placeholder="Choose a team..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {leaguesData.leagues.map((league) => (
+                      {leaguesList.map((league: { teamKey: string; teamName: string; leagueName: string }) => (
                         <SelectItem 
                           key={league.teamKey} 
                           value={league.teamKey}

@@ -20,8 +20,8 @@ export async function getMatchupComparison(
     throw new Error(`Week must be between 1 and ${endWeek}`);
   }
 
-  let myTeam: any = null;
-  let opponent: any = null;
+  let myTeam: Record<string, any> | null = null;
+  let opponent: Record<string, any> | null = null;
 
   // Get scoreboard to find teams
   const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, effectiveWeek);

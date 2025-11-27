@@ -131,14 +131,14 @@ async function extractTeamStats(
   currentWeek?: number,
   endWeek?: number
 ): Promise<TeamStats[]> {
-  let teams: any;
+  const teamsResult: any = {};
   
   if (week !== undefined) {
     const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, week);
     const matchups = scoreboard?.fantasy_content?.league?.[1]?.scoreboard?.[0]?.matchups;
     
     if (matchups && matchups.count > 0) {
-      teams = { count: 0 };
+      teamsResult.count = 0;
       let teamIndex = 0;
       
       for (let i = 0; i < matchups.count; i++) {
@@ -148,19 +148,20 @@ async function extractTeamStats(
           for (let j = 0; j < matchupTeams.count; j++) {
             const teamData = matchupTeams[j.toString()]?.team;
             if (teamData) {
-              teams[teamIndex.toString()] = { team: teamData };
+              teamsResult[teamIndex.toString()] = { team: teamData };
               teamIndex++;
             }
           }
         }
       }
-      teams.count = teamIndex;
+      teamsResult.count = teamIndex;
     }
   } else {
     const standings = await dataSource.getLeagueStandings(leagueKey);
-    teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
+    teamsResult.teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
   }
 
+  const teams = teamsResult.teams || teamsResult;
   if (!teams || teams.count === 0) {
     return [];
   }
@@ -187,7 +188,7 @@ async function extractTeamStats(
       const statsData = teamData[1]?.team_stats;
       if (statsData) {
         const stats = statsData.stats;
-        const statMap: any = {};
+        const statMap: Record<string, any> = {};
         
         if (Array.isArray(stats)) {
           stats.forEach((statObj: any) => {
@@ -198,22 +199,14 @@ async function extractTeamStats(
         }
         
         // Parse FG makes/attempts from stat 9004003 (format: "127/298")
-        let fgMakes = 0;
-        let fgAttempts = 0;
-        if (statMap['9004003']) {
-          const fgParts = statMap['9004003'].split('/');
-          fgMakes = parseInt(fgParts[0]) || 0;
-          fgAttempts = parseInt(fgParts[1]) || 0;
-        }
+        const fgParts = (statMap['9004003'] || '0/0').split('/');
+        const fgMakes = parseInt(fgParts[0]) || 0;
+        const fgAttempts = parseInt(fgParts[1]) || 0;
         
         // Parse FT makes/attempts from stat 9007006 (format: "76/94")
-        let ftMakes = 0;
-        let ftAttempts = 0;
-        if (statMap['9007006']) {
-          const ftParts = statMap['9007006'].split('/');
-          ftMakes = parseInt(ftParts[0]) || 0;
-          ftAttempts = parseInt(ftParts[1]) || 0;
-        }
+        const ftParts = (statMap['9007006'] || '0/0').split('/');
+        const ftMakes = parseInt(ftParts[0]) || 0;
+        const ftAttempts = parseInt(ftParts[1]) || 0;
         
         teamStats.push({
           teamKey: teamKeyObj?.team_key,
