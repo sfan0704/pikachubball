@@ -23,7 +23,7 @@ export function useFirstLeague() {
     if (leagues.length > 0 && !selectedLeagueKey) {
       setSelectedLeagueKey(leagues[0].leagueKey);
     }
-  }, [leagues, selectedLeagueKey]);
+  }, [leagues]);
 
   const selectedLeague = leagues.find((l) => l.leagueKey === selectedLeagueKey);
 
