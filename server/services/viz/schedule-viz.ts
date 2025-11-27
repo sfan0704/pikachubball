@@ -26,7 +26,7 @@ export async function getScheduleMatrix(
   const mySchedule = await generateScheduleForWeek(myPlayers, effectiveWeek);
   const myTotalGames = mySchedule.reduce((sum, day) => sum + day.gameCount, 0);
 
-  let opponentData;
+  let opponentData: { teamKey: string; teamName: string; schedule: DaySchedule[]; totalGames: number } | undefined;
   if (opponentTeamKey) {
     const oppRoster = await dataSource.getTeamRoster(opponentTeamKey);
     const oppTeamData = extractTeamInfo(oppRoster);

@@ -20,13 +20,13 @@ export function encrypt(text: string): string {
   
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
+  let encryptedHex = cipher.update(text, 'utf8', 'hex');
+  encryptedHex += cipher.final('hex');
   
   const authTag = cipher.getAuthTag();
   
   // Format: iv:authTag:encrypted
-  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encryptedHex}`;
 }
 
 export function decrypt(encryptedData: string): string {
@@ -44,10 +44,10 @@ export function decrypt(encryptedData: string): string {
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(authTag);
     
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    let decryptedText = decipher.update(encrypted, 'hex', 'utf8');
+    decryptedText += decipher.final('utf8');
     
-    return decrypted;
+    return decryptedText;
   } catch (error) {
     console.error('Decryption error:', error);
     throw new Error('Failed to decrypt data');
