@@ -8,7 +8,7 @@ import { ChatProvider, useChat } from "@/lib/chat-context";
 import RankingsPage from "@/pages/RankingsPage";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
-import ChatDialog from "@/components/ChatDialog";
+import ChatDialog from "@/components/features/chat/ChatDialog";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { user, isLoading } = useAuth();

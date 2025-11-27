@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import LeagueRankings from "@/components/LeagueRankings";
-import MatchupTab from "@/components/MatchupTab";
-import MatchupSimulator from "@/components/MatchupSimulator";
-import ScheduleTab from "@/components/ScheduleTab";
+import LeagueRankings from "@/components/features/league/LeagueRankings";
+import MatchupTab from "@/components/features/league/MatchupTab";
+import MatchupSimulator from "@/components/features/league/MatchupSimulator";
+import ScheduleTab from "@/components/features/league/ScheduleTab";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,8 @@ import { LogOut, MessageSquare, BarChart3, Calendar, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useChat } from "@/lib/chat-context";
 import { useToast } from "@/hooks/use-toast";
-import ThemeToggle from "@/components/ThemeToggle";
-import SettingsDialog from "@/components/SettingsDialog";
+import ThemeToggle from "@/components/common/ThemeToggle";
+import SettingsDialog from "@/components/features/auth/SettingsDialog";
 import { useFirstLeague } from "@/hooks/useFirstLeague";
 import type { RankingsResponse } from "@shared/schema";
 
