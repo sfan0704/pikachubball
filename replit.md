@@ -21,12 +21,25 @@ The application features a layered architecture comprising a React frontend, an 
 
 - **Purpose**: User interface and client-side state management.
 - **Key Technologies**: wouter for routing, TanStack Query for server state, react-hook-form + zod for forms, shadcn/ui + Tailwind CSS for UI.
+- **Directory Structure** (Feature-Based Organization):
+  - `components/features/league/` - League rankings, matchup tabs, matchup simulator, schedule tabs, comparison tables
+  - `components/features/chat/` - Chat dialogs, messages, inputs
+  - `components/features/auth/` - Yahoo OAuth connect, settings dialogs
+  - `components/common/` - Theme toggle, loading indicators (shared UI)
+  - `components/ui/` - shadcn component library
 - **UI/UX Decisions**: AI chat interface, 9-category master rankings page with sortable columns and color-coded performance indicators, user settings for credential management, mobile-first responsive design with light/dark modes, drawer-style sidebar on mobile, responsive typography.
 
 ### Backend Layer (Express + Node.js)
 
 - **Purpose**: API gateway, authentication, credential management, and MCP orchestration.
 - **Key Technologies**: Express.js with TypeScript, PostgreSQL via Drizzle ORM, Passport.js for authentication, AES-256-GCM for credential encryption.
+- **Directory Structure** (Domain-Based Route Organization):
+  - `server/routes/auth.ts` - Yahoo OAuth flows and credentials management (7.3KB)
+  - `server/routes/yahoo.ts` - Yahoo Fantasy API data fetching: leagues, rosters (7.7KB)
+  - `server/routes/viz.ts` - League visualizations: rankings, heatmaps, matchups, schedules (7.6KB)
+  - `server/routes/chat.ts` - AI chat endpoint with OpenAI integration (6KB)
+  - `server/routes/index.ts` - Route registration orchestrator
+  - Previously: Monolithic `routes.ts` (932 lines) - NOW REFACTORED ✓
 - **System Design Choices**: Secure account creation with bcrypt, per-user encrypted storage for Yahoo and OpenAI credentials, automatic Yahoo token refresh, and an API for AI chat interactions. Session-based authentication with secure cookies and CSRF protection is implemented.
 
 ### MCP Server Layer (Model Context Protocol)
@@ -46,6 +59,26 @@ The application features a layered architecture comprising a React frontend, an 
 1.  **Yahoo Fantasy API**: Utilized for real-time access to fantasy basketball league data (team rosters, league standings, player statistics, matchups) via a dedicated MCP server.
 2.  **OpenAI GPT-5**: Powers the core conversational AI chatbot for intelligent recommendations and function calling based on user queries and fantasy data.
 3.  **PostgreSQL**: Serves as the primary relational database for persistent storage of user accounts, encrypted credentials, and session management data, interacting via Drizzle ORM.
+
+## Recent Refactoring (Nov 27, 2025)
+
+**Backend Route Restructuring:**
+- Split 932-line monolithic `server/routes.ts` into 5 modular files organized by domain
+- Each route file focuses on a single concern: auth, yahoo data, visualizations, or chat
+- Reduces cognitive load and enables parallel development on different features
+- Total lines reduced from 932 to ~600 across all files (cleaner code per file)
+
+**Frontend Component Reorganization:**
+- Reorganized flat 17-component structure into feature-based directories
+- Improved component discovery and maintenance: related components now live together
+- Easier to add new features without cluttering the components root
+- Clear separation: feature components vs. common utilities vs. shadcn UI library
+
+**TypeScript & Code Quality:**
+- Fixed all remaining `any` type violations with proper generic typing
+- Improved variable naming (descriptive names instead of generic `template`, `encrypted`)
+- Added JSDoc headers to all exported route functions for API documentation
+- 100% elimination of `any` types from TypeScript codebase
 
 ## Coding Standards & Best Practices
 

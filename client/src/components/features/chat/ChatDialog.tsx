@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import ChatMessage from "@/components/ChatMessage";
-import ChatInput from "@/components/ChatInput";
+import ChatMessage from "./ChatMessage";
+import ChatInput from "./ChatInput";
 import QuickActions from "@/components/QuickActions";
 import TeamRoster from "@/components/TeamRoster";
-import LoadingIndicator from "@/components/LoadingIndicator";
-import YahooConnect from "@/components/YahooConnect";
+import LoadingIndicator from "@/components/common/LoadingIndicator";
+import YahooConnect from "@/components/features/auth/YahooConnect";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
