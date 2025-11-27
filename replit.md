@@ -1,84 +1,84 @@
-# Fantasy Basketball AI Assistant
+# Fantasy Basketball AI Assistant - Project Memory
 
-## Overview
+**Status**: Active development | **Last Updated**: Nov 27, 2025
 
-This project is a multi-user AI chatbot application designed to help users optimize their Yahoo Fantasy Basketball teams. It provides intelligent, data-driven recommendations for start/sit decisions, waiver pickups, and trade analysis through an AI-powered conversational interface. The application leverages AI-powered insights from multiple data sources, including real-time Yahoo Fantasy data. Each user provides their own API credentials (Yahoo + OpenAI), ensuring complete privacy and cost control.
+See `README.md` for user-facing documentation (features, setup, API reference, troubleshooting).
 
-The project's ambition is to create a powerful, personalized, and private AI assistant for fantasy sports, with potential for broader market application in data-driven decision-making tools.
+## Quick Overview
 
-## User Preferences
+Multi-user AI chatbot for Yahoo Fantasy Basketball optimization. Users provide their own Yahoo + OpenAI credentials for complete privacy. Real-time league analytics (9-category rankings, matchup comparisons, simulator) powered by Yahoo Fantasy API. AI recommendations via OpenAI integration.
 
-- **Design**: System-based modern design inspired by ChatGPT/Claude
-- **Typography**: Inter for text, JetBrains Mono for stats
-- **Data**: All non-parametric data must be in separate MCP servers (no hardcoding)
-- **APIs**: Prefer free API endpoints over web scraping for reliability
+## User Preferences & Constraints
 
-## System Architecture
+**Design & UX:**
+- System-based modern design inspired by ChatGPT/Claude
+- Typography: Inter for text, JetBrains Mono for stats
+- Mobile-first responsive with light/dark mode support
+- Drawer-style sidebar on mobile
 
-The application features a layered architecture comprising a React frontend, an Express Node.js backend, and isolated MCP (Model Context Protocol) servers for external data access. This design supports multi-tenancy, modularity, scalability, and security, with all sensitive credentials encrypted at rest.
+**Architecture Constraints:**
+- All non-parametric data must be in separate MCP servers (no hardcoding)
+- Prefer free API endpoints over web scraping for reliability
+- Each user provides their own Yahoo + OpenAI credentials (multi-tenant, privacy-first)
+- Backend should be thin; put business logic in frontend where possible
 
-### Frontend Layer (React + TypeScript + Vite)
+**Code Quality:**
+- 100% TypeScript with no `any` types
+- Follow official best practices: Google TypeScript Style Guide, React Docs, Express best practices
+- Use proper imports/exports: no circular dependencies, organized by feature
+- All functions have explicit return types
+- JSDoc headers on exported functions
 
-- **Purpose**: User interface and client-side state management.
-- **Key Technologies**: wouter for routing, TanStack Query for server state, react-hook-form + zod for forms, shadcn/ui + Tailwind CSS for UI.
-- **Directory Structure** (Feature-Based Organization):
-  - `components/features/league/` - League rankings, matchup tabs, matchup simulator, schedule tabs, comparison tables
-  - `components/features/chat/` - Chat dialogs, messages, inputs
-  - `components/features/auth/` - Yahoo OAuth connect, settings dialogs
-  - `components/common/` - Theme toggle, loading indicators (shared UI)
-  - `components/ui/` - shadcn component library
-- **UI/UX Decisions**: AI chat interface, 9-category master rankings page with sortable columns and color-coded performance indicators, user settings for credential management, mobile-first responsive design with light/dark modes, drawer-style sidebar on mobile, responsive typography.
+## Architecture (High-Level)
 
-### Backend Layer (Express + Node.js)
+```
+Frontend (React) → Backend (Express) → PostgreSQL + MCP Server (Yahoo API)
+                                    ↓
+                          Credential Encryption (AES-256-GCM)
+```
 
-- **Purpose**: API gateway, authentication, credential management, and MCP orchestration.
-- **Key Technologies**: Express.js with TypeScript, PostgreSQL via Drizzle ORM, Passport.js for authentication, AES-256-GCM for credential encryption.
-- **Directory Structure** (Domain-Based Route Organization):
-  - `server/routes/auth.ts` - Yahoo OAuth flows and credentials management (7.3KB)
-  - `server/routes/yahoo.ts` - Yahoo Fantasy API data fetching: leagues, rosters (7.7KB)
-  - `server/routes/viz.ts` - League visualizations: rankings, heatmaps, matchups, schedules (7.6KB)
-  - `server/routes/chat.ts` - AI chat endpoint with OpenAI integration (6KB)
-  - `server/routes/index.ts` - Route registration orchestrator
-  - Previously: Monolithic `routes.ts` (932 lines) - NOW REFACTORED ✓
-- **System Design Choices**: Secure account creation with bcrypt, per-user encrypted storage for Yahoo and OpenAI credentials, automatic Yahoo token refresh, and an API for AI chat interactions. Session-based authentication with secure cookies and CSRF protection is implemented.
+**Key Design Decisions:**
+- **Layered architecture** for separation of concerns
+- **Multi-tenant**: Each user's data is isolated and encrypted
+- **MCP servers**: External data access via stdio-based Model Context Protocol (extensible for future APIs)
+- **Credential encryption**: All Yahoo/OpenAI credentials encrypted with AES-256-GCM before storage
 
-### MCP Server Layer (Model Context Protocol)
+**Backend Organization** (modular by domain):
+- `auth.ts` - Yahoo OAuth, user registration, credential management
+- `yahoo.ts` - League data fetching, roster queries
+- `viz.ts` - Rankings, matchup comparisons, simulator
+- `chat.ts` - AI chat with OpenAI integration
+- `index.ts` - Route orchestration
 
-- **Purpose**: Isolated data access layer for external services.
-- **Technical Implementation**: A stdio-based server integrates with the Yahoo Fantasy API, providing 6 tools (leagues, standings, rosters, matchups, player stats, free agents). This layer is designed for extensibility to allow additional MCP servers for other data sources.
+**Frontend Organization** (feature-based):
+- `features/league/` - Rankings, matchups, schedule, simulator
+- `features/chat/` - Chat interface
+- `features/auth/` - OAuth, settings
+- `common/` - Shared utilities
+- `ui/` - shadcn/ui components
 
-### Security Features
+**Database** (Drizzle ORM + PostgreSQL):
+- `users` - User accounts (bcrypt passwords)
+- `yahooCredentials` - Encrypted Yahoo Client ID/Secret (per user)
+- `yahooTokens` - OAuth tokens with auto-refresh
+- `openaiCredentials` - Encrypted OpenAI API keys (per user)
 
-- **Credential Encryption**: AES-256-GCM for Yahoo credentials and OpenAI API keys, stored encrypted in PostgreSQL.
-- **Multi-Tenancy**: Complete data isolation between users, with each user providing their own credentials.
-- **Authentication**: Passport.js with bcrypt hashing, server-side sessions, and HttpOnly cookies.
-- **Yahoo OAuth Security**: State parameter for CSRF protection, encrypted token storage, and automatic token refresh.
+## Recent Changes & Milestones
 
-## External Dependencies
+**Nov 27, 2025 - Refactoring Complete:**
+- Backend: Split 932-line `routes.ts` into 5 modular domain files (~600 lines total)
+- Frontend: Reorganized 17 flat components into feature-based directory structure
+- Code Quality: Eliminated all `any` types, added JSDoc headers, improved naming
+- ESLint + Prettier setup for code quality enforcement
 
-1.  **Yahoo Fantasy API**: Utilized for real-time access to fantasy basketball league data (team rosters, league standings, player statistics, matchups) via a dedicated MCP server.
-2.  **OpenAI GPT-5**: Powers the core conversational AI chatbot for intelligent recommendations and function calling based on user queries and fantasy data.
-3.  **PostgreSQL**: Serves as the primary relational database for persistent storage of user accounts, encrypted credentials, and session management data, interacting via Drizzle ORM.
-
-## Recent Refactoring (Nov 27, 2025)
-
-**Backend Route Restructuring:**
-- Split 932-line monolithic `server/routes.ts` into 5 modular files organized by domain
-- Each route file focuses on a single concern: auth, yahoo data, visualizations, or chat
-- Reduces cognitive load and enables parallel development on different features
-- Total lines reduced from 932 to ~600 across all files (cleaner code per file)
-
-**Frontend Component Reorganization:**
-- Reorganized flat 17-component structure into feature-based directories
-- Improved component discovery and maintenance: related components now live together
-- Easier to add new features without cluttering the components root
-- Clear separation: feature components vs. common utilities vs. shadcn UI library
-
-**TypeScript & Code Quality:**
-- Fixed all remaining `any` type violations with proper generic typing
-- Improved variable naming (descriptive names instead of generic `template`, `encrypted`)
-- Added JSDoc headers to all exported route functions for API documentation
-- 100% elimination of `any` types from TypeScript codebase
+**Completed Features:**
+- Yahoo OAuth with automatic token refresh
+- 9-category league rankings with sortable columns
+- Weekly matchup comparisons (W/L/T with color-coded diffs)
+- Matchup simulator (show team's W/L/T vs all opponents)
+- AI chat interface with OpenAI integration
+- User settings for credential management
+- Light/dark mode support
 
 ## Coding Standards & Best Practices
 
@@ -101,19 +101,6 @@ This project adheres to official best practices from the libraries and framework
 - Naming: PascalCase for types/interfaces/classes, camelCase for functions/variables, UPPER_CASE for constants
 - Document complex functions with JSDoc: `/** ... */` format
 
-**Type Safety Patterns:**
-```typescript
-// ✅ Narrow, specific types
-type Status = 'active' | 'inactive' | 'pending';
-
-// ✅ Interface over 'any'
-interface User { id: number; name: string; }
-function processUser(user: User): void {}
-
-// ✅ Explicit return types for complex functions
-function getUser(id: number): User | null { /* ... */ }
-```
-
 ### React Best Practices
 
 **Official Resources:**
@@ -126,26 +113,8 @@ function getUser(id: number): User | null { /* ... */ }
 - Hooks must be called at the top level only — never in loops, conditions, or nested functions
 - Components must be pure: same input → same output, no side effects during render
 - Side effects run outside of render (in useEffect)
-- Never call component functions directly — only use components in JSX
 - Single Responsibility: each component = one function/concern
-- Lift state to the closest common parent for one-way data flow
 - Extract reusable logic into custom hooks
-
-**Component Patterns:**
-```typescript
-// ✅ Functional component with hooks
-function UserCard({ userId }: { userId: string }) {
-  const { user, isLoading } = useUser(userId);
-  return <div>{user?.name}</div>;
-}
-
-// ✅ Custom hook for reusable logic
-function useUser(id: string) {
-  const [user, setUser] = useState(null);
-  useEffect(() => { /* fetch user */ }, [id]);
-  return { user, isLoading: false };
-}
-```
 
 ### Express.js Best Practices
 
@@ -155,86 +124,43 @@ function useUser(id: string) {
 - Node.js Best Practices: https://github.com/goldbergyoni/nodebestpractices
 
 **Key Rules:**
-- Set `NODE_ENV=production` (critical for performance — caches templates, generates concise error messages)
+- Set `NODE_ENV=production` (critical for performance)
 - Use `next()` for error propagation through middleware chain
-- Always wrap async operations in try-catch; use middleware for error handling
-- Use Helmet.js for security headers, express-validator for input validation
-- Rate limiting: prevent brute-force attacks with express-rate-limit
-- Structure routes modularly: one routes file per entity (users.ts, leagues.ts, etc.)
-- Store secrets in `.env`, never hardcode API keys or credentials
+- Always wrap async operations in try-catch
+- Structure routes modularly: one routes file per domain
+- Store secrets in `.env`, never hardcode API keys
 - Use `const` over `let`/`var` for immutability
-
-**Project Structure:**
-```
-/server
-├── /routes          # Route definitions per entity
-├── /services        # Business logic, external API calls
-├── /auth-routes.ts  # Authentication logic
-├── storage.ts       # Database/storage interface
-├── db.ts            # Database connection
-├── index.ts         # Express app initialization
-```
-
-**Error Handling Pattern:**
-```typescript
-app.post("/api/users", async (req, res, next) => {
-  try {
-    const validatedData = userSchema.parse(req.body);
-    const result = await storage.createUser(validatedData);
-    res.json(result);
-  } catch (error) {
-    next(error); // Pass to error middleware
-  }
-});
-
-// Global error handler (last middleware)
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: 'Internal Server Error' });
-});
-```
 
 ### Tailwind CSS Best Practices
 
 **Official Resources:**
 - Utility-First Fundamentals: https://tailwindcss.com/docs/styling-with-utility-classes
-- Reusing Styles: https://v3.tailwindcss.com/docs/reusing-styles
-- Adding Custom Styles: https://tailwindcss.com/docs/adding-custom-styles
 - Tailwind Config: https://tailwindcss.com/docs/configuration
 
 **Key Rules:**
-- **Prefer components over `@apply`**: Create React components instead of custom CSS classes
-- Use `@apply` only for small, highly reusable elements (buttons, badges) when framework components aren't available
-- Centralize design tokens in `tailwind.config.ts` (colors, spacing, typography)
-- Mobile-first: use breakpoint prefixes `sm:`, `md:`, `lg:`, `xl:` progressively
-- Use arbitrary values sparingly: `class="top-[117px]"` only for one-off styles
-- Order utility classes consistently: layout → positioning → box-model → typography → visual → misc
-- Don't use string concatenation for dynamic classes: use complete class name objects or `clsx`
-- Never modify utility classes in production; let Tailwind's purge optimize CSS
+- Prefer React components over `@apply`
+- Centralize design tokens in `tailwind.config.ts`
+- Mobile-first: use breakpoint prefixes `sm:`, `md:`, `lg:` progressively
+- Use arbitrary values sparingly
+- Don't use string concatenation for dynamic classes: use `clsx`
 
-**Component Pattern (React):**
-```tsx
-// ✅ Extract to components instead of @apply
-function Button({ children }: { children: React.ReactNode }) {
-  return (
-    <button className="py-2 px-5 bg-violet-500 text-white font-semibold rounded-full shadow-md hover:bg-violet-700 hover:elevate active:elevate-2">
-      {children}
-    </button>
-  );
-}
+## Critical Implementation Notes
 
-// ✅ Centralize theme in config
-// tailwind.config.ts
-theme: {
-  extend: {
-    colors: { 'brand-primary': '#7743DB' }
-  }
-}
+**User Workflow:**
+- Primary: Compare team stats vs opponent for current week to see W/L/T matchup score and category differences
+- Design choice: Matchup tab uses table format with diff column color-coded green/red
+- Design choice: FG and FT stats display as "makes/attempts (percentage)" format
+- Design choice: Manager names display below team names in small gray text
 
-// Use semantic names: bg-brand-primary instead of arbitrary values
-```
+**Backend Stat IDs** (VERIFIED):
+- FG Makes/Attempts: 9004003
+- FT Makes/Attempts: 9007006
+- FG%: 5, FT%: 8, 3PM: 10
+- PTS: 12, REB: 15, AST: 16
+- STL: 17, BLK: 18, TO: 19
 
-**Design System Integration:**
-- All colors, spacing, and typography come from `tailwind.config.ts` (see design_guidelines.md)
-- Use CSS variables for dynamic theming (light/dark mode)
-- Leverage existing shadcn/ui components for consistency
+**Architecture Notes:**
+- MCP server in `mcp-servers/yahoo-fantasy/` is a separate Node.js app spawned as child process
+- Automatic token refresh via Yahoo OAuth
+- Shared folder at root level follows monorepo pattern (equally accessible to client and server)
+- Import aliases configured in `tsconfig.json` and `vite.config.ts`
