@@ -7,6 +7,7 @@ import MatchupTab from "@/components/MatchupTab";
 import MatchupSimulator from "@/components/MatchupSimulator";
 import ScheduleTab from "@/components/ScheduleTab";
 import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useLocation, useSearch } from "wouter";
 import { LogOut, MessageSquare, BarChart3, Calendar, Zap } from "lucide-react";
@@ -15,32 +16,19 @@ import { useChat } from "@/lib/chat-context";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import SettingsDialog from "@/components/SettingsDialog";
-import type { League, RankingsResponse } from "@shared/schema";
+import { useFirstLeague } from "@/hooks/useFirstLeague";
+import type { RankingsResponse } from "@shared/schema";
 
 export default function RankingsPage() {
-  const [selectedLeagueKey, setSelectedLeagueKey] = useState<string>("");
   const [maxWeeks, setMaxWeeks] = useState<number>(0);
   const [location, setLocation] = useLocation();
   const searchParams = useSearch();
   const { user, logout } = useAuth();
   const { openChat } = useChat();
   const { toast } = useToast();
-
-  // Auto-set to first league when leagues load
-  const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
-    leagues: League[];
-  }>({
-    queryKey: ["/api/yahoo/leagues"],
-    retry: false,
-  });
-
-  const leagues = leaguesData?.leagues || [];
   
-  useEffect(() => {
-    if (leagues.length > 0 && !selectedLeagueKey) {
-      setSelectedLeagueKey(leagues[0].leagueKey);
-    }
-  }, [leagues, selectedLeagueKey]);
+  // Use the shared hook for league selection
+  const { leagues, selectedLeagueKey, setSelectedLeagueKey, selectedLeague, isLoadingLeagues } = useFirstLeague();
 
   // Parse week from URL query params using useMemo to avoid redundant parsing
   const selectedWeek = useMemo(() => {
@@ -70,7 +58,6 @@ export default function RankingsPage() {
     // Only run when searchParams changes, not on every render
   }, [searchParams, location, setLocation]);
 
-  const selectedLeague = leagues.find(l => l.leagueKey === selectedLeagueKey);
 
   // Build query URL with week parameter
   const rankingsUrl = useMemo(() => {

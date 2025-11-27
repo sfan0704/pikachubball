@@ -26,10 +26,6 @@ const yahooCredentialsInputSchema = z.object({
   clientSecret: z.string().min(1, "Client Secret is required"),
 });
 
-// OpenAI credentials schema for user input
-const openaiCredentialsInputSchema = z.object({
-  apiKey: z.string().min(1, "OpenAI API key is required"),
-});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -98,69 +94,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to delete Yahoo credentials:", error);
-      res.status(500).json({ error: "Failed to delete credentials" });
-    }
-  });
-
-  // OpenAI Credentials Management Routes (Protected)
-  app.post("/api/settings/openai-credentials", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      const validatedData = openaiCredentialsInputSchema.parse(req.body);
-
-      // Encrypt API key before storing
-      const encryptedApiKey = encrypt(validatedData.apiKey);
-
-      await storage.saveOpenaiCredentials({
-        userId,
-        encryptedApiKey,
-      });
-
-      res.json({ success: true, message: "OpenAI API key saved successfully" });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid input", details: error.errors });
-      }
-      console.error("Failed to save OpenAI credentials:", error);
-      res.status(500).json({ error: "Failed to save API key" });
-    }
-  });
-
-  app.get("/api/settings/openai-credentials", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      const credentials = await storage.getOpenaiCredentials(userId);
-      
-      res.json({ 
-        hasCredentials: !!credentials,
-        updatedAt: credentials?.updatedAt || null,
-      });
-    } catch (error) {
-      console.error("Failed to check OpenAI credentials:", error);
-      res.status(500).json({ error: "Failed to check credentials" });
-    }
-  });
-
-  app.delete("/api/settings/openai-credentials", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = getAuthenticatedUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      await storage.deleteOpenaiCredentials(userId);
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Failed to delete OpenAI credentials:", error);
       res.status(500).json({ error: "Failed to delete credentials" });
     }
   });

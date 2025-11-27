@@ -10,6 +10,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import YahooConnect from "@/components/YahooConnect";
 import SettingsDialog from "@/components/SettingsDialog";
 import { useAuth } from "@/lib/auth";
+import { useFirstLeague } from "@/hooks/useFirstLeague";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,7 +19,7 @@ import { Menu, X, LogOut, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import type { League, Player } from "@shared/schema";
+import type { Player } from "@shared/schema";
 
 interface Message {
   id: string;
@@ -43,6 +44,9 @@ export default function ChatPage() {
   const { toast } = useToast();
   const { logout, user } = useAuth();
   const [location, setLocation] = useLocation();
+  
+  // Use the shared hook for league selection
+  const { leagues: leaguesList, isLoadingLeagues } = useFirstLeague();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -62,20 +66,12 @@ export default function ChatPage() {
     }
   }, [toast, setLocation]);
 
-  // Fetch user's leagues
-  const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
-    leagues: League[];
-  }>({
-    queryKey: ["/api/yahoo/leagues"],
-    retry: false,
-  });
-
   // Auto-select first team when leagues load
   useEffect(() => {
-    if (leaguesData?.leagues && leaguesData.leagues.length > 0 && !selectedTeamKey) {
-      setSelectedTeamKey(leaguesData.leagues[0].teamKey);
+    if (leaguesList && leaguesList.length > 0 && !selectedTeamKey) {
+      setSelectedTeamKey(leaguesList[0].teamKey);
     }
-  }, [leaguesData, selectedTeamKey]);
+  }, [leaguesList, selectedTeamKey]);
 
   // Fetch roster for selected team
   const { data: rosterData, isLoading: isLoadingRoster } = useQuery<{
