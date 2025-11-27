@@ -2,8 +2,6 @@
 
 An intelligent, multi-user AI chatbot designed to help optimize Yahoo Fantasy Basketball teams through data-driven recommendations, real-time league analysis, and conversational AI. Each user provides their own API credentials (Yahoo + OpenAI), ensuring complete privacy and cost control.
 
-![Architecture Overview](https://img.shields.io/badge/TypeScript-Full%20Stack-blue) ![React](https://img.shields.io/badge/React-18-61dafb) ![Express](https://img.shields.io/badge/Express-4-black) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-336791)
-
 ## Features
 
 - **🏀 Real-Time League Analytics**
