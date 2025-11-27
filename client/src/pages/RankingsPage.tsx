@@ -19,6 +19,7 @@ import type { League, RankingsResponse } from "@shared/schema";
 
 export default function RankingsPage() {
   const [selectedLeagueKey, setSelectedLeagueKey] = useState<string>("");
+  const [maxWeeks, setMaxWeeks] = useState<number>(0);
   const [location, setLocation] = useLocation();
   const searchParams = useSearch();
   const { user, logout } = useAuth();
@@ -87,6 +88,13 @@ export default function RankingsPage() {
 
   const rankings = rankingsData?.rankings || [];
   const metadata = rankingsData?.metadata;
+  
+  // Preserve max weeks count so dropdown options don't disappear during loading
+  useEffect(() => {
+    if (metadata?.currentWeek) {
+      setMaxWeeks(metadata.currentWeek);
+    }
+  }, [metadata?.currentWeek]);
 
   const handleWeekChange = (week: number | null) => {
     // Use fresh params from window.location to avoid stale state
@@ -213,7 +221,7 @@ export default function RankingsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
-                          {metadata && Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
+                          {maxWeeks > 0 && Array.from({ length: maxWeeks }, (_, i) => i + 1).map((week) => (
                             <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
                               Week {week}
                             </SelectItem>
