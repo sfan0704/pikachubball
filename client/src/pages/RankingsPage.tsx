@@ -198,7 +198,7 @@ export default function RankingsPage() {
                     </Select>
                   </div>
                   
-                  {selectedLeagueKey && (
+                  {selectedLeagueKey && metadata && (
                     <div className="flex-1">
                       <label htmlFor="week-select" className="text-xs md:text-sm font-medium mb-2 block">
                         Time Period
@@ -213,7 +213,7 @@ export default function RankingsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
-                          {metadata && Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
+                          {Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
                             <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
                               Week {week}
                             </SelectItem>
