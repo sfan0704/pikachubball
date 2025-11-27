@@ -6,7 +6,7 @@ import LeagueRankings from "@/components/LeagueRankings";
 import MatchupTab from "@/components/MatchupTab";
 import MatchupSimulator from "@/components/MatchupSimulator";
 import ScheduleTab from "@/components/ScheduleTab";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useSearch } from "wouter";
 import { LogOut, MessageSquare, BarChart3, Calendar, Zap } from "lucide-react";
@@ -86,7 +86,16 @@ export default function RankingsPage() {
   });
 
   const rankings = rankingsData?.rankings || [];
-  const metadata = rankingsData?.metadata;
+  const metadataRef = useRef<typeof rankingsData['metadata']>(rankingsData?.metadata);
+  
+  // Update ref when metadata changes, then use ref value to preserve during loading
+  useEffect(() => {
+    if (rankingsData?.metadata) {
+      metadataRef.current = rankingsData.metadata;
+    }
+  }, [rankingsData?.metadata]);
+  
+  const metadata = metadataRef.current;
 
   const handleWeekChange = (week: number | null) => {
     // Use fresh params from window.location to avoid stale state
@@ -198,7 +207,7 @@ export default function RankingsPage() {
                     </Select>
                   </div>
                   
-                  {selectedLeagueKey && metadata && (
+                  {selectedLeagueKey && (
                     <div className="flex-1">
                       <label htmlFor="week-select" className="text-xs md:text-sm font-medium mb-2 block">
                         Time Period
@@ -213,7 +222,7 @@ export default function RankingsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
-                          {Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
+                          {metadata && Array.from({ length: metadata.currentWeek }, (_, i) => i + 1).map((week) => (
                             <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
                               Week {week}
                             </SelectItem>
