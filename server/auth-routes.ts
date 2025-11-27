@@ -18,7 +18,8 @@ export function getAuthenticatedUserId(req: Request): string | null {
   if (!req.isAuthenticated() || !req.user) {
     return null;
   }
-  return (req.user as any).id;
+  const user = req.user as { id: string };
+  return user.id;
 }
 
 export function registerAuthRoutes(app: Express) {
@@ -61,7 +62,7 @@ export function registerAuthRoutes(app: Express) {
 
   // Login
   app.post("/api/auth/login", (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
+    passport.authenticate("local", (err: Error | null, user: any, info?: { message: string }) => {
       if (err) {
         return next(err);
       }
@@ -99,7 +100,8 @@ export function registerAuthRoutes(app: Express) {
     }
 
     // Don't send password hash to client
-    const { password, ...userWithoutPassword } = req.user as any;
+    const user = req.user as { id: string; username: string; password?: string };
+    const { password, ...userWithoutPassword } = user;
     res.json({ user: userWithoutPassword });
   });
 }
