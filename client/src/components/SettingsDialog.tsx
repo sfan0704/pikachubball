@@ -30,7 +30,7 @@ export default function SettingsDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: yahooCredentialsStatus } = useQuery<{ hasCredentials: boolean; updatedAt: string | null }>({
+  const { data: yahooCredentialsStatus, isLoading: isLoadingYahooStatus } = useQuery<{ hasCredentials: boolean; updatedAt: string | null }>({
     queryKey: ["/api/settings/yahoo-credentials"],
     enabled: open,
   });
