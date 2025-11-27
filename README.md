@@ -370,7 +370,3 @@ For issues, suggestions, or questions:
 - Open an issue on GitHub
 - Check existing documentation in `replit.md`
 - Review code comments and JSDoc headers for implementation details
-
----
-
-**Made with ❤️ for Fantasy Basketball enthusiasts**
