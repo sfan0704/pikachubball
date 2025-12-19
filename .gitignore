@@ -4,3 +4,17 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+scripts/yahoo-api-responses/
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+
+# IDE/Editor
+.cursor/
+.vscode/
+.idea/
+
+# Test coverage
+coverage/

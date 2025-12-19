@@ -136,8 +136,8 @@ fantasy-basketball-ai/
 
 - **Node.js** 18+ with npm
 - **PostgreSQL** database (Replit provides this automatically)
-- **Yahoo Fantasy Account** with valid API credentials (Client ID & Secret)
-- **OpenAI API Key** for chat functionality
+- **Yahoo Developer App** - Create a Yahoo app at https://developer.yahoo.com/apps/ to get Client ID & Secret (app-level, shared by all users)
+- **OpenAI API Key** - Users provide their own API keys through the app's settings page
 
 ## Quick Start
 
@@ -150,19 +150,45 @@ npm install
 ### 2. Set Environment Variables
 Create a `.env.local` file in the root with:
 ```bash
-# Database (automatically provided on Replit)
-DATABASE_URL=postgresql://...
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/fantasy_basketball
 
-# Session & Encryption (generate secure random strings)
-SESSION_SECRET=your-secure-session-secret
-ENCRYPTION_KEY=your-32-byte-hex-encryption-key
+# Session & Encryption (generate secure random strings - see commands below)
+SESSION_SECRET=your-secure-session-secret-min-32-chars
+ENCRYPTION_KEY=your-64-hex-character-encryption-key
 
 # Yahoo Fantasy OAuth (get from Yahoo Developer Portal)
+# App-level credentials - used as default for all users
+# Users can optionally provide their own credentials in Settings for rate limits/privacy
 YAHOO_CLIENT_ID=your-yahoo-client-id
 YAHOO_CLIENT_SECRET=your-yahoo-client-secret
+
+# Optional: Custom redirect URI for development (required for ngrok/HTTPS testing)
+# YAHOO_REDIRECT_URI=https://your-ngrok-subdomain.ngrok-free.dev/api/auth/yahoo/callback
+
+# Optional: Trust proxy (set to "true" when behind ngrok, nginx, or other reverse proxy)
+# TRUST_PROXY=true
 ```
 
-Note: Users provide their own OpenAI API keys through the app's settings page after authentication.
+**Generate secure secrets:**
+```bash
+# Generate SESSION_SECRET (32+ characters)
+openssl rand -hex 32
+
+# Generate ENCRYPTION_KEY (must be exactly 64 hex characters = 32 bytes)
+openssl rand -hex 32
+```
+
+**Yahoo OAuth Credentials:**
+- **Default (Recommended)**: App owner sets credentials in `.env.local`. All users share the same Yahoo app and just authorize via OAuth.
+- **Optional**: Users can provide their own credentials in Settings → Advanced for:
+  - Avoiding shared rate limits
+  - Using their own Yahoo Developer app
+  - Better privacy/security control
+  - Enterprise/custom branding
+
+**OpenAI API Keys:**
+- Users provide their own OpenAI API keys through the app's settings page after authentication.
 
 ### 3. Setup Database
 ```bash
@@ -178,6 +204,164 @@ The app will run on `http://localhost:5000` with:
 - Frontend: Vite dev server
 - Backend: Express API server
 - Hot module reloading enabled
+
+## Local Development with ngrok
+
+Yahoo OAuth **requires HTTPS**, so you need ngrok (or similar) for local development.
+
+### 1. Install ngrok
+```bash
+# macOS
+brew install ngrok
+
+# Or download from https://ngrok.com/download
+```
+
+### 2. Start ngrok tunnel
+```bash
+ngrok http 5000
+```
+
+Note the HTTPS URL (e.g., `https://abc123.ngrok-free.dev`)
+
+### 3. Configure environment
+Add to your `.env.local`:
+```bash
+YAHOO_REDIRECT_URI=https://abc123.ngrok-free.dev/api/auth/yahoo/callback
+TRUST_PROXY=true
+```
+
+### 4. Update Yahoo Developer Portal
+1. Go to https://developer.yahoo.com/apps/
+2. Select your app
+3. Add the ngrok URL to **Redirect URI(s)**: `https://abc123.ngrok-free.dev/api/auth/yahoo/callback`
+4. Save changes
+
+### 5. Restart the dev server
+```bash
+npm run dev
+```
+
+**Note:** The ngrok URL changes each time you restart ngrok (unless you have a paid plan). Update both `.env.local` and Yahoo Developer Portal when it changes.
+
+## Production Deployment
+
+### Build for Production
+```bash
+# Build frontend and backend
+npm run build
+
+# The build outputs:
+# - dist/public/     (frontend static files)
+# - dist/index.js    (backend server bundle)
+```
+
+### Production Environment Variables
+```bash
+# Required
+NODE_ENV=production
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+SESSION_SECRET=<generate-with-openssl-rand-hex-32>
+ENCRYPTION_KEY=<generate-with-openssl-rand-hex-32>
+
+# Yahoo OAuth (app-level credentials)
+YAHOO_CLIENT_ID=your-yahoo-client-id
+YAHOO_CLIENT_SECRET=your-yahoo-client-secret
+
+# Required: Your production domain's callback URL
+YAHOO_REDIRECT_URI=https://your-domain.com/api/auth/yahoo/callback
+
+# If behind a reverse proxy (nginx, load balancer, etc.)
+TRUST_PROXY=true
+
+# Optional: Custom port (default: 5000)
+PORT=5000
+```
+
+### Run in Production
+```bash
+# Start the production server
+npm start
+```
+
+### Deployment Checklist
+- [ ] PostgreSQL database provisioned and `DATABASE_URL` set
+- [ ] Generate new `SESSION_SECRET` and `ENCRYPTION_KEY` (don't reuse from dev)
+- [ ] Yahoo Developer Portal: Add production redirect URI
+- [ ] HTTPS configured (required for Yahoo OAuth)
+- [ ] `TRUST_PROXY=true` if behind reverse proxy/load balancer
+- [ ] Run `npm run db:push` to create database tables
+
+### Reverse Proxy (nginx example)
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+## Replit Deployment
+
+Replit provides automatic PostgreSQL and HTTPS, making deployment straightforward.
+
+### 1. Import Repository
+1. Go to [Replit](https://replit.com)
+2. Click "Create Repl" → "Import from GitHub"
+3. Paste your repository URL
+
+### 2. Set Secrets (Environment Variables)
+In Replit, go to **Tools → Secrets** and add:
+
+| Secret | Value |
+|--------|-------|
+| `DATABASE_URL` | Replit provides this automatically via PostgreSQL add-on |
+| `SESSION_SECRET` | Generate: `openssl rand -hex 32` |
+| `ENCRYPTION_KEY` | Generate: `openssl rand -hex 32` |
+| `YAHOO_CLIENT_ID` | From Yahoo Developer Portal |
+| `YAHOO_CLIENT_SECRET` | From Yahoo Developer Portal |
+
+**Note:** `REPLIT_DEV_DOMAIN` is automatically set by Replit - you don't need to configure it.
+
+### 3. Configure Yahoo Developer Portal
+Add the Replit URL as a redirect URI in your Yahoo app:
+```
+https://your-repl-name.your-username.repl.co/api/auth/yahoo/callback
+```
+
+### 4. Add PostgreSQL
+1. In Replit, click **Tools → Database**
+2. Select **PostgreSQL**
+3. Replit automatically sets `DATABASE_URL`
+
+### 5. Deploy
+```bash
+# Push database schema
+npm run db:push
+
+# Start the app (Replit does this automatically)
+npm run dev
+```
+
+### Replit-Specific Notes
+- **HTTPS**: Replit provides HTTPS automatically - no configuration needed
+- **Redirect URI**: Replit automatically detects `REPLIT_DEV_DOMAIN` for OAuth callbacks
+- **Secrets**: Never commit secrets to git - use Replit's Secrets tool
+- **Always-On**: Enable "Always On" in Replit for production use (requires paid plan)
 
 ## Development Guide
 
@@ -261,8 +445,10 @@ Never manually write SQL migrations.
 - `POST /api/auth/login` - Login with username/password
 - `GET /api/auth/logout` - Logout current session
 - `GET /api/auth/me` - Get authenticated user info
-- `POST /api/auth/yahoo-oauth/start` - Initialize Yahoo OAuth flow
-- `GET /api/auth/yahoo-oauth/callback` - OAuth callback endpoint
+- `GET /api/auth/yahoo` - Get Yahoo OAuth authorization URL
+- `GET /api/auth/yahoo/callback` - OAuth callback endpoint
+- `GET /api/auth/yahoo/status` - Get Yahoo connection status
+- `DELETE /api/auth/yahoo` - Disconnect Yahoo account
 
 ### Yahoo Fantasy Data
 - `GET /api/yahoo/leagues` - Get user's fantasy leagues
@@ -300,7 +486,9 @@ The Yahoo Fantasy MCP server provides isolated access to Yahoo's Fantasy Basketb
 ## Security
 
 ### Credential Encryption
-- All Yahoo and OpenAI credentials are encrypted with AES-256-GCM before storage
+- Yahoo OAuth credentials default to app-level (stored in environment variables, not encrypted)
+- Users can optionally provide their own Yahoo credentials, which are encrypted with AES-256-GCM before storage
+- OpenAI credentials are encrypted with AES-256-GCM before storage (per-user)
 - Encryption key is derived from `ENCRYPTION_KEY` environment variable
 - Encrypted values are stored in PostgreSQL; actual credentials never touch disk
 
@@ -323,6 +511,13 @@ Set `SESSION_SECRET` environment variable:
 export SESSION_SECRET=$(openssl rand -hex 32)
 ```
 
+### "ENCRYPTION_KEY must be exactly 64 hex characters"
+Generate a valid encryption key:
+```bash
+# This generates exactly 64 hex characters (32 bytes)
+openssl rand -hex 32
+```
+
 ### Database connection errors
 Verify `DATABASE_URL` is set and PostgreSQL is running:
 ```bash
@@ -330,9 +525,28 @@ npm run db:push  # Tests connection
 ```
 
 ### Yahoo OAuth fails
-1. Verify `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` are correct
-2. Check OAuth redirect URI matches Yahoo Developer Portal settings
-3. Ensure user has a valid Yahoo account with Fantasy Basketball access
+1. Verify `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` are set in `.env.local` (or user has provided their own in Settings)
+2. **Check redirect URI matches EXACTLY** - The URI in Yahoo Developer Portal must match your environment:
+   - Local with ngrok: `https://your-subdomain.ngrok-free.dev/api/auth/yahoo/callback`
+   - Production: `https://your-domain.com/api/auth/yahoo/callback`
+   - Replit: `https://your-repl.your-username.repl.co/api/auth/yahoo/callback`
+3. **Set `YAHOO_REDIRECT_URI`** in `.env.local` to match the Yahoo Developer Portal
+4. **Set `TRUST_PROXY=true`** if running behind ngrok/reverse proxy
+5. Ensure user has a valid Yahoo account with Fantasy Basketball access
+6. If using custom credentials, verify they're correct in Settings → Advanced
+
+### Yahoo OAuth "redirect_uri mismatch" error
+This means the redirect URI in your code doesn't match Yahoo Developer Portal:
+1. Check the console logs for "Generating OAuth URL" to see what URI is being used
+2. Copy that exact URI to Yahoo Developer Portal (including `/api/auth/yahoo/callback`)
+3. Set `YAHOO_REDIRECT_URI` in `.env.local` to that exact value
+4. Restart the server
+
+### ngrok URL keeps changing
+Free ngrok generates a new URL each session. Options:
+1. Update `.env.local` and Yahoo Developer Portal each time
+2. Use a paid ngrok plan for a stable subdomain
+3. Use a different tunneling service with stable URLs
 
 ### Chat not responding
 1. Verify user has provided an OpenAI API key in settings
@@ -346,12 +560,114 @@ npm run lint     # Code quality issues
 npm run format   # Fix formatting issues
 ```
 
+## Data Model
+
+The application uses a layered type system to transform raw Yahoo API responses into clean, type-safe domain models.
+
+### Architecture
+
+**Three-Layer System:**
+
+1. **Raw API Types** (`server/types/yahoo-api.ts`)
+   - Exact structure of Yahoo API responses
+   - Snake_case naming (matches Yahoo)
+   - Infrastructure layer
+
+2. **Domain Models** (`shared/domain/`)
+   - Clean, normalized domain objects
+   - CamelCase naming (TypeScript convention)
+   - Used by both frontend and backend
+   - Pure TypeScript interfaces (no runtime validation)
+
+3. **DTOs** (`shared/schema.ts`)
+   - Data Transfer Objects for frontend consumption
+   - May combine/denormalize domain models
+   - Zod validation schemas
+   - Optimized for API responses
+
+### Core Entities
+
+**League**: Fantasy basketball league
+- `leagueKey`, `name`, `season`, `currentWeek`, `endWeek`, `scoringType`, `numTeams`
+
+**Team**: Fantasy team within a league
+- `teamKey`, `teamName`, `leagueKey`, `managerName`, `managerGuid`
+
+**Player**: NBA player (minimal for now)
+- `playerKey`, `name`, `position`, `nbaTeam`, `status`
+
+**Matchup**: Head-to-head matchup between two teams
+- `leagueKey`, `week`, `team1Key`, `team2Key`, `team1Score`, `team2Score`, `status`
+
+**TeamStats**: Statistical performance (team or player)
+- `teamKey`, `scope` ('season' | 'week'), `week?`, `stats` (9 categories), computed `categoryRanks`, `totalRank`
+
+### Relationships
+
+- **League ↔ Team**: 1:N (Team has `leagueKey` foreign key)
+- **Team ↔ Player**: M:N (via roster, not stored as separate entity)
+- **League ↔ Matchup**: 1:N (Matchup has `leagueKey` foreign key)
+- **Team ↔ Matchup**: M:2 (Matchup has `team1Key`, `team2Key`)
+- **Team ↔ Stats**: 1:N (Stats has `teamKey` foreign key)
+
+**Pattern**: Flat domain models with foreign key references. Nested relationships only in DTOs when needed.
+
+### Parsing Strategy
+
+**Location**: `server/services/parsers/`
+
+**Functions**:
+- `parseLeague()` - Transform Yahoo API league response → League
+- `parseTeam()` - Transform Yahoo API team response → Team
+- `parseTeamStats()` - Transform Yahoo API stats → TeamStats
+- `parseMatchup()` - Transform Yahoo API scoreboard → Matchup[]
+- `parsePlayer()` - Transform Yahoo API player response → Player
+
+**Error Handling**: Parsers return `null` on invalid data. Services handle nulls and log warnings.
+
+**Type Safety**: Parsers accept typed raw API responses, return typed domain models.
+
+**Computed Fields**: Rankings and derived stats computed in separate functions (not in parsers).
+
+### Time Granularity
+
+Yahoo API supports **weekly** and **season** granularity (not daily):
+- Season totals: Default (no week parameter)
+- Weekly stats: `;type=week;week=${week}`
+- Stats model: `scope: 'season' | 'week'` with optional `week` field
+
+### File Structure
+
+```
+shared/
+  domain/
+    league.ts          # League, Team interfaces
+    player.ts          # Player interface
+    stats.ts           # TeamStats, CategoryStats interfaces
+    matchup.ts         # Matchup interface
+    index.ts           # Barrel exports (types only)
+
+server/
+  types/
+    yahoo-api.ts       # Raw Yahoo API response types (snake_case)
+  services/
+    parsers/
+      league-parser.ts # parseLeague(), parseTeam()
+      stats-parser.ts  # parseTeamStats()
+      matchup-parser.ts # parseMatchup()
+      player-parser.ts # parsePlayer()
+
+shared/
+  schema.ts            # DTOs with Zod validation (enhanced)
+```
+
 ## Contributing
 
 We follow best practices from:
 - [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)
 - [React Official Docs](https://react.dev/)
 - [Express.js Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)
+- See `docs/EXPRESS_BEST_PRACTICES.md` for detailed code organization guidelines
 
 ### Development Workflow
 1. Create a feature branch
@@ -368,5 +684,22 @@ MIT License - see LICENSE file for details
 
 For issues, suggestions, or questions:
 - Open an issue on GitHub
-- Check existing documentation in `replit.md`
+- Check existing documentation in `docs/` folder
 - Review code comments and JSDoc headers for implementation details
+
+## Environment Variables Reference
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `SESSION_SECRET` | ✅ | Session encryption key (32+ chars) |
+| `ENCRYPTION_KEY` | ✅ | AES encryption key (64 hex chars) |
+| `YAHOO_CLIENT_ID` | ✅ | Yahoo app Client ID |
+| `YAHOO_CLIENT_SECRET` | ✅ | Yahoo app Client Secret |
+| `YAHOO_REDIRECT_URI` | ⚠️ | OAuth callback URL (required for ngrok/production) |
+| `TRUST_PROXY` | ⚠️ | Set to `true` behind reverse proxy |
+| `NODE_ENV` | ❌ | `development` / `production` / `test` |
+| `PORT` | ❌ | Server port (default: 5000) |
+| `REPLIT_DEV_DOMAIN` | ❌ | Auto-set by Replit |
+
+⚠️ = Required in certain environments

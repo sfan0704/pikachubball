@@ -90,6 +90,11 @@ export default function YahooConnect() {
     );
   }
 
+  // Hide the component when already connected
+  if (status?.connected) {
+    return null;
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">

@@ -67,20 +67,24 @@ export type InsertYahooToken = z.infer<typeof insertYahooTokenSchema>;
 export type OpenaiCredentials = typeof openaiCredentials.$inferSelect;
 export type InsertOpenaiCredentials = z.infer<typeof insertOpenaiCredentialsSchema>;
 
-// Yahoo API Response Types
+// Yahoo API Response Types (DTOs)
+// These are enhanced versions of domain models for API responses
+
 export const leagueSchema = z.object({
   leagueKey: z.string(),
   leagueName: z.string(),
   teamKey: z.string(),
   teamName: z.string(),
+  season: z.number().optional(),
+  gameKey: z.string().optional(),
 });
 
 export const playerSchema = z.object({
+  playerKey: z.string(),
   name: z.string(),
   position: z.string(),
-  team: z.string(),
+  team: z.string(), // DTO uses 'team' for frontend compatibility (domain uses 'nbaTeam')
   status: z.enum(["active", "injured", "out"]),
-  playerKey: z.string().optional(),
 });
 
 export const categoryStatsSchema = z.object({
@@ -100,7 +104,7 @@ export const teamRankingSchema = z.object({
   teamName: z.string(),
   managerName: z.string().optional(),
   stats: categoryStatsSchema,
-  categoryRanks: categoryStatsSchema,
+  categoryRanks: categoryStatsSchema, // Note: This represents ranks, not stats, but uses same structure
   totalRank: z.number(),
 });
 

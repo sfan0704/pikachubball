@@ -1,22 +1,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getLeagueRankings, getLeagueHeatmap } from '../../../../server/services/viz/league-viz';
-import { YahooMCPDataSource } from '../../../../server/services/fantasy-data-source';
-import { createMockMCPClient, createMalformedMCPClient } from '../../fixtures/mock-mcp-client';
+import { createMockFantasyDataSource, createMalformedFantasyDataSource } from '../../fixtures/mock-fantasy-data-source';
+import type { FantasyDataSource } from '../../../../server/services/fantasy-data-source';
 import { testLeagueKey } from '../../fixtures/test-data';
 
 describe('league-viz', () => {
-  let dataSource: YahooMCPDataSource;
+  let dataSource: FantasyDataSource;
 
   beforeEach(async () => {
-    const mockClient = createMockMCPClient();
-    await mockClient.setCredentials('test-token', 'refresh-token', Date.now() + 3600000);
-    dataSource = new YahooMCPDataSource(mockClient as any);
+    dataSource = createMockFantasyDataSource();
   });
 
   describe('getLeagueRankings', () => {
     it('should return league rankings with correct structure', async () => {
+      // ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey);
 
+      // ASSERT
       expect(result).toHaveProperty('rankings');
       expect(result).toHaveProperty('metadata');
       expect(Array.isArray(result.rankings)).toBe(true);
@@ -24,9 +24,11 @@ describe('league-viz', () => {
     });
 
     it('should calculate category ranks correctly', async () => {
+      // ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey);
       const firstTeam = result.rankings[0];
 
+      // ASSERT
       // Check that all categories have ranks
       expect(firstTeam.categoryRanks).toHaveProperty('fgPct');
       expect(firstTeam.categoryRanks).toHaveProperty('ftPct');
@@ -45,20 +47,24 @@ describe('league-viz', () => {
       });
     });
 
-    it('should calculate total rank as average of category ranks', async () => {
+    it('should calculate total rank as sum of category ranks', async () => {
+      // ARRANGE & ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey);
       const team = result.rankings[0];
 
+      // ASSERT
+      // Total rank is the sum of all category ranks (not average)
       const categoryRanks = Object.values(team.categoryRanks);
-      const sum = categoryRanks.reduce((a: number, b: number) => a + b, 0);
-      const expectedAvg = sum / categoryRanks.length;
+      const expectedSum = categoryRanks.reduce((a: number, b: number) => a + b, 0);
 
-      expect(team.totalRank).toBeCloseTo(expectedAvg, 2);
+      expect(team.totalRank).toBe(expectedSum);
     });
 
     it('should rank turnover category in reverse (lower is better)', async () => {
+      // ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey);
 
+      // ASSERT
       // Find teams with lowest and highest TOs
       const sortedByTO = [...result.rankings].sort((a, b) => a.stats.to - b.stats.to);
       const lowestTO = sortedByTO[0];
@@ -69,17 +75,21 @@ describe('league-viz', () => {
     });
 
     it('should extract manager names', async () => {
+      // ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey);
 
+      // ASSERT
       // At least one team should have a manager name
       const teamsWithManagers = result.rankings.filter(t => t.managerName);
       expect(teamsWithManagers.length).toBeGreaterThan(0);
     });
 
     it('should include FG% and FT% makes/attempts data', async () => {
+      // ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey);
       const team = result.rankings[0] as any;
 
+      // ASSERT
       // Check that shooting data is present
       expect(team.fgMakes).toBeGreaterThan(0);
       expect(team.fgAttempts).toBeGreaterThan(0);
@@ -92,8 +102,10 @@ describe('league-viz', () => {
     });
 
     it('should include correct metadata', async () => {
+      // ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey);
 
+      // ASSERT
       expect(result.metadata.scope).toBe('season');
       expect(result.metadata.currentWeek).toBeGreaterThan(0);
       expect(result.metadata.totalWeeks).toBeGreaterThan(0);
@@ -101,9 +113,13 @@ describe('league-viz', () => {
     });
 
     it('should handle week parameter for weekly rankings', async () => {
+      // ARRANGE
       const week = 5;
+      
+      // ACT
       const result = await getLeagueRankings(dataSource, testLeagueKey, week);
 
+      // ASSERT
       expect(result.metadata.scope).toBe('week');
       expect(result.metadata.week).toBe(week);
     });
@@ -111,8 +127,10 @@ describe('league-viz', () => {
 
   describe('getLeagueHeatmap', () => {
     it('should return heatmap data with correct structure', async () => {
+      // ACT
       const result = await getLeagueHeatmap(dataSource, testLeagueKey);
 
+      // ASSERT
       expect(result).toHaveProperty('teams');
       expect(result).toHaveProperty('metadata');
       expect(Array.isArray(result.teams)).toBe(true);
@@ -120,9 +138,11 @@ describe('league-viz', () => {
     });
 
     it('should include heatmap cells for each category', async () => {
+      // ACT
       const result = await getLeagueHeatmap(dataSource, testLeagueKey);
       const team = result.teams[0];
 
+      // ASSERT
       expect(team.categories).toHaveProperty('fgPct');
       expect(team.categories).toHaveProperty('ftPct');
       expect(team.categories).toHaveProperty('tpm');
@@ -135,8 +155,10 @@ describe('league-viz', () => {
     });
 
     it('should calculate percentiles correctly (0-100 range)', async () => {
+      // ACT
       const result = await getLeagueHeatmap(dataSource, testLeagueKey);
 
+      // ASSERT
       result.teams.forEach(team => {
         Object.values(team.categories).forEach((cell: any) => {
           expect(cell.percentile).toBeGreaterThanOrEqual(0);
@@ -146,9 +168,11 @@ describe('league-viz', () => {
     });
 
     it('should assign ranks correctly', async () => {
+      // ACT
       const result = await getLeagueHeatmap(dataSource, testLeagueKey);
       const numTeams = result.teams.length;
 
+      // ASSERT
       result.teams.forEach(team => {
         Object.values(team.categories).forEach((cell: any) => {
           expect(cell.rank).toBeGreaterThan(0);
@@ -160,29 +184,36 @@ describe('league-viz', () => {
 
   describe('error handling', () => {
     it('should return empty rankings for malformed standings data', async () => {
-      const malformedClient = createMalformedMCPClient();
-      await malformedClient.setCredentials('test-token', 'refresh-token', Date.now() + 3600000);
-      const malformedDataSource = new YahooMCPDataSource(malformedClient as any);
+      // ARRANGE
+      const malformedDataSource = createMalformedFantasyDataSource();
 
-      // Code doesn't throw, returns empty/default structure
+      // ACT
+      // Code should handle malformed data gracefully
       const result = await getLeagueRankings(malformedDataSource, testLeagueKey);
+      
+      // ASSERT
       expect(result).toBeDefined();
       expect(result.rankings).toBeDefined();
       expect(Array.isArray(result.rankings)).toBe(true);
     });
 
     it('should pass through week parameter without validation', async () => {
+      // ACT
       // Week validation happens at Yahoo API level, not in our code
       // Our code just passes it through
       const result = await getLeagueRankings(dataSource, testLeagueKey, 999);
+      
+      // ASSERT
       expect(result).toBeDefined();
       expect(result.metadata.week).toBe(999);
     });
 
     it('should handle missing stat data', async () => {
+      // ACT
       // MockMCPClient returns consistent data, but we verify resilience
       const result = await getLeagueRankings(dataSource, testLeagueKey);
       
+      // ASSERT
       // Even with potential missing stats, should return valid structure
       expect(result.rankings).toBeDefined();
       expect(Array.isArray(result.rankings)).toBe(true);

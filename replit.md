@@ -59,9 +59,11 @@ Frontend (React) → Backend (Express) → PostgreSQL + MCP Server (Yahoo API)
 
 **Database** (Drizzle ORM + PostgreSQL):
 - `users` - User accounts (bcrypt passwords)
-- `yahooCredentials` - Encrypted Yahoo Client ID/Secret (per user)
-- `yahooTokens` - OAuth tokens with auto-refresh
+- `yahooCredentials` - Optional encrypted Yahoo Client ID/Secret (per user, falls back to env if not set)
+- `yahooTokens` - OAuth tokens with auto-refresh (per user)
 - `openaiCredentials` - Encrypted OpenAI API keys (per user)
+
+Note: Yahoo OAuth credentials default to app-level (stored in environment variables). Users can optionally provide their own credentials which are encrypted and stored per-user.
 
 ## Recent Changes & Milestones
 

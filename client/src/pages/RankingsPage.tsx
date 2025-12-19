@@ -7,14 +7,19 @@ import MatchupSimulator from "@/components/features/league/MatchupSimulator";
 import ScheduleTab from "@/components/features/league/ScheduleTab";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useLocation, useSearch } from "wouter";
-import { LogOut, MessageSquare, BarChart3, Calendar, Zap } from "lucide-react";
+import { LogOut, MessageSquare, BarChart3, Calendar, Zap, X, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { useChat } from "@/lib/chat-context";
+import { useChat } from "@/lib/chatContext";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import SettingsDialog from "@/components/features/auth/SettingsDialog";
+import YahooCredentialsSetupModal from "@/components/features/auth/YahooCredentialsSetupModal";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RankingsSkeleton, LeagueSelectorSkeleton } from "@/components/common/RankingsSkeleton";
+import { ErrorBanner } from "@/components/common/ErrorBanner";
 import { useFirstLeague } from "@/hooks/useFirstLeague";
 import type { RankingsResponse } from "@shared/schema";
 
@@ -23,11 +28,105 @@ export default function RankingsPage() {
   const [location, setLocation] = useLocation();
   const searchParams = useSearch();
   const { user, logout } = useAuth();
-  const { openChat } = useChat();
+  const { openChat, setSelectedTeamKey } = useChat();
   const { toast } = useToast();
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [dismissedConnectionBanner, setDismissedConnectionBanner] = useState(false);
   
   // Use the shared hook for league selection
-  const { leagues, selectedLeagueKey, setSelectedLeagueKey, selectedLeague, isLoadingLeagues } = useFirstLeague();
+  const { leagues, selectedLeagueKey, setSelectedLeagueKey, selectedLeague, isLoadingLeagues, error: leaguesError } = useFirstLeague();
+
+  // Sync selected team to chat context when it changes
+  useEffect(() => {
+    if (selectedLeague?.teamKey) {
+      setSelectedTeamKey(selectedLeague.teamKey);
+    }
+  }, [selectedLeague?.teamKey, setSelectedTeamKey]);
+
+  // Check Yahoo credentials status
+  const { data: credentialsStatus, isLoading: isLoadingCredentials } = useQuery<{
+    hasCredentials: boolean;
+    updatedAt: string | null;
+  }>({
+    queryKey: ["/api/settings/yahoo-credentials"],
+  });
+
+  // Check Yahoo connection status
+  const { data: yahooStatus, isLoading: isLoadingYahooStatus } = useQuery<{
+    connected: boolean;
+    hasValidToken: boolean;
+    hasCredentials: boolean;
+  }>({
+    queryKey: ["/api/auth/yahoo/status"],
+  });
+
+  // Check for OAuth errors in URL and display them
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    const details = params.get('details');
+    const description = params.get('description');
+    
+    if (error) {
+      let errorMessage = "Yahoo OAuth error occurred";
+      
+      if (error === 'yahoo_oauth_error') {
+        errorMessage = details || description || "Yahoo OAuth authorization failed";
+      } else if (error === 'token_exchange_failed') {
+        errorMessage = details || "Failed to exchange authorization code. Check that your redirect URI matches your Yahoo Developer Portal settings.";
+      } else if (error === 'credentials_not_found' || error === 'credentials_required') {
+        errorMessage = "Yahoo credentials are required. Please add your Client ID and Client Secret in Settings.";
+      } else if (error === 'missing_code') {
+        errorMessage = "Missing authorization code. Please try connecting again.";
+      } else if (error === 'invalid_state') {
+        errorMessage = "Invalid OAuth state. Please try connecting again.";
+      } else if (error === 'not_authenticated') {
+        errorMessage = "You must be logged in to connect Yahoo.";
+      }
+      
+      toast({
+        title: "Yahoo Connection Error",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 10000,
+      });
+      
+      // Clean up URL
+      params.delete('error');
+      params.delete('details');
+      params.delete('description');
+      const newSearch = params.toString();
+      const path = location.split('?')[0];
+      setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
+    } else if (params.get('yahoo_connected') === 'true') {
+      toast({
+        title: "Successfully Connected",
+        description: "Your Yahoo Fantasy account has been connected!",
+      });
+      // Invalidate status query to refresh connection state
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/yahoo/status"] });
+      params.delete('yahoo_connected');
+      const newSearch = params.toString();
+      const path = location.split('?')[0];
+      setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
+    }
+  }, [location, setLocation, toast]);
+
+  // Check if credentials are required (can be dismissed for session)
+  useEffect(() => {
+    if (user && !isLoadingCredentials && !isLoadingYahooStatus) {
+      const SESSION_DISMISS_KEY = 'yahoo_credentials_modal_dismissed';
+      const isDismissedForSession = typeof window !== 'undefined' && sessionStorage.getItem(SESSION_DISMISS_KEY) === 'true';
+      
+      if (!yahooStatus?.hasCredentials && !isDismissedForSession) {
+        // No credentials - show setup modal (can be dismissed)
+        setShowCredentialsModal(true);
+      } else {
+        // Has credentials or dismissed - hide credentials modal
+        setShowCredentialsModal(false);
+      }
+    }
+  }, [user, yahooStatus?.hasCredentials, isLoadingCredentials, isLoadingYahooStatus]);
 
   // Parse week from URL query params using useMemo to avoid redundant parsing
   const selectedWeek = useMemo(() => {
@@ -66,7 +165,7 @@ export default function RankingsPage() {
       : `/api/yahoo/league-rankings/${selectedLeagueKey}`;
   }, [selectedLeagueKey, selectedWeek]);
 
-  const { data: rankingsData, isLoading: isLoadingRankings } = useQuery<RankingsResponse>({
+  const { data: rankingsData, isLoading: isLoadingRankings, error: rankingsError } = useQuery<RankingsResponse>({
     queryKey: [rankingsUrl],
     enabled: !!rankingsUrl,
     retry: false,
@@ -95,8 +194,98 @@ export default function RankingsPage() {
     setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
   };
 
+  const handleConnectYahoo = async () => {
+    try {
+      const response = await fetch("/api/auth/yahoo", {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authUrl) {
+          window.location.href = data.authUrl;
+        }
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Connection Failed",
+          description: error.error || "Failed to initiate authentication",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to connect",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Yahoo Credentials Setup Modal - blocking, shown when credentials are missing */}
+      <YahooCredentialsSetupModal 
+        open={showCredentialsModal} 
+        onOpenChange={setShowCredentialsModal}
+      />
+      
+      {/* Non-blocking connection banner - shown when credentials exist but not connected */}
+      {yahooStatus?.hasCredentials && !yahooStatus?.connected && !dismissedConnectionBanner && (
+        <Alert className="mx-4 md:mx-6 mt-4 border-primary/20 bg-primary/5">
+          <div className="flex items-start justify-between w-full">
+            <div className="flex-1">
+              <AlertTitle className="flex items-center gap-2">
+                Connect Your Yahoo Fantasy Account
+              </AlertTitle>
+              <AlertDescription className="mt-2">
+                Connect to access your leagues, teams, and get AI-powered insights.
+              </AlertDescription>
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/auth/yahoo", {
+                      credentials: "include",
+                    });
+                    if (response.ok) {
+                      const data = await response.json();
+                      if (data.authUrl) {
+                        window.location.href = data.authUrl;
+                      }
+                    } else {
+                      const error = await response.json();
+                      toast({
+                        title: "Connection Failed",
+                        description: error.error || "Failed to initiate authentication",
+                        variant: "destructive",
+                      });
+                    }
+                  } catch (error: any) {
+                    toast({
+                      title: "Connection Failed",
+                      description: error.message || "Failed to connect",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                size="sm"
+                className="mt-3"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Connect to Yahoo
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              onClick={() => setDismissedConnectionBanner(true)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </Alert>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 md:px-6">
@@ -152,14 +341,89 @@ export default function RankingsPage() {
           </p>
         </div>
 
-        {isLoadingLeagues ? (
-          <div className="text-center py-8 text-muted-foreground">Loading leagues...</div>
-        ) : leagues.length === 0 ? (
+        {/* Error Banners - Only show for actual errors, not missing credentials or connection issues */}
+        {leaguesError && yahooStatus?.hasCredentials && 
+         !leaguesError.message?.toLowerCase().includes("connect") &&
+         !leaguesError.message?.toLowerCase().includes("connection") && (
+          <ErrorBanner
+            title="Failed to Load Leagues"
+            message={leaguesError.message || "Unable to load your leagues. Please try again."}
+            onRetry={() => queryClient.invalidateQueries({ queryKey: ["/api/yahoo/leagues"] })}
+          />
+        )}
+        {rankingsError && selectedLeagueKey && yahooStatus?.hasCredentials &&
+         !(rankingsError instanceof Error && rankingsError.message?.toLowerCase().includes("connect")) &&
+         !(rankingsError instanceof Error && rankingsError.message?.toLowerCase().includes("connection")) && (
+          <ErrorBanner
+            title="Failed to Load Rankings"
+            message={rankingsError instanceof Error ? rankingsError.message : "Unable to load rankings data. Please try again."}
+            onRetry={() => queryClient.invalidateQueries({ queryKey: [rankingsUrl] })}
+          />
+        )}
+
+        {isLoadingLeagues || isLoadingCredentials || isLoadingYahooStatus ? (
+          <LeagueSelectorSkeleton />
+        ) : !yahooStatus?.hasCredentials ? (
           <Card>
-            <CardContent className="py-8">
-              <p className="text-center text-muted-foreground">
-                No leagues found. Please connect your Yahoo account first.
-              </p>
+            <CardContent className="py-12">
+              <div className="text-center space-y-4">
+                <p className="text-lg font-medium text-muted-foreground">
+                  Yahoo Credentials Required
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Please set up your Yahoo OAuth credentials to use this app.
+                </p>
+                <Button
+                  onClick={() => {
+                    // Clear session dismissal so modal can show
+                    sessionStorage.removeItem('yahoo_credentials_modal_dismissed');
+                    setShowCredentialsModal(true);
+                  }}
+                  size="lg"
+                >
+                  Set Up Credentials
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : leaguesError || (yahooStatus && !yahooStatus.connected && leagues.length === 0) ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center space-y-4">
+                <p className="text-lg font-medium text-muted-foreground">
+                  {leaguesError 
+                    ? "Unable to load leagues" 
+                    : "No leagues found"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {yahooStatus?.connected 
+                    ? "You don't have any leagues yet."
+                    : dismissedConnectionBanner
+                      ? "Connect your Yahoo Fantasy account to view your leagues and get AI-powered insights."
+                      : "Use the banner above to connect your Yahoo Fantasy account."}
+                </p>
+                {!yahooStatus?.connected && dismissedConnectionBanner && (
+                  <Button
+                    onClick={handleConnectYahoo}
+                    size="lg"
+                  >
+                    Connect Yahoo Account
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : leagues.length === 0 && yahooStatus?.connected ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center space-y-4">
+                <p className="text-lg font-medium text-muted-foreground">
+                  No leagues found
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  You don't have any Yahoo Fantasy Basketball leagues yet.
+                </p>
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -207,7 +471,7 @@ export default function RankingsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
-                          {maxWeeks > 0 && Array.from({ length: maxWeeks }, (_, i) => i + 1).map((week) => (
+                          {maxWeeks > 0 && Array.from({ length: maxWeeks }, (_, i) => i + 1).reverse().map((week) => (
                             <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
                               Week {week}
                             </SelectItem>
@@ -220,7 +484,7 @@ export default function RankingsPage() {
               </CardContent>
             </Card>
 
-            {selectedLeagueKey ? (
+            {selectedLeagueKey && yahooStatus?.connected ? (
               <Tabs defaultValue="rankings" className="space-y-4">
                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4" data-testid="tabs-visualizations">
                   <TabsTrigger value="rankings" data-testid="tab-rankings" className="gap-2">
@@ -243,7 +507,7 @@ export default function RankingsPage() {
 
                 <TabsContent value="rankings" className="space-y-4">
                   {isLoadingRankings ? (
-                    <div className="text-center py-8 text-muted-foreground">Loading rankings...</div>
+                    <RankingsSkeleton />
                   ) : rankings.length > 0 && selectedLeague && metadata ? (
                     <LeagueRankings 
                       rankings={rankings} 
@@ -320,7 +584,9 @@ export default function RankingsPage() {
               <Card>
                 <CardContent className="py-12">
                   <p className="text-center text-muted-foreground">
-                    Select a league above to view visualizations
+                    {yahooStatus?.connected 
+                      ? "Select a league above to view visualizations"
+                      : "Connect your Yahoo account to view visualizations"}
                   </p>
                 </CardContent>
               </Card>

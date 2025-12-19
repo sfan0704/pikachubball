@@ -4,17 +4,28 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { ChatProvider, useChat } from "@/lib/chat-context";
+import { ChatProvider, useChat } from "@/lib/chatContext";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import RankingsPage from "@/pages/RankingsPage";
 import AuthPage from "@/pages/AuthPage";
-import NotFound from "@/pages/not-found";
+import NotFound from "@/pages/NotFoundPage";
 import ChatDialog from "@/components/features/chat/ChatDialog";
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-4">
+          <Skeleton className="h-8 w-48 mx-auto" />
+          <Skeleton className="h-4 w-32 mx-auto" />
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -28,8 +39,29 @@ function Router() {
   const { user, isLoading } = useAuth();
   const { isChatOpen, openChat, closeChat } = useChat();
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onCmdK: () => {
+      if (user && !isChatOpen) {
+        openChat();
+      }
+    },
+    onEscape: () => {
+      if (isChatOpen) {
+        closeChat();
+      }
+    },
+  });
+
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-4">
+          <Skeleton className="h-8 w-48 mx-auto" />
+          <Skeleton className="h-4 w-32 mx-auto" />
+        </div>
+      </div>
+    );
   }
 
   const handleChatOpenChange = (open: boolean) => {
@@ -61,16 +93,20 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ChatProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </ChatProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ChatProvider>
+            <TooltipProvider>
+              <Toaster />
+              <ErrorBoundary>
+                <Router />
+              </ErrorBoundary>
+            </TooltipProvider>
+          </ChatProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

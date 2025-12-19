@@ -161,6 +161,12 @@ export const mockScoreboard = {
                             { name: "Team Alpha" },
                           ],
                           {
+                            team_points: {
+                              total: 5,
+                              wins: 5,
+                              losses: 4,
+                              ties: 0,
+                            },
                             team_stats: {
                               stats: [
                                 { stat: { stat_id: "5", value: "0.475" } },
@@ -186,6 +192,12 @@ export const mockScoreboard = {
                             { name: "Team Beta" },
                           ],
                           {
+                            team_points: {
+                              total: 4,
+                              wins: 4,
+                              losses: 5,
+                              ties: 0,
+                            },
                             team_stats: {
                               stats: [
                                 { stat: { stat_id: "5", value: "0.468" } },

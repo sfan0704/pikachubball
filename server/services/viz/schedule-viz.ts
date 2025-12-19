@@ -1,5 +1,8 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
 import type { ScheduleMatrixResponse, DaySchedule, PlayerGame } from '@shared/schema';
+import { parseTeam } from '../parsers/league-parser.js';
+import { parsePlayersFromRoster } from '../parsers/player-parser.js';
+import type { YahooApiTeamResponse } from '../../types/yahoo-api.js';
 
 export async function getScheduleMatrix(
   dataSource: FantasyDataSource,
@@ -10,8 +13,12 @@ export async function getScheduleMatrix(
 ): Promise<ScheduleMatrixResponse> {
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
-  const currentWeek = parseInt(leagueData?.current_week || '1');
-  const endWeek = parseInt(leagueData?.end_week || '22');
+  // Handle both array and object formats for league properties
+  const leagueProps = Array.isArray(leagueData) 
+    ? (leagueData.find((p: any) => p.current_week) || leagueData[0]) 
+    : leagueData;
+  const currentWeek = parseInt((leagueProps as any)?.current_week || '1');
+  const endWeek = parseInt((leagueProps as any)?.end_week || '22');
   
   const effectiveWeek = week || currentWeek;
   
@@ -20,7 +27,7 @@ export async function getScheduleMatrix(
   }
 
   const myRoster = await dataSource.getTeamRoster(teamKey);
-  const myTeamData = extractTeamInfo(myRoster);
+  const myTeamData = extractTeamInfo(myRoster, leagueKey);
   const myPlayers = extractRosterPlayers(myRoster);
   
   const mySchedule = await generateScheduleForWeek(myPlayers, effectiveWeek);
@@ -29,7 +36,7 @@ export async function getScheduleMatrix(
   let opponentData: { teamKey: string; teamName: string; schedule: DaySchedule[]; totalGames: number } | undefined;
   if (opponentTeamKey) {
     const oppRoster = await dataSource.getTeamRoster(opponentTeamKey);
-    const oppTeamData = extractTeamInfo(oppRoster);
+    const oppTeamData = extractTeamInfo(oppRoster, leagueKey);
     const oppPlayers = extractRosterPlayers(oppRoster);
     const oppSchedule = await generateScheduleForWeek(oppPlayers, effectiveWeek);
     const oppTotalGames = oppSchedule.reduce((sum, day) => sum + day.gameCount, 0);
@@ -61,59 +68,43 @@ export async function getScheduleMatrix(
   };
 }
 
-function extractTeamInfo(rosterData: any): { teamKey: string; teamName: string } {
+function extractTeamInfo(rosterData: YahooApiTeamResponse, leagueKey: string): { teamKey: string; teamName: string } {
   const team = rosterData?.fantasy_content?.team;
-  if (!team || !Array.isArray(team)) {
+  if (!team) {
     return { teamKey: '', teamName: 'Unknown Team' };
   }
   
-  const teamProperties = team[0];
-  if (!Array.isArray(teamProperties)) {
-    return { teamKey: '', teamName: 'Unknown Team' };
+  // Use the parser for consistency
+  const parsedTeam = parseTeam(team, leagueKey);
+  if (parsedTeam) {
+    return {
+      teamKey: parsedTeam.teamKey,
+      teamName: parsedTeam.teamName
+    };
   }
   
-  const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
-  const teamNameObj = teamProperties.find((prop: any) => prop.name);
-  
-  return {
-    teamKey: teamKeyObj?.team_key || '',
-    teamName: teamNameObj?.name || 'Unknown Team'
-  };
+  return { teamKey: '', teamName: 'Unknown Team' };
 }
 
-function extractRosterPlayers(rosterData: any): Array<{
+function extractRosterPlayers(rosterData: YahooApiTeamResponse): Array<{
   playerKey: string;
   playerName: string;
   team: string;
 }> {
-  const roster = rosterData?.fantasy_content?.team?.[1]?.roster?.[0]?.players;
-  if (!roster || !roster.count) {
+  const roster = rosterData?.fantasy_content?.team?.[1]?.roster;
+  if (!roster || !Array.isArray(roster) || roster.length === 0) {
     return [];
   }
 
-  const players: Array<{ playerKey: string; playerName: string; team: string }> = [];
+  // Use the parser for consistency
+  const domainPlayers = parsePlayersFromRoster({ roster });
   
-  for (let i = 0; i < roster.count; i++) {
-    const playerData = roster[i.toString()]?.player;
-    if (playerData && Array.isArray(playerData)) {
-      const playerInfo = playerData[0];
-      if (Array.isArray(playerInfo)) {
-        const playerKeyObj = playerInfo.find((prop: any) => prop.player_key);
-        const nameObj = playerInfo.find((prop: any) => prop.name);
-        const teamObj = playerInfo.find((prop: any) => prop.editorial_team_abbr);
-        
-        if (playerKeyObj && nameObj && teamObj) {
-          players.push({
-            playerKey: playerKeyObj.player_key,
-            playerName: nameObj.full || nameObj.name || 'Unknown Player',
-            team: teamObj.editorial_team_abbr
-          });
-        }
-      }
-    }
-  }
-  
-  return players;
+  // Convert to the format needed for schedule (playerName and team instead of name and nbaTeam)
+  return domainPlayers.map(player => ({
+    playerKey: player.playerKey,
+    playerName: player.name,
+    team: player.nbaTeam
+  }));
 }
 
 async function generateScheduleForWeek(

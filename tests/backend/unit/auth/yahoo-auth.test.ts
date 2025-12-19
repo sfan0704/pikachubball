@@ -3,8 +3,25 @@ import {
   generateState, 
   validateState, 
   getAuthorizationUrl,
-  YahooAuthError
+  exchangeCodeForToken,
+  refreshAccessToken
 } from '../../../../server/yahoo-auth';
+import axios from 'axios';
+import { env } from '../../../../server/config/env';
+import { logger } from '../../../../server/utils/logger';
+
+// Mock dependencies
+vi.mock('axios');
+vi.mock('../../../../server/config/env', () => ({
+  env: {
+    YAHOO_REDIRECT_URI: undefined,
+    REPLIT_DEV_DOMAIN: undefined,
+    PORT: 5000,
+    YAHOO_CLIENT_ID: 'test-client-id',
+    YAHOO_CLIENT_SECRET: 'test-client-secret',
+  },
+}));
+vi.mock('../../../../server/utils/logger');
 
 describe('Yahoo OAuth - CSRF Protection', () => {
   describe('generateState()', () => {
@@ -101,35 +118,8 @@ describe('Yahoo OAuth - CSRF Protection', () => {
   });
 });
 
-describe('Yahoo OAuth Errors', () => {
-  describe('YahooAuthError', () => {
-    it('should be an Error instance', () => {
-      const error = new YahooAuthError('Test error');
-      expect(error).toBeInstanceOf(Error);
-    });
-
-    it('should have correct message', () => {
-      const message = 'Failed to refresh token';
-      const error = new YahooAuthError(message);
-      expect(error.message).toBe(message);
-    });
-
-    it('should have needsReauth flag (default false)', () => {
-      const error = new YahooAuthError('Test error');
-      expect(error.needsReauth).toBe(false);
-    });
-
-    it('should have needsReauth flag set to true when specified', () => {
-      const error = new YahooAuthError('Test error', true);
-      expect(error.needsReauth).toBe(true);
-    });
-
-    it('should have correct error name', () => {
-      const error = new YahooAuthError('Test error');
-      expect(error.name).toBe('YahooAuthError');
-    });
-  });
-});
+// Note: YahooAuthError class was removed from the codebase
+// Error handling is now done through AppError classes in errorHandler.ts
 
 describe('State Store Cleanup', () => {
   it('should store state with expiration timestamp', () => {
@@ -145,5 +135,194 @@ describe('State Store Cleanup', () => {
     // Real expiration would require mocking Date or waiting 10 min
     const state = generateState();
     expect(validateState(state)).toBe(true);
+  });
+});
+
+describe('exchangeCodeForToken', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should exchange code for token successfully', async () => {
+    // ARRANGE
+    const code = 'auth-code-123';
+    const clientId = 'test-client-id';
+    const clientSecret = 'test-client-secret';
+    const mockResponse = {
+      data: {
+        access_token: 'access-token-123',
+        refresh_token: 'refresh-token-123',
+        expires_in: 3600,
+      },
+    };
+    vi.mocked(axios).mockResolvedValue(mockResponse as any);
+
+    // ACT
+    const result = await exchangeCodeForToken(code, clientId, clientSecret);
+
+    // ASSERT
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://api.login.yahoo.com/oauth2/get_token',
+        method: 'post',
+        headers: expect.objectContaining({
+          'Authorization': expect.stringContaining('Basic'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        }),
+      })
+    );
+    expect(result).toEqual({
+      accessToken: 'access-token-123',
+      refreshToken: 'refresh-token-123',
+      expiresIn: 3600,
+    });
+  });
+
+  it('should throw error with error_description from response', async () => {
+    // ARRANGE
+    const code = 'invalid-code';
+    const clientId = 'test-client-id';
+    const clientSecret = 'test-client-secret';
+    const error = {
+      response: {
+        status: 400,
+        statusText: 'Bad Request',
+        data: {
+          error: 'invalid_grant',
+          error_description: 'Invalid authorization code',
+        },
+      },
+      message: 'Request failed',
+    };
+    vi.mocked(axios).mockRejectedValue(error);
+
+    // ACT & ASSERT
+    await expect(exchangeCodeForToken(code, clientId, clientSecret)).rejects.toThrow(
+      'Token exchange failed: Invalid authorization code'
+    );
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('should throw error with error from response when no error_description', async () => {
+    // ARRANGE
+    const code = 'invalid-code';
+    const clientId = 'test-client-id';
+    const clientSecret = 'test-client-secret';
+    const error = {
+      response: {
+        status: 400,
+        data: {
+          error: 'invalid_request',
+        },
+      },
+      message: 'Request failed',
+    };
+    vi.mocked(axios).mockRejectedValue(error);
+
+    // ACT & ASSERT
+    await expect(exchangeCodeForToken(code, clientId, clientSecret)).rejects.toThrow(
+      'Token exchange failed: invalid_request'
+    );
+  });
+
+  it('should throw error with message when no response data', async () => {
+    // ARRANGE
+    const code = 'invalid-code';
+    const clientId = 'test-client-id';
+    const clientSecret = 'test-client-secret';
+    const error = {
+      message: 'Network error',
+    };
+    vi.mocked(axios).mockRejectedValue(error);
+
+    // ACT & ASSERT
+    await expect(exchangeCodeForToken(code, clientId, clientSecret)).rejects.toThrow(
+      'Token exchange failed: Network error'
+    );
+  });
+});
+
+describe('refreshAccessToken', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should refresh token successfully with provided credentials', async () => {
+    // ARRANGE
+    const refreshToken = 'refresh-token-123';
+    const clientId = 'provided-client-id';
+    const clientSecret = 'provided-client-secret';
+    const mockResponse = {
+      data: {
+        access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token',
+        expires_in: 3600,
+      },
+    };
+    vi.mocked(axios).mockResolvedValue(mockResponse as any);
+
+    // ACT
+    const result = await refreshAccessToken(refreshToken, clientId, clientSecret);
+
+    // ASSERT
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://api.login.yahoo.com/oauth2/get_token',
+        method: 'post',
+        headers: expect.objectContaining({
+          'Authorization': expect.stringContaining('Basic'),
+        }),
+      })
+    );
+    expect(result).toEqual({
+      accessToken: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+      expiresIn: 3600,
+    });
+  });
+
+  it('should throw error when credentials not provided', async () => {
+    // ARRANGE
+    const refreshToken = 'refresh-token-123';
+
+    // ACT & ASSERT
+    // The function now requires credentials to be explicitly provided
+    await expect(refreshAccessToken(refreshToken)).rejects.toThrow(
+      'Yahoo OAuth credentials are required'
+    );
+  });
+
+  it('should throw error when no credentials available', async () => {
+    // ARRANGE
+    const refreshToken = 'refresh-token-123';
+
+    // ACT & ASSERT
+    // The function requires credentials to be explicitly provided
+    await expect(refreshAccessToken(refreshToken)).rejects.toThrow(
+      'Yahoo OAuth credentials are required'
+    );
+  });
+
+  it('should throw error when refresh fails', async () => {
+    // ARRANGE
+    const refreshToken = 'invalid-refresh-token';
+    const clientId = 'test-client-id';
+    const clientSecret = 'test-client-secret';
+    const error = {
+      response: {
+        status: 400,
+        data: {
+          error: 'invalid_grant',
+        },
+      },
+      message: 'Request failed',
+    };
+    vi.mocked(axios).mockRejectedValue(error);
+
+    // ACT & ASSERT
+    await expect(refreshAccessToken(refreshToken, clientId, clientSecret)).rejects.toThrow(
+      'Failed to refresh access token'
+    );
+    expect(logger.error).toHaveBeenCalled();
   });
 });

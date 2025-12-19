@@ -1,12 +1,25 @@
 import axios from "axios";
-import { storage } from "./storage";
 import { randomBytes } from "crypto";
+import { env } from "./config/env";
+import { logger } from "./utils/logger";
 
-const CLIENT_ID = process.env.YAHOO_CLIENT_ID!;
-const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET!;
-const REDIRECT_URI = process.env.REPLIT_DEV_DOMAIN 
-  ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/yahoo/callback`
-  : "http://localhost:5000/api/auth/yahoo/callback";
+// Build redirect URI dynamically based on environment
+function getRedirectUri(): string {
+  // Allow custom redirect URI for development (e.g., ngrok HTTPS URL)
+  if (env.YAHOO_REDIRECT_URI) {
+    return env.YAHOO_REDIRECT_URI;
+  }
+  if (env.REPLIT_DEV_DOMAIN) {
+    return `https://${env.REPLIT_DEV_DOMAIN}/api/auth/yahoo/callback`;
+  }
+  // Use the PORT from env (defaults to 5000, but can be overridden)
+  // Try HTTPS first since Yahoo requires it, fallback to HTTP
+  const port = env.PORT;
+  // Yahoo requires HTTPS, so use https://localhost even though it may show a warning
+  return `https://localhost:${port}/api/auth/yahoo/callback`;
+}
+
+const REDIRECT_URI = getRedirectUri();
 
 // In-memory state store for CSRF protection
 const stateStore = new Map<string, { expires: number }>();
@@ -45,7 +58,6 @@ export function getAuthorizationUrl(state: string, clientId: string): string {
     client_id: clientId,
     redirect_uri: REDIRECT_URI,
     response_type: 'code',
-    language: 'en-us',
     state: state
   });
   
@@ -53,12 +65,40 @@ export function getAuthorizationUrl(state: string, clientId: string): string {
   // This is sufficient for analyzing data and providing recommendations
   params.append('scope', 'fspt-r');
   
-  return `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
+  // Note: Removed 'language' parameter as it may not be standard for Yahoo OAuth
+  
+  const authUrl = `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
+  
+  // Log the full URL for debugging (without exposing sensitive data)
+  logger.debug('Generated Yahoo OAuth URL', {
+    endpoint: 'https://api.login.yahoo.com/oauth2/request_auth',
+    redirectUri: REDIRECT_URI,
+    clientIdPrefix: clientId.substring(0, 20) + '...',
+    stateLength: state.length,
+    scope: 'fspt-r',
+    urlLength: authUrl.length,
+  });
+  
+  return authUrl;
 }
 
 export async function exchangeCodeForToken(code: string, clientId: string, clientSecret: string) {
   const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
   
+  const requestData = {
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: REDIRECT_URI,
+    code: code,
+    grant_type: 'authorization_code'
+  };
+
+  logger.debug('Exchanging code for token', {
+    redirectUri: REDIRECT_URI,
+    codeLength: code.length,
+    clientIdPrefix: clientId.substring(0, 10),
+  });
+
   try {
     const response = await axios({
       url: 'https://api.login.yahoo.com/oauth2/get_token',
@@ -67,13 +107,7 @@ export async function exchangeCodeForToken(code: string, clientId: string, clien
         'Authorization': `Basic ${authHeader}`,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      data: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: REDIRECT_URI,
-        code: code,
-        grant_type: 'authorization_code'
-      }).toString()
+      data: new URLSearchParams(requestData).toString()
     });
 
     return {
@@ -81,14 +115,38 @@ export async function exchangeCodeForToken(code: string, clientId: string, clien
       refreshToken: response.data.refresh_token,
       expiresIn: response.data.expires_in
     };
-  } catch (error) {
-    console.error('Error exchanging code for token:', error);
-    throw new Error('Failed to exchange authorization code for token');
+  } catch (error: any) {
+    // Log detailed error information
+    logger.error('Error exchanging code for token:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      requestUrl: error.config?.url,
+      requestData: {
+        ...requestData,
+        code: code.substring(0, 10) + '...',
+        client_secret: '***',
+      },
+      message: error.message,
+    });
+
+    // Provide more detailed error message
+    const errorMessage = error.response?.data?.error_description 
+      || error.response?.data?.error
+      || error.message
+      || 'Failed to exchange authorization code for token';
+    
+    throw new Error(`Token exchange failed: ${errorMessage}`);
   }
 }
 
-export async function refreshAccessToken(refreshToken: string) {
-  const authHeader = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+export async function refreshAccessToken(refreshToken: string, clientId: string, clientSecret: string) {
+  // Require credentials to be provided (no fallback)
+  if (!clientId || !clientSecret) {
+    throw new Error('Yahoo OAuth credentials are required');
+  }
+  
+  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
   
   try {
     const response = await axios({
@@ -111,90 +169,10 @@ export async function refreshAccessToken(refreshToken: string) {
       expiresIn: response.data.expires_in
     };
   } catch (error) {
-    console.error('Error refreshing token:', error);
+    logger.error('Error refreshing token:', error);
     throw new Error('Failed to refresh access token');
   }
 }
 
-export async function getValidAccessToken(userId: string): Promise<string | null> {
-  console.log('Getting valid access token for user:', userId);
-  const tokenData = await storage.getYahooToken(userId);
-  
-  console.log('Token data retrieved:', tokenData ? 'exists' : 'null', tokenData ? `expires at ${tokenData.expiresAt}` : '');
-  
-  if (!tokenData) {
-    console.log('No token data found for user');
-    return null;
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  console.log('Current timestamp:', now, 'Token expires at:', tokenData.expiresAt, 'Time until expiry:', tokenData.expiresAt - now);
-  
-  if (tokenData.expiresAt > now + 300) {
-    console.log('Token is still valid, returning access token');
-    return tokenData.accessToken;
-  }
-
-  console.log('Token needs refresh, refreshing...');
-  try {
-    const newTokens = await refreshAccessToken(tokenData.refreshToken);
-    
-    await storage.saveYahooToken({
-      userId: userId,
-      accessToken: newTokens.accessToken,
-      refreshToken: newTokens.refreshToken,
-      expiresAt: now + newTokens.expiresIn
-    });
-
-    console.log('Token refreshed successfully');
-    return newTokens.accessToken;
-  } catch (error) {
-    console.error('Failed to refresh token:', error);
-    await storage.deleteYahooToken(userId);
-    return null;
-  }
-}
-
-export class YahooAuthError extends Error {
-  constructor(message: string, public readonly needsReauth: boolean = false) {
-    super(message);
-    this.name = 'YahooAuthError';
-  }
-}
-
-export async function makeYahooApiRequest(userId: string, endpoint: string, params?: Record<string, string>) {
-  const accessToken = await getValidAccessToken(userId);
-  
-  if (!accessToken) {
-    throw new YahooAuthError('No valid Yahoo access token available. Please reconnect your Yahoo account.', true);
-  }
-
-  const url = new URL(`https://fantasysports.yahooapis.com/fantasy/v2${endpoint}`);
-  url.searchParams.append('format', 'json');
-  
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
-  }
-
-  try {
-    const response = await axios({
-      url: url.toString(),
-      method: 'get',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-
-    return response.data;
-  } catch (error: any) {
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      await storage.deleteYahooToken(userId);
-      throw new YahooAuthError('Yahoo token is invalid or expired. Please reconnect your Yahoo account.', true);
-    }
-    
-    console.error('Error making Yahoo API request:', error);
-    throw new Error('Failed to fetch data from Yahoo Fantasy API');
-  }
-}
+// Note: Token refresh is handled by YahooApiClient in yahoo-api-client.ts
+// API calls are made directly to Yahoo Fantasy API

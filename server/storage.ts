@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "./db";
+import { db } from "./config/db";
 import { users, yahooTokens, yahooCredentials, openaiCredentials } from "@shared/schema";
 import type {
   User,
@@ -23,7 +23,7 @@ export interface IStorage {
   getYahooToken(userId: string): Promise<YahooToken | undefined>;
   deleteYahooToken(userId: string): Promise<void>;
 
-  // Yahoo credentials operations
+  // Yahoo credentials operations (optional - falls back to env if not set)
   saveYahooCredentials(credentials: InsertYahooCredentials): Promise<YahooCredentials>;
   getYahooCredentials(userId: string): Promise<YahooCredentials | undefined>;
   deleteYahooCredentials(userId: string): Promise<void>;

@@ -1,22 +1,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getMatchupComparison } from '../../../../server/services/viz/matchup-viz';
-import { YahooMCPDataSource } from '../../../../server/services/fantasy-data-source';
-import { createMockMCPClient, createMalformedMCPClient } from '../../fixtures/mock-mcp-client';
+import { createMockFantasyDataSource, createMalformedFantasyDataSource } from '../../fixtures/mock-fantasy-data-source';
+import type { FantasyDataSource } from '../../../../server/services/fantasy-data-source';
 import { testLeagueKey, testTeamKey } from '../../fixtures/test-data';
 
 describe('matchup-viz', () => {
-  let dataSource: YahooMCPDataSource;
+  let dataSource: FantasyDataSource;
 
   beforeEach(async () => {
-    const mockClient = createMockMCPClient();
-    await mockClient.setCredentials('test-token', 'refresh-token', Date.now() + 3600000);
-    dataSource = new YahooMCPDataSource(mockClient as any);
+    dataSource = createMockFantasyDataSource();
   });
 
   describe('getMatchupComparison', () => {
     it('should return matchup comparison with correct structure', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       expect(result).toHaveProperty('myTeam');
       expect(result).toHaveProperty('opponent');
       expect(result).toHaveProperty('categories');
@@ -25,8 +25,10 @@ describe('matchup-viz', () => {
     });
 
     it('should identify correct teams in matchup', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       expect(result.myTeam.teamKey).toBe(testTeamKey);
       expect(result.myTeam.teamName).toBeTruthy();
       expect(result.opponent.teamKey).toBeTruthy();
@@ -35,8 +37,10 @@ describe('matchup-viz', () => {
     });
 
     it('should include all 9 categories', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       expect(result.categories.length).toBe(9);
       
       const categoryNames = result.categories.map(c => c.category);
@@ -52,8 +56,10 @@ describe('matchup-viz', () => {
     });
 
     it('should calculate W/L/T score correctly', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       // Score should add up to 9 (total categories)
       const total = result.score.wins + result.score.losses + result.score.ties;
       expect(total).toBe(9);
@@ -65,8 +71,10 @@ describe('matchup-viz', () => {
     });
 
     it('should determine category winner correctly (higher is better for most stats)', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       // Find a category where myTeam has higher value (not TO)
       const ptsCategory = result.categories.find(c => c.category === 'pts');
       if (ptsCategory && ptsCategory.myTeam > ptsCategory.opponent) {
@@ -77,8 +85,10 @@ describe('matchup-viz', () => {
     });
 
     it('should handle turnovers correctly (lower is better)', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       const toCategory = result.categories.find(c => c.category === 'to');
       expect(toCategory).toBeDefined();
 
@@ -91,8 +101,10 @@ describe('matchup-viz', () => {
     });
 
     it('should include makes/attempts for FG% and FT%', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       const fgCategory = result.categories.find(c => c.category === 'fgPct');
       const ftCategory = result.categories.find(c => c.category === 'ftPct');
 
@@ -110,8 +122,10 @@ describe('matchup-viz', () => {
     });
 
     it('should include correct metadata', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       expect(result.metadata.scope).toBe('week');
       expect(result.metadata.week).toBeGreaterThan(0);
       expect(result.metadata.currentWeek).toBeGreaterThan(0);
@@ -119,22 +133,30 @@ describe('matchup-viz', () => {
     });
 
     it('should use current week by default', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       // Week should match current week when not specified
       expect(result.metadata.week).toBe(result.metadata.currentWeek);
     });
 
     it('should handle specified week parameter', async () => {
+      // ARRANGE
       const week = 3;
+      
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey, week);
 
+      // ASSERT
       expect(result.metadata.week).toBe(week);
     });
 
     it('should have consistent tie handling', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       // Check that ties are properly counted
       const tiedCategories = result.categories.filter(c => c.myTeam === c.opponent);
       
@@ -145,8 +167,10 @@ describe('matchup-viz', () => {
     });
 
     it('should have valid stat values', async () => {
+      // ACT
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
 
+      // ASSERT
       result.categories.forEach(category => {
         // All stat values should be non-negative
         expect(category.myTeam).toBeGreaterThanOrEqual(0);
@@ -163,18 +187,18 @@ describe('matchup-viz', () => {
 
   describe('error handling', () => {
     it('should return empty matchup data for malformed scoreboard', async () => {
-      const malformedClient = createMalformedMCPClient();
-      await malformedClient.setCredentials('test-token', 'refresh-token', Date.now() + 3600000);
-      const malformedDataSource = new YahooMCPDataSource(malformedClient as any);
+      // ARRANGE
+      const malformedDataSource = createMalformedFantasyDataSource();
 
-      // Code doesn't throw, returns empty/default structure
-      const result = await getMatchupComparison(malformedDataSource, testLeagueKey, testTeamKey);
-      expect(result).toBeDefined();
-      expect(result.categories).toBeDefined();
-      expect(Array.isArray(result.categories)).toBe(true);
+      // ACT & ASSERT
+      // Code should throw or return error for malformed data
+      await expect(
+        getMatchupComparison(malformedDataSource, testLeagueKey, testTeamKey)
+      ).rejects.toThrow();
     });
 
     it('should validate week parameter and throw for invalid values', async () => {
+      // ARRANGE & ACT & ASSERT
       // matchup-viz actually validates weeks
       await expect(async () => {
         await getMatchupComparison(dataSource, testLeagueKey, testTeamKey, 999);
@@ -182,10 +206,12 @@ describe('matchup-viz', () => {
     });
 
     it('should handle team with no opponent (edge case)', async () => {
+      // ACT
       // In real scenario, every team should have an opponent
       // But we verify the function handles data robustly
       const result = await getMatchupComparison(dataSource, testLeagueKey, testTeamKey);
       
+      // ASSERT
       expect(result.opponent).toBeDefined();
       expect(result.opponent.teamKey).toBeTruthy();
     });

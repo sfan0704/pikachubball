@@ -1,17 +1,25 @@
 import { useState, useEffect } from "react";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import QuickActions from "@/components/QuickActions";
-import TeamRoster from "@/components/TeamRoster";
+import QuickActions from "./QuickActions";
+import TeamRoster from "../league/TeamRoster";
 import LoadingIndicator from "@/components/common/LoadingIndicator";
 import YahooConnect from "@/components/features/auth/YahooConnect";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import type { League, Player } from "@shared/schema";
+import { useFirstLeague } from "@/hooks/useFirstLeague";
+import { RosterSkeleton } from "@/components/common/RosterSkeleton";
+import { ErrorBanner } from "@/components/common/ErrorBanner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { queryClient } from "@/lib/queryClient";
+import { Menu } from "lucide-react";
+import { useChat } from "@/lib/chatContext";
+import type { Player } from "@shared/schema";
 
 interface Message {
   id: string;
@@ -36,45 +44,35 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedTeamKey, setSelectedTeamKey] = useState<string | null>(null);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
+  const { selectedTeamKey: contextTeamKey, setSelectedTeamKey } = useChat();
+  const [localSelectedTeamKey, setLocalSelectedTeamKey] = useState<string | null>(null);
 
+  // Use shared hook for league fetching
+  const { leagues, selectedLeague, isLoadingLeagues } = useFirstLeague();
+
+  // Use team key from context (synced from RankingsPage) or local state
+  const selectedTeamKey = contextTeamKey || localSelectedTeamKey;
+
+  // Sync with context when it changes, or fallback to selectedLeague
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('yahoo_connected') === 'true') {
-      toast({
-        title: "Yahoo Fantasy Connected",
-        description: "Successfully connected to your Yahoo Fantasy account.",
-      });
-      setLocation('/');
-    } else if (params.get('error')) {
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect to Yahoo Fantasy. Please try again.",
-        variant: "destructive",
-      });
-      setLocation('/');
+    if (contextTeamKey) {
+      setLocalSelectedTeamKey(contextTeamKey);
+    } else if (selectedLeague && !localSelectedTeamKey) {
+      setLocalSelectedTeamKey(selectedLeague.teamKey);
+      setSelectedTeamKey(selectedLeague.teamKey);
     }
-  }, [toast, setLocation]);
+  }, [contextTeamKey, selectedLeague, localSelectedTeamKey, setSelectedTeamKey]);
 
-  // Fetch user's leagues
-  const { data: leaguesData, isLoading: isLoadingLeagues } = useQuery<{
-    leagues: League[];
-  }>({
-    queryKey: ["/api/yahoo/leagues"],
-    retry: false,
-  });
-
-  // Auto-select first team when leagues load
-  useEffect(() => {
-    if (leaguesData?.leagues && leaguesData.leagues.length > 0 && !selectedTeamKey) {
-      setSelectedTeamKey(leaguesData.leagues[0].teamKey);
-    }
-  }, [leaguesData, selectedTeamKey]);
+  // Update context when local selection changes
+  const handleTeamChange = (teamKey: string | null) => {
+    setLocalSelectedTeamKey(teamKey);
+    setSelectedTeamKey(teamKey);
+  };
 
   // Fetch roster for selected team
-  const { data: rosterData, isLoading: isLoadingRoster } = useQuery<{
+  const { data: rosterData, isLoading: isLoadingRoster, error: rosterError } = useQuery<{
     roster: Player[];
   }>({
     queryKey: ["/api/yahoo/roster-by-team", selectedTeamKey],
@@ -96,8 +94,8 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
     setIsLoading(true);
 
     try {
-      // Get selected league key from leagues data
-      const selectedLeague = leaguesData?.leagues?.find(l => l.teamKey === selectedTeamKey);
+      // Find the league for the selected team
+      const teamLeague = leagues.find(l => l.teamKey === selectedTeamKey);
       
       // Prepare conversation history (last 10 messages for context)
       const conversationHistory = messages.slice(-10).map(msg => ({
@@ -113,7 +111,7 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
         body: JSON.stringify({
           message: content,
           teamKey: selectedTeamKey,
-          leagueKey: selectedLeague?.leagueKey,
+          leagueKey: teamLeague?.leagueKey,
           conversationHistory,
         }),
       });
@@ -172,36 +170,98 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col">
-        <SheetHeader className="p-4 border-b border-border">
+        <SheetHeader className="p-4 border-b border-border flex flex-row items-center justify-between">
           <SheetTitle data-testid="heading-chat-title">Fantasy Basketball AI</SheetTitle>
+          {/* Mobile sidebar toggle */}
+          <Drawer open={showMobileSidebar} onOpenChange={setShowMobileSidebar}>
+            <DrawerTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Team & Roster</DrawerTitle>
+              </DrawerHeader>
+              <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                <YahooConnect />
+                
+                {/* Team Selector */}
+                {isLoadingLeagues ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : leagues && leagues.length > 0 ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Select Team
+                    </label>
+                    <Select 
+                      value={selectedTeamKey || undefined} 
+                      onValueChange={handleTeamChange}
+                      data-testid="select-team-mobile"
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a team..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {leagues.map((league) => (
+                          <SelectItem 
+                            key={league.teamKey} 
+                            value={league.teamKey}
+                            data-testid={`select-item-mobile-${league.teamKey}`}
+                          >
+                            {league.teamName} ({league.leagueName})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
+                
+                {/* Team Roster */}
+                {isLoadingRoster ? (
+                  <RosterSkeleton />
+                ) : roster.length > 0 ? (
+                  <TeamRoster players={roster} />
+                ) : selectedTeamKey ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No roster data available
+                  </div>
+                ) : null}
+              </div>
+            </DrawerContent>
+          </Drawer>
         </SheetHeader>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
+          {/* Desktop Sidebar */}
           <aside className="w-64 border-r border-border bg-sidebar p-4 overflow-y-auto hidden md:block">
             <div className="space-y-4">
               <YahooConnect />
               
               {/* Team Selector */}
               {isLoadingLeagues ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  Loading leagues...
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
-              ) : leaguesData && leaguesData.leagues.length > 0 ? (
+              ) : leagues && leagues.length > 0 ? (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-sidebar-foreground">
                     Select Team
                   </label>
                   <Select 
                     value={selectedTeamKey || undefined} 
-                    onValueChange={setSelectedTeamKey}
+                    onValueChange={handleTeamChange}
                     data-testid="select-team"
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Choose a team..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {leaguesData.leagues.map((league) => (
+                      {leagues.map((league) => (
                         <SelectItem 
                           key={league.teamKey} 
                           value={league.teamKey}
@@ -217,9 +277,7 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
               
               {/* Team Roster */}
               {isLoadingRoster ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  Loading roster...
-                </div>
+                <RosterSkeleton />
               ) : roster.length > 0 ? (
                 <TeamRoster players={roster} />
               ) : selectedTeamKey ? (
@@ -232,6 +290,16 @@ export default function ChatDialog({ open, onOpenChange }: ChatDialogProps) {
 
           {/* Chat Content */}
           <div className="flex-1 flex flex-col min-w-0">
+            {/* Error Banner */}
+            {rosterError && selectedTeamKey && (
+              <div className="p-4 border-b border-border">
+                <ErrorBanner
+                  title="Failed to Load Roster"
+                  message={rosterError instanceof Error ? rosterError.message : "Unable to load roster data. Please try again."}
+                  onRetry={() => queryClient.invalidateQueries({ queryKey: ["/api/yahoo/roster-by-team", selectedTeamKey] })}
+                />
+              </div>
+            )}
             <QuickActions onActionClick={handleQuickAction} />
 
             <ScrollArea className="flex-1">

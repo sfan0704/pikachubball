@@ -1,19 +1,12 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
 import type { RankingsResponse, LeagueHeatmapResponse, TeamHeatmapData, HeatmapCell } from '@shared/schema';
+import { CATEGORIES, type CategoryKey, type TeamStats } from '@shared/domain';
+import { parseTeamStatsFromStandings, parseTeamStats, parseTeamStatsFromScoreboard } from '../parsers/stats-parser.js';
+import { computeRankings } from '../parsers/rankings-compute.js';
+import { parseTeam } from '../parsers/league-parser.js';
 
-export const CATEGORIES = ['fgPct', 'ftPct', 'tpm', 'pts', 'reb', 'ast', 'stl', 'blk', 'to'] as const;
-export type CategoryKey = typeof CATEGORIES[number];
-
-export interface TeamStats {
-  teamKey: string;
-  teamName: string;
-  managerName?: string;
-  stats: Record<CategoryKey, number>;
-  fgMakes?: number;
-  fgAttempts?: number;
-  ftMakes?: number;
-  ftAttempts?: number;
-}
+// Re-export for other services
+export { CATEGORIES, type CategoryKey };
 
 export async function getLeagueRankings(
   dataSource: FantasyDataSource,
@@ -22,43 +15,38 @@ export async function getLeagueRankings(
 ): Promise<RankingsResponse> {
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
-  const currentWeek = parseInt(leagueData?.current_week || '1');
-  const endWeek = parseInt(leagueData?.end_week || '22');
+  // Handle both array and object formats for league properties
+  const leagueProps = Array.isArray(leagueData) 
+    ? (leagueData.find((p: any) => p.current_week) || leagueData[0]) 
+    : leagueData;
+  const currentWeek = parseInt((leagueProps as any)?.current_week || '1');
+  const endWeek = parseInt((leagueProps as any)?.end_week || '22');
   
   const teamStats = await extractTeamStats(dataSource, leagueKey, week, currentWeek, endWeek);
   
-  const rankings = teamStats.map(team => ({
-    ...team,
-    categoryRanks: {} as Record<CategoryKey, number>,
-    totalRank: 0
+  // Compute rankings using the new computation functions
+  const rankings = computeRankings(teamStats);
+  
+  // Sort by total rank
+  rankings.sort((a, b) => (a.totalRank || 0) - (b.totalRank || 0));
+
+  // Convert to DTO format (TeamRanking requires teamName)
+  const rankingsDto = rankings.map(team => ({
+    teamKey: team.teamKey,
+    teamName: team.teamName || 'Unknown Team',
+    managerName: team.managerName,
+    stats: team.stats,
+    categoryRanks: team.categoryRanks || {} as Record<CategoryKey, number>,
+    totalRank: team.totalRank || 0,
+    // Include makes/attempts data for percentage stats
+    fgMakes: team.fgMakes,
+    fgAttempts: team.fgAttempts,
+    ftMakes: team.ftMakes,
+    ftAttempts: team.ftAttempts,
   }));
 
-  CATEGORIES.forEach(cat => {
-    const sorted = [...teamStats].sort((a, b) => {
-      if (cat === 'to') {
-        return a.stats[cat] - b.stats[cat];
-      } else {
-        return b.stats[cat] - a.stats[cat];
-      }
-    });
-
-    sorted.forEach((team, index) => {
-      const rankingTeam = rankings.find(r => r.teamKey === team.teamKey);
-      if (rankingTeam) {
-        rankingTeam.categoryRanks[cat] = index + 1;
-      }
-    });
-  });
-
-  rankings.forEach(team => {
-    const totalRank = CATEGORIES.reduce((sum, cat) => sum + team.categoryRanks[cat], 0);
-    team.totalRank = totalRank / CATEGORIES.length;
-  });
-
-  rankings.sort((a, b) => a.totalRank - b.totalRank);
-
   return {
-    rankings,
+    rankings: rankingsDto,
     metadata: {
       scope: week !== undefined ? 'week' : 'season',
       week,
@@ -75,8 +63,12 @@ export async function getLeagueHeatmap(
 ): Promise<LeagueHeatmapResponse> {
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
-  const currentWeek = parseInt(leagueData?.current_week || '1');
-  const endWeek = parseInt(leagueData?.end_week || '22');
+  // Handle both array and object formats for league properties
+  const leagueProps = Array.isArray(leagueData) 
+    ? (leagueData.find((p: any) => p.current_week) || leagueData[0]) 
+    : leagueData;
+  const currentWeek = parseInt((leagueProps as any)?.current_week || '1');
+  const endWeek = parseInt((leagueProps as any)?.end_week || '22');
   
   const teamStats = await extractTeamStats(dataSource, leagueKey, week, currentWeek, endWeek);
   
@@ -96,10 +88,14 @@ export async function getLeagueHeatmap(
       if (!teamData) {
         teamData = {
           teamKey: team.teamKey,
-          teamName: team.teamName,
+          teamName: team.teamName || 'Unknown Team',
           categories: {} as any
         };
         teams.push(teamData);
+      }
+      
+      if (!teamData) {
+        return; // Type guard
       }
       
       const rank = index + 1;
@@ -131,106 +127,32 @@ async function extractTeamStats(
   currentWeek?: number,
   endWeek?: number
 ): Promise<TeamStats[]> {
-  const teamsResult: any = {};
+  const { logger } = await import("../../utils/logger");
   
   if (week !== undefined) {
+    // For weekly stats, get from scoreboard
     const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, week);
-    const matchups = scoreboard?.fantasy_content?.league?.[1]?.scoreboard?.[0]?.matchups;
+    logger.debug("Scoreboard response structure:", {
+      leagueKey,
+      week,
+      hasFantasyContent: !!scoreboard?.fantasy_content,
+      leagueArrayLength: scoreboard?.fantasy_content?.league?.length,
+    });
     
-    if (matchups && matchups.count > 0) {
-      teamsResult.count = 0;
-      let teamIndex = 0;
-      
-      for (let i = 0; i < matchups.count; i++) {
-        const matchup = matchups[i.toString()]?.matchup;
-        if (matchup && matchup['0']?.teams) {
-          const matchupTeams = matchup['0'].teams;
-          for (let j = 0; j < matchupTeams.count; j++) {
-            const teamData = matchupTeams[j.toString()]?.team;
-            if (teamData) {
-              teamsResult[teamIndex.toString()] = { team: teamData };
-              teamIndex++;
-            }
-          }
-        }
-      }
-      teamsResult.count = teamIndex;
-    }
+    // Use parser to extract team stats - this handles all Yahoo API format variations
+    return parseTeamStatsFromScoreboard(scoreboard, week);
   } else {
+    // For season stats, get from standings
     const standings = await dataSource.getLeagueStandings(leagueKey);
-    teamsResult.teams = standings?.fantasy_content?.league?.[1]?.standings?.[0]?.teams;
+    logger.debug("Standings response structure:", {
+      leagueKey,
+      hasFantasyContent: !!standings?.fantasy_content,
+      leagueArrayLength: standings?.fantasy_content?.league?.length,
+      hasStandings: !!standings?.fantasy_content?.league?.[1]?.standings,
+    });
+    
+    // Use parser to extract team stats - this handles all Yahoo API format variations
+    // Parser can accept raw Yahoo API response directly
+    return parseTeamStatsFromStandings(standings, 'season');
   }
-
-  const teams = teamsResult.teams || teamsResult;
-  if (!teams || teams.count === 0) {
-    return [];
-  }
-
-  const teamStats: TeamStats[] = [];
-  
-  for (let i = 0; i < teams.count; i++) {
-    const teamData = teams[i.toString()]?.team;
-    if (teamData && Array.isArray(teamData) && teamData[0] && Array.isArray(teamData[0])) {
-      const teamProperties = teamData[0];
-      const teamKeyObj = teamProperties.find((prop: any) => prop.team_key);
-      const teamNameObj = teamProperties.find((prop: any) => prop.name);
-      const managersObj = teamProperties.find((prop: any) => prop.managers);
-      
-      // Extract manager name from nested managers array
-      let managerName: string | undefined;
-      if (managersObj?.managers && Array.isArray(managersObj.managers)) {
-        const manager = managersObj.managers[0]?.manager;
-        if (manager && typeof manager === 'object') {
-          managerName = manager.nickname;
-        }
-      }
-      
-      const statsData = teamData[1]?.team_stats;
-      if (statsData) {
-        const stats = statsData.stats;
-        const statMap: Record<string, any> = {};
-        
-        if (Array.isArray(stats)) {
-          stats.forEach((statObj: any) => {
-            if (statObj.stat) {
-              statMap[statObj.stat.stat_id] = statObj.stat.value;
-            }
-          });
-        }
-        
-        // Parse FG makes/attempts from stat 9004003 (format: "127/298")
-        const fgParts = (statMap['9004003'] || '0/0').split('/');
-        const fgMakes = parseInt(fgParts[0]) || 0;
-        const fgAttempts = parseInt(fgParts[1]) || 0;
-        
-        // Parse FT makes/attempts from stat 9007006 (format: "76/94")
-        const ftParts = (statMap['9007006'] || '0/0').split('/');
-        const ftMakes = parseInt(ftParts[0]) || 0;
-        const ftAttempts = parseInt(ftParts[1]) || 0;
-        
-        teamStats.push({
-          teamKey: teamKeyObj?.team_key,
-          teamName: teamNameObj?.name,
-          managerName,
-          stats: {
-            fgPct: parseFloat(statMap['5'] || '0'),
-            ftPct: parseFloat(statMap['8'] || '0'),
-            tpm: parseInt(statMap['10'] || '0'),
-            pts: parseInt(statMap['12'] || '0'),
-            reb: parseInt(statMap['15'] || '0'),
-            ast: parseInt(statMap['16'] || '0'),
-            stl: parseInt(statMap['17'] || '0'),
-            blk: parseInt(statMap['18'] || '0'),
-            to: parseInt(statMap['19'] || '0'),
-          },
-          fgMakes,
-          fgAttempts,
-          ftMakes,
-          ftAttempts,
-        });
-      }
-    }
-  }
-  
-  return teamStats;
 }

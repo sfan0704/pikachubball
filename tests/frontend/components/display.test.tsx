@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment happy-dom
+ */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -55,6 +58,7 @@ const mockMatchup = {
 describe('Display Functionality Tests', () => {
   describe('League Rankings Display', () => {
     it('should render rankings table with all teams', () => {
+      // ARRANGE & ACT
       render(
         <div>
           <table>
@@ -96,6 +100,7 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       // Verify all teams rendered
       expect(screen.getByText('Dream Team')).toBeInTheDocument();
       expect(screen.getByText('Rivals')).toBeInTheDocument();
@@ -108,6 +113,7 @@ describe('Display Functionality Tests', () => {
     });
 
     it('should display category rankings with color coding', () => {
+      // ARRANGE & ACT
       render(
         <div>
           {mockRankings.rankings.map((team) => (
@@ -123,6 +129,7 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       // Verify top team has highlighted rank
       const topTeamCard = screen.getByTestId(`card-team-${mockRankings.rankings[0].teamKey}`);
       expect(topTeamCard).toBeInTheDocument();
@@ -130,6 +137,7 @@ describe('Display Functionality Tests', () => {
     });
 
     it('should display makes/attempts for percentage stats (FG%, FT%)', () => {
+      // ARRANGE & ACT
       render(
         <div>
           {mockMatchup.categories
@@ -148,15 +156,18 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       // Verify makes/attempts displayed
       expect(screen.getByText('100/222')).toBeInTheDocument();
       expect(screen.getByText('98/223')).toBeInTheDocument();
     });
 
     it('should handle week selection dropdown', async () => {
+      // ARRANGE
       const user = userEvent.setup();
       const weeks = Array.from({ length: mockRankings.metadata.currentWeek }, (_, i) => i + 1);
 
+      // ACT
       render(
         <select data-testid="select-week">
           <option value="season">Season (to date)</option>
@@ -170,12 +181,15 @@ describe('Display Functionality Tests', () => {
 
       const select = screen.getByTestId('select-week');
       await user.selectOptions(select, '5');
+      
+      // ASSERT
       expect((select as HTMLSelectElement).value).toBe('5');
     });
   });
 
   describe('Matchup Tab Display', () => {
     it('should render matchup comparison with team names', () => {
+      // ARRANGE & ACT
       render(
         <div data-testid="matchup-container">
           <div data-testid="my-team-header">{mockMatchup.myTeam.teamName}</div>
@@ -186,12 +200,14 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('my-team-header')).toHaveTextContent(mockLeague.teamName);
       expect(screen.getByTestId('opponent-header')).toHaveTextContent('Opponent Team');
       expect(screen.getByTestId('text-wlt-score')).toHaveTextContent('9W - 0L - 0T');
     });
 
     it('should display all 9 categories with stats', () => {
+      // ARRANGE & ACT
       render(
         <table>
           <thead>
@@ -217,6 +233,7 @@ describe('Display Functionality Tests', () => {
         </table>
       );
 
+      // ASSERT
       // Verify all 9 categories displayed
       expect(mockMatchup.categories).toHaveLength(9);
       mockMatchup.categories.forEach((cat) => {
@@ -225,6 +242,7 @@ describe('Display Functionality Tests', () => {
     });
 
     it('should color-code winning/losing categories (green/red)', () => {
+      // ARRANGE & ACT
       render(
         <div>
           {mockMatchup.categories.map((cat) => (
@@ -239,12 +257,14 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       // Verify color coding
       const winCell = screen.getByTestId('diff-cell-fgPct');
       expect(winCell).toHaveClass('text-green-600');
     });
 
     it('should display metadata (current week, scope)', () => {
+      // ARRANGE & ACT
       render(
         <div>
           <span data-testid="text-scope">{mockMatchup.metadata.scope}</span>
@@ -253,6 +273,7 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('text-scope')).toHaveTextContent('week');
       expect(screen.getByTestId('text-week')).toHaveTextContent('Week 1');
     });
@@ -266,6 +287,7 @@ describe('Display Functionality Tests', () => {
     ];
 
     it('should render simulator matrix with all opponent matchups', () => {
+      // ARRANGE & ACT
       render(
         <table>
           <thead>
@@ -289,6 +311,7 @@ describe('Display Functionality Tests', () => {
         </table>
       );
 
+      // ASSERT
       // Verify matrix rendered
       expect(screen.getByTestId('row-simulator-Team A')).toBeInTheDocument();
       expect(screen.getByTestId('text-wins-Team C')).toHaveTextContent('9');
@@ -296,6 +319,7 @@ describe('Display Functionality Tests', () => {
     });
 
     it('should color-code W/L/T results', () => {
+      // ARRANGE & ACT
       render(
         <div>
           <span className="text-green-600" data-testid="color-wins">7W</span>
@@ -304,15 +328,18 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('color-wins')).toHaveClass('text-green-600');
       expect(screen.getByTestId('color-losses')).toHaveClass('text-red-600');
       expect(screen.getByTestId('color-ties')).toHaveClass('text-gray-600');
     });
 
     it('should handle opponent team selection', async () => {
+      // ARRANGE
       const user = userEvent.setup();
       const selectedTeam = 'Team A';
 
+      // ACT
       render(
         <select data-testid="select-simulator-team">
           {simulatorData.map((row) => (
@@ -325,12 +352,15 @@ describe('Display Functionality Tests', () => {
 
       const select = screen.getByTestId('select-simulator-team') as HTMLSelectElement;
       await user.selectOptions(select, selectedTeam);
+      
+      // ASSERT
       expect(select.value).toBe(selectedTeam);
     });
   });
 
   describe('Chat Interface Display', () => {
     it('should render chat messages with role and content', () => {
+      // ARRANGE
       const messages = [
         { id: '1', role: 'assistant', content: 'Hi! How can I help?', timestamp: '2:30 PM' },
         { id: '2', role: 'user', content: 'Who should I start?', timestamp: '2:31 PM' }
@@ -347,6 +377,7 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('message-1')).toHaveClass('message-assistant');
       expect(screen.getByTestId('message-2')).toHaveClass('message-user');
       expect(screen.getByText('Hi! How can I help?')).toBeInTheDocument();
@@ -354,6 +385,7 @@ describe('Display Functionality Tests', () => {
     });
 
     it('should display source citations', () => {
+      // ARRANGE
       const message = {
         id: '1',
         role: 'assistant',
@@ -374,12 +406,14 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('text-message-content')).toHaveTextContent('Based on recent analysis');
       expect(screen.getByTestId('source-BALLDONTLIE')).toBeInTheDocument();
       expect(screen.getByTestId('source-Reddit')).toBeInTheDocument();
     });
 
     it('should show loading state during message processing', () => {
+      // ARRANGE & ACT
       render(
         <div>
           {true && (
@@ -390,6 +424,7 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
       expect(screen.getByTestId('loading-indicator')).toHaveClass('animate-pulse');
     });
@@ -397,6 +432,7 @@ describe('Display Functionality Tests', () => {
 
   describe('Error & Loading States', () => {
     it('should display loading skeleton for rankings', () => {
+      // ARRANGE & ACT
       render(
         <div data-testid="rankings-loading">
           <div className="animate-pulse h-8 bg-gray-200 rounded mb-4"></div>
@@ -405,12 +441,14 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       const loadingState = screen.getByTestId('rankings-loading');
       const skeletons = loadingState.querySelectorAll('.animate-pulse');
       expect(skeletons.length).toBe(3);
     });
 
     it('should display error message when no leagues found', () => {
+      // ARRANGE & ACT
       render(
         <div data-testid="no-leagues-error">
           <p data-testid="text-error-message">
@@ -419,10 +457,12 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('text-error-message')).toBeInTheDocument();
     });
 
     it('should display empty state for matchups', () => {
+      // ARRANGE & ACT
       render(
         <div data-testid="empty-matchup">
           <p data-testid="text-empty-state">
@@ -431,12 +471,14 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('text-empty-state')).toBeInTheDocument();
     });
   });
 
   describe('Responsive Design', () => {
     it('should have responsive table with horizontal scroll on mobile', () => {
+      // ARRANGE & ACT
       render(
         <div data-testid="rankings-table-container" className="overflow-x-auto md:overflow-visible">
           <table className="w-full">
@@ -453,10 +495,12 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('rankings-table-container')).toHaveClass('overflow-x-auto');
     });
 
     it('should display mobile-friendly header', () => {
+      // ARRANGE & ACT
       render(
         <header>
           <h1 className="text-lg md:text-xl">
@@ -466,12 +510,14 @@ describe('Display Functionality Tests', () => {
         </header>
       );
 
+      // ASSERT
       expect(screen.getByText('FB Rankings')).toBeInTheDocument();
     });
   });
 
   describe('Accessibility', () => {
     it('should have proper table structure with headers', () => {
+      // ARRANGE & ACT
       render(
         <table>
           <thead>
@@ -491,11 +537,13 @@ describe('Display Functionality Tests', () => {
         </table>
       );
 
+      // ASSERT
       const headers = screen.getAllByRole('columnheader');
       expect(headers).toHaveLength(3);
     });
 
     it('should have data-testid on interactive elements', () => {
+      // ARRANGE & ACT
       render(
         <div>
           <button data-testid="button-logout">Logout</button>
@@ -506,6 +554,7 @@ describe('Display Functionality Tests', () => {
         </div>
       );
 
+      // ASSERT
       expect(screen.getByTestId('button-logout')).toBeInTheDocument();
       expect(screen.getByTestId('button-header-chat')).toBeInTheDocument();
       expect(screen.getByTestId('select-league')).toBeInTheDocument();

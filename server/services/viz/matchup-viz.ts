@@ -1,6 +1,10 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
 import type { MatchupComparisonResponse, CategoryComparison } from '@shared/schema';
 import { CATEGORIES, type CategoryKey } from './league-viz.js';
+import { parseTeamStats } from '../parsers/stats-parser.js';
+import type { TeamStats } from '@shared/domain';
+import type { YahooApiTeamData } from '../../types/yahoo-api.js';
+import { extractTeamFromScoreboard, parseMatchupsFromScoreboard } from '../parsers/matchup-parser.js';
 
 export async function getMatchupComparison(
   dataSource: FantasyDataSource,
@@ -11,8 +15,12 @@ export async function getMatchupComparison(
 ): Promise<MatchupComparisonResponse> {
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
-  const currentWeek = parseInt(leagueData?.current_week || '1');
-  const endWeek = parseInt(leagueData?.end_week || '22');
+  // Handle both array and object formats for league properties
+  const leagueProps = Array.isArray(leagueData) 
+    ? (leagueData.find((p: any) => p.current_week) || leagueData[0]) 
+    : leagueData;
+  const currentWeek = parseInt((leagueProps as any)?.current_week || '1');
+  const endWeek = parseInt((leagueProps as any)?.end_week || '22');
   
   const effectiveWeek = week || currentWeek;
   
@@ -20,74 +28,37 @@ export async function getMatchupComparison(
     throw new Error(`Week must be between 1 and ${endWeek}`);
   }
 
-  let myTeam: Record<string, any> | null = null;
-  let opponent: Record<string, any> | null = null;
-
   // Get scoreboard to find teams
   const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, effectiveWeek);
-  const matchups = scoreboard?.fantasy_content?.league?.[1]?.scoreboard?.[0]?.matchups;
   
-  if (!matchups || matchups.count === 0) {
-    throw new Error('No matchups found for this week');
+  // Use parser to extract team data - this handles all Yahoo API format variations
+  const myTeam = extractTeamFromScoreboard(scoreboard, teamKey, effectiveWeek);
+  
+  if (!myTeam) {
+    throw new Error('Your team not found in scoreboard');
   }
 
-  // Search scoreboard for my team
-  for (let i = 0; i < matchups.count; i++) {
-    const matchup = matchups[i.toString()]?.matchup;
-    if (matchup && matchup['0']?.teams) {
-      const teams = matchup['0'].teams;
-      
-      for (let j = 0; j < teams.count; j++) {
-        const team = teams[j.toString()]?.team;
-        if (team && Array.isArray(team)) {
-          const teamProperties = team[0];
-          const teamKeyObj = teamProperties?.find((prop: any) => prop.team_key);
-          const currentTeamKey = teamKeyObj?.team_key;
-          
-          // Check if this is my team
-          if (currentTeamKey === teamKey) {
-            myTeam = team;
-            
-            // If no specific opponent is requested, use the other team in this matchup
-            if (!opponentTeamKey) {
-              const opponentIndex = j === 0 ? 1 : 0;
-              const opponentTeam = teams[opponentIndex.toString()]?.team;
-              if (opponentTeam && Array.isArray(opponentTeam)) {
-                opponent = opponentTeam;
-              }
-            }
-            break;
-          }
-        }
-      }
-      
-      if (myTeam) break;
+  let opponent: YahooApiTeamData | null = null;
+
+  // If a specific opponent was requested, find it
+  if (opponentTeamKey) {
+    opponent = extractTeamFromScoreboard(scoreboard, opponentTeamKey, effectiveWeek);
+    if (!opponent) {
+      throw new Error(`Opponent team ${opponentTeamKey} not found in this week's matchups`);
     }
-  }
-  
-  // If a specific opponent was requested, search for it
-  if (opponentTeamKey && !opponent) {
-    for (let i = 0; i < matchups.count; i++) {
-      const matchup = matchups[i.toString()]?.matchup;
-      if (matchup && matchup['0']?.teams) {
-        const teams = matchup['0'].teams;
-        
-        for (let j = 0; j < teams.count; j++) {
-          const team = teams[j.toString()]?.team;
-          if (team && Array.isArray(team)) {
-            const teamProperties = team[0];
-            const teamKeyObj = teamProperties?.find((prop: any) => prop.team_key);
-            const currentTeamKey = teamKeyObj?.team_key;
-            
-            if (currentTeamKey === opponentTeamKey) {
-              opponent = team;
-              break;
-            }
-          }
-        }
-        
-        if (opponent) break;
-      }
+  } else {
+    // Find opponent from the same matchup as my team
+    // We need to find which matchup contains my team, then get the other team
+    const matchups = parseMatchupsFromScoreboard(scoreboard, leagueKey, effectiveWeek);
+    const myMatchup = matchups.find(m => m.team1Key === teamKey || m.team2Key === teamKey);
+    
+    if (myMatchup) {
+      const opponentKey = myMatchup.team1Key === teamKey ? myMatchup.team2Key : myMatchup.team1Key;
+      opponent = extractTeamFromScoreboard(scoreboard, opponentKey, effectiveWeek);
+    }
+    
+    if (!opponent) {
+      throw new Error('Opponent team not found in matchup');
     }
   }
   
@@ -103,8 +74,16 @@ export async function getMatchupComparison(
     }
   }
 
-  const myTeamStats = extractTeamStatsFromMatchup(myTeam);
-  const opponentStats = extractTeamStatsFromMatchup(opponent);
+  // Use the new parser instead of duplicate logic
+  const myTeamStatsResult = parseTeamStats(myTeam, 'week', effectiveWeek);
+  const opponentStatsResult = parseTeamStats(opponent, 'week', effectiveWeek);
+  
+  if (!myTeamStatsResult || !opponentStatsResult) {
+    throw new Error('Failed to parse team stats from matchup');
+  }
+  
+  const myTeamStats = myTeamStatsResult;
+  const opponentStats = opponentStatsResult;
 
   const categories: CategoryComparison[] = CATEGORIES.map(cat => {
     const myValue = myTeamStats.stats[cat];
@@ -159,11 +138,11 @@ export async function getMatchupComparison(
   return {
     myTeam: {
       teamKey: myTeamStats.teamKey,
-      teamName: myTeamStats.teamName
+      teamName: myTeamStats.teamName || 'Unknown Team'
     },
     opponent: {
       teamKey: opponentStats.teamKey,
-      teamName: opponentStats.teamName
+      teamName: opponentStats.teamName || 'Unknown Team'
     },
     categories,
     score: { wins, losses, ties },
@@ -176,66 +155,3 @@ export async function getMatchupComparison(
   };
 }
 
-function extractTeamStatsFromMatchup(teamData: any): {
-  teamKey: string;
-  teamName: string;
-  stats: Record<CategoryKey, number>;
-  fgMakes: number;
-  fgAttempts: number;
-  ftMakes: number;
-  ftAttempts: number;
-} {
-  const teamProperties = teamData[0];
-  const teamKeyObj = teamProperties?.find((prop: any) => prop.team_key);
-  const teamNameObj = teamProperties?.find((prop: any) => prop.name);
-  
-  const statsData = teamData[1]?.team_stats;
-  const stats = statsData?.stats || [];
-  const statMap: any = {};
-  
-  if (Array.isArray(stats)) {
-    stats.forEach((statObj: any) => {
-      if (statObj.stat) {
-        statMap[statObj.stat.stat_id] = statObj.stat.value;
-      }
-    });
-  }
-  
-  // Parse FG makes/attempts from stat 9004003 (format: "127/298")
-  let fgMakes = 0;
-  let fgAttempts = 0;
-  if (statMap['9004003']) {
-    const fgParts = statMap['9004003'].split('/');
-    fgMakes = parseInt(fgParts[0]) || 0;
-    fgAttempts = parseInt(fgParts[1]) || 0;
-  }
-  
-  // Parse FT makes/attempts from stat 9007006 (format: "76/94")
-  let ftMakes = 0;
-  let ftAttempts = 0;
-  if (statMap['9007006']) {
-    const ftParts = statMap['9007006'].split('/');
-    ftMakes = parseInt(ftParts[0]) || 0;
-    ftAttempts = parseInt(ftParts[1]) || 0;
-  }
-  
-  return {
-    teamKey: teamKeyObj?.team_key || '',
-    teamName: teamNameObj?.name || '',
-    stats: {
-      fgPct: parseFloat(statMap['5'] || '0'),
-      ftPct: parseFloat(statMap['8'] || '0'),
-      tpm: parseInt(statMap['10'] || '0'),
-      pts: parseInt(statMap['12'] || '0'),
-      reb: parseInt(statMap['15'] || '0'),
-      ast: parseInt(statMap['16'] || '0'),
-      stl: parseInt(statMap['17'] || '0'),
-      blk: parseInt(statMap['18'] || '0'),
-      to: parseInt(statMap['19'] || '0'),
-    },
-    fgMakes,
-    fgAttempts,
-    ftMakes,
-    ftAttempts,
-  };
-}

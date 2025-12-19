@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
 import session from 'express-session';
@@ -9,6 +9,10 @@ import { testLeagueKey, testTeamKey } from '../../fixtures/test-data';
 
 describe('Visualization API Endpoints', () => {
   let app: Express;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   beforeAll(async () => {
     // For now, create a minimal Express app
@@ -42,20 +46,30 @@ describe('Visualization API Endpoints', () => {
 
   describe('GET /api/viz/rankings', () => {
     it('should return 200 and rankings data structure', async () => {
+      // ARRANGE
+      const leagueKey = testLeagueKey;
+      
+      // ACT
       const response = await request(app)
         .get('/api/viz/rankings')
-        .query({ leagueKey: testLeagueKey });
+        .query({ leagueKey });
 
+      // ASSERT
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('rankings');
       expect(response.body).toHaveProperty('metadata');
     });
 
     it('should include correct metadata structure', async () => {
+      // ARRANGE
+      const leagueKey = testLeagueKey;
+      
+      // ACT
       const response = await request(app)
         .get('/api/viz/rankings')
-        .query({ leagueKey: testLeagueKey });
+        .query({ leagueKey });
 
+      // ASSERT
       expect(response.body.metadata).toHaveProperty('scope');
       expect(response.body.metadata).toHaveProperty('week');
       expect(response.body.metadata).toHaveProperty('currentWeek');
@@ -65,10 +79,16 @@ describe('Visualization API Endpoints', () => {
 
   describe('GET /api/viz/matchup', () => {
     it('should return 200 and matchup comparison data', async () => {
+      // ARRANGE
+      const leagueKey = testLeagueKey;
+      const teamKey = testTeamKey;
+      
+      // ACT
       const response = await request(app)
         .get('/api/viz/matchup')
-        .query({ leagueKey: testLeagueKey, teamKey: testTeamKey });
+        .query({ leagueKey, teamKey });
 
+      // ASSERT
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('myTeam');
       expect(response.body).toHaveProperty('opponent');
@@ -77,10 +97,16 @@ describe('Visualization API Endpoints', () => {
     });
 
     it('should include W/L/T score in response', async () => {
+      // ARRANGE
+      const leagueKey = testLeagueKey;
+      const teamKey = testTeamKey;
+      
+      // ACT
       const response = await request(app)
         .get('/api/viz/matchup')
-        .query({ leagueKey: testLeagueKey, teamKey: testTeamKey });
+        .query({ leagueKey, teamKey });
 
+      // ASSERT
       expect(response.body.score).toHaveProperty('wins');
       expect(response.body.score).toHaveProperty('losses');
       expect(response.body.score).toHaveProperty('ties');
