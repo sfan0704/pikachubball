@@ -38,7 +38,7 @@ async function testInit() {
   console.log("🔄 Initializing YahooFantasy library...\n");
 
   try {
-    const yf = new YahooFantasy(
+    const _yf = new YahooFantasy(
       env.YAHOO_CLIENT_ID!,
       env.YAHOO_CLIENT_SECRET!,
       (newAccessToken, newRefreshToken) => {

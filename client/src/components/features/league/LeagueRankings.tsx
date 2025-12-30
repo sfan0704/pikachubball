@@ -3,13 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -17,20 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { TeamRanking, RankingsMetadata } from "@shared/schema";
+import type { TeamRanking } from "@shared/schema";
 import { useState, useMemo } from "react";
 import { ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
 
 interface LeagueRankingsProps {
   rankings: TeamRanking[];
-  metadata: RankingsMetadata;
   userTeamKey?: string;
 }
 
 type SortKey = 'fgPct' | 'ftPct' | 'tpm' | 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'to' | 'totalRank';
 type SortDirection = 'asc' | 'desc';
 
-export default function LeagueRankings({ rankings, metadata, userTeamKey }: LeagueRankingsProps) {
+export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankingsProps) {
   const [showStats, setShowStats] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('totalRank');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -242,7 +234,7 @@ export default function LeagueRankings({ rankings, metadata, userTeamKey }: Leag
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedRankings.map((team, index) => {
+              {sortedRankings.map((team) => {
                 const isUserTeam = team.teamKey === userTeamKey;
                 return (
                   <TableRow

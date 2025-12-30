@@ -1,11 +1,9 @@
 /**
  * @vitest-environment happy-dom
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '../../../client/src/lib/queryClient';
 
 // Mock data for testing
 const mockLeague = {
@@ -413,10 +411,13 @@ describe('Display Functionality Tests', () => {
     });
 
     it('should show loading state during message processing', () => {
-      // ARRANGE & ACT
+      // ARRANGE
+      const isLoading = true;
+      
+      // ACT
       render(
         <div>
-          {true && (
+          {isLoading && (
             <div data-testid="loading-indicator" className="animate-pulse">
               <span>AI is thinking...</span>
             </div>

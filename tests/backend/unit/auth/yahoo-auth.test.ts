@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { 
   generateState, 
   validateState, 
@@ -7,7 +7,6 @@ import {
   refreshAccessToken
 } from '../../../../server/yahoo-auth';
 import axios from 'axios';
-import { env } from '../../../../server/config/env';
 import { logger } from '../../../../server/utils/logger';
 
 // Mock dependencies

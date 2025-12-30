@@ -13,13 +13,13 @@ vi.mock('../../../../server/config/auth');
 describe('authController', () => {
   let mockReq: Request;
   let mockRes: Response;
-  let mockNext: NextFunction;
+  let _mockNext: NextFunction;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockReq = createMockRequest() as Request;
     mockRes = createMockResponse() as Response;
-    mockNext = createMockNext();
+    _mockNext = createMockNext();
   });
 
   describe('signup', () => {
@@ -179,15 +179,7 @@ describe('authController', () => {
   describe('login', () => {
     it('should authenticate user and return user without password', async () => {
       // ARRANGE
-      const user = createMockUser();
-      const mockPassport = await import('../../../../server/config/auth');
-      
-      // Mock passport.authenticate
-      const authenticateMock = vi.fn((strategy: string, callback: Function) => {
-        return (req: Request, res: Response, next: NextFunction) => {
-          callback(null, user, undefined);
-        };
-      });
+      const _user = createMockUser();
 
       // ACT & ASSERT
       // We need to test the login flow, but passport.authenticate is complex

@@ -5,7 +5,7 @@ config({ path: resolve(process.cwd(), ".env.local") });
 
 import { env } from "./config/env";
 
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes/index";
 import { setupVite, serveStatic } from "./config/vite";

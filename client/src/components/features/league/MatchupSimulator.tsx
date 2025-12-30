@@ -98,7 +98,7 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
     return sortDirection === "asc" ? <span className="ml-1">↑</span> : <span className="ml-1">↓</span>;
   };
 
-  const selectedTeamName = rankings.find(r => r.teamKey === selectedTeam)?.teamName || "Unknown";
+  const _selectedTeamName = rankings.find(r => r.teamKey === selectedTeam)?.teamName || "Unknown";
 
   const getRowColor = (row: MatchupRow) => {
     if (row.wins > row.losses) {

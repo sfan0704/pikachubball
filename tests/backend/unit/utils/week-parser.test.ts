@@ -59,7 +59,7 @@ describe('weekParser', () => {
       const result2 = parseWeekParam('-1');
       const result3 = parseWeekParam('abc');
       // '5.5' parses to 5 (parseInt truncates), so we check it's not exactly 5.5
-      const result4 = parseWeekParam('5.5');
+      const _result4 = parseWeekParam('5.5');
       
       // ASSERT
       expect(result1).toBeUndefined();

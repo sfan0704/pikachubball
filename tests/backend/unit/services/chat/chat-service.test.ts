@@ -1,15 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type OpenAI from 'openai';
 import { sendChatMessage, type ChatMessage } from '../../../../../server/services/chat/chat-service';
 import { getOpenAITools } from '../../../../../server/services/chat/openai-tools';
 
-// Mock OpenAI
-const mockOpenAI = {
+// Mock OpenAI structure type
+type MockOpenAI = {
   chat: {
     completions: {
-      create: vi.fn(),
-    },
-  },
+      create: ReturnType<typeof vi.fn>;
+    };
+  };
 };
 
 // Mock openai-tools
@@ -18,7 +17,7 @@ vi.mock('../../../../../server/services/chat/openai-tools', () => ({
 }));
 
 describe('chat-service', () => {
-  let mockOpenAIClient: typeof mockOpenAI;
+  let mockOpenAIClient: MockOpenAI;
 
   beforeEach(() => {
     vi.clearAllMocks();

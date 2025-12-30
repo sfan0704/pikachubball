@@ -58,7 +58,7 @@ describe('yahooController', () => {
       const handler = yahooController.getLeagues as any;
       try {
         await handler(mockReq, mockRes, mockNext);
-      } catch (e) {
+      } catch {
         // Error might be thrown or passed to next
       }
 
@@ -145,7 +145,7 @@ describe('yahooController', () => {
       const handler = yahooController.getRoster as any;
       try {
         await handler(mockReq, mockRes, mockNext);
-      } catch (e) {
+      } catch {
         // Error might be thrown or passed to next
       }
 

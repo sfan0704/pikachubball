@@ -6,8 +6,7 @@ import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { decrypt } from '../../../../server/utils/encryption';
 import { sendChatMessage } from '../../../../server/services/chat/chat-service';
 import { ValidationError, NotFoundError } from '../../../../server/middleware/error-handler';
-import { createMockRequest, createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
-import OpenAI from 'openai';
+import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
 
 // Mock dependencies
 vi.mock('../../../../server/storage');

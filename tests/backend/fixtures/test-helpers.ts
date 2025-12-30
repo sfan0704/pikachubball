@@ -52,7 +52,7 @@ export function createMockRequest(overrides: Partial<MockRequest> = {}): MockReq
  * Create a mock Express response object
  */
 export function createMockResponse(): MockResponse {
-  const eventListeners: Record<string, Function[]> = {};
+  const eventListeners: Record<string, ((...args: unknown[]) => void)[]> = {};
   
   const res: MockResponse = {
     statusCode: 200,
@@ -77,7 +77,7 @@ export function createMockResponse(): MockResponse {
     }),
     cookie: vi.fn(() => res as Response),
     clearCookie: vi.fn(() => res as Response),
-    on: vi.fn((event: string, callback: Function) => {
+    on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
       if (!eventListeners[event]) {
         eventListeners[event] = [];
       }

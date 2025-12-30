@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   parsePlayer,
 } from '../../../../../server/services/parsers/player-parser';
-import type { Player } from '@shared/domain';
 
 // Note: parseLeaguesResponse was removed - league parsing is now done in league-service.ts
 // parsePlayerStatus is now a private function in player-parser.ts

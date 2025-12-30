@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ interface YahooConnectionModalProps {
 export default function YahooConnectionModal({ open, onOpenChange }: YahooConnectionModalProps) {
   const { toast } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
-  const [authUrl, setAuthUrl] = useState<string | null>(null);
+  const [authUrl, _setAuthUrl] = useState<string | null>(null);
 
   // Check if user dismissed this modal for this session
   const SESSION_DISMISS_KEY = 'yahoo_connection_modal_dismissed';

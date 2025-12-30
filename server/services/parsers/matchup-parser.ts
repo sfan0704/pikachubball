@@ -4,7 +4,7 @@
  */
 
 import type { Matchup, MatchupScore } from '@shared/domain';
-import type { YahooApiScoreboardResponse, YahooApiMatchupData, YahooApiMatchupTeam, YahooApiTeamData } from '../../types/yahoo-api.js';
+import type { YahooApiScoreboardResponse, YahooApiMatchupData, YahooApiTeamData } from '../../types/yahoo-api.js';
 import { logger } from '../../utils/logger.js';
 
 /**
@@ -15,7 +15,7 @@ import { logger } from '../../utils/logger.js';
  */
 function parseMatchupScore(
   teamPoints: any,
-  teamStats?: any
+  _teamStats?: any
 ): MatchupScore {
   // Yahoo API may provide wins/losses/ties in different formats
   // For now, we'll extract from team_points if available, otherwise default
@@ -335,7 +335,7 @@ export function parseMatchupsFromScoreboard(
 export function extractTeamFromScoreboard(
   scoreboardData: YahooApiScoreboardResponse | null | undefined,
   teamKey: string,
-  week: number
+  _week: number
 ): YahooApiTeamData | null {
   if (!scoreboardData?.fantasy_content?.league) {
     return null;

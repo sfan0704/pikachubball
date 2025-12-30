@@ -4,7 +4,7 @@
  */
 
 import type { Player, PlayerStatus } from '@shared/domain';
-import type { YahooApiPlayerData, YahooApiPlayerProperties } from '../../types/yahoo-api.js';
+import type { YahooApiPlayerData } from '../../types/yahoo-api.js';
 import { logger } from '../../utils/logger.js';
 
 /**

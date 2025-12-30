@@ -20,21 +20,21 @@ export class MockMCPClient implements Partial<YahooFantasyMCPClient> {
     this.credentials = { accessToken, refreshToken, expiresAt };
   }
 
-  async getLeagueSettings(leagueKey: string): Promise<any> {
+  async getLeagueSettings(_leagueKey: string): Promise<any> {
     if (!this.credentials) {
       throw new Error('Credentials not set');
     }
     return mockLeagueSettings;
   }
 
-  async getLeagueStandings(leagueKey: string): Promise<any> {
+  async getLeagueStandings(_leagueKey: string): Promise<any> {
     if (!this.credentials) {
       throw new Error('Credentials not set');
     }
     return mockStandings;
   }
 
-  async getLeagueScoreboard(leagueKey: string, week?: number): Promise<any> {
+  async getLeagueScoreboard(_leagueKey: string, _week?: number): Promise<any> {
     if (!this.credentials) {
       throw new Error('Credentials not set');
     }

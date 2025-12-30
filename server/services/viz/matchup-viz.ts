@@ -1,10 +1,9 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
 import type { MatchupComparisonResponse, CategoryComparison } from '@shared/schema';
-import { CATEGORIES, type CategoryKey } from './league-viz.js';
-import { parseTeamStats } from '../parsers/stats-parser.js';
-import type { TeamStats } from '@shared/domain';
+import { CATEGORIES } from './league-viz.js';
 import type { YahooApiTeamData } from '../../types/yahoo-api.js';
 import { extractTeamFromScoreboard, parseMatchupsFromScoreboard } from '../parsers/matchup-parser.js';
+import { parseTeamStats } from '../parsers/stats-parser.js';
 
 export async function getMatchupComparison(
   dataSource: FantasyDataSource,

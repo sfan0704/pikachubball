@@ -4,15 +4,15 @@ import { apiLimiter, authLimiter, signupLimiter } from '../../../../server/middl
 import { createMockRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
 
 describe('rateLimiter', () => {
-  let mockReq: Request;
-  let mockRes: Response;
-  let mockNext: NextFunction;
+  let _mockReq: Request;
+  let _mockRes: Response;
+  let _mockNext: NextFunction;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockReq = createMockRequest() as Request;
-    mockRes = createMockResponse() as Response;
-    mockNext = createMockNext();
+    _mockReq = createMockRequest() as Request;
+    _mockRes = createMockResponse() as Response;
+    _mockNext = createMockNext();
   });
 
   describe('apiLimiter', () => {

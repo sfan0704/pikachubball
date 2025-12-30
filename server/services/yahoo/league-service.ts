@@ -1,7 +1,6 @@
 import { getYahooApiClient } from "./yahoo-api-client";
 import { logger } from "../../utils/logger";
-import { parseTeam, parseTeamsFromStandings } from "../parsers/league-parser.js";
-import type { League, Team } from "@shared/domain";
+import { parseTeamsFromStandings } from "../parsers/league-parser.js";
 
 /**
  * League Service

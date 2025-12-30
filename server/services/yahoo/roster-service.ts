@@ -1,6 +1,5 @@
 import { getYahooApiClient } from "./yahoo-api-client";
 import { parsePlayersFromRoster } from "../parsers/player-parser.js";
-import type { Player as DomainPlayer } from "@shared/domain";
 import type { Player } from "@shared/schema";
 
 /**
