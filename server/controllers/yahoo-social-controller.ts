@@ -80,11 +80,14 @@ export const yahooSocialController = {
     }
 
     // Validate credentials and exchange code for tokens
+    // Use the same redirect URI that was used in initiateLogin
+    const redirectUri = env.YAHOO_REDIRECT_URI || getDefaultRedirectUri();
     const { clientId, clientSecret } = validateYahooCredentials();
     const tokens = await exchangeCodeForToken(
       code,
       clientId,
-      clientSecret
+      clientSecret,
+      redirectUri
     );
 
     // Validate that we received an id_token (required when 'openid' scope is used)

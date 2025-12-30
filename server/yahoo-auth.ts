@@ -82,19 +82,20 @@ export function getAuthorizationUrl(state: string, clientId: string): string {
   return authUrl;
 }
 
-export async function exchangeCodeForToken(code: string, clientId: string, clientSecret: string) {
+export async function exchangeCodeForToken(code: string, clientId: string, clientSecret: string, redirectUri?: string) {
   const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const effectiveRedirectUri = redirectUri || REDIRECT_URI;
   
   const requestData = {
     client_id: clientId,
     client_secret: clientSecret,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: effectiveRedirectUri,
     code: code,
     grant_type: 'authorization_code'
   };
 
   logger.debug('Exchanging code for token', {
-    redirectUri: REDIRECT_URI,
+    redirectUri: effectiveRedirectUri,
     codeLength: code.length,
     clientIdPrefix: clientId.substring(0, 10),
   });
