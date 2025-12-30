@@ -5,6 +5,8 @@ import { queryClient, apiRequest } from "./queryClient";
 interface User {
   id: string;
   username: string;
+  displayName?: string | null;
+  email?: string | null;
 }
 
 interface AuthContextType {
