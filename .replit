@@ -40,3 +40,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_anthropic:1.0.0", "javascript_openai_ai_integrations:1.0.0"]
+
+[userenv]
+
+[userenv.production]
+YAHOO_REDIRECT_URI = "https://pikachubball.replit.app/api/auth/yahoo/callback"
