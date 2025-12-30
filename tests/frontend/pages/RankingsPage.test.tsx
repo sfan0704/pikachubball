@@ -111,11 +111,6 @@ vi.mock('../../../client/src/hooks/useFirstLeague', () => ({
   }),
 }));
 
-// Mock YahooCredentialsSetupModal to prevent blocking
-vi.mock('../../../client/src/components/features/auth/YahooCredentialsSetupModal', () => ({
-  default: () => null, // Render nothing
-}));
-
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -141,12 +136,6 @@ describe('RankingsPage', () => {
 
     // Default fetch mocks - all return connected/valid state
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/settings/yahoo-credentials')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ hasCredentials: true, updatedAt: '2024-01-01' }),
-        });
-      }
       if (url.includes('/api/auth/yahoo/status')) {
         return Promise.resolve({
           ok: true,
@@ -194,13 +183,13 @@ describe('RankingsPage', () => {
       });
     });
 
-    it('should render user username', async () => {
+    it('should render team name or user display name', async () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
-      // ASSERT
+      // ASSERT - Shows team name when league is selected
       await waitFor(() => {
-        expect(screen.getByTestId('text-username')).toHaveTextContent('testuser');
+        expect(screen.getByTestId('text-username')).toHaveTextContent('Test Team');
       });
     });
 
@@ -221,16 +210,6 @@ describe('RankingsPage', () => {
       // ASSERT
       await waitFor(() => {
         expect(screen.getByTestId('button-logout')).toBeInTheDocument();
-      });
-    });
-
-    it('should render settings button', async () => {
-      // ARRANGE & ACT
-      renderRankingsPage();
-
-      // ASSERT
-      await waitFor(() => {
-        expect(screen.getByTestId('button-settings')).toBeInTheDocument();
       });
     });
 
@@ -327,7 +306,6 @@ describe('RankingsPage', () => {
 
       // ASSERT - Check that all navigation buttons are rendered
       expect(screen.getByTestId('button-header-chat')).toBeInTheDocument();
-      expect(screen.getByTestId('button-settings')).toBeInTheDocument();
       expect(screen.getByTestId('button-theme-toggle')).toBeInTheDocument();
       expect(screen.getByTestId('button-logout')).toBeInTheDocument();
     });

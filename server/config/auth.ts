@@ -16,6 +16,11 @@ passport.use(
         return done(null, false, { message: "Incorrect username or password" });
       }
 
+      // OAuth users don't have passwords - they must use Yahoo login
+      if (!user.password) {
+        return done(null, false, { message: "Please use Yahoo login" });
+      }
+
       const isValidPassword = await bcrypt.compare(password, user.password);
       
       if (!isValidPassword) {

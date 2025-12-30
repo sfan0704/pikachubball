@@ -2,38 +2,20 @@ import type { Express } from "express";
 import { requireAuth } from "../middleware/auth";
 import { yahooOAuthController } from "../controllers/yahoo-oauth-controller";
 
-/** Register Yahoo OAuth routes */
+/** 
+ * Register Yahoo OAuth utility routes
+ * Note: Main Yahoo login flow is handled by /api/auth/yahoo routes in auth.ts
+ * These routes provide status checking and token management
+ */
 export function registerYahooOAuthRoutes(app: Express): void {
-  // Optional credential management (users can provide their own for rate limits/privacy)
-  app.post(
-    "/api/settings/yahoo-credentials",
-    requireAuth,
-    yahooOAuthController.saveCredentials
-  );
-  app.get(
-    "/api/settings/yahoo-credentials",
-    requireAuth,
-    yahooOAuthController.getCredentials
-  );
-  app.delete(
-    "/api/settings/yahoo-credentials",
-    requireAuth,
-    yahooOAuthController.deleteCredentials
-  );
-
-  // OAuth flow
-  app.get("/api/auth/yahoo", requireAuth, yahooOAuthController.getAuthUrl);
-  app.get(
-    "/api/auth/yahoo/callback",
-    yahooOAuthController.handleCallback
-  );
+  // OAuth status and token management
   app.get(
     "/api/auth/yahoo/status",
     requireAuth,
     yahooOAuthController.getStatus
   );
   app.delete(
-    "/api/auth/yahoo",
+    "/api/auth/yahoo/disconnect",
     requireAuth,
     yahooOAuthController.disconnect
   );

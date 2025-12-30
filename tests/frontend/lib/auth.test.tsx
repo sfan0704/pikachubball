@@ -69,7 +69,6 @@ describe('auth', () => {
       expect(result.current.user).toBeNull();
       expect(result.current.isLoading).toBeDefined();
       expect(result.current.login).toBeInstanceOf(Function);
-      expect(result.current.signup).toBeInstanceOf(Function);
       expect(result.current.logout).toBeInstanceOf(Function);
     });
 
@@ -156,44 +155,6 @@ describe('auth', () => {
       // ACT
       await act(async () => {
         await result.current.login('testuser', 'password123');
-      });
-
-      // ASSERT
-      await waitFor(() => {
-        expect(result.current.user).toEqual(mockUser);
-      });
-    });
-  });
-
-  describe('signup', () => {
-    it('should call apiRequest with correct arguments', async () => {
-      // ARRANGE
-      const mockUser = { id: '2', username: 'newuser' };
-      mockApiRequest.mockResolvedValue({ user: mockUser });
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ACT
-      await act(async () => {
-        await result.current.signup('newuser', 'password123');
-      });
-
-      // ASSERT
-      expect(mockApiRequest).toHaveBeenCalledWith(
-        '/api/auth/signup',
-        'POST',
-        { username: 'newuser', password: 'password123' }
-      );
-    });
-
-    it('should update user after successful signup', async () => {
-      // ARRANGE
-      const mockUser = { id: '2', username: 'newuser' };
-      mockApiRequest.mockResolvedValue({ user: mockUser });
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ACT
-      await act(async () => {
-        await result.current.signup('newuser', 'password123');
       });
 
       // ASSERT

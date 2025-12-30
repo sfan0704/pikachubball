@@ -25,7 +25,6 @@ export function registerDebugRoutes(app: Express): void {
       }
 
       const token = await storage.getYahooToken(userId);
-      const credentials = await storage.getYahooCredentials(userId);
 
       // Calculate redirect URI (same logic as yahoo-auth.ts)
       const redirectUri = env.YAHOO_REDIRECT_URI || 
@@ -41,13 +40,11 @@ export function registerDebugRoutes(app: Express): void {
         tokenExpired: token 
           ? token.expiresAt < Math.floor(Date.now() / 1000)
           : null,
-        hasCredentials: !!credentials,
         redirectUri,
         redirectUriConfigured: !!env.YAHOO_REDIRECT_URI,
         port: env.PORT,
-        note: "Make sure the redirect URI above matches exactly what's configured in your Yahoo Developer Portal. User credentials are required (no app-level fallback).",
+        note: "Make sure the redirect URI above matches exactly what's configured in your Yahoo Developer Portal.",
       });
     })
   );
 }
-

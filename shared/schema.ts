@@ -6,17 +6,11 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),  // Nullable for OAuth users
+  yahooGuid: text("yahoo_guid").unique(),  // Yahoo's unique user identifier
+  displayName: text("display_name"),  // Display name from Yahoo profile
+  email: text("email"),  // Email from Yahoo profile (optional)
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const yahooCredentials = pgTable("yahoo_credentials", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().unique(),
-  encryptedClientId: text("encrypted_client_id").notNull(),
-  encryptedClientSecret: text("encrypted_client_secret").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const yahooTokens = pgTable("yahoo_tokens", {
@@ -36,15 +30,23 @@ export const openaiCredentials = pgTable("openai_credentials", {
 });
 
 // Insert schemas
+
+// Schema for local auth users (admin) - requires password
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+}).extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-export const insertYahooCredentialsSchema = createInsertSchema(yahooCredentials).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+// Schema for OAuth users - requires yahooGuid, no password
+export const insertOAuthUserSchema = createInsertSchema(users).pick({
+  username: true,
+  yahooGuid: true,
+  displayName: true,
+  email: true,
+}).extend({
+  yahooGuid: z.string().min(1, "Yahoo GUID is required"),
 });
 
 export const insertYahooTokenSchema = createInsertSchema(yahooTokens).omit({
@@ -59,9 +61,8 @@ export const insertOpenaiCredentialsSchema = createInsertSchema(openaiCredential
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertOAuthUser = z.infer<typeof insertOAuthUserSchema>;
 export type User = typeof users.$inferSelect;
-export type YahooCredentials = typeof yahooCredentials.$inferSelect;
-export type InsertYahooCredentials = z.infer<typeof insertYahooCredentialsSchema>;
 export type YahooToken = typeof yahooTokens.$inferSelect;
 export type InsertYahooToken = z.infer<typeof insertYahooTokenSchema>;
 export type OpenaiCredentials = typeof openaiCredentials.$inferSelect;

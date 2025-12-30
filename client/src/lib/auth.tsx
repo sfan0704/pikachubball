@@ -11,7 +11,6 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  signup: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -45,17 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const signupMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const result = await apiRequest<{ user: User }>("/api/auth/signup", "POST", { username, password });
-      return result;
-    },
-    onSuccess: (data) => {
-      setUser(data.user);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-    },
-  });
-
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("/api/auth/logout", "POST", {});
@@ -70,16 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loginMutation.mutateAsync({ username, password });
   };
 
-  const signup = async (username: string, password: string) => {
-    await signupMutation.mutateAsync({ username, password });
-  };
-
   const logout = async () => {
     await logoutMutation.mutateAsync();
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -62,8 +62,10 @@ describe('authController', () => {
         user: {
           id: newUser.id,
           username: newUser.username,
+          yahooGuid: newUser.yahooGuid,
+          displayName: newUser.displayName,
+          email: newUser.email,
           createdAt: newUser.createdAt,
-          updatedAt: newUser.updatedAt,
         },
       });
     });
@@ -249,8 +251,10 @@ describe('authController', () => {
         user: {
           id: user.id,
           username: user.username,
+          yahooGuid: user.yahooGuid,
+          displayName: user.displayName,
+          email: user.email,
           createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
         },
       });
     });

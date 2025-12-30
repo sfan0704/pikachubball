@@ -9,11 +9,9 @@ import AuthPage from '../../../client/src/pages/AuthPage';
 
 // Mock useAuth hook
 const mockLogin = vi.fn();
-const mockSignup = vi.fn();
 vi.mock('../../../client/src/lib/auth', () => ({
   useAuth: () => ({
     login: mockLogin,
-    signup: mockSignup,
     user: null,
     isLoading: false,
     logout: vi.fn(),
@@ -28,21 +26,24 @@ vi.mock('../../../client/src/hooks/use-toast', () => ({
   }),
 }));
 
+// Mock window.location for Yahoo OAuth redirect
+const originalLocation = window.location;
+beforeEach(() => {
+  // @ts-ignore
+  delete window.location;
+  window.location = { ...originalLocation, href: '' } as Location;
+});
+
+afterEach(() => {
+  window.location = originalLocation;
+});
+
 describe('AuthPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('rendering', () => {
-    it('should render login and signup tabs', () => {
-      // ARRANGE & ACT
-      render(<AuthPage />);
-
-      // ASSERT
-      expect(screen.getByTestId('tab-login')).toBeInTheDocument();
-      expect(screen.getByTestId('tab-signup')).toBeInTheDocument();
-    });
-
     it('should render page title', () => {
       // ARRANGE & ACT
       render(<AuthPage />);
@@ -56,82 +57,106 @@ describe('AuthPage', () => {
       render(<AuthPage />);
 
       // ASSERT
-      expect(screen.getByText('Sign in or create an account to get started')).toBeInTheDocument();
+      expect(screen.getByText(/Sign in with your Yahoo account/i)).toBeInTheDocument();
     });
 
-    it('should show login form by default', () => {
+    it('should render Yahoo login button', () => {
       // ARRANGE & ACT
       render(<AuthPage />);
 
       // ASSERT
-      expect(screen.getByTestId('input-username-login')).toBeInTheDocument();
-      expect(screen.getByTestId('input-password-login')).toBeInTheDocument();
-      expect(screen.getByTestId('button-login')).toBeInTheDocument();
+      expect(screen.getByTestId('button-yahoo-login')).toBeInTheDocument();
+      expect(screen.getByText('Continue with Yahoo')).toBeInTheDocument();
+    });
+
+    it('should render Admin Login toggle button', () => {
+      // ARRANGE & ACT
+      render(<AuthPage />);
+
+      // ASSERT
+      expect(screen.getByTestId('button-admin-toggle')).toBeInTheDocument();
+      expect(screen.getByText('Admin Login')).toBeInTheDocument();
+    });
+
+    it('should not show admin login form by default', () => {
+      // ARRANGE & ACT
+      render(<AuthPage />);
+
+      // ASSERT - Admin form should be collapsed
+      expect(screen.queryByTestId('input-username-admin')).not.toBeInTheDocument();
     });
   });
 
-  describe('tab switching', () => {
-    it('should switch to signup tab when clicked', async () => {
+  describe('Yahoo login', () => {
+    it('should redirect to Yahoo OAuth endpoint when clicked', async () => {
       // ARRANGE
       const user = userEvent.setup();
       render(<AuthPage />);
 
       // ACT
-      await user.click(screen.getByTestId('tab-signup'));
+      await user.click(screen.getByTestId('button-yahoo-login'));
 
       // ASSERT
-      await waitFor(() => {
-        expect(screen.getByTestId('input-username-signup')).toBeInTheDocument();
-        expect(screen.getByTestId('input-password-signup')).toBeInTheDocument();
-        expect(screen.getByTestId('button-signup')).toBeInTheDocument();
-      });
+      expect(window.location.href).toBe('/api/auth/yahoo');
     });
+  });
 
-    it('should switch back to login tab when clicked', async () => {
+  describe('admin login', () => {
+    it('should show admin login form when toggle is clicked', async () => {
       // ARRANGE
       const user = userEvent.setup();
       render(<AuthPage />);
 
-      // ACT - Switch to signup then back to login
-      await user.click(screen.getByTestId('tab-signup'));
-      await user.click(screen.getByTestId('tab-login'));
+      // ACT
+      await user.click(screen.getByTestId('button-admin-toggle'));
 
       // ASSERT
       await waitFor(() => {
-        expect(screen.getByTestId('input-username-login')).toBeInTheDocument();
-        expect(screen.getByTestId('button-login')).toBeInTheDocument();
+        expect(screen.getByTestId('input-username-admin')).toBeInTheDocument();
+        expect(screen.getByTestId('input-password-admin')).toBeInTheDocument();
+        expect(screen.getByTestId('button-admin-login')).toBeInTheDocument();
       });
     });
-  });
 
-  describe('login form', () => {
-    it('should call login with correct credentials on submit', async () => {
+    it('should call login with correct credentials on admin form submit', async () => {
       // ARRANGE
       const user = userEvent.setup();
       mockLogin.mockResolvedValue(undefined);
       render(<AuthPage />);
 
-      // ACT
-      await user.type(screen.getByTestId('input-username-login'), 'testuser');
-      await user.type(screen.getByTestId('input-password-login'), 'testpassword');
-      await user.click(screen.getByTestId('button-login'));
+      // ACT - Open admin login form
+      await user.click(screen.getByTestId('button-admin-toggle'));
+
+      // Fill and submit form
+      await waitFor(() => {
+        expect(screen.getByTestId('input-username-admin')).toBeInTheDocument();
+      });
+      await user.type(screen.getByTestId('input-username-admin'), 'adminuser');
+      await user.type(screen.getByTestId('input-password-admin'), 'adminpassword');
+      await user.click(screen.getByTestId('button-admin-login'));
 
       // ASSERT
       await waitFor(() => {
-        expect(mockLogin).toHaveBeenCalledWith('testuser', 'testpassword');
+        expect(mockLogin).toHaveBeenCalledWith('adminuser', 'adminpassword');
       });
     });
 
-    it('should show error toast on login failure', async () => {
+    it('should show error toast on admin login failure', async () => {
       // ARRANGE
       const user = userEvent.setup();
       mockLogin.mockRejectedValue(new Error('Invalid credentials'));
       render(<AuthPage />);
 
-      // ACT
-      await user.type(screen.getByTestId('input-username-login'), 'testuser');
-      await user.type(screen.getByTestId('input-password-login'), 'testpassword');
-      await user.click(screen.getByTestId('button-login'));
+      // ACT - Open admin login form
+      await user.click(screen.getByTestId('button-admin-toggle'));
+
+      // Fill and submit form
+      await waitFor(() => {
+        expect(screen.getByTestId('input-username-admin')).toBeInTheDocument();
+      });
+      await user.type(screen.getByTestId('input-username-admin'), 'adminuser');
+      await user.type(screen.getByTestId('input-password-admin'), 'adminpassword');
+      await user.click(screen.getByTestId('button-admin-login'));
 
       // ASSERT
       await waitFor(() => {
@@ -149,10 +174,15 @@ describe('AuthPage', () => {
       const user = userEvent.setup();
       render(<AuthPage />);
 
-      // ACT
-      await user.type(screen.getByTestId('input-username-login'), 'ab');
-      await user.type(screen.getByTestId('input-password-login'), 'testpassword');
-      await user.click(screen.getByTestId('button-login'));
+      // ACT - Open admin login form
+      await user.click(screen.getByTestId('button-admin-toggle'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('input-username-admin')).toBeInTheDocument();
+      });
+      await user.type(screen.getByTestId('input-username-admin'), 'ab');
+      await user.type(screen.getByTestId('input-password-admin'), 'testpassword');
+      await user.click(screen.getByTestId('button-admin-login'));
 
       // ASSERT
       await waitFor(() => {
@@ -166,10 +196,15 @@ describe('AuthPage', () => {
       const user = userEvent.setup();
       render(<AuthPage />);
 
-      // ACT
-      await user.type(screen.getByTestId('input-username-login'), 'testuser');
-      await user.type(screen.getByTestId('input-password-login'), 'short');
-      await user.click(screen.getByTestId('button-login'));
+      // ACT - Open admin login form
+      await user.click(screen.getByTestId('button-admin-toggle'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('input-username-admin')).toBeInTheDocument();
+      });
+      await user.type(screen.getByTestId('input-username-admin'), 'testuser');
+      await user.type(screen.getByTestId('input-password-admin'), 'short');
+      await user.click(screen.getByTestId('button-admin-login'));
 
       // ASSERT
       await waitFor(() => {
@@ -179,98 +214,26 @@ describe('AuthPage', () => {
     });
   });
 
-  describe('signup form', () => {
-    it('should call signup with correct credentials on submit', async () => {
-      // ARRANGE
-      const user = userEvent.setup();
-      mockSignup.mockResolvedValue(undefined);
-      render(<AuthPage />);
-
-      // ACT - Switch to signup tab
-      await user.click(screen.getByTestId('tab-signup'));
-
-      // Fill form
-      await user.type(screen.getByTestId('input-username-signup'), 'newuser');
-      await user.type(screen.getByTestId('input-password-signup'), 'newpassword');
-      await user.click(screen.getByTestId('button-signup'));
-
-      // ASSERT
-      await waitFor(() => {
-        expect(mockSignup).toHaveBeenCalledWith('newuser', 'newpassword');
-      });
-    });
-
-    it('should show success toast on signup success', async () => {
-      // ARRANGE
-      const user = userEvent.setup();
-      mockSignup.mockResolvedValue(undefined);
-      render(<AuthPage />);
-
-      // ACT - Switch to signup tab
-      await user.click(screen.getByTestId('tab-signup'));
-
-      // Fill form and submit
-      await user.type(screen.getByTestId('input-username-signup'), 'newuser');
-      await user.type(screen.getByTestId('input-password-signup'), 'newpassword');
-      await user.click(screen.getByTestId('button-signup'));
-
-      // ASSERT
-      await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Success',
-            description: 'Account created successfully',
-          })
-        );
-      });
-    });
-
-    it('should show error toast on signup failure', async () => {
-      // ARRANGE
-      const user = userEvent.setup();
-      mockSignup.mockRejectedValue(new Error('Username already exists'));
-      render(<AuthPage />);
-
-      // ACT - Switch to signup tab
-      await user.click(screen.getByTestId('tab-signup'));
-
-      // Fill form and submit
-      await user.type(screen.getByTestId('input-username-signup'), 'existinguser');
-      await user.type(screen.getByTestId('input-password-signup'), 'newpassword');
-      await user.click(screen.getByTestId('button-signup'));
-
-      // ASSERT
-      await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Error',
-            variant: 'destructive',
-          })
-        );
-      });
-    });
-  });
-
   describe('button states', () => {
-    it('should show "Log In" text on login button', () => {
+    it('should show "Continue with Yahoo" text on Yahoo button', () => {
       // ARRANGE & ACT
       render(<AuthPage />);
 
       // ASSERT
-      expect(screen.getByTestId('button-login')).toHaveTextContent('Log In');
+      expect(screen.getByTestId('button-yahoo-login')).toHaveTextContent('Continue with Yahoo');
     });
 
-    it('should show "Create Account" text on signup button', async () => {
+    it('should show "Log In as Admin" text on admin login button', async () => {
       // ARRANGE
       const user = userEvent.setup();
       render(<AuthPage />);
 
-      // ACT
-      await user.click(screen.getByTestId('tab-signup'));
+      // ACT - Open admin login form
+      await user.click(screen.getByTestId('button-admin-toggle'));
 
       // ASSERT
       await waitFor(() => {
-        expect(screen.getByTestId('button-signup')).toHaveTextContent('Create Account');
+        expect(screen.getByTestId('button-admin-login')).toHaveTextContent('Log In as Admin');
       });
     });
   });

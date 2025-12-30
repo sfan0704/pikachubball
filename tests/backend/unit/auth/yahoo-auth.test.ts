@@ -100,7 +100,7 @@ describe('Yahoo OAuth - CSRF Protection', () => {
     it('should include fspt-r scope', () => {
       const state = generateState();
       const url = getAuthorizationUrl(state, 'test-client');
-      expect(url).toContain('scope=fspt-r');
+      expect(url).toContain('scope=openid+fspt-r');
     });
 
     it('should include Yahoo OAuth endpoint', () => {

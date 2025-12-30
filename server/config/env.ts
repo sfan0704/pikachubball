@@ -10,8 +10,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid PostgreSQL connection string"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
   ENCRYPTION_KEY: z.string().length(64, "ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes)"),
-  // Optional: Yahoo OAuth credentials (app-level, used as fallback if user doesn't provide their own)
-  // Users can optionally provide their own credentials for rate limits, privacy, or custom apps
+  // Yahoo OAuth credentials (app-level, used for Yahoo Social Login)
+  // Required at runtime for social login features
   YAHOO_CLIENT_ID: z.string().optional(),
   YAHOO_CLIENT_SECRET: z.string().optional(),
   // Optional: Custom redirect URI for development (e.g., ngrok HTTPS URL)

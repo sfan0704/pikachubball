@@ -5,7 +5,6 @@
 
 import axios, { AxiosInstance } from "axios";
 import { storage } from "../../storage";
-import { decrypt } from "../../utils/encryption";
 import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
 import { refreshAccessToken } from "../../yahoo-auth";
@@ -38,20 +37,15 @@ export class YahooApiClient {
 
   /**
    * Create a YahooApiClient instance for a user
-   * Requires user-provided credentials (no app-level fallback)
+   * Uses app-level credentials from environment variables
    */
   static async create(userId: string): Promise<YahooApiClient> {
-    // Require user-provided credentials
-    const credentials = await storage.getYahooCredentials(userId);
-    if (!credentials) {
-      throw new Error("Yahoo OAuth credentials are required. Please add your Client ID and Client Secret in Settings.");
-    }
-
-    const clientId = decrypt(credentials.encryptedClientId);
-    const clientSecret = decrypt(credentials.encryptedClientSecret);
+    // Use app-level credentials from environment variables
+    const clientId = env.YAHOO_CLIENT_ID;
+    const clientSecret = env.YAHOO_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      throw new Error("Yahoo OAuth credentials are invalid. Please update your credentials in Settings.");
+      throw new Error("Yahoo OAuth credentials are not configured. Please set YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET environment variables.");
     }
 
     const client = new YahooApiClient(userId, clientId, clientSecret);

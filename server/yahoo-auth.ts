@@ -62,8 +62,8 @@ export function getAuthorizationUrl(state: string, clientId: string): string {
   });
   
   // Use fspt-r scope for read-only access to Yahoo Fantasy Sports
-  // This is sufficient for analyzing data and providing recommendations
-  params.append('scope', 'fspt-r');
+  // Use openid scope for user identity (required for social login)
+  params.append('scope', 'openid fspt-r');
   
   // Note: Removed 'language' parameter as it may not be standard for Yahoo OAuth
   
@@ -75,7 +75,7 @@ export function getAuthorizationUrl(state: string, clientId: string): string {
     redirectUri: REDIRECT_URI,
     clientIdPrefix: clientId.substring(0, 20) + '...',
     stateLength: state.length,
-    scope: 'fspt-r',
+    scope: 'openid fspt-r',
     urlLength: authUrl.length,
   });
   
@@ -110,10 +110,18 @@ export async function exchangeCodeForToken(code: string, clientId: string, clien
       data: new URLSearchParams(requestData).toString()
     });
 
+    logger.debug('Token exchange response', {
+      hasAccessToken: !!response.data.access_token,
+      hasRefreshToken: !!response.data.refresh_token,
+      hasIdToken: !!response.data.id_token,
+      expiresIn: response.data.expires_in,
+    });
+
     return {
       accessToken: response.data.access_token,
       refreshToken: response.data.refresh_token,
-      expiresIn: response.data.expires_in
+      expiresIn: response.data.expires_in,
+      idToken: response.data.id_token as string | undefined, // JWT containing user info when openid scope is used
     };
   } catch (error: any) {
     // Log detailed error information

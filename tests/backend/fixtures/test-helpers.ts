@@ -103,15 +103,33 @@ export function createMockNext(): ReturnType<typeof vi.fn<NextFunction>> {
 }
 
 /**
- * Create a mock authenticated user
+ * Create a mock authenticated user (local auth with password)
  */
 export function createMockUser(overrides: Partial<User> = {}): User {
   return {
     id: 'test-user-id',
     username: 'testuser',
     password: 'hashed-password',
+    yahooGuid: null,
+    displayName: null,
+    email: null,
     createdAt: new Date(),
-    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create a mock OAuth user (Yahoo social login, no password)
+ */
+export function createMockOAuthUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 'test-oauth-user-id',
+    username: 'yahoo_user_abc123',
+    password: null,
+    yahooGuid: 'YAHOO_GUID_ABC123',
+    displayName: 'Test Yahoo User',
+    email: 'test@yahoo.com',
+    createdAt: new Date(),
     ...overrides,
   };
 }

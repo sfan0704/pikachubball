@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 const authSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -18,9 +19,9 @@ const authSchema = z.object({
 type AuthFormData = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
-  const { login, signup } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [adminLoginOpen, setAdminLoginOpen] = useState(false);
 
   const loginForm = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
@@ -30,15 +31,12 @@ export default function AuthPage() {
     },
   });
 
-  const signupForm = useForm<AuthFormData>({
-    resolver: zodResolver(authSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
+  const handleYahooLogin = () => {
+    // Redirect to Yahoo OAuth endpoint
+    window.location.href = "/api/auth/yahoo";
+  };
 
-  const handleLogin = async (data: AuthFormData) => {
+  const handleAdminLogin = async (data: AuthFormData) => {
     try {
       await login(data.username, data.password);
     } catch (error: any) {
@@ -50,43 +48,61 @@ export default function AuthPage() {
     }
   };
 
-  const handleSignup = async (data: AuthFormData) => {
-    try {
-      await signup(data.username, data.password);
-      toast({
-        title: "Success",
-        description: "Account created successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create account",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-xl md:text-2xl">Yahoo Fantasy Basketball</CardTitle>
-          <CardDescription className="text-sm">Sign in or create an account to get started</CardDescription>
+        <CardHeader className="space-y-3 text-center">
+          <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+            <span className="text-2xl">🏀</span>
+          </div>
+          <CardTitle className="text-2xl font-bold">
+            Yahoo Fantasy Basketball
+          </CardTitle>
+          <CardDescription>
+            Sign in with your Yahoo account to access your fantasy leagues
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" data-testid="tab-login">
-                Login
-              </TabsTrigger>
-              <TabsTrigger value="signup" data-testid="tab-signup">
-                Sign Up
-              </TabsTrigger>
-            </TabsList>
+        <CardContent className="space-y-6">
+          {/* Primary: Yahoo Login */}
+          <Button
+            onClick={handleYahooLogin}
+            className="w-full h-12 font-semibold"
+            data-testid="button-yahoo-login"
+          >
+            <svg 
+              className="w-5 h-5 mr-2" 
+              viewBox="0 0 24 24" 
+              fill="currentColor"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+            </svg>
+            Continue with Yahoo
+          </Button>
 
-            <TabsContent value="login">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+
+          {/* Secondary: Admin Login (Collapsible) */}
+          <Collapsible open={adminLoginOpen} onOpenChange={setAdminLoginOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground hover:text-foreground"
+                data-testid="button-admin-toggle"
+              >
+                Admin Login
+                <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${adminLoginOpen ? "rotate-180" : ""}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
               <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                <form onSubmit={loginForm.handleSubmit(handleAdminLogin)} className="space-y-4">
                   <FormField
                     control={loginForm.control}
                     name="username"
@@ -96,9 +112,9 @@ export default function AuthPage() {
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Enter your username"
+                            placeholder="Enter admin username"
                             autoComplete="username"
-                            data-testid="input-username-login"
+                            data-testid="input-username-admin"
                           />
                         </FormControl>
                         <FormMessage />
@@ -116,9 +132,9 @@ export default function AuthPage() {
                           <Input
                             {...field}
                             type="password"
-                            placeholder="Enter your password"
+                            placeholder="Enter password"
                             autoComplete="current-password"
-                            data-testid="input-password-login"
+                            data-testid="input-password-admin"
                           />
                         </FormControl>
                         <FormMessage />
@@ -128,70 +144,21 @@ export default function AuthPage() {
 
                   <Button
                     type="submit"
+                    variant="outline"
                     className="w-full"
                     disabled={loginForm.formState.isSubmitting}
-                    data-testid="button-login"
+                    data-testid="button-admin-login"
                   >
-                    {loginForm.formState.isSubmitting ? "Logging in..." : "Log In"}
+                    {loginForm.formState.isSubmitting ? "Logging in..." : "Log In as Admin"}
                   </Button>
                 </form>
               </Form>
-            </TabsContent>
+            </CollapsibleContent>
+          </Collapsible>
 
-            <TabsContent value="signup">
-              <Form {...signupForm}>
-                <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-                  <FormField
-                    control={signupForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Choose a username"
-                            autoComplete="username"
-                            data-testid="input-username-signup"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={signupForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="password"
-                            placeholder="Choose a password (min 6 characters)"
-                            autoComplete="new-password"
-                            data-testid="input-password-signup"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={signupForm.formState.isSubmitting}
-                    data-testid="button-signup"
-                  >
-                    {signupForm.formState.isSubmitting ? "Creating account..." : "Create Account"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
+          <p className="text-center text-xs text-muted-foreground">
+            By signing in, you agree to allow this app to access your Yahoo Fantasy Sports data.
+          </p>
         </CardContent>
       </Card>
     </div>

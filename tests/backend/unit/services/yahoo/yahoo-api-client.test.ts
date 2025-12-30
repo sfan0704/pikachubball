@@ -1,14 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { YahooApiClient, getYahooApiClient } from '../../../../../server/services/yahoo/yahoo-api-client';
 import { storage } from '../../../../../server/storage';
-import { decrypt } from '../../../../../server/utils/encryption';
 import { env } from '../../../../../server/config/env';
 import { refreshAccessToken } from '../../../../../server/yahoo-auth';
 import axios from 'axios';
 
 // Mock dependencies
 vi.mock('../../../../../server/storage');
-vi.mock('../../../../../server/utils/encryption');
 vi.mock('../../../../../server/config/env', () => ({
   env: {
     YAHOO_CLIENT_ID: 'test-client-id',
@@ -32,24 +30,13 @@ describe('YahooApiClient', () => {
     // Reset env mocks
     (env as any).YAHOO_CLIENT_ID = clientId;
     (env as any).YAHOO_CLIENT_SECRET = clientSecret;
-    vi.mocked(decrypt).mockImplementation((encrypted: string) => encrypted.replace('encrypted-', ''));
   });
 
   describe('create', () => {
-    it('should create client with user credentials when available', async () => {
+    it('should create client using env credentials', async () => {
       // ARRANGE
-      const encryptedClientId = 'encrypted-client-id';
-      const encryptedClientSecret = 'encrypted-client-secret';
-      const credentials = {
-        userId,
-        encryptedClientId,
-        encryptedClientSecret,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -63,46 +50,22 @@ describe('YahooApiClient', () => {
       const client = await YahooApiClient.create(userId);
 
       // ASSERT
-      expect(storage.getYahooCredentials).toHaveBeenCalledWith(userId);
-      expect(decrypt).toHaveBeenCalledWith(encryptedClientId);
-      expect(decrypt).toHaveBeenCalledWith(encryptedClientSecret);
       expect(client).toBeInstanceOf(YahooApiClient);
     });
 
-    it('should create client with env credentials when user credentials not available', async () => {
+    it('should throw error when env credentials not configured', async () => {
       // ARRANGE
-      // Controller now requires user credentials, so this should throw
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(undefined);
-
-      // ACT & ASSERT
-      await expect(YahooApiClient.create(userId)).rejects.toThrow(
-        'Yahoo OAuth credentials are required'
-      );
-      expect(storage.getYahooCredentials).toHaveBeenCalledWith(userId);
-    });
-
-    it('should throw error when no credentials available', async () => {
-      // ARRANGE
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(undefined);
       (env as any).YAHOO_CLIENT_ID = undefined;
       (env as any).YAHOO_CLIENT_SECRET = undefined;
 
       // ACT & ASSERT
       await expect(YahooApiClient.create(userId)).rejects.toThrow(
-        'Yahoo OAuth credentials are required'
+        'Yahoo OAuth credentials are not configured'
       );
     });
 
     it('should throw error when no token available', async () => {
       // ARRANGE
-      const credentials = {
-        userId,
-        encryptedClientId: 'encrypted-client-id',
-        encryptedClientSecret: 'encrypted-client-secret',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue(undefined); // No token
 
       // ACT & ASSERT
@@ -117,16 +80,9 @@ describe('YahooApiClient', () => {
       const newAccessToken = 'new-access-token';
       const newRefreshToken = 'new-refresh-token';
       const newExpiresIn = 3600;
-      const credentials = {
-        userId,
-        encryptedClientId: 'encrypted-client-id',
-        encryptedClientSecret: 'encrypted-client-secret',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
 
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -138,6 +94,7 @@ describe('YahooApiClient', () => {
         expiresIn: newExpiresIn,
       });
       vi.mocked(storage.saveYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
@@ -151,8 +108,8 @@ describe('YahooApiClient', () => {
       const client = await YahooApiClient.create(userId);
 
       // ASSERT
-      // decrypt removes 'encrypted-' prefix, so 'encrypted-client-id' -> 'client-id'
-      expect(refreshAccessToken).toHaveBeenCalledWith(refreshToken, 'client-id', 'client-secret');
+      // Uses env credentials
+      expect(refreshAccessToken).toHaveBeenCalledWith(refreshToken, clientId, clientSecret);
       expect(storage.saveYahooToken).toHaveBeenCalled();
       expect(client).toBeInstanceOf(YahooApiClient);
     });
@@ -160,16 +117,9 @@ describe('YahooApiClient', () => {
     it('should throw error if token refresh fails', async () => {
       // ARRANGE
       const expiredExpiresAt = Math.floor(Date.now() / 1000) - 3600;
-      const credentials = {
-        userId,
-        encryptedClientId: 'encrypted-client-id',
-        encryptedClientSecret: 'encrypted-client-secret',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
       
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -189,15 +139,8 @@ describe('YahooApiClient', () => {
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
-      const credentials = {
-        userId,
-        encryptedClientId: 'encrypted-client-id',
-        encryptedClientSecret: 'encrypted-client-secret',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -277,6 +220,7 @@ describe('YahooApiClient', () => {
         expiresIn: newExpiresIn,
       });
       vi.mocked(storage.saveYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
@@ -287,8 +231,8 @@ describe('YahooApiClient', () => {
       const result = await (client as any).apiRequest(endpoint);
 
       // ASSERT
-      // decrypt removes 'encrypted-' prefix, so credentials are decrypted to 'client-id' and 'client-secret'
-      expect(refreshAccessToken).toHaveBeenCalledWith(refreshToken, 'client-id', 'client-secret');
+      // Uses env credentials
+      expect(refreshAccessToken).toHaveBeenCalledWith(refreshToken, clientId, clientSecret);
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
       expect(result).toEqual({ success: true });
     });
@@ -327,18 +271,8 @@ describe('YahooApiClient', () => {
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
-      const encryptedClientId = 'encrypted-client-id';
-      const encryptedClientSecret = 'encrypted-client-secret';
-      const credentials = {
-        userId,
-        encryptedClientId,
-        encryptedClientSecret,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -355,21 +289,16 @@ describe('YahooApiClient', () => {
 
     it('should return games array when games exist', async () => {
       // ARRANGE
-      // Implementation expects: userData[0] = properties object, userData[1] = subresources object
-      // gamesData['0'].game is an array [gameProps, leaguesData]
-      // But the implementation maps over games and accesses g.game_key directly
-      // So g should be the gameProps object, not the array
       const apiResponse = {
         fantasy_content: {
           users: [
             {
               user: [
-                { guid: 'test-guid' }, // userData[0] - properties object
+                { guid: 'test-guid' },
                 {
                   games: {
                     '0': {
                       game: {
-                        // gameProps object directly (not wrapped in array)
                         game_key: '466',
                         name: 'Basketball',
                         code: 'nba',
@@ -406,9 +335,9 @@ describe('YahooApiClient', () => {
           users: [
             {
               user: [
-                { guid: 'test-guid' }, // userData[0] - properties object
+                { guid: 'test-guid' },
                 {
-                  games: {}, // Empty games object
+                  games: {},
                 },
               ],
             },
@@ -487,18 +416,8 @@ describe('YahooApiClient', () => {
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
-      const encryptedClientId = 'encrypted-client-id';
-      const encryptedClientSecret = 'encrypted-client-secret';
-      const credentials = {
-        userId,
-        encryptedClientId,
-        encryptedClientSecret,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -524,12 +443,11 @@ describe('YahooApiClient', () => {
             users: [
               {
                 user: [
-                  { guid: 'test-guid' }, // userData[0] - properties
+                  { guid: 'test-guid' },
                   {
                     games: {
                       '0': {
                         game: {
-                          // gameProps object directly
                           game_key: '466',
                           name: 'Basketball',
                           code: 'nba',
@@ -545,7 +463,6 @@ describe('YahooApiClient', () => {
       });
 
       // Mock getUserGameLeagues response
-      // Yahoo API structure: game[0] = game properties, game[1] = leagues subresource
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: {
           fantasy_content: {
@@ -631,18 +548,8 @@ describe('YahooApiClient', () => {
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
-      const encryptedClientId = 'encrypted-client-id';
-      const encryptedClientSecret = 'encrypted-client-secret';
-      const credentials = {
-        userId,
-        encryptedClientId,
-        encryptedClientSecret,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -736,18 +643,8 @@ describe('YahooApiClient', () => {
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
-      const encryptedClientId = 'encrypted-client-id';
-      const encryptedClientSecret = 'encrypted-client-secret';
-      const credentials = {
-        userId,
-        encryptedClientId,
-        encryptedClientSecret,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -807,18 +704,8 @@ describe('YahooApiClient', () => {
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
-      const encryptedClientId = 'encrypted-client-id';
-      const encryptedClientSecret = 'encrypted-client-secret';
-      const credentials = {
-        userId,
-        encryptedClientId,
-        encryptedClientSecret,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
@@ -920,18 +807,8 @@ describe('YahooApiClient', () => {
   describe('getYahooApiClient', () => {
     it('should create and return YahooApiClient instance', async () => {
       // ARRANGE
-      const encryptedClientId = 'encrypted-client-id';
-      const encryptedClientSecret = 'encrypted-client-secret';
-      const credentials = {
-        userId,
-        encryptedClientId,
-        encryptedClientSecret,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      vi.mocked(storage.getYahooCredentials).mockResolvedValue(credentials);
       vi.mocked(storage.getYahooToken).mockResolvedValue({
+        id: 'token-1',
         userId,
         accessToken,
         refreshToken,
