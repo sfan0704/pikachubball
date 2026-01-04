@@ -47,7 +47,6 @@ config({ path: resolve(process.cwd(), ".env.local") });
 
 import { storage } from "../server/storage";
 import { getYahooApiClient } from "../server/services/yahoo/yahoo-api-client";
-import { logger } from "../server/utils/logger";
 
 /**
  * Wrapper to add timeout to API calls
@@ -199,7 +198,7 @@ function analyzeStructure(data: any, depth = 0, maxDepth = 4, visited = new Weak
 /**
  * Extract key observations about the API response structure
  */
-function extractObservations(data: any, apiName: string): string[] {
+function extractObservations(data: any, _apiName: string): string[] {
   const observations: string[] = [];
 
   // Check for array structure pattern

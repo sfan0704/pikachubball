@@ -6,15 +6,15 @@ import { mockLeagueSettings, mockStandings, mockScoreboard } from './yahoo-respo
  * Returns fixture data instead of making real API calls
  */
 export class MockFantasyDataSource implements FantasyDataSource {
-  async getLeagueStandings(leagueKey: string): Promise<any> {
+  async getLeagueStandings(_leagueKey: string): Promise<any> {
     return mockStandings;
   }
 
-  async getLeagueSettings(leagueKey: string): Promise<any> {
+  async getLeagueSettings(_leagueKey: string): Promise<any> {
     return mockLeagueSettings;
   }
 
-  async getLeagueScoreboard(leagueKey: string, week?: number): Promise<any> {
+  async getLeagueScoreboard(_leagueKey: string, _week?: number): Promise<any> {
     return mockScoreboard;
   }
 

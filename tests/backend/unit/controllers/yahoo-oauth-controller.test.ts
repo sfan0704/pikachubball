@@ -3,7 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { yahooOAuthController } from '../../../../server/controllers/yahoo-oauth-controller';
 import { storage } from '../../../../server/storage';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
-import { createMockRequest, createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
+import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
 
 // Mock dependencies
 vi.mock('../../../../server/storage');

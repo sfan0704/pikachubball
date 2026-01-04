@@ -354,10 +354,9 @@ export default function RankingsPage() {
                 <TabsContent value="rankings" className="space-y-4">
                   {isLoadingRankings ? (
                     <RankingsSkeleton />
-                  ) : rankings.length > 0 && selectedLeague && metadata ? (
+                  ) : rankings.length > 0 && selectedLeague ? (
                     <LeagueRankings 
                       rankings={rankings} 
-                      metadata={metadata}
                       userTeamKey={selectedLeague.teamKey}
                     />
                   ) : (

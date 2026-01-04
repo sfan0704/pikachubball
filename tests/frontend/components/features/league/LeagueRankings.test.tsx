@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LeagueRankings from '../../../../../client/src/components/features/league/LeagueRankings';
-import type { TeamRanking, RankingsMetadata } from '@shared/schema';
+import type { TeamRanking } from '@shared/schema';
 
 // Sample test data
 const createMockRankings = (): TeamRanking[] => [
@@ -96,26 +96,18 @@ const createMockRankings = (): TeamRanking[] => [
   },
 ];
 
-const createMockMetadata = (): RankingsMetadata => ({
-  scope: 'season',
-  currentWeek: 10,
-  totalWeeks: 20,
-});
-
 describe('LeagueRankings', () => {
   let mockRankings: TeamRanking[];
-  let mockMetadata: RankingsMetadata;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockRankings = createMockRankings();
-    mockMetadata = createMockMetadata();
   });
 
   describe('rendering', () => {
     it('should render the rankings card', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByTestId('card-league-rankings')).toBeInTheDocument();
@@ -123,7 +115,7 @@ describe('LeagueRankings', () => {
 
     it('should render the title', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByTestId('heading-rankings')).toBeInTheDocument();
@@ -132,7 +124,7 @@ describe('LeagueRankings', () => {
 
     it('should render all team rows', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       mockRankings.forEach(team => {
@@ -142,7 +134,7 @@ describe('LeagueRankings', () => {
 
     it('should render view toggle switch', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByTestId('switch-view-toggle')).toBeInTheDocument();
@@ -150,7 +142,7 @@ describe('LeagueRankings', () => {
 
     it('should render category headers', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByTestId('header-fgpct')).toBeInTheDocument();
@@ -169,7 +161,7 @@ describe('LeagueRankings', () => {
   describe('rankings display', () => {
     it('should display category ranks by default', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT - Team One has FG% rank of 2
       const teamOneRow = screen.getByTestId('row-ranking-466.l.12345.t.1');
@@ -178,7 +170,7 @@ describe('LeagueRankings', () => {
 
     it('should display total rank for each team', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByText('2.5')).toBeInTheDocument(); // Team One total rank
@@ -188,7 +180,7 @@ describe('LeagueRankings', () => {
 
     it('should sort by totalRank ascending by default', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT - Team Three (1.5) should be first, then Team One (2.5), then Team Two (3.8)
       const rows = screen.getAllByTestId(/^row-ranking-/);
@@ -204,7 +196,6 @@ describe('LeagueRankings', () => {
       render(
         <LeagueRankings 
           rankings={mockRankings} 
-          metadata={mockMetadata} 
           userTeamKey="466.l.12345.t.2"
         />
       );
@@ -219,7 +210,6 @@ describe('LeagueRankings', () => {
       render(
         <LeagueRankings 
           rankings={mockRankings} 
-          metadata={mockMetadata} 
           userTeamKey="466.l.12345.t.1"
         />
       );
@@ -234,7 +224,6 @@ describe('LeagueRankings', () => {
       render(
         <LeagueRankings 
           rankings={mockRankings} 
-          metadata={mockMetadata} 
           userTeamKey="466.l.12345.t.1"
         />
       );
@@ -248,7 +237,7 @@ describe('LeagueRankings', () => {
   describe('view toggle', () => {
     it('should show "Rankings" label by default', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByText('Rankings')).toBeInTheDocument();
@@ -257,7 +246,7 @@ describe('LeagueRankings', () => {
     it('should switch to "Actual Stats" label when toggled', async () => {
       // ARRANGE
       const user = userEvent.setup();
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT
       await user.click(screen.getByTestId('switch-view-toggle'));
@@ -269,7 +258,7 @@ describe('LeagueRankings', () => {
     it('should display actual stats after toggle', async () => {
       // ARRANGE
       const user = userEvent.setup();
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT
       await user.click(screen.getByTestId('switch-view-toggle'));
@@ -284,7 +273,7 @@ describe('LeagueRankings', () => {
     it('should sort by PTS when PTS header is clicked', async () => {
       // ARRANGE
       const user = userEvent.setup();
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT
       await user.click(screen.getByTestId('header-pts'));
@@ -299,7 +288,7 @@ describe('LeagueRankings', () => {
     it('should toggle sort direction when clicking same header twice', async () => {
       // ARRANGE
       const user = userEvent.setup();
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT - Click PTS twice
       await user.click(screen.getByTestId('header-pts'));
@@ -316,7 +305,7 @@ describe('LeagueRankings', () => {
   describe('manager name display', () => {
     it('should display manager names', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByText('Manager 1')).toBeInTheDocument();
@@ -328,7 +317,7 @@ describe('LeagueRankings', () => {
   describe('rank badges', () => {
     it('should display 1st badge for top ranked team', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByText('1st')).toBeInTheDocument();
@@ -336,7 +325,7 @@ describe('LeagueRankings', () => {
 
     it('should display 2nd badge for second ranked team', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByText('2nd')).toBeInTheDocument();
@@ -344,7 +333,7 @@ describe('LeagueRankings', () => {
 
     it('should display 3rd badge for third ranked team', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={mockRankings} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
       expect(screen.getByText('3rd')).toBeInTheDocument();
@@ -354,7 +343,7 @@ describe('LeagueRankings', () => {
   describe('empty state', () => {
     it('should render table with no rows when rankings is empty', () => {
       // ARRANGE & ACT
-      render(<LeagueRankings rankings={[]} metadata={mockMetadata} />);
+      render(<LeagueRankings rankings={[]} />);
 
       // ASSERT
       expect(screen.getByTestId('card-league-rankings')).toBeInTheDocument();

@@ -29,7 +29,7 @@ vi.mock('../../../client/src/hooks/use-toast', () => ({
 // Mock window.location for Yahoo OAuth redirect
 const originalLocation = window.location;
 beforeEach(() => {
-  // @ts-ignore
+  // @ts-expect-error - intentionally deleting window.location for test
   delete window.location;
   window.location = { ...originalLocation, href: '' } as Location;
 });

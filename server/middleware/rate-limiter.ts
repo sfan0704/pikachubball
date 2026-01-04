@@ -6,7 +6,7 @@ import { env } from "../config/env";
  * Skip rate limiting in development mode
  * This avoids validation errors and makes local development easier
  */
-const skipInDevelopment = (req: Request, res: Response) => {
+const skipInDevelopment = (_req: Request, _res: Response) => {
   return env.NODE_ENV === "development";
 };
 

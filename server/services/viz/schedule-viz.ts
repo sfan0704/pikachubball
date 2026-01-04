@@ -1,7 +1,7 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
-import type { ScheduleMatrixResponse, DaySchedule, PlayerGame } from '@shared/schema';
-import { parseTeam } from '../parsers/league-parser.js';
+import type { ScheduleMatrixResponse, DaySchedule } from '@shared/schema';
 import { parsePlayersFromRoster } from '../parsers/player-parser.js';
+import { parseTeam } from '../parsers/league-parser.js';
 import type { YahooApiTeamResponse } from '../../types/yahoo-api.js';
 
 export async function getScheduleMatrix(

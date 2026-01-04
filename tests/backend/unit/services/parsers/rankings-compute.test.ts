@@ -138,7 +138,7 @@ describe('rankings-compute', () => {
       // Team Alpha should have lower total rank (better) since it has higher stats
       const teamAlpha = result.find(t => t.teamKey === 't.1');
       const teamBeta = result.find(t => t.teamKey === 't.2');
-      expect(teamAlpha?.totalRank).toBeLessThan(teamBeta?.totalRank!);
+      expect(teamAlpha?.totalRank).toBeLessThan(teamBeta!.totalRank);
     });
 
     it('should handle teams without categoryRanks', () => {

@@ -11,12 +11,10 @@
 
 import { config } from "dotenv";
 import { resolve } from "path";
-import { readFileSync, readdirSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 config({ path: resolve(process.cwd(), ".env.local") });
 
-import { storage } from "../server/storage";
-import { getYahooApiClient } from "../server/services/yahoo/yahoo-api-client";
 
 const RESPONSES_DIR = join(process.cwd(), "scripts", "yahoo-api-responses");
 const DOCS_DIR = join(process.cwd(), "docs");
@@ -315,7 +313,7 @@ All Yahoo Fantasy Sports API responses follow this structure:
       leagueEndpoints.get(key)!.push(analysis);
     }
     
-    for (const [endpointKey, endpointAnalyses] of leagueEndpoints) {
+    for (const [_endpointKey, endpointAnalyses] of leagueEndpoints) {
       const analysis = endpointAnalyses[0];
       doc += `### ${analysis.endpoint.resource}${analysis.endpoint.params ? ` (${analysis.endpoint.params})` : ""}\n\n`;
       doc += `**Endpoint:** \`/fantasy/v2/league/{league_key}/${analysis.endpoint.resource}${analysis.endpoint.params ? `;${analysis.endpoint.params}` : ""}\`\n\n`;
@@ -380,7 +378,7 @@ All Yahoo Fantasy Sports API responses follow this structure:
       teamEndpoints.get(key)!.push(analysis);
     }
     
-    for (const [endpointKey, endpointAnalyses] of teamEndpoints) {
+    for (const [_endpointKey, endpointAnalyses] of teamEndpoints) {
       const analysis = endpointAnalyses[0];
       doc += `### ${analysis.endpoint.resource}${analysis.endpoint.params ? ` (${analysis.endpoint.params})` : ""}\n\n`;
       doc += `**Endpoint:** \`/fantasy/v2/team/{team_key}/${analysis.endpoint.resource}${analysis.endpoint.params ? `;${analysis.endpoint.params}` : ""}\`\n\n`;
@@ -439,7 +437,7 @@ All Yahoo Fantasy Sports API responses follow this structure:
       playerEndpoints.get(key)!.push(analysis);
     }
     
-    for (const [endpointKey, endpointAnalyses] of playerEndpoints) {
+    for (const [_endpointKey, endpointAnalyses] of playerEndpoints) {
       const analysis = endpointAnalyses[0];
       doc += `### ${analysis.endpoint.resource}${analysis.endpoint.params ? ` (${analysis.endpoint.params})` : ""}\n\n`;
       doc += `**Endpoint:** \`/fantasy/v2/player/{player_key}/${analysis.endpoint.resource}${analysis.endpoint.params ? `;${analysis.endpoint.params}` : ""}\`\n\n`;

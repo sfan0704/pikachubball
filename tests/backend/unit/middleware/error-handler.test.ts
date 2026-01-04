@@ -169,7 +169,7 @@ describe('errorHandler middleware', () => {
 
   describe('asyncHandler', () => {
     it('should call handler function with req, res, next', async () => {
-      const handler = vi.fn(async (req: Request, res: Response, next: NextFunction) => {
+      const handler = vi.fn(async (_req: Request, res: Response, _next: NextFunction) => {
         res.json({ success: true });
       });
 

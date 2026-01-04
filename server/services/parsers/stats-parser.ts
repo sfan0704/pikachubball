@@ -4,7 +4,7 @@
  */
 
 import type { TeamStats, CategoryStats } from '@shared/domain';
-import type { YahooApiTeamStats, YahooApiTeamData, YahooApiScoreboardResponse } from '../../types/yahoo-api.js';
+import type { YahooApiTeamData, YahooApiScoreboardResponse } from '../../types/yahoo-api.js';
 import { YAHOO_STAT_IDS } from '../../types/yahoo-stat-ids.js';
 import { logger } from '../../utils/logger.js';
 

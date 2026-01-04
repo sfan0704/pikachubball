@@ -29,9 +29,9 @@ describe('authController.login', () => {
     const user = createMockUser();
     let authCallback: (err: Error | null, user: any, info?: { message: string }) => void;
 
-    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: Function) => {
+    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: (err: Error | null, user: any, info?: { message: string }) => void) => {
       authCallback = callback;
-      return (req: Request, res: Response, next: NextFunction) => {
+      return (_req: Request, _res: Response, _next: NextFunction) => {
         // Call the callback with success
         authCallback(null, user, undefined);
       };
@@ -66,9 +66,9 @@ describe('authController.login', () => {
     // ARRANGE
     let authCallback: (err: Error | null, user: any, info?: { message: string }) => void;
 
-    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: Function) => {
+    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: (err: Error | null, user: any, info?: { message: string }) => void) => {
       authCallback = callback;
-      return (req: Request, res: Response, next: NextFunction) => {
+      return (_req: Request, _res: Response, _next: NextFunction) => {
         authCallback(null, null, { message: 'Invalid credentials' });
       };
     });
@@ -96,9 +96,9 @@ describe('authController.login', () => {
     // ARRANGE
     let authCallback: (err: Error | null, user: any, info?: { message: string }) => void;
 
-    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: Function) => {
+    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: (err: Error | null, user: any, info?: { message: string }) => void) => {
       authCallback = callback;
-      return (req: Request, res: Response, next: NextFunction) => {
+      return (_req: Request, _res: Response, _next: NextFunction) => {
         authCallback(null, null, undefined);
       };
     });
@@ -122,9 +122,9 @@ describe('authController.login', () => {
     const authError = new Error('Passport error');
     let authCallback: (err: Error | null, user: any, info?: { message: string }) => void;
 
-    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: Function) => {
+    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: (err: Error | null, user: any, info?: { message: string }) => void) => {
       authCallback = callback;
-      return (req: Request, res: Response, next: NextFunction) => {
+      return (_req: Request, _res: Response, _next: NextFunction) => {
         authCallback(authError, null, undefined);
       };
     });
@@ -146,9 +146,9 @@ describe('authController.login', () => {
     const loginError = new Error('Login failed');
     let authCallback: (err: Error | null, user: any, info?: { message: string }) => void;
     
-    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: Function) => {
+    vi.mocked(passport.authenticate).mockImplementation((strategy: string, callback: (err: Error | null, user: any, info?: { message: string }) => void) => {
       authCallback = callback;
-      return (req: Request, res: Response, next: NextFunction) => {
+      return (_req: Request, _res: Response, _next: NextFunction) => {
         authCallback(null, user, undefined);
       };
     });

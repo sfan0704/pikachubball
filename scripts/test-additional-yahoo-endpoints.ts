@@ -7,7 +7,7 @@
 
 import { config } from "dotenv";
 import { resolve } from "path";
-import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { writeFileSync } from "fs";
 import { join } from "path";
 config({ path: resolve(process.cwd(), ".env.local") });
 

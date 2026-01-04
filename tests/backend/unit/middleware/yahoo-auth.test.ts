@@ -6,7 +6,7 @@ import {
 import { storage } from '../../../../server/storage';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { NotFoundError, UnauthorizedError } from '../../../../server/middleware/error-handler';
-import { createMockRequest, createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
+import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
 
 // Mock dependencies
 vi.mock('../../../../server/storage');

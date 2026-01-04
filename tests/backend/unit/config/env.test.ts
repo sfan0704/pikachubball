@@ -250,7 +250,7 @@ describe('config/env', () => {
       // ACT
       try {
         await import('../../../../server/config/env');
-      } catch (error) {
+      } catch {
         // Expected to fail
       }
 
@@ -272,7 +272,7 @@ describe('config/env', () => {
       // ACT
       try {
         await import('../../../../server/config/env');
-      } catch (error) {
+      } catch {
         // Expected to fail
       }
 

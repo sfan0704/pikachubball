@@ -35,7 +35,7 @@ export const authController = {
       }
 
       // Don't send password hash to client
-      const { password, ...userWithoutPassword } = user;
+      const { password: _password, ...userWithoutPassword } = user;
       res.status(201).json({ user: userWithoutPassword });
     });
   }),
@@ -62,7 +62,7 @@ export const authController = {
         }
 
         // Don't send password hash to client
-        const { password, ...userWithoutPassword } = user;
+        const { password: _password, ...userWithoutPassword } = user;
         res.json({ user: userWithoutPassword });
       });
     })(req, res, next);
@@ -93,7 +93,7 @@ export const authController = {
 
     // Don't send password hash to client
     const user = req.user as { id: string; username: string; password?: string };
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     res.json({ user: userWithoutPassword });
   }),
 };

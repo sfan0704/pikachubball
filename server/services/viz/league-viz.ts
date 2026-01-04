@@ -1,9 +1,8 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
-import type { RankingsResponse, LeagueHeatmapResponse, TeamHeatmapData, HeatmapCell } from '@shared/schema';
+import type { RankingsResponse, LeagueHeatmapResponse, TeamHeatmapData } from '@shared/schema';
 import { CATEGORIES, type CategoryKey, type TeamStats } from '@shared/domain';
-import { parseTeamStatsFromStandings, parseTeamStats, parseTeamStatsFromScoreboard } from '../parsers/stats-parser.js';
+import { parseTeamStatsFromStandings, parseTeamStatsFromScoreboard } from '../parsers/stats-parser.js';
 import { computeRankings } from '../parsers/rankings-compute.js';
-import { parseTeam } from '../parsers/league-parser.js';
 
 // Re-export for other services
 export { CATEGORIES, type CategoryKey };
@@ -124,8 +123,8 @@ async function extractTeamStats(
   dataSource: FantasyDataSource,
   leagueKey: string,
   week?: number,
-  currentWeek?: number,
-  endWeek?: number
+  _currentWeek?: number,
+  _endWeek?: number
 ): Promise<TeamStats[]> {
   const { logger } = await import("../../utils/logger");
   
