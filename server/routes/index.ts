@@ -1,5 +1,4 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { registerAuthRoutes } from "./auth";
 import { registerYahooOAuthRoutes } from "./yahoo-oauth";
 import { registerYahooRoutes } from "./yahoo";
@@ -8,7 +7,11 @@ import { registerChatRoutes } from "./chat";
 import { registerDebugRoutes } from "./debug";
 
 /** Register all application routes */
-export async function registerRoutes(app: Express): Promise<Server> {
+export function registerRoutes(app: Express): void {
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok", service: "pikachubball" });
+  });
+
   // Register basic authentication routes (signup/login/logout)
   registerAuthRoutes(app);
 
@@ -18,7 +21,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerVizRoutes(app);         // League visualizations
   registerChatRoutes(app);        // AI chat endpoint
   registerDebugRoutes(app);        // Debug endpoints (dev only)
-
-  const server = createServer(app);
-  return server;
 }
