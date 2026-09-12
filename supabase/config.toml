@@ -1,0 +1,17 @@
+# Repository-local Supabase CLI configuration. Remote project references and
+# secrets must never be committed here.
+project_id = "pikachubball"
+
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+sql_paths = []
