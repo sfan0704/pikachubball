@@ -27,7 +27,7 @@ export const vizController = {
     }
 
     const week = parseWeekParam(req.query.week);
-    const dataSource = new YahooFantasyDataSource(userId);
+    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
     const response = await getLeagueRankings(dataSource, leagueKey, week);
 
     res.json(response);
@@ -48,7 +48,7 @@ export const vizController = {
     }
 
     const week = parseWeekParam(req.query.week);
-    const dataSource = new YahooFantasyDataSource(userId);
+    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
     const response = await getLeagueHeatmap(dataSource, leagueKey, week);
 
     res.json(response);
@@ -70,7 +70,7 @@ export const vizController = {
 
     const week = parseWeekParam(req.query.week);
     const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
-    const dataSource = new YahooFantasyDataSource(userId);
+    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
     const response = await getMatchupComparison(
       dataSource,
       leagueKey,
@@ -98,7 +98,7 @@ export const vizController = {
 
     const week = parseWeekParam(req.query.week);
     const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
-    const dataSource = new YahooFantasyDataSource(userId);
+    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
     const response = await getScheduleMatrix(
       dataSource,
       leagueKey,
@@ -110,4 +110,3 @@ export const vizController = {
     res.json(response);
   }),
 };
-

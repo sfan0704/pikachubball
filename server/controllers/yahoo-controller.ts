@@ -20,7 +20,14 @@ export const yahooController = {
     }
     
     try {
-      const leagues = await getUserLeagues(userId);
+      const leagues = req.ownerStorage
+        ? await getUserLeagues(userId, req.ownerStorage)
+        : await getUserLeagues(userId);
+      if (req.ownerStorage) {
+        await req.ownerStorage.replaceFantasyMemberships(
+          leagues.map(({ leagueKey, teamKey }) => ({ leagueKey, teamKey })),
+        );
+      }
       logger.info("Returning leagues to client", {
         userId,
         leaguesCount: leagues.length,
@@ -51,8 +58,9 @@ export const yahooController = {
     if (!userId) {
       throw new ValidationError("Authentication required");
     }
-    const roster = await getTeamRoster(userId, teamKey);
+    const roster = req.ownerStorage
+      ? await getTeamRoster(userId, teamKey, req.ownerStorage)
+      : await getTeamRoster(userId, teamKey);
     res.json({ roster });
   }),
 };
-

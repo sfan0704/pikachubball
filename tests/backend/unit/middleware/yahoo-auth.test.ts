@@ -1,84 +1,118 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { NextFunction, Request, Response } from "express";
 import {
+  leagueKeyFromTeamKey,
+  requireOwnedFantasyResource,
   requireYahooAuth,
-} from '../../../../server/middleware/yahoo-auth';
-import { storage } from '../../../../server/storage';
-import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
-import { NotFoundError, UnauthorizedError } from '../../../../server/middleware/error-handler';
-import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
+} from "../../../../server/middleware/yahoo-auth";
+import { getAuthenticatedUserId } from "../../../../server/middleware/auth";
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../../../../server/middleware/error-handler";
+import {
+  createAuthenticatedRequest,
+  createMockNext,
+  createMockResponse,
+  createMockUser,
+} from "../../fixtures/test-helpers";
+import type { OwnerScopedStorage } from "../../../../server/storage/yahoo-token-storage";
 
-// Mock dependencies
-vi.mock('../../../../server/storage');
-vi.mock('../../../../server/middleware/auth');
+vi.mock("../../../../server/middleware/auth");
 
-describe('yahooAuth middleware', () => {
-  let mockReq: Request;
-  let mockRes: Response;
-  let mockNext: NextFunction;
-  let mockUser: ReturnType<typeof createMockUser>;
+function ownerStorage(overrides: Partial<OwnerScopedStorage> = {}): OwnerScopedStorage {
+  return {
+    saveYahooConnection: vi.fn(),
+    saveYahooToken: vi.fn(),
+    getYahooToken: vi.fn(),
+    deleteYahooToken: vi.fn(),
+    replaceFantasyMemberships: vi.fn(),
+    ownsFantasyResource: vi.fn(),
+    ...overrides,
+  };
+}
+
+describe("Yahoo owner middleware", () => {
+  let req: Request;
+  let res: Response;
+  let next: NextFunction;
+  const user = createMockUser();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUser = createMockUser();
-    mockReq = createAuthenticatedRequest(mockUser) as Request;
-    mockRes = createMockResponse() as Response;
-    mockNext = createMockNext();
+    req = createAuthenticatedRequest(user) as Request;
+    res = createMockResponse() as Response;
+    next = createMockNext();
   });
 
-  describe('requireYahooAuth', () => {
-    it('should call next() if user has valid Yahoo token', async () => {
-      // ARRANGE
-      const token = {
-        userId: mockUser.id,
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        expiresAt: Math.floor(Date.now() / 1000) + 3600,
-      };
-
-      vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
-      vi.mocked(storage.getYahooToken).mockResolvedValue(token);
-
-      // ACT
-      await requireYahooAuth(mockReq, mockRes, mockNext);
-
-      // ASSERT
-      expect(getAuthenticatedUserId).toHaveBeenCalledWith(mockReq);
-      expect(storage.getYahooToken).toHaveBeenCalledWith(mockUser.id);
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockNext.mock.calls[0][0]).toBeUndefined(); // No error passed
+  it("requires a Yahoo connection from the request-scoped repository", async () => {
+    const getYahooToken = vi.fn().mockResolvedValue({
+      userId: user.id,
+      accessToken: "access-token",
+      refreshToken: "refresh-token",
+      expiresAt: 1_800_000_000,
     });
+    req.ownerStorage = ownerStorage({ getYahooToken });
+    vi.mocked(getAuthenticatedUserId).mockReturnValue(user.id);
 
-    it('should throw UnauthorizedError if user is not authenticated', async () => {
-      // ARRANGE
-      vi.mocked(getAuthenticatedUserId).mockImplementation(() => {
-        throw new UnauthorizedError('Authentication required');
-      });
+    await requireYahooAuth(req, res, next);
 
-      // ACT
-      await requireYahooAuth(mockReq, mockRes, mockNext);
+    expect(getYahooToken).toHaveBeenCalledWith(user.id);
+    expect(next).toHaveBeenCalledWith();
+  });
 
-      // ASSERT
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error).toBeInstanceOf(UnauthorizedError);
-      expect(error.message).toBe('Authentication required');
-      expect(storage.getYahooToken).not.toHaveBeenCalled();
+  it("fails when authentication or owner storage is absent", async () => {
+    vi.mocked(getAuthenticatedUserId).mockImplementation(() => {
+      throw new UnauthorizedError("Authentication required");
     });
+    await requireYahooAuth(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
 
-    it('should throw NotFoundError if Yahoo token does not exist', async () => {
-      // ARRANGE
-      vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
-      vi.mocked(storage.getYahooToken).mockResolvedValue(null);
+    vi.clearAllMocks();
+    vi.mocked(getAuthenticatedUserId).mockReturnValue(user.id);
+    await requireYahooAuth(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
+  });
 
-      // ACT
-      await requireYahooAuth(mockReq, mockRes, mockNext);
+  it("rejects an owner without a Yahoo connection", async () => {
+    req.ownerStorage = ownerStorage({ getYahooToken: vi.fn().mockResolvedValue(null) });
+    vi.mocked(getAuthenticatedUserId).mockReturnValue(user.id);
 
-      // ASSERT
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error).toBeInstanceOf(NotFoundError);
-      expect(error.message).toContain('Yahoo Fantasy connection');
-    });
+    await requireYahooAuth(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
+  });
+
+  it("derives and verifies the exact league/team pair", async () => {
+    const ownsFantasyResource = vi.fn().mockResolvedValue(true);
+    req.ownerStorage = ownerStorage({ ownsFantasyResource });
+    req.params = { teamKey: "466.l.12345.t.7" };
+
+    await requireOwnedFantasyResource(req, res, next);
+
+    expect(leagueKeyFromTeamKey("466.l.12345.t.7")).toBe("466.l.12345");
+    expect(ownsFantasyResource).toHaveBeenCalledWith(
+      "466.l.12345",
+      "466.l.12345.t.7",
+    );
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("rejects a forged or cross-league team pair before Yahoo is called", async () => {
+    const ownsFantasyResource = vi.fn().mockResolvedValue(false);
+    req.ownerStorage = ownerStorage({ ownsFantasyResource });
+    req.params = {
+      leagueKey: "466.l.owner-league",
+      teamKey: "466.l.foreign-league.t.9",
+    };
+
+    await requireOwnedFantasyResource(req, res, next);
+
+    expect(ownsFantasyResource).toHaveBeenCalledWith(
+      "466.l.owner-league",
+      "466.l.foreign-league.t.9",
+    );
+    expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError));
   });
 });

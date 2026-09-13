@@ -5,6 +5,7 @@ import type {
   YahooApiTeamResponse,
   YahooApiPlayerResponse,
 } from '../types/yahoo-api.js';
+import type { YahooTokenStorage } from '../storage/yahoo-token-storage.js';
 
 export interface FantasyDataSource {
   getLeagueStandings(leagueKey: string): Promise<YahooApiLeagueResponse>;
@@ -15,11 +16,20 @@ export interface FantasyDataSource {
 }
 
 export class YahooFantasyDataSource implements FantasyDataSource {
-  constructor(private userId: string) {}
+  constructor(
+    private userId: string,
+    private tokenStorage?: YahooTokenStorage,
+  ) {}
+
+  private getClient() {
+    return this.tokenStorage
+      ? getYahooApiClient(this.userId, this.tokenStorage)
+      : getYahooApiClient(this.userId);
+  }
 
   async getLeagueStandings(leagueKey: string): Promise<YahooApiLeagueResponse> {
     const { logger } = await import("../utils/logger");
-    const client = await getYahooApiClient(this.userId);
+    const client = await this.getClient();
     
     const response = await client.getLeagueStandings(leagueKey);
     
@@ -36,22 +46,22 @@ export class YahooFantasyDataSource implements FantasyDataSource {
   }
 
   async getLeagueSettings(leagueKey: string): Promise<YahooApiLeagueResponse> {
-    const client = await getYahooApiClient(this.userId);
+    const client = await this.getClient();
     return await client.getLeagueSettings(leagueKey);
   }
 
   async getLeagueScoreboard(leagueKey: string, week?: number): Promise<YahooApiScoreboardResponse> {
-    const client = await getYahooApiClient(this.userId);
+    const client = await this.getClient();
     return await client.getLeagueScoreboard(leagueKey, week);
   }
 
   async getTeamRoster(teamKey: string): Promise<YahooApiTeamResponse> {
-    const client = await getYahooApiClient(this.userId);
+    const client = await this.getClient();
     return await client.getTeamRoster(teamKey);
   }
 
   async getPlayerStats(playerKeys: string[]): Promise<YahooApiPlayerResponse | null> {
-    const client = await getYahooApiClient(this.userId);
+    const client = await this.getClient();
     // For now, return the first player's stats as a placeholder
     if (playerKeys.length === 0) {
       return null;

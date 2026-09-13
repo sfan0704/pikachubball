@@ -1,6 +1,7 @@
 import { getYahooApiClient } from "./yahoo-api-client";
 import { logger } from "../../utils/logger";
 import { parseTeamsFromStandings } from "../parsers/league-parser.js";
+import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
 
 /**
  * League Service
@@ -20,8 +21,13 @@ export interface LeagueWithTeam {
  * Get all user's leagues with their teams
  * Optimized with parallel API calls
  */
-export async function getUserLeagues(userId: string): Promise<LeagueWithTeam[]> {
-  const client = await getYahooApiClient(userId);
+export async function getUserLeagues(
+  userId: string,
+  tokenStorage?: YahooTokenStorage,
+): Promise<LeagueWithTeam[]> {
+  const client = tokenStorage
+    ? await getYahooApiClient(userId, tokenStorage)
+    : await getYahooApiClient(userId);
 
   try {
     // Get user games to extract GUID, then fetch NBA leagues only
@@ -265,4 +271,3 @@ export async function getUserLeagues(userId: string): Promise<LeagueWithTeam[]> 
     throw new Error(`Failed to get leagues: ${errorMsg}`);
   }
 }
-

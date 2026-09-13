@@ -25,7 +25,7 @@ Create one custom OAuth/OIDC provider in the dedicated basketball Supabase proje
 | PKCE | Enabled |
 | Nonce verification | Enabled |
 
-Use the callback URL displayed by Supabase for this provider as the callback in the Yahoo Developer application. The Yahoo client id and secret belong only in the Supabase provider configuration. Do not add them to Vercel.
+Use the callback URL displayed by Supabase for this provider as the callback in the Yahoo Developer application. Configure the same Yahoo application credentials in the server-only Vercel environment because Yahoo requires them when the API access token is refreshed. They must never use a `VITE_` prefix or enter a client bundle.
 
 In Supabase URL configuration, set the site URL to the production Vercel origin and allow exactly:
 
@@ -45,6 +45,8 @@ APP_ORIGIN=https://<production-domain>
 SUPABASE_URL=https://<basketball-project-ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<project-publishable-key>
 ENCRYPTION_KEY=<64-hex-character key>
+YAHOO_CLIENT_ID=<Yahoo-application-client-id>
+YAHOO_CLIENT_SECRET=<Yahoo-application-client-secret>
 ```
 
 Storage configuration is defined by CAR-60. The final Vercel runtime must not receive a Supabase service-role key or database password.

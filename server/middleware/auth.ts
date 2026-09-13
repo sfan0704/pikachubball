@@ -5,10 +5,13 @@ import {
   readVerifiedYahooIdentity,
   type YahooSessionIdentity,
 } from "../auth/supabase-auth";
+import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
+import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
 
 declare module "express-serve-static-core" {
   interface Request {
     authIdentity?: YahooSessionIdentity;
+    ownerStorage?: OwnerScopedStorage;
   }
 }
 
@@ -28,6 +31,7 @@ export async function requireAuth(
   try {
     const client = createSupabaseRequestClient(req, res);
     req.authIdentity = await readVerifiedYahooIdentity(client);
+    req.ownerStorage = createSupabaseOwnerStorage(client, req.authIdentity.userId);
     next();
   } catch {
     res.status(401).json({ 

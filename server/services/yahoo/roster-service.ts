@@ -1,6 +1,7 @@
 import { getYahooApiClient } from "./yahoo-api-client";
 import { parsePlayersFromRoster } from "../parsers/player-parser.js";
 import type { Player } from "@shared/schema";
+import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
 
 /**
  * Roster Service
@@ -13,9 +14,12 @@ import type { Player } from "@shared/schema";
  */
 export async function getTeamRoster(
   userId: string,
-  teamKey: string
+  teamKey: string,
+  tokenStorage?: YahooTokenStorage,
 ): Promise<Player[]> {
-  const client = await getYahooApiClient(userId);
+  const client = tokenStorage
+    ? await getYahooApiClient(userId, tokenStorage)
+    : await getYahooApiClient(userId);
   const response = await client.getTeamRoster(teamKey);
 
   // Parse the raw Yahoo API response
@@ -41,4 +45,3 @@ export async function getTeamRoster(
     status: player.status,
   }));
 }
-

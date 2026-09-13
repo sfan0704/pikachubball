@@ -8,6 +8,7 @@ import { storage } from "../../storage";
 import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
 import { refreshAccessToken } from "../../yahoo-auth";
+import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
 
 const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
 
@@ -20,9 +21,15 @@ export class YahooApiClient {
   private clientSecret: string;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
+  private tokenVersion: number | undefined;
   private axiosInstance: AxiosInstance;
 
-  private constructor(userId: string, clientId: string, clientSecret: string) {
+  private constructor(
+    userId: string,
+    clientId: string,
+    clientSecret: string,
+    private readonly tokenStorage: YahooTokenStorage,
+  ) {
     this.userId = userId;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
@@ -39,7 +46,10 @@ export class YahooApiClient {
    * Create a YahooApiClient instance for a user
    * Uses app-level credentials from environment variables
    */
-  static async create(userId: string): Promise<YahooApiClient> {
+  static async create(
+    userId: string,
+    tokenStorage: YahooTokenStorage = storage,
+  ): Promise<YahooApiClient> {
     // Use app-level credentials from environment variables
     const clientId = env.YAHOO_CLIENT_ID;
     const clientSecret = env.YAHOO_CLIENT_SECRET;
@@ -48,7 +58,7 @@ export class YahooApiClient {
       throw new Error("Yahoo OAuth credentials are not configured. Please set YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET environment variables.");
     }
 
-    const client = new YahooApiClient(userId, clientId, clientSecret);
+    const client = new YahooApiClient(userId, clientId, clientSecret, tokenStorage);
     await client.initializeTokens();
     return client;
   }
@@ -57,7 +67,7 @@ export class YahooApiClient {
    * Initialize tokens from storage and refresh if expired
    */
   private async initializeTokens(): Promise<void> {
-    const tokenData = await storage.getYahooToken(this.userId);
+    const tokenData = await this.tokenStorage.getYahooToken(this.userId);
     if (!tokenData) {
       throw new Error("No valid Yahoo access token available. Please reconnect your Yahoo account.");
     }
@@ -78,15 +88,18 @@ export class YahooApiClient {
         const newTokens = await refreshAccessToken(refreshToken, this.clientId, this.clientSecret);
         const newExpiresAt = Math.floor(Date.now() / 1000) + newTokens.expiresIn;
         
-        await storage.saveYahooToken({
+        const savedToken = await this.tokenStorage.saveYahooToken({
           userId: this.userId,
           accessToken: newTokens.accessToken,
           refreshToken: newTokens.refreshToken,
           expiresAt: newExpiresAt,
+        }, {
+          expectedVersion: tokenData.version,
         });
         
         accessToken = newTokens.accessToken;
         refreshToken = newTokens.refreshToken;
+        this.tokenVersion = savedToken.version;
         
         logger.info("Token refreshed successfully", { userId: this.userId });
       } catch (error: unknown) {
@@ -101,6 +114,7 @@ export class YahooApiClient {
 
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
+    this.tokenVersion ??= tokenData.version;
   }
 
   /**
@@ -139,15 +153,18 @@ export class YahooApiClient {
           const newTokens = await refreshAccessToken(this.refreshToken, this.clientId, this.clientSecret);
           const newExpiresAt = Math.floor(Date.now() / 1000) + newTokens.expiresIn;
           
-          await storage.saveYahooToken({
+          const savedToken = await this.tokenStorage.saveYahooToken({
             userId: this.userId,
             accessToken: newTokens.accessToken,
             refreshToken: newTokens.refreshToken,
             expiresAt: newExpiresAt,
+          }, {
+            expectedVersion: this.tokenVersion,
           });
           
           this.accessToken = newTokens.accessToken;
           this.refreshToken = newTokens.refreshToken;
+          this.tokenVersion = savedToken.version;
           
           // Retry the request with new token
           const response = await this.axiosInstance.get(url, {
@@ -769,7 +786,9 @@ export class YahooApiClient {
  * Get a YahooApiClient instance for a user
  * This is the main entry point for Yahoo API access
  */
-export async function getYahooApiClient(userId: string): Promise<YahooApiClient> {
-  return YahooApiClient.create(userId);
+export async function getYahooApiClient(
+  userId: string,
+  tokenStorage: YahooTokenStorage = storage,
+): Promise<YahooApiClient> {
+  return YahooApiClient.create(userId, tokenStorage);
 }
-

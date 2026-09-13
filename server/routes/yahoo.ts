@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { requireAuth } from "../middleware/auth";
-import { requireYahooAuth } from "../middleware/yahoo-auth";
+import {
+  requireOwnedFantasyResource,
+  requireYahooAuth,
+} from "../middleware/yahoo-auth";
 import { yahooController } from "../controllers/yahoo-controller";
 import { getYahooApiClient } from "../services/yahoo/yahoo-api-client";
 import { getAuthenticatedUserId } from "../middleware/auth";
@@ -18,6 +21,7 @@ export function registerYahooRoutes(app: Express): void {
     "/api/yahoo/roster-by-team/:teamKey",
     requireAuth,
     requireYahooAuth,
+    requireOwnedFantasyResource,
     yahooController.getRoster
   );
   
@@ -32,7 +36,7 @@ export function registerYahooRoutes(app: Express): void {
       }
       
       try {
-        const client = await getYahooApiClient(userId);
+        const client = await getYahooApiClient(userId, req.ownerStorage);
         const games = await client.getUserGames();
         res.json({
           success: true,

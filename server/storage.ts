@@ -10,8 +10,9 @@ import type {
   OpenaiCredentials,
   InsertOpenaiCredentials,
 } from "@shared/schema";
+import type { YahooTokenStorage } from "./storage/yahoo-token-storage";
 
-export interface IStorage {
+export interface IStorage extends YahooTokenStorage {
   // User operations
   createUser(user: InsertUser): Promise<User>;
   createOAuthUser(user: InsertOAuthUser): Promise<User>;

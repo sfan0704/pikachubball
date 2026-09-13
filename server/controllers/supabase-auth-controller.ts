@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import type { Provider, SupabaseClient } from "@supabase/supabase-js";
-import { storage, type IStorage } from "../storage";
 import { asyncHandler, UnauthorizedError, ValidationError } from "../middleware/error-handler";
 import {
   applyAuthNoStore,
@@ -10,16 +9,21 @@ import {
   requireYahooProviderTokens,
   YAHOO_PROVIDER,
 } from "../auth/supabase-auth";
+import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
+import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
 
 export interface AuthControllerDependencies {
   createClient(req: Request, res: Response): SupabaseClient;
-  tokenStorage: Pick<IStorage, "saveYahooToken">;
+  createStorage(client: SupabaseClient, ownerId: string): Pick<
+    OwnerScopedStorage,
+    "saveYahooConnection"
+  >;
   now(): number;
 }
 
 const defaultDependencies: AuthControllerDependencies = {
   createClient: createSupabaseRequestClient,
-  tokenStorage: storage,
+  createStorage: createSupabaseOwnerStorage,
   now: Date.now,
 };
 
@@ -71,8 +75,11 @@ export function createSupabaseAuthController(
       } catch {
         throw new UnauthorizedError("Yahoo authentication response was incomplete");
       }
-      await dependencies.tokenStorage.saveYahooToken({
+      await dependencies.createStorage(client, identity.userId).saveYahooConnection({
         userId: identity.userId,
+        yahooGuid: identity.yahooGuid,
+        displayName: identity.displayName,
+        email: identity.email,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         expiresAt: Math.floor(dependencies.now() / 1000) + 3600,
