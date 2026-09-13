@@ -48,7 +48,7 @@ npm test
 npm run build
 ```
 
-The production build creates the client assets and the local Node server bundle. Vercel uses the root Express export and builds client assets into `public/` according to `vercel.json`.
+The production build creates the client assets and the local Node server bundle. Vercel uses `api/index.ts` as the Express function and builds client assets into `public/` according to `vercel.json`.
 
 ## Supabase
 
