@@ -3,8 +3,8 @@
  * Compute category ranks and total ranks from team stats
  */
 
-import type { TeamStats, CategoryKey } from '@shared/domain';
-import { CATEGORIES } from '@shared/domain';
+import type { TeamStats, CategoryKey } from '../../../shared/domain/index.js';
+import { CATEGORIES } from '../../../shared/domain/index.js';
 
 /**
  * Compute category ranks for all teams
@@ -71,4 +71,3 @@ export function computeRankings(teamStats: TeamStats[]): TeamStats[] {
   const withCategoryRanks = computeCategoryRanks(teamStats);
   return computeTotalRanks(withCategoryRanks);
 }
-

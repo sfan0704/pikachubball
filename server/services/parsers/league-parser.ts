@@ -3,7 +3,7 @@
  * Transform raw Yahoo API responses into domain models
  */
 
-import type { League, Team } from '@shared/domain';
+import type { League, Team } from '../../../shared/domain/index.js';
 import type { YahooApiLeagueResponse, YahooApiTeamData, YahooApiLeagueProperties } from '../../types/yahoo-api.js';
 import { logger } from '../../utils/logger.js';
 
@@ -149,4 +149,3 @@ export function parseTeamsFromStandings(
 
   return parsedTeams;
 }
-

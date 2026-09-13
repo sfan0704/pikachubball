@@ -3,7 +3,7 @@
  * Transform raw Yahoo API scoreboard responses into domain models
  */
 
-import type { Matchup, MatchupScore } from '@shared/domain';
+import type { Matchup, MatchupScore } from '../../../shared/domain/index.js';
 import type { YahooApiScoreboardResponse, YahooApiMatchupData, YahooApiTeamData } from '../../types/yahoo-api.js';
 import { logger } from '../../utils/logger.js';
 
@@ -375,4 +375,3 @@ export function extractTeamFromScoreboard(
 
   return null;
 }
-

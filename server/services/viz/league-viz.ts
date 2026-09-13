@@ -1,6 +1,6 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
-import type { RankingsResponse, LeagueHeatmapResponse, TeamHeatmapData } from '@shared/schema';
-import { CATEGORIES, type CategoryKey, type TeamStats } from '@shared/domain';
+import type { RankingsResponse, LeagueHeatmapResponse, TeamHeatmapData } from '../../../shared/schema.js';
+import { CATEGORIES, type CategoryKey, type TeamStats } from '../../../shared/domain/index.js';
 import { parseTeamStatsFromStandings, parseTeamStatsFromScoreboard } from '../parsers/stats-parser.js';
 import { computeRankings } from '../parsers/rankings-compute.js';
 

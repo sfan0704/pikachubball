@@ -1,6 +1,6 @@
 import { getYahooApiClient } from "./yahoo-api-client";
 import { parsePlayersFromRoster } from "../parsers/player-parser.js";
-import type { Player } from "@shared/schema";
+import type { Player } from "../../../shared/schema.js";
 import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
 
 /**

@@ -3,7 +3,7 @@
  * Transform raw Yahoo API player responses into domain models
  */
 
-import type { Player, PlayerStatus } from '@shared/domain';
+import type { Player, PlayerStatus } from '../../../shared/domain/index.js';
 import type { YahooApiPlayerData } from '../../types/yahoo-api.js';
 import { logger } from '../../utils/logger.js';
 
@@ -158,4 +158,3 @@ export function parsePlayersFromRoster(rosterData: any): Player[] {
 
   return parsedPlayers;
 }
-

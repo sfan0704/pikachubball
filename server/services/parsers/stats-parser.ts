@@ -3,7 +3,7 @@
  * Transform raw Yahoo API stats responses into domain models
  */
 
-import type { TeamStats, CategoryStats } from '@shared/domain';
+import type { TeamStats, CategoryStats } from '../../../shared/domain/index.js';
 import type { YahooApiTeamData, YahooApiScoreboardResponse } from '../../types/yahoo-api.js';
 import { YAHOO_STAT_IDS } from '../../types/yahoo-stat-ids.js';
 import { logger } from '../../utils/logger.js';
@@ -327,4 +327,3 @@ export function parseTeamStatsFromScoreboard(
 
   return teamStats;
 }
-

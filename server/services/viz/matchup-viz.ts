@@ -1,5 +1,5 @@
 import type { FantasyDataSource } from '../fantasy-data-source.js';
-import type { MatchupComparisonResponse, CategoryComparison } from '@shared/schema';
+import type { MatchupComparisonResponse, CategoryComparison } from '../../../shared/schema.js';
 import { CATEGORIES } from './league-viz.js';
 import type { YahooApiTeamData } from '../../types/yahoo-api.js';
 import { extractTeamFromScoreboard, parseMatchupsFromScoreboard } from '../parsers/matchup-parser.js';
@@ -153,4 +153,3 @@ export async function getMatchupComparison(
     }
   };
 }
-
