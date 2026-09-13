@@ -18,8 +18,6 @@ export default defineConfig({
     // Set environment variables before any imports
     env: {
       NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-      SESSION_SECRET: 'test-secret-that-is-at-least-32-characters-long',
       ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       PORT: '5000',
     },

@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import { yahooOAuthController } from '../../../../server/controllers/yahoo-oauth-controller';
-import { storage } from '../../../../server/storage';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
 
 // Mock dependencies
-vi.mock('../../../../server/storage');
 vi.mock('../../../../server/middleware/auth');
 
 describe('yahooOAuthController', () => {
@@ -14,11 +12,17 @@ describe('yahooOAuthController', () => {
   let mockRes: Response;
   let mockNext: NextFunction;
   let mockUser: ReturnType<typeof createMockUser>;
+  const getYahooToken = vi.fn();
+  const deleteYahooToken = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockUser = createMockUser();
     mockReq = createAuthenticatedRequest(mockUser) as Request;
+    mockReq.ownerStorage = {
+      getYahooToken,
+      deleteYahooToken,
+    } as Request["ownerStorage"];
     mockRes = createMockResponse() as Response;
     mockNext = createMockNext();
   });
@@ -35,7 +39,7 @@ describe('yahooOAuthController', () => {
       };
 
       vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
-      vi.mocked(storage.getYahooToken).mockResolvedValue(token);
+      getYahooToken.mockResolvedValue(token);
 
       // ACT
       const handler = yahooOAuthController.getStatus as any;
@@ -62,7 +66,7 @@ describe('yahooOAuthController', () => {
       };
 
       vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
-      vi.mocked(storage.getYahooToken).mockResolvedValue(token);
+      getYahooToken.mockResolvedValue(token);
 
       // ACT
       const handler = yahooOAuthController.getStatus as any;
@@ -81,7 +85,7 @@ describe('yahooOAuthController', () => {
     it('should return connection status with no token', async () => {
       // ARRANGE
       vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
-      vi.mocked(storage.getYahooToken).mockResolvedValue(undefined);
+      getYahooToken.mockResolvedValue(undefined);
 
       // ACT
       const handler = yahooOAuthController.getStatus as any;
@@ -116,14 +120,14 @@ describe('yahooOAuthController', () => {
     it('should delete Yahoo token', async () => {
       // ARRANGE
       vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
-      vi.mocked(storage.deleteYahooToken).mockResolvedValue(undefined);
+      deleteYahooToken.mockResolvedValue(undefined);
 
       // ACT
       const handler = yahooOAuthController.disconnect as any;
       await handler(mockReq, mockRes, mockNext);
 
       // ASSERT
-      expect(storage.deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
+      expect(deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
       expect(mockRes.json).toHaveBeenCalledWith({ 
         success: true, 
         message: 'Yahoo account disconnected.' 

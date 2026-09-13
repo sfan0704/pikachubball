@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { YahooApiClient, getYahooApiClient } from '../../../../../server/services/yahoo/yahoo-api-client';
-import { storage } from '../../../../../server/storage';
+import type { YahooTokenStorage } from '../../../../../server/storage/yahoo-token-storage';
 import { env } from '../../../../../server/config/env';
 import { refreshAccessToken } from '../../../../../server/yahoo-auth';
 import axios from 'axios';
 
 // Mock dependencies
-vi.mock('../../../../../server/storage');
 vi.mock('../../../../../server/config/env', () => ({
   env: {
     YAHOO_CLIENT_ID: 'test-client-id',
@@ -17,6 +16,11 @@ vi.mock('../../../../../server/yahoo-auth');
 vi.mock('axios');
 
 describe('YahooApiClient', () => {
+  const storage = {
+    getYahooToken: vi.fn(),
+    saveYahooToken: vi.fn(),
+    deleteYahooToken: vi.fn(),
+  } as unknown as YahooTokenStorage;
   const userId = 'test-user-id';
   const clientId = 'test-client-id';
   const clientSecret = 'test-client-secret';
@@ -47,7 +51,7 @@ describe('YahooApiClient', () => {
       } as any);
 
       // ACT
-      const client = await YahooApiClient.create(userId);
+      const client = await YahooApiClient.create(userId, storage);
 
       // ASSERT
       expect(client).toBeInstanceOf(YahooApiClient);
@@ -59,7 +63,7 @@ describe('YahooApiClient', () => {
       (env as any).YAHOO_CLIENT_SECRET = undefined;
 
       // ACT & ASSERT
-      await expect(YahooApiClient.create(userId)).rejects.toThrow(
+      await expect(YahooApiClient.create(userId, storage)).rejects.toThrow(
         'Yahoo OAuth credentials are not configured'
       );
     });
@@ -69,7 +73,7 @@ describe('YahooApiClient', () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue(undefined); // No token
 
       // ACT & ASSERT
-      await expect(YahooApiClient.create(userId)).rejects.toThrow(
+      await expect(YahooApiClient.create(userId, storage)).rejects.toThrow(
         'No valid Yahoo access token available'
       );
     });
@@ -105,7 +109,7 @@ describe('YahooApiClient', () => {
       } as any);
 
       // ACT
-      const client = await YahooApiClient.create(userId);
+      const client = await YahooApiClient.create(userId, storage);
 
       // ASSERT
       // Uses env credentials
@@ -128,7 +132,7 @@ describe('YahooApiClient', () => {
       vi.mocked(refreshAccessToken).mockRejectedValue(new Error('Refresh failed'));
 
       // ACT & ASSERT
-      await expect(YahooApiClient.create(userId)).rejects.toThrow(
+      await expect(YahooApiClient.create(userId, storage)).rejects.toThrow(
         'Yahoo access token expired and refresh failed'
       );
     });
@@ -152,7 +156,7 @@ describe('YahooApiClient', () => {
       };
       vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
 
-      client = await YahooApiClient.create(userId);
+      client = await YahooApiClient.create(userId, storage);
     });
 
     it('should make successful API request', async () => {
@@ -284,7 +288,7 @@ describe('YahooApiClient', () => {
       };
       vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
 
-      client = await YahooApiClient.create(userId);
+      client = await YahooApiClient.create(userId, storage);
     });
 
     it('should return games array when games exist', async () => {
@@ -429,7 +433,7 @@ describe('YahooApiClient', () => {
       };
       vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
 
-      client = await YahooApiClient.create(userId);
+      client = await YahooApiClient.create(userId, storage);
     });
 
     it('should return leagues for game code', async () => {
@@ -561,7 +565,7 @@ describe('YahooApiClient', () => {
       };
       vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
 
-      client = await YahooApiClient.create(userId);
+      client = await YahooApiClient.create(userId, storage);
     });
 
     it('should get league standings', async () => {
@@ -656,7 +660,7 @@ describe('YahooApiClient', () => {
       };
       vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
 
-      client = await YahooApiClient.create(userId);
+      client = await YahooApiClient.create(userId, storage);
     });
 
     it('should get team roster without week', async () => {
@@ -717,7 +721,7 @@ describe('YahooApiClient', () => {
       };
       vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
 
-      client = await YahooApiClient.create(userId);
+      client = await YahooApiClient.create(userId, storage);
     });
 
     it('should get player stats without week', async () => {
@@ -819,7 +823,7 @@ describe('YahooApiClient', () => {
       } as any);
 
       // ACT
-      const client = await getYahooApiClient(userId);
+      const client = await getYahooApiClient(userId, storage);
 
       // ASSERT
       expect(client).toBeInstanceOf(YahooApiClient);

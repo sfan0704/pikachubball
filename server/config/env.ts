@@ -7,18 +7,15 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.string().transform(Number).default("5000"),
-  DATABASE_URL: z.string().url("DATABASE_URL must be a valid PostgreSQL connection string"),
-  SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
-  ENCRYPTION_KEY: z.string().length(64, "ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes)"),
-  // Yahoo OAuth credentials (app-level, used for Yahoo Social Login)
-  // Required at runtime for social login features
+  ENCRYPTION_KEY: z.string().regex(
+    /^[a-fA-F0-9]{64}$/,
+    "ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes)",
+  ),
+  // Server-only Yahoo credentials used to refresh Fantasy API access.
   YAHOO_CLIENT_ID: z.string().optional(),
   YAHOO_CLIENT_SECRET: z.string().optional(),
-  // Optional: Custom redirect URI for development (e.g., ngrok HTTPS URL)
-  YAHOO_REDIRECT_URI: z.string().url().optional(),
-  // Optional: Replit development domain (for Replit deployments)
-  REPLIT_DEV_DOMAIN: z.string().optional(),
-  // Optional: Trust proxy setting (set to "true" to enable, useful for ngrok/reverse proxies)
+  YAHOO_PROVIDER_REDIRECT_URI: z.string().url().optional(),
+  // Vercel and local reverse-proxy support.
   TRUST_PROXY: z.string().optional().transform((val) => val === "true"),
 });
 
@@ -53,4 +50,3 @@ export const env = (() => {
  * Type-safe environment variable access
  */
 export type Env = z.infer<typeof envSchema>;
-

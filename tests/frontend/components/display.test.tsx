@@ -356,81 +356,6 @@ describe('Display Functionality Tests', () => {
     });
   });
 
-  describe('Chat Interface Display', () => {
-    it('should render chat messages with role and content', () => {
-      // ARRANGE
-      const messages = [
-        { id: '1', role: 'assistant', content: 'Hi! How can I help?', timestamp: '2:30 PM' },
-        { id: '2', role: 'user', content: 'Who should I start?', timestamp: '2:31 PM' }
-      ];
-
-      render(
-        <div data-testid="chat-container">
-          {messages.map((msg) => (
-            <div key={msg.id} data-testid={`message-${msg.id}`} className={`message-${msg.role}`}>
-              <span data-testid={`text-content-${msg.id}`}>{msg.content}</span>
-              <span data-testid={`text-time-${msg.id}`}>{msg.timestamp}</span>
-            </div>
-          ))}
-        </div>
-      );
-
-      // ASSERT
-      expect(screen.getByTestId('message-1')).toHaveClass('message-assistant');
-      expect(screen.getByTestId('message-2')).toHaveClass('message-user');
-      expect(screen.getByText('Hi! How can I help?')).toBeInTheDocument();
-      expect(screen.getByText('Who should I start?')).toBeInTheDocument();
-    });
-
-    it('should display source citations', () => {
-      // ARRANGE
-      const message = {
-        id: '1',
-        role: 'assistant',
-        content: 'Based on recent analysis...',
-        sources: ['BALLDONTLIE', 'Reddit', 'ESPN']
-      };
-
-      render(
-        <div data-testid="message-with-sources">
-          <p data-testid="text-message-content">{message.content}</p>
-          <div data-testid="sources-list">
-            {message.sources?.map((source) => (
-              <span key={source} data-testid={`source-${source}`} className="source-badge">
-                {source}
-              </span>
-            ))}
-          </div>
-        </div>
-      );
-
-      // ASSERT
-      expect(screen.getByTestId('text-message-content')).toHaveTextContent('Based on recent analysis');
-      expect(screen.getByTestId('source-BALLDONTLIE')).toBeInTheDocument();
-      expect(screen.getByTestId('source-Reddit')).toBeInTheDocument();
-    });
-
-    it('should show loading state during message processing', () => {
-      // ARRANGE
-      const isLoading = true;
-      
-      // ACT
-      render(
-        <div>
-          {isLoading && (
-            <div data-testid="loading-indicator" className="animate-pulse">
-              <span>AI is thinking...</span>
-            </div>
-          )}
-        </div>
-      );
-
-      // ASSERT
-      expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
-      expect(screen.getByTestId('loading-indicator')).toHaveClass('animate-pulse');
-    });
-  });
-
   describe('Error & Loading States', () => {
     it('should display loading skeleton for rankings', () => {
       // ARRANGE & ACT
@@ -548,7 +473,6 @@ describe('Display Functionality Tests', () => {
       render(
         <div>
           <button data-testid="button-logout">Logout</button>
-          <button data-testid="button-header-chat">Chat</button>
           <select data-testid="select-league">
             <option>Select League</option>
           </select>
@@ -557,7 +481,6 @@ describe('Display Functionality Tests', () => {
 
       // ASSERT
       expect(screen.getByTestId('button-logout')).toBeInTheDocument();
-      expect(screen.getByTestId('button-header-chat')).toBeInTheDocument();
       expect(screen.getByTestId('select-league')).toBeInTheDocument();
     });
   });

@@ -4,15 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeagueRankings from "@/components/features/league/LeagueRankings";
 import MatchupTab from "@/components/features/league/MatchupTab";
 import MatchupSimulator from "@/components/features/league/MatchupSimulator";
-import ScheduleTab from "@/components/features/league/ScheduleTab";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useLocation, useSearch } from "wouter";
-import { LogOut, MessageSquare, BarChart3, Calendar, Zap } from "lucide-react";
+import { LogOut, BarChart3, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { useChat } from "@/lib/chatContext";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import { RankingsSkeleton, LeagueSelectorSkeleton } from "@/components/common/RankingsSkeleton";
@@ -25,18 +23,10 @@ export default function RankingsPage() {
   const [location, setLocation] = useLocation();
   const searchParams = useSearch();
   const { user, logout } = useAuth();
-  const { openChat, setSelectedTeamKey } = useChat();
   const { toast } = useToast();
   
   // Use the shared hook for league selection
   const { leagues, selectedLeagueKey, setSelectedLeagueKey, selectedLeague, isLoadingLeagues, error: leaguesError } = useFirstLeague();
-
-  // Sync selected team to chat context when it changes
-  useEffect(() => {
-    if (selectedLeague?.teamKey) {
-      setSelectedTeamKey(selectedLeague.teamKey);
-    }
-  }, [selectedLeague?.teamKey, setSelectedTeamKey]);
 
   // Check Yahoo connection status
   const { data: yahooStatus, isLoading: isLoadingYahooStatus } = useQuery<{
@@ -182,14 +172,6 @@ export default function RankingsPage() {
                       {selectedLeague?.teamName || user.email || user.displayName || user.username}
                     </span>
                   )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={openChat}
-                data-testid="button-header-chat"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
               <ThemeToggle />
               <Button
                 variant="ghost"
@@ -332,7 +314,7 @@ export default function RankingsPage() {
 
             {selectedLeagueKey && yahooStatus?.connected ? (
               <Tabs defaultValue="rankings" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4" data-testid="tabs-visualizations">
+                <TabsList className="grid w-full grid-cols-3" data-testid="tabs-visualizations">
                   <TabsTrigger value="rankings" data-testid="tab-rankings" className="gap-2">
                     <BarChart3 className="h-4 w-4" />
                     <span>Rankings</span>
@@ -344,10 +326,6 @@ export default function RankingsPage() {
                   <TabsTrigger value="simulator" data-testid="tab-simulator" className="gap-2">
                     <Zap className="h-4 w-4" />
                     <span>Simulator</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="schedule" data-testid="tab-schedule" className="gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Schedule</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -407,23 +385,6 @@ export default function RankingsPage() {
                   )}
                 </TabsContent>
 
-                <TabsContent value="schedule">
-                  {selectedLeague ? (
-                    <ScheduleTab 
-                      leagueKey={selectedLeagueKey} 
-                      teamKey={selectedLeague.teamKey}
-                      week={selectedWeek} 
-                    />
-                  ) : (
-                    <Card>
-                      <CardContent className="py-12">
-                        <p className="text-center text-muted-foreground">
-                          Select a league to view schedule
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
               </Tabs>
             ) : (
               <Card>

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
-import session from 'express-session';
 import { testLeagueKey, testTeamKey } from '../../fixtures/test-data';
 
 // This will be a simple integration test to verify API endpoints work
@@ -19,11 +18,6 @@ describe('Visualization API Endpoints', () => {
     // In a full implementation, we'd import the actual server/routes
     app = express();
     app.use(express.json());
-    app.use(session({
-      secret: 'test-secret',
-      resave: false,
-      saveUninitialized: false,
-    }));
 
     // Mock endpoints for testing structure
     app.get('/api/viz/rankings', async (req, res) => {

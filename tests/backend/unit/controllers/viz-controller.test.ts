@@ -4,7 +4,6 @@ import { vizController } from '../../../../server/controllers/viz-controller';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { getLeagueRankings, getLeagueHeatmap } from '../../../../server/services/viz/league-viz';
 import { getMatchupComparison } from '../../../../server/services/viz/matchup-viz';
-import { getScheduleMatrix } from '../../../../server/services/viz/schedule-viz';
 import { ValidationError } from '../../../../server/middleware/error-handler';
 import { createAuthenticatedRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
 
@@ -12,7 +11,6 @@ import { createAuthenticatedRequest, createMockResponse, createMockNext } from '
 vi.mock('../../../../server/middleware/auth');
 vi.mock('../../../../server/services/viz/league-viz');
 vi.mock('../../../../server/services/viz/matchup-viz');
-vi.mock('../../../../server/services/viz/schedule-viz');
 
 describe('vizController', () => {
   let mockReq: Request;
@@ -207,53 +205,4 @@ describe('vizController', () => {
       expect(error.message).toBe('League key and team key required');
     });
   });
-
-  describe('getScheduleMatrix', () => {
-    it('should return schedule matrix', async () => {
-      // ARRANGE
-      const leagueKey = '466.l.12345';
-      const teamKey = '466.l.12345.t.1';
-      const week = 5;
-      const opponentTeamKey = '466.l.12345.t.2';
-      const mockResponse = {
-        matrix: [],
-        metadata: { scope: 'week', week, currentWeek: 10, totalWeeks: 20 },
-      };
-
-      mockReq.params = { leagueKey, teamKey };
-      mockReq.query = { week: week.toString(), opponentTeamKey };
-      vi.mocked(getScheduleMatrix).mockResolvedValue(mockResponse);
-
-      // ACT
-      const handler = vizController.getScheduleMatrix as any;
-      await handler(mockReq, mockRes, mockNext);
-
-      // ASSERT
-      expect(getAuthenticatedUserId).toHaveBeenCalledWith(mockReq);
-      expect(getScheduleMatrix).toHaveBeenCalledWith(
-        expect.any(Object), // YahooFantasyDataSource instance
-        leagueKey,
-        teamKey,
-        week,
-        opponentTeamKey
-      );
-      expect(mockRes.json).toHaveBeenCalledWith(mockResponse);
-    });
-
-    it('should throw ValidationError if leagueKey is missing', async () => {
-      // ARRANGE
-      mockReq.params = { teamKey: '466.l.12345.t.1' };
-
-      // ACT
-      const handler = vizController.getScheduleMatrix as any;
-      await handler(mockReq, mockRes, mockNext);
-
-      // ASSERT
-      expect(mockNext).toHaveBeenCalled();
-      const error = mockNext.mock.calls[0][0];
-      expect(error).toBeInstanceOf(ValidationError);
-      expect(error.message).toBe('League key and team key required');
-    });
-  });
 });
-

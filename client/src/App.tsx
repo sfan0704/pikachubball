@@ -4,13 +4,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { ChatProvider, useChat } from "@/lib/chatContext";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import RankingsPage from "@/pages/RankingsPage";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/NotFoundPage";
-import ChatDialog from "@/components/features/chat/ChatDialog";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -37,21 +34,6 @@ function ProtectedRoute({ component: Component }: { component: () => JSX.Element
 
 function Router() {
   const { user, isLoading } = useAuth();
-  const { isChatOpen, openChat, closeChat } = useChat();
-
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
-    onCmdK: () => {
-      if (user && !isChatOpen) {
-        openChat();
-      }
-    },
-    onEscape: () => {
-      if (isChatOpen) {
-        closeChat();
-      }
-    },
-  });
 
   if (isLoading) {
     return (
@@ -64,30 +46,16 @@ function Router() {
     );
   }
 
-  const handleChatOpenChange = (open: boolean) => {
-    if (!open) {
-      closeChat();
-    } else {
-      openChat();
-    }
-  };
-
   return (
-    <>
-      <Switch>
-        <Route path="/auth">
-          {user ? <Redirect to="/" /> : <AuthPage />}
-        </Route>
-        <Route path="/">
-          <ProtectedRoute component={RankingsPage} />
-        </Route>
-        <Route component={NotFound} />
-      </Switch>
-      
-      {user && (
-        <ChatDialog open={isChatOpen} onOpenChange={handleChatOpenChange} />
-      )}
-    </>
+    <Switch>
+      <Route path="/auth">
+        {user ? <Redirect to="/" /> : <AuthPage />}
+      </Route>
+      <Route path="/">
+        <ProtectedRoute component={RankingsPage} />
+      </Route>
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
@@ -96,14 +64,12 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ChatProvider>
-            <TooltipProvider>
-              <Toaster />
-              <ErrorBoundary>
-                <Router />
-              </ErrorBoundary>
-            </TooltipProvider>
-          </ChatProvider>
+          <TooltipProvider>
+            <Toaster />
+            <ErrorBoundary>
+              <Router />
+            </ErrorBoundary>
+          </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

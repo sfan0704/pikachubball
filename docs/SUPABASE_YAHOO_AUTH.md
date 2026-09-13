@@ -47,6 +47,7 @@ SUPABASE_PUBLISHABLE_KEY=<project-publishable-key>
 ENCRYPTION_KEY=<64-hex-character key>
 YAHOO_CLIENT_ID=<Yahoo-application-client-id>
 YAHOO_CLIENT_SECRET=<Yahoo-application-client-secret>
+YAHOO_PROVIDER_REDIRECT_URI=<callback-URL-displayed-by-Supabase>
 ```
 
 Storage configuration is defined by CAR-60. The final Vercel runtime must not receive a Supabase service-role key or database password.

@@ -260,10 +260,4 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
-
-  /* Floating chat button with safe-area support */
-  .floating-chat-button {
-    bottom: calc(1.5rem + var(--safe-area-bottom)) !important;
-    right: calc(1.5rem + var(--safe-area-right)) !important;
-  }
 }

@@ -6,7 +6,7 @@ import {
 } from "../middleware/yahoo-auth";
 import { vizController } from "../controllers/viz-controller";
 
-/** Register visualization routes for league rankings, matchups, schedules */
+/** Register retained rankings and matchup visualization routes. */
 export function registerVizRoutes(app: Express): void {
   app.get(
     "/api/yahoo/league-rankings/:leagueKey",
@@ -28,12 +28,5 @@ export function registerVizRoutes(app: Express): void {
     requireYahooAuth,
     requireOwnedFantasyResource,
     vizController.getMatchupComparison
-  );
-  app.get(
-    "/api/viz/schedule/:leagueKey/:teamKey",
-    requireAuth,
-    requireYahooAuth,
-    requireOwnedFantasyResource,
-    vizController.getScheduleMatrix
   );
 }

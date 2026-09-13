@@ -1,5 +1,4 @@
 import type { Request, Response } from "express";
-import { storage } from "../storage";
 import { getAuthenticatedUserId } from "../middleware/auth";
 import { asyncHandler, ValidationError } from "../middleware/error-handler";
 
@@ -18,7 +17,10 @@ export const yahooOAuthController = {
       throw new ValidationError("Authentication required");
     }
 
-    const token = await storage.getYahooToken(userId);
+    if (!req.ownerStorage) {
+      throw new ValidationError("Owner-scoped storage is unavailable");
+    }
+    const token = await req.ownerStorage.getYahooToken(userId);
 
     res.json({
       connected: !!token,
@@ -35,7 +37,10 @@ export const yahooOAuthController = {
       throw new ValidationError("Authentication required");
     }
 
-    await storage.deleteYahooToken(userId);
+    if (!req.ownerStorage) {
+      throw new ValidationError("Owner-scoped storage is unavailable");
+    }
+    await req.ownerStorage.deleteYahooToken(userId);
     res.json({ success: true, message: "Yahoo account disconnected." });
   }),
 };

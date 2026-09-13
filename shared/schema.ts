@@ -1,72 +1,4 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password"),  // Nullable for OAuth users
-  yahooGuid: text("yahoo_guid").unique(),  // Yahoo's unique user identifier
-  displayName: text("display_name"),  // Display name from Yahoo profile
-  email: text("email"),  // Email from Yahoo profile (optional)
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const yahooTokens = pgTable("yahoo_tokens", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().unique(),
-  accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token").notNull(),
-  expiresAt: integer("expires_at").notNull(),
-});
-
-export const openaiCredentials = pgTable("openai_credentials", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().unique(),
-  encryptedApiKey: text("encrypted_api_key").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Insert schemas
-
-// Schema for local auth users (admin) - requires password
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-}).extend({
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-// Schema for OAuth users - requires yahooGuid, no password
-export const insertOAuthUserSchema = createInsertSchema(users).pick({
-  username: true,
-  yahooGuid: true,
-  displayName: true,
-  email: true,
-}).extend({
-  yahooGuid: z.string().min(1, "Yahoo GUID is required"),
-});
-
-export const insertYahooTokenSchema = createInsertSchema(yahooTokens).omit({
-  id: true,
-});
-
-export const insertOpenaiCredentialsSchema = createInsertSchema(openaiCredentials).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-// Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type InsertOAuthUser = z.infer<typeof insertOAuthUserSchema>;
-export type User = typeof users.$inferSelect;
-export type YahooToken = typeof yahooTokens.$inferSelect;
-export type InsertYahooToken = z.infer<typeof insertYahooTokenSchema>;
-export type OpenaiCredentials = typeof openaiCredentials.$inferSelect;
-export type InsertOpenaiCredentials = z.infer<typeof insertOpenaiCredentialsSchema>;
 
 // Yahoo API Response Types (DTOs)
 // These are enhanced versions of domain models for API responses
@@ -186,43 +118,8 @@ export const matchupComparisonResponseSchema = z.object({
   metadata: rankingsMetadataSchema,
 });
 
-export const playerGameSchema = z.object({
-  playerKey: z.string(),
-  playerName: z.string(),
-  team: z.string(),
-  opponent: z.string().optional(),
-});
-
-export const dayScheduleSchema = z.object({
-  date: z.string(),
-  dayOfWeek: z.string(),
-  games: z.array(playerGameSchema),
-  gameCount: z.number(),
-});
-
-export const scheduleMatrixResponseSchema = z.object({
-  myTeam: z.object({
-    teamKey: z.string(),
-    teamName: z.string(),
-    schedule: z.array(dayScheduleSchema),
-    totalGames: z.number(),
-  }),
-  opponent: z.object({
-    teamKey: z.string(),
-    teamName: z.string(),
-    schedule: z.array(dayScheduleSchema),
-    totalGames: z.number(),
-  }).optional(),
-  metadata: rankingsMetadataSchema,
-  isPlaceholder: z.boolean(),
-  placeholderMessage: z.string().optional(),
-});
-
 export type HeatmapCell = z.infer<typeof heatmapCellSchema>;
 export type TeamHeatmapData = z.infer<typeof teamHeatmapDataSchema>;
 export type LeagueHeatmapResponse = z.infer<typeof leagueHeatmapResponseSchema>;
 export type CategoryComparison = z.infer<typeof categoryComparisonSchema>;
 export type MatchupComparisonResponse = z.infer<typeof matchupComparisonResponseSchema>;
-export type PlayerGame = z.infer<typeof playerGameSchema>;
-export type DaySchedule = z.infer<typeof dayScheduleSchema>;
-export type ScheduleMatrixResponse = z.infer<typeof scheduleMatrixResponseSchema>;

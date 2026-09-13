@@ -54,35 +54,6 @@ export function createTestTeamRanking(overrides?: Partial<TeamRanking>): TeamRan
   };
 }
 
-export function createTestUser(overrides?: {
-  id?: number;
-  username?: string;
-  hasYahooToken?: boolean;
-  hasOpenAiKey?: boolean;
-}) {
-  return {
-    id: overrides?.id || 1,
-    username: overrides?.username || 'testuser',
-    passwordHash: '$2b$10$abcdefghijklmnopqrstuvwxyz123456',
-    hasYahooToken: overrides?.hasYahooToken ?? true,
-    hasOpenAiKey: overrides?.hasOpenAiKey ?? true,
-  };
-}
-
-export function createTestYahooToken(overrides?: {
-  userId?: number;
-  accessToken?: string;
-  refreshToken?: string;
-  expiresAt?: number;
-}) {
-  return {
-    userId: overrides?.userId || 1,
-    accessToken: overrides?.accessToken || 'test-access-token',
-    refreshToken: overrides?.refreshToken || 'test-refresh-token',
-    expiresAt: overrides?.expiresAt || Date.now() + 3600000, // 1 hour from now
-  };
-}
-
 export const testLeagueKey = '466.l.12345';
 export const testTeamKey = '466.l.12345.t.1';
 export const testUserGuid = 'test-user-guid';

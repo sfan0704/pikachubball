@@ -57,6 +57,23 @@ describe("application routing", () => {
     });
   });
 
+  it("does not register excluded chat, schedule, or AI credential endpoints", async () => {
+    const app = createApiApp();
+    const responses = await Promise.all([
+      request(app).post("/api/chat/message").send({ message: "hello" }),
+      request(app).get("/api/viz/schedule/466.l.1/466.l.1.t.1"),
+      request(app).post("/api/settings/openai").send({ apiKey: "synthetic" }),
+    ]);
+
+    for (const response of responses) {
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        error: "API route not found",
+        code: "NOT_FOUND",
+      });
+    }
+  });
+
   it("passes route failures through the application error handler", async () => {
     const response = await request(createApiApp()).get(
       "/api/auth/callback",

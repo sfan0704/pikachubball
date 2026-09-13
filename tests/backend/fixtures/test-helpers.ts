@@ -1,5 +1,14 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { User } from '@shared/schema';
+
+export interface TestUser {
+  id: string;
+  username: string;
+  password: string | null;
+  yahooGuid: string | null;
+  displayName: string | null;
+  email: string | null;
+  createdAt: Date;
+}
 
 /**
  * Test helpers for creating mock Express objects
@@ -9,7 +18,7 @@ export interface MockRequest extends Partial<Request> {
   body?: any;
   params?: Record<string, string>;
   query?: Record<string, any>;
-  user?: User;
+  user?: TestUser;
   isAuthenticated?: () => boolean;
   login?: (user: any, callback: (err?: Error) => void) => void;
   logout?: (callback: (err?: Error) => void) => void;
@@ -105,7 +114,7 @@ export function createMockNext(): ReturnType<typeof vi.fn<NextFunction>> {
 /**
  * Create a mock authenticated user (local auth with password)
  */
-export function createMockUser(overrides: Partial<User> = {}): User {
+export function createMockUser(overrides: Partial<TestUser> = {}): TestUser {
   return {
     id: 'test-user-id',
     username: 'testuser',
@@ -121,7 +130,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
 /**
  * Create a mock OAuth user (Yahoo social login, no password)
  */
-export function createMockOAuthUser(overrides: Partial<User> = {}): User {
+export function createMockOAuthUser(overrides: Partial<TestUser> = {}): TestUser {
   return {
     id: 'test-oauth-user-id',
     username: 'yahoo_user_abc123',
@@ -137,7 +146,7 @@ export function createMockOAuthUser(overrides: Partial<User> = {}): User {
 /**
  * Create a mock authenticated request
  */
-export function createAuthenticatedRequest(user?: User): MockRequest {
+export function createAuthenticatedRequest(user?: TestUser): MockRequest {
   const mockUser = user || createMockUser();
   const request = createMockRequest({
     user: mockUser,
@@ -156,7 +165,7 @@ export function createAuthenticatedRequest(user?: User): MockRequest {
  * Create a mock Yahoo authenticated request
  */
 export function createYahooAuthenticatedRequest(
-  user?: User,
+  user?: TestUser,
   mcpClient?: any
 ): MockRequest {
   const mockUser = user || createMockUser();

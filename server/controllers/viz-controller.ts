@@ -2,14 +2,13 @@ import type { Request, Response } from "express";
 import { YahooFantasyDataSource } from "../services/fantasy-data-source";
 import { getLeagueRankings, getLeagueHeatmap } from "../services/viz/league-viz";
 import { getMatchupComparison } from "../services/viz/matchup-viz";
-import { getScheduleMatrix } from "../services/viz/schedule-viz";
 import { getAuthenticatedUserId } from "../middleware/auth";
 import { parseWeekParam } from "../utils/week-parser";
 import { asyncHandler, ValidationError } from "../middleware/error-handler";
 
 /**
  * Visualization controller
- * Handles league rankings, matchups, and schedule visualizations
+ * Handles retained league rankings and matchup visualizations.
  */
 export const vizController = {
   /**
@@ -72,34 +71,6 @@ export const vizController = {
     const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
     const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
     const response = await getMatchupComparison(
-      dataSource,
-      leagueKey,
-      teamKey,
-      week,
-      opponentTeamKey
-    );
-
-    res.json(response);
-  }),
-
-  /**
-   * Get schedule matrix visualization
-   */
-  getScheduleMatrix: asyncHandler(async (req: Request, res: Response) => {
-    const { leagueKey, teamKey } = req.params;
-    if (!leagueKey || !teamKey) {
-      throw new ValidationError("League key and team key required");
-    }
-
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      throw new ValidationError("Authentication required");
-    }
-
-    const week = parseWeekParam(req.query.week);
-    const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
-    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
-    const response = await getScheduleMatrix(
       dataSource,
       leagueKey,
       teamKey,

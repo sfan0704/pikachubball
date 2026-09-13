@@ -68,17 +68,6 @@ vi.mock('../../../client/src/lib/auth', () => ({
   }),
 }));
 
-// Mock useChat hook
-const mockOpenChat = vi.fn();
-const mockSetSelectedTeamKey = vi.fn();
-vi.mock('../../../client/src/lib/chatContext', () => ({
-  useChat: () => ({
-    openChat: mockOpenChat,
-    setSelectedTeamKey: mockSetSelectedTeamKey,
-    selectedTeamKey: null,
-  }),
-}));
-
 // Mock useToast hook
 const mockToast = vi.fn();
 vi.mock('../../../client/src/hooks/use-toast', () => ({
@@ -193,16 +182,6 @@ describe('RankingsPage', () => {
       });
     });
 
-    it('should render chat button', async () => {
-      // ARRANGE & ACT
-      renderRankingsPage();
-
-      // ASSERT
-      await waitFor(() => {
-        expect(screen.getByTestId('button-header-chat')).toBeInTheDocument();
-      });
-    });
-
     it('should render logout button', async () => {
       // ARRANGE & ACT
       renderRankingsPage();
@@ -248,21 +227,6 @@ describe('RankingsPage', () => {
   });
 
   describe('interactions', () => {
-    it('should open chat when chat button is clicked', async () => {
-      // ARRANGE
-      const user = userEvent.setup();
-      renderRankingsPage();
-
-      // ACT
-      await waitFor(() => {
-        expect(screen.getByTestId('button-header-chat')).toBeInTheDocument();
-      });
-      await user.click(screen.getByTestId('button-header-chat'));
-
-      // ASSERT
-      expect(mockOpenChat).toHaveBeenCalled();
-    });
-
     it('should call logout when logout button is clicked', async () => {
       // ARRANGE
       const user = userEvent.setup();
@@ -300,14 +264,14 @@ describe('RankingsPage', () => {
       expect(header).toBeInTheDocument();
     });
 
-    it('should render header with navigation buttons', () => {
+    it('should retain theme and logout controls while excluding chat and schedule', () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
-      // ASSERT - Check that all navigation buttons are rendered
-      expect(screen.getByTestId('button-header-chat')).toBeInTheDocument();
       expect(screen.getByTestId('button-theme-toggle')).toBeInTheDocument();
       expect(screen.getByTestId('button-logout')).toBeInTheDocument();
+      expect(screen.queryByTestId('button-header-chat')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('tab-schedule')).not.toBeInTheDocument();
     });
   });
 });
