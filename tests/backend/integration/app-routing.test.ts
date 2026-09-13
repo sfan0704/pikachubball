@@ -59,7 +59,7 @@ describe("application routing", () => {
 
   it("passes route failures through the application error handler", async () => {
     const response = await request(createApiApp()).get(
-      "/api/auth/yahoo/callback",
+      "/api/auth/callback",
     );
 
     expect(response.status).toBe(400);

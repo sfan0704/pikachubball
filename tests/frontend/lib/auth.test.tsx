@@ -68,7 +68,6 @@ describe('auth', () => {
       expect(result.current).toBeDefined();
       expect(result.current.user).toBeNull();
       expect(result.current.isLoading).toBeDefined();
-      expect(result.current.login).toBeInstanceOf(Function);
       expect(result.current.logout).toBeInstanceOf(Function);
     });
 
@@ -122,44 +121,6 @@ describe('auth', () => {
       // ASSERT
       await waitFor(() => {
         expect(result.current.user).toBeNull();
-      });
-    });
-  });
-
-  describe('login', () => {
-    it('should call apiRequest with correct arguments', async () => {
-      // ARRANGE
-      const mockUser = { id: '1', username: 'testuser' };
-      mockApiRequest.mockResolvedValue({ user: mockUser });
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ACT
-      await act(async () => {
-        await result.current.login('testuser', 'password123');
-      });
-
-      // ASSERT
-      expect(mockApiRequest).toHaveBeenCalledWith(
-        '/api/auth/login',
-        'POST',
-        { username: 'testuser', password: 'password123' }
-      );
-    });
-
-    it('should update user after successful login', async () => {
-      // ARRANGE
-      const mockUser = { id: '1', username: 'testuser' };
-      mockApiRequest.mockResolvedValue({ user: mockUser });
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ACT
-      await act(async () => {
-        await result.current.login('testuser', 'password123');
-      });
-
-      // ASSERT
-      await waitFor(() => {
-        expect(result.current.user).toEqual(mockUser);
       });
     });
   });

@@ -134,4 +134,3 @@ export function asyncHandler(
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 }
-

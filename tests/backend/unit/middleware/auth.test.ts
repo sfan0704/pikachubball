@@ -1,130 +1,65 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
-import { requireAuth, getAuthenticatedUserId, getAuthenticatedUser, getOptionalUserId } from '../../../../server/middleware/auth';
-import { UnauthorizedError } from '../../../../server/middleware/error-handler';
-import { createMockRequest, createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { NextFunction, Request, Response } from "express";
+import {
+  getAuthenticatedUser,
+  getAuthenticatedUserId,
+  getOptionalUserId,
+  requireAuth,
+} from "../../../../server/middleware/auth";
+import { UnauthorizedError } from "../../../../server/middleware/error-handler";
+import {
+  createAuthenticatedRequest,
+  createMockNext,
+  createMockRequest,
+  createMockResponse,
+} from "../../fixtures/test-helpers";
 
-describe('auth middleware', () => {
-  let mockReq: Request;
-  let mockRes: Response;
-  let mockNext: NextFunction;
+describe("Supabase auth middleware", () => {
+  let req: Request;
+  let res: Response;
+  let next: NextFunction;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockReq = createMockRequest() as Request;
-    mockRes = createMockResponse() as Response;
-    mockNext = createMockNext();
+    req = createMockRequest() as Request;
+    res = createMockResponse() as Response;
+    next = createMockNext();
   });
 
-  describe('requireAuth', () => {
-    it('should call next() if user is authenticated', () => {
-      mockReq.isAuthenticated = vi.fn(() => true);
+  it("accepts an identity already verified for this request", async () => {
+    req = createAuthenticatedRequest() as Request;
 
-      requireAuth(mockReq, mockRes, mockNext);
+    await requireAuth(req, res, next);
 
-      expect(mockReq.isAuthenticated).toHaveBeenCalled();
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockRes.status).not.toHaveBeenCalled();
-    });
-
-    it('should return 401 if user is not authenticated', () => {
-      mockReq.isAuthenticated = vi.fn(() => false);
-
-      requireAuth(mockReq, mockRes, mockNext);
-
-      expect(mockReq.isAuthenticated).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Authentication required',
-        code: 'UNAUTHORIZED',
-      });
-      expect(mockNext).not.toHaveBeenCalled();
-    });
+    expect(next).toHaveBeenCalledOnce();
+    expect(res.status).not.toHaveBeenCalled();
   });
 
-  describe('getAuthenticatedUserId', () => {
-    it('should return user ID if authenticated', () => {
-      const user = createMockUser();
-      mockReq = createAuthenticatedRequest(user) as Request;
+  it("fails closed when no Supabase session can be verified", async () => {
+    await requireAuth(req, res, next);
 
-      const userId = getAuthenticatedUserId(mockReq);
-
-      expect(userId).toBe(user.id);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Authentication required",
+      code: "UNAUTHORIZED",
     });
-
-    it('should throw UnauthorizedError if not authenticated', () => {
-      mockReq.isAuthenticated = vi.fn(() => false);
-      mockReq.user = undefined;
-
-      expect(() => getAuthenticatedUserId(mockReq)).toThrow(UnauthorizedError);
-    });
-
-    it('should throw UnauthorizedError if user is null', () => {
-      mockReq.isAuthenticated = vi.fn(() => true);
-      mockReq.user = null as any;
-
-      expect(() => getAuthenticatedUserId(mockReq)).toThrow(UnauthorizedError);
-    });
+    expect(next).not.toHaveBeenCalled();
   });
 
-  describe('getAuthenticatedUser', () => {
-    it('should return user object if authenticated', () => {
-      const user = createMockUser();
-      mockReq = createAuthenticatedRequest(user) as Request;
+  it("projects the verified subject and Yahoo identity", () => {
+    req = createAuthenticatedRequest() as Request;
 
-      const authenticatedUser = getAuthenticatedUser(mockReq);
-
-      expect(authenticatedUser.id).toBe(user.id);
-      expect(authenticatedUser.username).toBe(user.username);
-      // Function returns { id, username } - the full user object is cast
-      expect(typeof authenticatedUser.id).toBe('string');
-      expect(typeof authenticatedUser.username).toBe('string');
+    expect(getAuthenticatedUserId(req)).toBe("test-user-id");
+    expect(getAuthenticatedUser(req)).toEqual({
+      id: "test-user-id",
+      username: "testuser",
     });
-
-    it('should throw UnauthorizedError if not authenticated', () => {
-      mockReq.isAuthenticated = vi.fn(() => false);
-      mockReq.user = undefined;
-
-      expect(() => getAuthenticatedUser(mockReq)).toThrow(UnauthorizedError);
-    });
+    expect(getOptionalUserId(req)).toBe("test-user-id");
   });
 
-  describe('getOptionalUserId', () => {
-    it('should return user ID if authenticated', () => {
-      // ARRANGE
-      const user = createMockUser();
-      mockReq = createAuthenticatedRequest(user) as Request;
-
-      // ACT
-      const userId = getOptionalUserId(mockReq);
-
-      // ASSERT
-      expect(userId).toBe(user.id);
-    });
-
-    it('should return null if not authenticated', () => {
-      // ARRANGE
-      mockReq.isAuthenticated = vi.fn(() => false);
-      mockReq.user = undefined;
-
-      // ACT
-      const userId = getOptionalUserId(mockReq);
-
-      // ASSERT
-      expect(userId).toBeNull();
-    });
-
-    it('should return null if user is null', () => {
-      // ARRANGE
-      mockReq.isAuthenticated = vi.fn(() => true);
-      mockReq.user = null as any;
-
-      // ACT
-      const userId = getOptionalUserId(mockReq);
-
-      // ASSERT
-      expect(userId).toBeNull();
-    });
+  it("rejects getters before authentication", () => {
+    expect(() => getAuthenticatedUserId(req)).toThrow(UnauthorizedError);
+    expect(() => getAuthenticatedUser(req)).toThrow(UnauthorizedError);
+    expect(getOptionalUserId(req)).toBeNull();
   });
 });
-

@@ -1,23 +1,40 @@
 import type { Request, Response, NextFunction } from "express";
 import { UnauthorizedError } from "./error-handler";
+import {
+  createSupabaseRequestClient,
+  readVerifiedYahooIdentity,
+  type YahooSessionIdentity,
+} from "../auth/supabase-auth";
+
+declare module "express-serve-static-core" {
+  interface Request {
+    authIdentity?: YahooSessionIdentity;
+  }
+}
 
 /**
  * Middleware to require authentication for protected routes
  * Returns 401 if user is not authenticated
  */
-export function requireAuth(
+export async function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction
-): void {
-  if (!req.isAuthenticated()) {
+): Promise<void> {
+  if (req.authIdentity) {
+    next();
+    return;
+  }
+  try {
+    const client = createSupabaseRequestClient(req, res);
+    req.authIdentity = await readVerifiedYahooIdentity(client);
+    next();
+  } catch {
     res.status(401).json({ 
       error: "Authentication required",
       code: "UNAUTHORIZED"
     });
-    return;
   }
-  next();
 }
 
 /**
@@ -29,11 +46,10 @@ export function requireAuth(
  * @throws {UnauthorizedError} If user is not authenticated
  */
 export function getAuthenticatedUserId(req: Request): string {
-  if (!req.isAuthenticated() || !req.user) {
-    // This should never happen if requireAuth was used, but defensive check
+  if (!req.authIdentity) {
     throw new UnauthorizedError("User not authenticated");
   }
-  return (req.user as { id: string }).id;
+  return req.authIdentity.userId;
 }
 
 /**
@@ -45,10 +61,13 @@ export function getAuthenticatedUserId(req: Request): string {
  * @throws {UnauthorizedError} If user is not authenticated
  */
 export function getAuthenticatedUser(req: Request): { id: string; username: string } {
-  if (!req.isAuthenticated() || !req.user) {
+  if (!req.authIdentity) {
     throw new UnauthorizedError("User not authenticated");
   }
-  return req.user as { id: string; username: string };
+  return {
+    id: req.authIdentity.userId,
+    username: req.authIdentity.yahooGuid,
+  };
 }
 
 /**
@@ -66,9 +85,5 @@ export function getAuthenticatedUser(req: Request): { id: string; username: stri
  * @returns User ID if authenticated, null otherwise
  */
 export function getOptionalUserId(req: Request): string | null {
-  if (!req.isAuthenticated() || !req.user) {
-    return null;
-  }
-  return (req.user as { id: string }).id;
+  return req.authIdentity?.userId ?? null;
 }
-

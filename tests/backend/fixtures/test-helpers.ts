@@ -139,10 +139,17 @@ export function createMockOAuthUser(overrides: Partial<User> = {}): User {
  */
 export function createAuthenticatedRequest(user?: User): MockRequest {
   const mockUser = user || createMockUser();
-  return createMockRequest({
+  const request = createMockRequest({
     user: mockUser,
     isAuthenticated: () => true,
   });
+  request.authIdentity = {
+    userId: mockUser.id,
+    yahooGuid: mockUser.yahooGuid ?? mockUser.username,
+    displayName: mockUser.displayName,
+    email: mockUser.email,
+  };
+  return request;
 }
 
 /**
@@ -170,4 +177,3 @@ export function createYahooAuthenticatedRequest(
   
   return req;
 }
-
