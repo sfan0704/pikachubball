@@ -41,6 +41,9 @@ export function createSupabaseAuthController(
           redirectTo: `${config.appOrigin}/api/auth/callback`,
           skipBrowserRedirect: true,
           scopes: "openid profile email fspt-r",
+          queryParams: {
+            prompt: "consent",
+          },
         },
       });
       if (error || !data.url) {

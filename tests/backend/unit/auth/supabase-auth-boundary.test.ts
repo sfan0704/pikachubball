@@ -192,6 +192,9 @@ describe("Supabase Yahoo auth boundary", () => {
         redirectTo: "https://basketball.example.test/api/auth/callback",
         skipBrowserRedirect: true,
         scopes: "openid profile email fspt-r",
+        queryParams: {
+          prompt: "consent",
+        },
       },
     });
     for (const [header, value] of Object.entries(AUTH_NO_STORE_HEADERS)) {
