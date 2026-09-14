@@ -8,6 +8,16 @@ import { yahooOAuthController } from "../controllers/yahoo-oauth-controller";
  * These routes provide status checking and token management
  */
 export function registerYahooOAuthRoutes(app: Express): void {
+  app.get(
+    "/api/auth/yahoo/fantasy",
+    requireAuth,
+    yahooOAuthController.beginFantasyAccess,
+  );
+  app.get(
+    "/api/auth/yahoo/fantasy/callback",
+    requireAuth,
+    yahooOAuthController.completeFantasyAccess,
+  );
   // OAuth status and token management
   app.get(
     "/api/auth/yahoo/status",

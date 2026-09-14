@@ -173,8 +173,6 @@ describe("Supabase Yahoo auth boundary", () => {
     });
     const controller = createSupabaseAuthController({
       createClient: () => fakeClient({ signInWithOAuth }),
-      createStorage: () => ({ saveYahooConnection: vi.fn() }),
-      now: () => 1_800_000_000_000,
     });
     const app = express();
     app.get("/start", controller.beginYahooLogin);
@@ -202,16 +200,13 @@ describe("Supabase Yahoo auth boundary", () => {
     }
   });
 
-  it("persists provider tokens once and rejects callback replay", async () => {
+  it("establishes the Supabase session before starting Fantasy authorization", async () => {
     const exchangeCodeForSession = vi
       .fn()
       .mockResolvedValueOnce({ data: { session: yahooSession() }, error: null })
       .mockResolvedValueOnce({ data: { session: null }, error: new Error("used") });
-    const saveYahooConnection = vi.fn().mockResolvedValue({});
     const controller = createSupabaseAuthController({
       createClient: () => fakeClient({ exchangeCodeForSession }),
-      createStorage: () => ({ saveYahooConnection }),
-      now: () => 1_800_000_000_000,
     });
     const app = express();
     app.get("/callback", controller.completeYahooLogin);
@@ -221,34 +216,21 @@ describe("Supabase Yahoo auth boundary", () => {
     const replay = await request(app).get("/callback?code=one-time-code");
 
     expect(first.status).toBe(303);
-    expect(first.headers.location).toBe("/");
+    expect(first.headers.location).toBe("/api/auth/yahoo/fantasy");
     expect(replay.status).toBe(401);
-    expect(saveYahooConnection).toHaveBeenCalledOnce();
-    expect(saveYahooConnection).toHaveBeenCalledWith({
-      userId: USER_ID,
-      yahooGuid: "yahoo-guid-1",
-      displayName: "Test Manager",
-      email: "player@example.test",
-      accessToken: "yahoo-access-token",
-      refreshToken: "yahoo-refresh-token",
-      expiresAt: 1_800_003_600,
-    });
     expect(first.text).not.toContain("yahoo-access-token");
     expect(first.headers.location).not.toContain("token");
   });
 
-  it("creates no token handoff when callback verification is incomplete", async () => {
-    const saveYahooConnection = vi.fn();
+  it("rejects callback completion when the Yahoo identity is incomplete", async () => {
     const controller = createSupabaseAuthController({
       createClient: () =>
         fakeClient({
           exchangeCodeForSession: vi.fn().mockResolvedValue({
-            data: { session: yahooSession({ provider_refresh_token: null }) },
+            data: { session: yahooSession({ user: yahooUser({ identities: [] }) }) },
             error: null,
           }),
         }),
-      createStorage: () => ({ saveYahooConnection }),
-      now: () => 1_800_000_000_000,
     });
     const app = express();
     app.get("/callback", controller.completeYahooLogin);
@@ -261,6 +243,5 @@ describe("Supabase Yahoo auth boundary", () => {
       error: "Yahoo authentication response was incomplete",
       code: "UNAUTHORIZED",
     });
-    expect(saveYahooConnection).not.toHaveBeenCalled();
   });
 });
