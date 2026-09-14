@@ -9,6 +9,31 @@ export interface YahooAuthorizationTokens {
   yahooGuid: string;
 }
 
+function yahooGuidFromFantasyResponse(payload: unknown): string | undefined {
+  if (typeof payload !== "object" || payload === null) return undefined;
+  const fantasyContent = (payload as any).fantasy_content;
+  const users = fantasyContent?.users;
+  const user = users?.["0"]?.user ?? users?.[0]?.user ?? users?.user;
+  const attributes = Array.isArray(user) ? user[0] : undefined;
+  return typeof attributes?.guid === "string" ? attributes.guid : undefined;
+}
+
+async function readYahooGuid(accessToken: string): Promise<string> {
+  const response = await axios({
+    url: "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1?format=json",
+    method: "get",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    },
+  });
+  const yahooGuid = yahooGuidFromFantasyResponse(response.data);
+  if (!yahooGuid) {
+    throw new Error("Yahoo Fantasy identity response was incomplete");
+  }
+  return yahooGuid;
+}
+
 export async function exchangeAuthorizationCode(
   code: string,
   clientId: string,
@@ -37,15 +62,19 @@ export async function exchangeAuthorizationCode(
     const accessToken = response.data?.access_token;
     const refreshToken = response.data?.refresh_token;
     const expiresIn = Number(response.data?.expires_in);
-    const yahooGuid = response.data?.xoauth_yahoo_guid;
+    const responseYahooGuid = response.data?.xoauth_yahoo_guid;
     if (
       typeof accessToken !== "string" ||
       typeof refreshToken !== "string" ||
-      !Number.isFinite(expiresIn) ||
-      typeof yahooGuid !== "string"
+      !Number.isFinite(expiresIn)
     ) {
       throw new Error("Yahoo token response was incomplete");
     }
+
+    const yahooGuid =
+      typeof responseYahooGuid === "string"
+        ? responseYahooGuid
+        : await readYahooGuid(accessToken);
 
     return { accessToken, refreshToken, expiresIn, yahooGuid };
   } catch (error) {
