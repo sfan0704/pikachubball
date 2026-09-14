@@ -65,7 +65,7 @@ export function createSupabaseAuthController(
         throw new UnauthorizedError("Yahoo authentication response was incomplete");
       }
 
-      res.redirect(303, "/api/connect/start");
+      res.redirect(303, "/connect/start");
     }),
 
     getCurrentUser: asyncHandler(async (req: Request, res: Response) => {
