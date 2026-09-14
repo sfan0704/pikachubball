@@ -30,12 +30,7 @@ export async function getUserLeagues(
     : await getYahooApiClient(userId);
 
   try {
-    // Get user games to extract GUID, then fetch NBA leagues only
-    logger.debug("Fetching user games for NBA leagues");
-    const allGames = await client.getUserGames();
-    const userGuid = allGames?.guid;
-
-    // Try to get NBA leagues directly
+    // Fetch NBA leagues and the user's GUID in one Yahoo request.
     let userData;
     try {
       logger.debug("Fetching NBA leagues");
@@ -54,7 +49,7 @@ export async function getUserLeagues(
           error: error.message,
           fallbackError: fallbackError.message
         });
-        return [];
+        throw fallbackError;
       }
     }
     
@@ -73,17 +68,15 @@ export async function getUserLeagues(
     
     if (!userData?.games || !Array.isArray(userData.games) || userData.games.length === 0) {
       logger.warn("No NBA games found for user", { 
-        allGamesResponse: allGames,
         userDataResponse: userData 
       });
       return [];
     }
 
-    // Use guid from userData if available, otherwise from allGames
-    const finalUserGuid = userData.guid || userGuid;
+    const finalUserGuid = userData.guid;
 
     if (!finalUserGuid) {
-      logger.warn("No user GUID found", { userData, allGames });
+      logger.warn("No user GUID found", { userData });
       return [];
     }
 

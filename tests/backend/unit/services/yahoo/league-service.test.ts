@@ -17,15 +17,12 @@ describe('league-service', () => {
     
     // Create a mock YahooApiClient
     mockYahooApiClient = {
-      getUserGames: vi.fn().mockResolvedValue({
-        games: [
-          { game_key: '466', name: 'Basketball', code: 'nba' },
-        ],
-      }),
       getUserGameLeagues: vi.fn().mockResolvedValue({
         guid: 'test-guid',
         games: [
           {
+            code: 'nba',
+            game_key: '466',
             leagues: [
               {
                 league_key: '466.l.12345',
@@ -46,7 +43,6 @@ describe('league-service', () => {
       // ARRANGE
       // Create a client that returns empty response
       const emptyClient = {
-        getUserGames: vi.fn().mockResolvedValue({ games: [] }),
         getUserGameLeagues: vi.fn().mockResolvedValue({ games: [] }),
         getLeagueStandings: vi.fn(),
       };
@@ -107,10 +103,12 @@ describe('league-service', () => {
     it('should handle credential errors', async () => {
       // ARRANGE
       const errorClient = {
-        getUserGames: vi.fn().mockRejectedValue(
+        getUserGameLeagues: vi.fn().mockRejectedValue(
           new Error('Yahoo Fantasy credentials expired or invalid')
         ),
-        getUserGameLeagues: vi.fn(),
+        getAllUserLeagues: vi.fn().mockRejectedValue(
+          new Error('Yahoo Fantasy credentials expired or invalid')
+        ),
         getLeagueStandings: vi.fn(),
       };
       vi.mocked(getYahooApiClient).mockResolvedValue(errorClient);
@@ -124,10 +122,12 @@ describe('league-service', () => {
     it('should handle token errors', async () => {
       // ARRANGE
       const errorClient = {
-        getUserGames: vi.fn().mockRejectedValue(
+        getUserGameLeagues: vi.fn().mockRejectedValue(
           new Error('Token refresh failed')
         ),
-        getUserGameLeagues: vi.fn(),
+        getAllUserLeagues: vi.fn().mockRejectedValue(
+          new Error('Token refresh failed')
+        ),
         getLeagueStandings: vi.fn(),
       };
       vi.mocked(getYahooApiClient).mockResolvedValue(errorClient);
@@ -202,4 +202,3 @@ describe('league-service', () => {
     });
   });
 });
-

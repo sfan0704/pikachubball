@@ -440,33 +440,6 @@ describe('YahooApiClient', () => {
       // ARRANGE
       const gameCode = 'nba';
       
-      // Mock getUserGames response - must return game with code 'nba'
-      mockAxiosInstance.get.mockResolvedValueOnce({
-        data: {
-          fantasy_content: {
-            users: [
-              {
-                user: [
-                  { guid: 'test-guid' },
-                  {
-                    games: {
-                      '0': {
-                        game: {
-                          game_key: '466',
-                          name: 'Basketball',
-                          code: 'nba',
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      });
-
-      // Mock getUserGameLeagues response
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: {
           fantasy_content: {
@@ -481,6 +454,7 @@ describe('YahooApiClient', () => {
                           {
                             game_key: '466',
                             name: 'Basketball',
+                            code: 'nba',
                           },
                           {
                             leagues: {
@@ -515,9 +489,14 @@ describe('YahooApiClient', () => {
         league_key: '466.l.12345',
         name: 'Test League',
       });
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        '/users;use_login=1/games;game_codes=nba/leagues?format=json',
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
     });
 
-    it('should throw error if game code not found', async () => {
+    it('should return no games if Yahoo has no leagues for the game code', async () => {
       // ARRANGE
       const gameCode = 'invalid';
       
@@ -541,8 +520,13 @@ describe('YahooApiClient', () => {
       });
 
       // ACT & ASSERT
-      await expect(client.getUserGameLeagues(gameCode)).rejects.toThrow(
-        `Game code ${gameCode} not found`
+      await expect(client.getUserGameLeagues(gameCode)).resolves.toEqual({
+        guid: 'test-guid',
+        games: [{ leagues: [] }],
+      });
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        '/users;use_login=1/games;game_codes=invalid/leagues?format=json',
+        { headers: { Authorization: `Bearer ${accessToken}` } },
       );
     });
   });

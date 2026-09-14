@@ -519,16 +519,11 @@ export class YahooApiClient {
   }
 
   async getUserGameLeagues(gameCode: string): Promise<any> {
-    // First get the game key for the game code
-    const gamesResponse = await this.getUserGames();
-    const game = gamesResponse.games?.find((g: any) => g.code === gameCode);
-    
-    if (!game) {
-      throw new Error(`Game code ${gameCode} not found`);
-    }
-
-    const gameKey = game.game_key;
-    const response = await this.apiRequest(`/users;use_login=1/games;game_keys=${gameKey}/leagues`);
+    // Yahoo supports filtering the games collection by code. Going directly to
+    // the leagues subresource avoids a separate, broader user-games request.
+    const response = await this.apiRequest(
+      `/users;use_login=1/games;game_codes=${encodeURIComponent(gameCode)}/leagues`,
+    );
     
     // Parse the raw Yahoo API response
     const users = response?.fantasy_content?.users;
@@ -558,7 +553,7 @@ export class YahooApiClient {
         usersIsArray: Array.isArray(users),
         usersKeys: users && typeof users === 'object' ? Object.keys(users) : undefined
       });
-      return { games: [], guid: gamesResponse.guid };
+      return { games: [], guid: undefined };
     }
     
     if (!userData || !Array.isArray(userData) || userData.length < 2) {
@@ -567,7 +562,7 @@ export class YahooApiClient {
         isArray: Array.isArray(userData),
         length: userData?.length
       });
-      return { games: [], guid: gamesResponse.guid };
+      return { games: [], guid: userData?.[0]?.guid };
     }
     
     const gamesData = userData[1]?.games;
@@ -576,7 +571,7 @@ export class YahooApiClient {
         userDataKeys: Object.keys(userData[1] || {}),
         userDataLength: userData.length
       });
-      return { games: [], guid: gamesResponse.guid };
+      return { games: [], guid: userData[0]?.guid };
     }
     
     logger.debug("getUserGameLeagues: Games data structure", {
@@ -727,7 +722,7 @@ export class YahooApiClient {
     });
     
     return {
-      guid: userData[0]?.guid || gamesResponse.guid,
+      guid: userData[0]?.guid,
       games: parsedGames,
     };
   }
