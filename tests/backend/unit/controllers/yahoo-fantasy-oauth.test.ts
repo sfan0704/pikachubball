@@ -30,7 +30,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     (env as any).YAHOO_CLIENT_ID = "fantasy-client-id";
     (env as any).YAHOO_CLIENT_SECRET = "fantasy-client-secret";
     (env as any).YAHOO_PROVIDER_REDIRECT_URI =
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback";
+      "https://basketball.example.test/api/yahoo/return";
     saveYahooConnection.mockResolvedValue({});
   });
 
@@ -62,7 +62,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     expect(location.searchParams.get("client_id")).toBe("fantasy-client-id");
     expect(location.searchParams.get("scope")).toBe("fspt-r");
     expect(location.searchParams.get("redirect_uri")).toBe(
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      "https://basketball.example.test/api/yahoo/return",
     );
     expect(location.searchParams.get("state")).toHaveLength(43);
     expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
@@ -91,7 +91,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
       "one-time-code",
       "fantasy-client-id",
       "fantasy-client-secret",
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      "https://basketball.example.test/api/yahoo/return",
     );
     expect(saveYahooConnection).toHaveBeenCalledWith(
       expect.objectContaining({
