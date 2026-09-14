@@ -205,8 +205,12 @@ export default function RankingsPage() {
         {/* Error Banners */}
         {leaguesError && yahooStatus?.connected && (
           <ErrorBanner
-            title="Failed to Load Leagues"
-            message={leaguesError.message || "Unable to load your leagues. Please try again."}
+            title={leaguesError.message.includes("YAHOO_FANTASY_ACCESS_PENDING")
+              ? "Yahoo Access Is Pending"
+              : "Failed to Load Leagues"}
+            message={leaguesError.message.includes("YAHOO_FANTASY_ACCESS_PENDING")
+              ? "Yahoo sign-in is working, but Yahoo still needs to activate Fantasy API access for this app."
+              : leaguesError.message || "Unable to load your leagues. Please try again."}
             onRetry={() => queryClient.invalidateQueries({ queryKey: ["/api/yahoo/leagues"] })}
           />
         )}

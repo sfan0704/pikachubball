@@ -2,6 +2,7 @@ import { getYahooApiClient } from "./yahoo-api-client";
 import { logger } from "../../utils/logger";
 import { parseTeamsFromStandings } from "../parsers/league-parser.js";
 import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
+import { AppError } from "../../middleware/error-handler";
 
 /**
  * League Service
@@ -256,9 +257,25 @@ export async function getUserLeagues(
         "Yahoo Fantasy credentials expired or invalid. Please reconnect your Yahoo account."
       );
     }
-    // Provide more detailed error message
-    const errorMsg = error.response?.data?.error_description 
-      || error.response?.data?.error
+    const yahooError = error.response?.data?.error;
+    const yahooDescription = typeof yahooError === "object"
+      ? yahooError?.description
+      : undefined;
+
+    if (
+      error.response?.status === 403 &&
+      yahooDescription?.includes("not authorized to perform this action")
+    ) {
+      throw new AppError(
+        503,
+        "Yahoo has not activated Fantasy API access for this application yet.",
+        "YAHOO_FANTASY_ACCESS_PENDING",
+      );
+    }
+
+    const errorMsg = error.response?.data?.error_description
+      || yahooDescription
+      || (typeof yahooError === "string" ? yahooError : undefined)
       || error.message
       || "Failed to retrieve leagues from Yahoo Fantasy API";
     throw new Error(`Failed to get leagues: ${errorMsg}`);

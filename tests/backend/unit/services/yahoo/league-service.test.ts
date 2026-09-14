@@ -138,6 +138,28 @@ describe('league-service', () => {
       // The error should be thrown (either original or converted)
     });
 
+    it('should identify Yahoo application access awaiting activation', async () => {
+      const accessError = Object.assign(new Error('Request failed with status code 403'), {
+        response: {
+          status: 403,
+          data: {
+            error: {
+              description: 'This application is not authorized to perform this action.',
+            },
+          },
+        },
+      });
+      vi.mocked(getYahooApiClient).mockResolvedValue({
+        getUserGameLeagues: vi.fn().mockRejectedValue(accessError),
+        getAllUserLeagues: vi.fn().mockRejectedValue(accessError),
+      } as any);
+
+      await expect(getUserLeagues(userId)).rejects.toMatchObject({
+        statusCode: 503,
+        code: 'YAHOO_FANTASY_ACCESS_PENDING',
+      });
+    });
+
     it('should use parallel API calls for standings', async () => {
       // ARRANGE
       // Setup mock to return leagues that will trigger standings fetch
