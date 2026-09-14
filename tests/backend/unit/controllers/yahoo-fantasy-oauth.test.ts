@@ -104,6 +104,31 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     );
   });
 
+  it("stores a legacy Fantasy token when Yahoo omits the optional guid", async () => {
+    const start = await request(app()).get("/start");
+    const location = new URL(start.headers.location);
+    const state = location.searchParams.get("state")!;
+    const cookie = start.headers["set-cookie"][0].split(";")[0];
+    vi.mocked(exchangeAuthorizationCode).mockResolvedValue({
+      accessToken: "legacy-access-token",
+      refreshToken: "legacy-refresh-token",
+      expiresIn: 3600,
+    });
+
+    const response = await request(app())
+      .get(`/callback?code=one-time-code&state=${encodeURIComponent(state)}`)
+      .set("Cookie", cookie);
+
+    expect(response.status).toBe(303);
+    expect(saveYahooConnection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: IDENTITY.userId,
+        yahooGuid: IDENTITY.yahooGuid,
+        accessToken: "legacy-access-token",
+      }),
+    );
+  });
+
   it("rejects state replay before exchanging a Yahoo code", async () => {
     const response = await request(app())
       .get("/callback?code=one-time-code&state=attacker-state")

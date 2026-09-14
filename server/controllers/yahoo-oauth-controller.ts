@@ -87,7 +87,7 @@ export const yahooOAuthController = {
       config.clientSecret,
       config.redirectUri,
     );
-    if (tokens.yahooGuid !== identity.yahooGuid) {
+    if (tokens.yahooGuid && tokens.yahooGuid !== identity.yahooGuid) {
       throw new UnauthorizedError("Yahoo Fantasy account does not match the signed-in account");
     }
     await req.ownerStorage.saveYahooConnection({

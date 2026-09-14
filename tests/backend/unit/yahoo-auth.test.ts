@@ -38,25 +38,14 @@ describe("exchangeAuthorizationCode", () => {
     expect(body.get("grant_type")).toBe("authorization_code");
   });
 
-  it("binds a Fantasy-only token to the Yahoo user when the token response omits the guid", async () => {
-    vi.mocked(axios)
-      .mockResolvedValueOnce({
-        data: {
-          access_token: "access-token",
-          refresh_token: "refresh-token",
-          expires_in: 3600,
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          fantasy_content: {
-            users: {
-              "0": { user: [{ guid: "yahoo-guid" }] },
-              count: 1,
-            },
-          },
-        },
-      });
+  it("accepts a legacy Fantasy token response that omits the guid", async () => {
+    vi.mocked(axios).mockResolvedValueOnce({
+      data: {
+        access_token: "access-token",
+        refresh_token: "refresh-token",
+        expires_in: 3600,
+      },
+    });
 
     const result = await exchangeAuthorizationCode(
       "authorization-code",
@@ -65,13 +54,7 @@ describe("exchangeAuthorizationCode", () => {
       "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
     );
 
-    expect(result.yahooGuid).toBe("yahoo-guid");
-    expect(axios).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(axios).mock.calls[1][0]).toEqual(
-      expect.objectContaining({
-        method: "get",
-        url: "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1?format=json",
-      }),
-    );
+    expect(result.yahooGuid).toBeUndefined();
+    expect(axios).toHaveBeenCalledOnce();
   });
 });
