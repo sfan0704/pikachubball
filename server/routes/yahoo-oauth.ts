@@ -9,12 +9,12 @@ import { yahooOAuthController } from "../controllers/yahoo-oauth-controller";
  */
 export function registerYahooOAuthRoutes(app: Express): void {
   app.get(
-    "/api/yahoo/connect",
+    "/api/connect/start",
     requireAuth,
     yahooOAuthController.beginFantasyAccess,
   );
   app.get(
-    "/api/yahoo/return",
+    "/api/connect/return",
     requireAuth,
     yahooOAuthController.completeFantasyAccess,
   );

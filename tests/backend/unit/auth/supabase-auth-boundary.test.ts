@@ -216,7 +216,7 @@ describe("Supabase Yahoo auth boundary", () => {
     const replay = await request(app).get("/callback?code=one-time-code");
 
     expect(first.status).toBe(303);
-    expect(first.headers.location).toBe("/api/yahoo/connect");
+    expect(first.headers.location).toBe("/api/connect/start");
     expect(replay.status).toBe(401);
     expect(first.text).not.toContain("yahoo-access-token");
     expect(first.headers.location).not.toContain("token");
