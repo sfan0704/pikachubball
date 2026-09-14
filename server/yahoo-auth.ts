@@ -26,6 +26,8 @@ export async function exchangeAuthorizationCode(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       data: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: redirectUri,
         grant_type: "authorization_code",
         code,
@@ -49,6 +51,11 @@ export async function exchangeAuthorizationCode(
   } catch (error) {
     logger.error("Yahoo authorization code exchange failed", {
       error: error instanceof Error ? error.message : "Unknown error",
+      status: axios.isAxiosError(error) ? error.response?.status : undefined,
+      yahooError: axios.isAxiosError(error) ? error.response?.data?.error : undefined,
+      yahooErrorDescription: axios.isAxiosError(error)
+        ? error.response?.data?.error_description
+        : undefined,
     });
     throw new Error("Failed to exchange Yahoo authorization code");
   }
