@@ -67,6 +67,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     expect(location.searchParams.get("state")).toHaveLength(43);
     expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
     expect(response.headers["set-cookie"][0]).toContain("SameSite=Lax");
+    expect(response.headers["set-cookie"][0]).toContain("Path=/");
   });
 
   it("stores an approved Fantasy token only for the matching Yahoo account", async () => {
