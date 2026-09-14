@@ -23,7 +23,7 @@ describe("exchangeAuthorizationCode", () => {
       "authorization-code",
       "client-id",
       "client-secret",
-      "https://basketball.example.test/connect/return",
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
     );
 
     expect(axios).toHaveBeenCalledOnce();
@@ -32,7 +32,7 @@ describe("exchangeAuthorizationCode", () => {
     expect(body.get("client_id")).toBe("client-id");
     expect(body.get("client_secret")).toBe("client-secret");
     expect(body.get("redirect_uri")).toBe(
-      "https://basketball.example.test/connect/return",
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
     );
     expect(body.get("code")).toBe("authorization-code");
     expect(body.get("grant_type")).toBe("authorization_code");

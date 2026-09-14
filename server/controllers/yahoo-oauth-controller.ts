@@ -36,7 +36,7 @@ function stateCookie(value: string, maxAge: number): string {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/connect",
+    path: "/",
     maxAge,
   });
 }

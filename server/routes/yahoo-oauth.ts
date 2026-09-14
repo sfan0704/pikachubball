@@ -14,7 +14,7 @@ export function registerYahooOAuthRoutes(app: Express): void {
     yahooOAuthController.beginFantasyAccess,
   );
   app.get(
-    "/connect/return",
+    "/api/auth/yahoo/fantasy/callback",
     requireAuth,
     yahooOAuthController.completeFantasyAccess,
   );
