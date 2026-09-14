@@ -60,7 +60,9 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     const location = new URL(response.headers.location);
     expect(location.origin).toBe("https://api.login.yahoo.com");
     expect(location.searchParams.get("client_id")).toBe("fantasy-client-id");
-    expect(location.searchParams.get("scope")).toBe("fspt-r");
+    // Yahoo Fantasy access is granted at the application level. Supplying an
+    // OAuth scope here can yield a token that Yahoo rejects at the Fantasy API.
+    expect(location.searchParams.has("scope")).toBe(false);
     expect(location.searchParams.get("redirect_uri")).toBe(
       "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
     );

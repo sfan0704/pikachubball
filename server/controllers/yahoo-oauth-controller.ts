@@ -58,7 +58,6 @@ export const yahooOAuthController = {
       client_id: config.clientId,
       redirect_uri: config.redirectUri,
       response_type: "code",
-      scope: "fspt-r",
       state,
       prompt: "consent",
     }).toString();
