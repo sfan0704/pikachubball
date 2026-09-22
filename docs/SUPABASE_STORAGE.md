@@ -22,12 +22,13 @@ Token ciphertext is bound to the owner UUID, token purpose, and key version as a
 
 Apply [`202609120001_owner_scoped_connections.sql`](../supabase/migrations/202609120001_owner_scoped_connections.sql) to an empty dedicated Supabase project. The migration creates the two retained tables, foreign keys to `auth.users`, forced RLS, explicit authenticated policies, and security-invoker RPCs. It does not alter or drop any legacy table, so importing or retaining the old schema is non-destructive.
 
-Run the RLS matrix against a disposable local Supabase instance:
+Run the RLS matrix against a disposable local Supabase instance (requires a running Docker engine):
 
 ```text
-supabase db reset
-supabase test db supabase/tests/owner_scoped_storage_test.sql
+npm run test:db
 ```
+
+This starts the local database if needed, runs `supabase db reset --local`, then `supabase test db --local`. CI runs the same command on every pull request.
 
 The matrix creates synthetic owners A and B, checks owner reads and writes, rejects anonymous and cross-owner operations, and proves the compare-and-swap refresh rule. Do not use real user rows in reset or migration tests.
 

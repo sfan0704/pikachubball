@@ -19,3 +19,7 @@ scripts/yahoo-api-responses/
 
 # Test coverage
 coverage/
+
+# Supabase CLI local state
+supabase/.branches
+supabase/.temp
