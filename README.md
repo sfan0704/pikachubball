@@ -21,11 +21,11 @@ The app has three separated tiers. No tier holds another tier's credentials, and
 
 | Tier | Runs at | Supabase | Yahoo app | Credentials live in | Used for |
 | --- | --- | --- | --- | --- | --- |
-| Local | laptop and CI | disposable local stack (`npm run test:db`) | none | nothing hosted | migrations and RLS tests |
-| Dev | `http://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Local` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
-| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball` | Vercel Production environment only | league members |
+| Local | laptop and CI | disposable local stack (`npm run test:db`) | none today; `PikachuBball - Local` after it is freed (CAR-74) | nothing hosted | migrations and RLS tests |
+| Dev | `http://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
+| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball - Local` today; moving to a dedicated prod app (CAR-57) | Vercel Production environment only | league members |
 
-Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
+Each tier has its own Yahoo app because a Supabase project holds exactly one `custom:yahoo` provider. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
 
 ## Local setup
 
@@ -43,7 +43,7 @@ cp .env.example .env.local
 openssl rand -hex 32   # use as ENCRYPTION_KEY
 ```
 
-The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball - Local` Yahoo app. Never copy production values into `.env.local`.
+The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball - Dev` Yahoo app. Never copy production values into `.env.local`.
 
 Start the app with `npm run dev` and open `http://localhost:5001`. The dev server uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
 
