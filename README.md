@@ -15,6 +15,18 @@ The retained product includes league and week selection, rankings, team matchup 
 
 Vercel serves the client and API on one origin. The expected traffic is small, including at most 14 concurrent league members, so the app does not require background workers, a cache cluster, or a dedicated database connection pool.
 
+## Environments
+
+The app has three separated tiers. No tier holds another tier's credentials, and no Yahoo app redirects to another tier's Supabase project.
+
+| Tier | Runs at | Supabase | Yahoo app | Credentials live in | Used for |
+| --- | --- | --- | --- | --- | --- |
+| Local | laptop and CI | disposable local stack (`npm run test:db`) | none | nothing hosted | migrations and RLS tests |
+| Dev | `http://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Local` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
+| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball` | Vercel Production environment only | league members |
+
+Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
+
 ## Local setup
 
 Install the pinned toolchain and dependencies:
@@ -24,20 +36,16 @@ nvm use
 npm ci
 ```
 
-Create `.env.local` with synthetic or dedicated development values:
+To run the app against the dev tier, create `.env.local` from the template and fill in the dev values:
 
 ```text
-NODE_ENV=development
-APP_ORIGIN=http://localhost:5000
-SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_PUBLISHABLE_KEY=<local-publishable-key>
-ENCRYPTION_KEY=<64-hex-character-key>
-YAHOO_CLIENT_ID=<development-Yahoo-client-id>
-YAHOO_CLIENT_SECRET=<development-Yahoo-client-secret>
-YAHOO_PROVIDER_REDIRECT_URI=<callback-URL-displayed-by-Supabase>
+cp .env.example .env.local
+openssl rand -hex 32   # use as ENCRYPTION_KEY
 ```
 
-Start the app with `npm run dev`. The default origin is `http://localhost:5000`.
+The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball - Local` Yahoo app. Never copy production values into `.env.local`.
+
+Start the app with `npm run dev` and open `http://localhost:5001`. The dev server uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
 
 ## Checks
 

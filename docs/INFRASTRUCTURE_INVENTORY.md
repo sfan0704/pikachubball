@@ -40,6 +40,22 @@ ID. Production secrets are scoped only to basketball production. Preview builds 
 synthetic configuration and do not receive production authentication, database, or
 Yahoo credentials.
 
+## Environment tiers
+
+Decided in CAR-70 on 2026-09-22. A hosted dev tier amends the original "local disposable dev" plan: every useful screen needs live Yahoo Fantasy data, which requires a real Yahoo sign-in through an HTTPS Supabase callback that a local-only stack cannot provide.
+
+| Resource | Local | Dev | Prod |
+| --- | --- | --- | --- |
+| Supabase project | Disposable CLI stack, `project_id = "pikachubball"` | `Pikachu Basketball Development` / `ocqdxmfpezxpgutoicyh` | `Pikachu Basketball` / `fpdwtpwpmxsbgjxizuxa` |
+| Supabase region | Docker on the developer machine or CI | AWS North Virginia (`us-east-1`), Free | AWS North Virginia (`us-east-1`), Free |
+| Yahoo Developer app | None | `PikachuBball - Local` (app ID `i19hJ8X4`) | `PikachuBball` (app ID `VZxFFbzH`) |
+| Yahoo redirect URI | None | `https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback` only | `https://fpdwtpwpmxsbgjxizuxa.supabase.co/auth/v1/callback` only |
+| Application callback | None | `http://localhost:5001/api/auth/callback` | `https://<production-domain>/api/auth/callback` |
+| Secret location | None | Developer's `.env.local` | Vercel Production environment |
+| Migrations | `npm run test:db` on every change | Applied first and validated | Applied only after dev validation |
+
+The Supabase organization is on the Free plan, which allows two active projects. Both basketball projects are active, and the two Card Benefits projects are paused. Restoring a Card Benefits project requires pausing one basketball project first.
+
 ## Legacy application inventory
 
 - Deployment: Replit autoscale, port 5000, with the recorded production callback
