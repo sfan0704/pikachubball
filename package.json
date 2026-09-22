@@ -19,7 +19,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "test:coverage": "vitest --run --coverage"
+    "test:coverage": "vitest --run --coverage",
+    "test:db": "bash scripts/test-database.sh"
   },
   "dependencies": {
     "@jridgewell/trace-mapping": "^0.3.25",
@@ -107,6 +108,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "postcss": "^8.4.47",
+    "supabase": "2.117.0",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
