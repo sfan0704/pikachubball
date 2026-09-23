@@ -30,9 +30,10 @@ supabase test db --local
 # Local stack values only; the check below refuses anything but loopback.
 SUPABASE_URL="$(supabase status -o env | sed -n 's/^API_URL="\(.*\)"$/\1/p')"
 SUPABASE_PUBLISHABLE_KEY="$(supabase status -o env | sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p')"
+SUPABASE_DB_URL="$(supabase status -o env | sed -n 's/^DB_URL="\(.*\)"$/\1/p')"
 case "$SUPABASE_URL" in
   http://127.0.0.1:*|http://localhost:*) ;;
   *) echo "Refusing to run Data API tests against '$SUPABASE_URL'." >&2; exit 1 ;;
 esac
-export SUPABASE_URL SUPABASE_PUBLISHABLE_KEY
+export SUPABASE_URL SUPABASE_PUBLISHABLE_KEY SUPABASE_DB_URL
 vitest run --config vitest.database.config.ts

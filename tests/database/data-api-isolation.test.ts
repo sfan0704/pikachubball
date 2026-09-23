@@ -1,24 +1,34 @@
 // Local tier only: exercises the owner-scoped repository and RLS policies through
 // the real Supabase Data API (PostgREST behind Kong) with real GoTrue sessions.
 // Run through `npm run test:db`, which starts the disposable stack and exports
-// SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY. No secret or service-role key is used.
+// SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY. No secret or service-role key is used
+// by the clients under test; SUPABASE_DB_URL only seeds the Yahoo identity that
+// sign-in would normally create, because the local stack cannot reach Yahoo.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
-import { beforeAll, describe, expect, it } from "vitest";
+import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AesGcmOwnerTokenCipher } from "../../server/storage/owner-token-cipher";
 import { SupabaseOwnerStorage } from "../../server/storage/supabase-owner-storage";
 
 const supabaseUrl = process.env.SUPABASE_URL ?? "";
 const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
+const databaseUrl = process.env.SUPABASE_DB_URL ?? "";
 
-if (!/^http:\/\/(127\.0\.0\.1|localhost):/.test(supabaseUrl)) {
+if (
+  !/^http:\/\/(127\.0\.0\.1|localhost):/.test(supabaseUrl) ||
+  !/^postgresql:\/\/[^@]+@(127\.0\.0\.1|localhost):/.test(databaseUrl)
+) {
   throw new Error("Data API isolation tests only run against a local Supabase stack");
 }
+
+const database = new pg.Client({ connectionString: databaseUrl });
 
 const cipher = AesGcmOwnerTokenCipher.fromHex("22".repeat(32));
 
 interface Owner {
   id: string;
+  yahooGuid: string;
   client: SupabaseClient;
   storage: SupabaseOwnerStorage;
 }
@@ -56,9 +66,20 @@ async function signUpOwner(label: string): Promise<Owner> {
   if (error || !data.user || !data.session) {
     throw new Error(`Could not create synthetic ${label} session: ${error?.message}`);
   }
+  const yahooGuid = `guid-${label}-${randomUUID()}`;
+  await database.query(
+    `insert into auth.identities (provider_id, user_id, identity_data, provider, created_at, updated_at)
+     values ($1, $2, $3, 'custom:yahoo', now(), now())`,
+    [
+      yahooGuid,
+      data.user.id,
+      { sub: yahooGuid, iss: "https://api.login.yahoo.com" },
+    ],
+  );
   await waitForDataApi(client);
   return {
     id: data.user.id,
+    yahooGuid,
     client,
     storage: new SupabaseOwnerStorage(client, data.user.id, cipher),
   };
@@ -67,7 +88,7 @@ async function signUpOwner(label: string): Promise<Owner> {
 async function connect(owner: Owner, label: string) {
   return owner.storage.saveYahooConnection({
     userId: owner.id,
-    yahooGuid: `guid-${label}-${randomUUID()}`,
+    yahooGuid: owner.yahooGuid,
     displayName: `Manager ${label}`,
     email: `${label}@example.test`,
     accessToken: `access-secret-${label}`,
@@ -82,10 +103,15 @@ const leagueA = { leagueKey: "466.l.101", teamKey: "466.l.101.t.1" };
 const leagueB = { leagueKey: "466.l.202", teamKey: "466.l.202.t.5" };
 
 beforeAll(async () => {
+  await database.connect();
   [ownerA, ownerB] = await Promise.all([signUpOwner("a"), signUpOwner("b")]);
   await Promise.all([connect(ownerA, "a"), connect(ownerB, "b")]);
   await ownerA.storage.replaceFantasyMemberships([leagueA]);
   await ownerB.storage.replaceFantasyMemberships([leagueB]);
+});
+
+afterAll(async () => {
+  await database.end();
 });
 
 describe("owner access through the Data API", () => {
@@ -221,6 +247,36 @@ describe("cross-owner isolation through the Data API", () => {
     await expect(
       ownerA.storage.ownsFantasyResource(leagueB.leagueKey),
     ).resolves.toBe(false);
+  });
+
+  it("cannot claim another manager's Yahoo GUID", async () => {
+    const claim = await ownerB.storage
+      .saveYahooConnection({
+        userId: ownerB.id,
+        yahooGuid: ownerA.yahooGuid,
+        displayName: "Manager b",
+        email: "b@example.test",
+        accessToken: "access-secret-b",
+        refreshToken: "refresh-secret-b",
+        expiresAt: 1_800_000_000,
+      })
+      .catch((error) => error);
+    const rewrite = await ownerB.client
+      .from("yahoo_connections")
+      .update({ yahoo_guid: ownerA.yahooGuid })
+      .eq("owner_id", ownerB.id);
+
+    expect(claim).toBeInstanceOf(Error);
+    expect(claim.message).toMatch(/\(42501\)/);
+    expect(rewrite.error?.code).toBe("42501");
+
+    const reconnect = await connect(ownerA, "a");
+    expect(reconnect.version).toBeGreaterThan(1);
+    const { data } = await ownerB.client
+      .from("yahoo_connections")
+      .select("yahoo_guid")
+      .single();
+    expect(data?.yahoo_guid).toBe(ownerB.yahooGuid);
   });
 
   it("rejects a repository call for a foreign owner before any request", async () => {
