@@ -2,10 +2,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import { yahooOAuthController } from '../../../../server/controllers/yahoo-oauth-controller';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
+import { revokeYahooToken } from '../../../../server/yahoo-auth';
 import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
 
 // Mock dependencies
 vi.mock('../../../../server/middleware/auth');
+vi.mock('../../../../server/yahoo-auth', () => ({
+  exchangeAuthorizationCode: vi.fn(),
+  revokeYahooToken: vi.fn(),
+}));
 
 describe('yahooOAuthController', () => {
   let mockReq: Request;
@@ -117,21 +122,63 @@ describe('yahooOAuthController', () => {
   });
 
   describe('disconnect', () => {
-    it('should delete Yahoo token', async () => {
-      // ARRANGE
+    const storedToken = {
+      userId: 'placeholder',
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+    };
+
+    beforeEach(() => {
       vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
-      deleteYahooToken.mockResolvedValue(undefined);
+      getYahooToken.mockReset().mockResolvedValue({ ...storedToken, userId: mockUser.id });
+      deleteYahooToken.mockReset().mockResolvedValue(undefined);
+    });
 
-      // ACT
-      const handler = yahooOAuthController.disconnect as any;
-      await handler(mockReq, mockRes, mockNext);
+    it('revokes the refresh token at Yahoo, then deletes it locally', async () => {
+      vi.mocked(revokeYahooToken).mockResolvedValue(true);
 
-      // ASSERT
+      (yahooOAuthController.disconnect as any)(mockReq, mockRes, mockNext);
+      await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
+
+      expect(revokeYahooToken).toHaveBeenCalledWith(
+        'refresh-token',
+        expect.any(String),
+        expect.any(String),
+      );
       expect(deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
-      expect(mockRes.json).toHaveBeenCalledWith({ 
-        success: true, 
-        message: 'Yahoo account disconnected.' 
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        revokedAtYahoo: true,
+        message: 'Yahoo account disconnected and access revoked at Yahoo.',
       });
+    });
+
+    it('still deletes local tokens and says so when Yahoo does not confirm revocation', async () => {
+      vi.mocked(revokeYahooToken).mockResolvedValue(false);
+
+      (yahooOAuthController.disconnect as any)(mockReq, mockRes, mockNext);
+      await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
+
+      expect(deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        revokedAtYahoo: false,
+        message: expect.stringContaining('Yahoo did not confirm revocation'),
+      });
+    });
+
+    it('still deletes local tokens when the stored token cannot be read', async () => {
+      getYahooToken.mockRejectedValue(new Error('Stored Yahoo credential could not be authenticated'));
+
+      (yahooOAuthController.disconnect as any)(mockReq, mockRes, mockNext);
+      await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
+
+      expect(revokeYahooToken).not.toHaveBeenCalled();
+      expect(deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({ success: true, revokedAtYahoo: false }),
+      );
     });
 
     it('should throw ValidationError if user is not authenticated', async () => {
