@@ -29,6 +29,24 @@ function newClient(): SupabaseClient {
   });
 }
 
+// `db reset` restarts the API containers; wait until PostgREST accepts sessions
+// and surface its full error if it never does.
+async function waitForDataApi(client: SupabaseClient): Promise<void> {
+  const deadline = Date.now() + 30_000;
+  for (;;) {
+    const { error } = await client.from("yahoo_connections").select("owner_id").limit(0);
+    if (!error) {
+      return;
+    }
+    if (Date.now() > deadline) {
+      throw new Error(
+        `Data API rejected a fresh session: ${error.code} ${error.message} ${error.details ?? ""}`,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+}
+
 async function signUpOwner(label: string): Promise<Owner> {
   const client = newClient();
   const { data, error } = await client.auth.signUp({
@@ -38,6 +56,7 @@ async function signUpOwner(label: string): Promise<Owner> {
   if (error || !data.user || !data.session) {
     throw new Error(`Could not create synthetic ${label} session: ${error?.message}`);
   }
+  await waitForDataApi(client);
   return {
     id: data.user.id,
     client,
