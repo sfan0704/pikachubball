@@ -3,6 +3,30 @@ import { getMatchupComparison } from '../../../../server/services/viz/matchup-vi
 import { createMockFantasyDataSource, createMalformedFantasyDataSource } from '../../fixtures/mock-fantasy-data-source';
 import type { FantasyDataSource } from '../../../../server/services/fantasy-data-source';
 import { testLeagueKey, testTeamKey } from '../../fixtures/test-data';
+import { mockScoreboard } from '../../fixtures/yahoo-responses';
+
+/** Scoreboard fixture with chosen stat values (by Yahoo stat_id) for given teams. */
+function scoreboardWith(values: Record<string, Record<string, string>>) {
+  const scoreboard = JSON.parse(JSON.stringify(mockScoreboard));
+  const visit = (node: any, teamKey?: string): void => {
+    if (Array.isArray(node)) {
+      // Yahoo puts team_key in the team's metadata array, a sibling of team_stats.
+      const metadata = node.flatMap((item: any) => (Array.isArray(item) ? item : [item]));
+      const key = metadata.find((item: any) => item?.team_key)?.team_key ?? teamKey;
+      node.forEach((item: any) => visit(item, key));
+      return;
+    }
+    if (node && typeof node === 'object') {
+      const stat = node.stat;
+      if (stat?.stat_id && teamKey && values[teamKey]?.[stat.stat_id] !== undefined) {
+        stat.value = values[teamKey][stat.stat_id];
+      }
+      Object.values(node).forEach((child) => visit(child, teamKey));
+    }
+  };
+  visit(scoreboard);
+  return scoreboard;
+}
 
 describe('matchup-viz', () => {
   let dataSource: FantasyDataSource;
@@ -182,6 +206,65 @@ describe('matchup-viz', () => {
           expect(category.opponent).toBeLessThanOrEqual(1);
         }
       });
+    });
+  });
+
+  describe('ties and exact percentages', () => {
+    const opponentKey = '466.l.12345.t.2';
+
+    function sourceWith(values: Record<string, Record<string, string>>): FantasyDataSource {
+      const source = createMockFantasyDataSource();
+      source.getLeagueScoreboard = async () => scoreboardWith(values);
+      return source;
+    }
+
+    it('reports equal values as ties, including turnovers, and counts them', async () => {
+      const result = await getMatchupComparison(
+        sourceWith({
+          [testTeamKey]: { '12': '200', '19': '24' },
+          [opponentKey]: { '12': '200', '19': '24' },
+        }),
+        testLeagueKey,
+        testTeamKey,
+      );
+
+      const pts = result.categories.find(c => c.category === 'pts');
+      const to = result.categories.find(c => c.category === 'to');
+      expect(pts).toMatchObject({ result: 'tie', winning: false, difference: 0 });
+      expect(to).toMatchObject({ result: 'tie', winning: false, difference: 0 });
+      expect(result.score.ties).toBe(
+        result.categories.filter(c => c.result === 'tie').length,
+      );
+      expect(result.score.wins + result.score.losses + result.score.ties).toBe(9);
+    });
+
+    it('decides FG% from makes/attempts when the reported percentages round equal', async () => {
+      const result = await getMatchupComparison(
+        sourceWith({
+          [testTeamKey]: { '5': '.478', '9004003': '440/920' },
+          [opponentKey]: { '5': '.478', '9004003': '445/930' },
+        }),
+        testLeagueKey,
+        testTeamKey,
+      );
+
+      const fg = result.categories.find(c => c.category === 'fgPct');
+      expect(fg?.myTeam).toBe(fg?.opponent);
+      expect(fg?.result).toBe('loss');
+      expect(fg?.difference).toBeCloseTo(440 / 920 - 445 / 930, 10);
+    });
+
+    it('ties identical shooting rates at different volumes', async () => {
+      const result = await getMatchupComparison(
+        sourceWith({
+          [testTeamKey]: { '8': '.750', '9007006': '3/4' },
+          [opponentKey]: { '8': '.750', '9007006': '75/100' },
+        }),
+        testLeagueKey,
+        testTeamKey,
+      );
+
+      expect(result.categories.find(c => c.category === 'ftPct')?.result).toBe('tie');
     });
   });
 

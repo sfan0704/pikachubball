@@ -20,11 +20,11 @@ describe('MatchupTab', () => {
       teamName: 'Opponent Team',
     },
     categories: [
-      { category: 'fgPct', myTeam: 0.485, opponent: 0.470, winning: true, myTeamMakes: 150, myTeamAttempts: 309, opponentMakes: 140, opponentAttempts: 298 },
-      { category: 'ftPct', myTeam: 0.82, opponent: 0.78, winning: true },
-      { category: 'pts', myTeam: 1200, opponent: 1150, winning: true },
-      { category: 'reb', myTeam: 450, opponent: 480, winning: false },
-      { category: 'ast', myTeam: 280, opponent: 260, winning: true },
+      { category: 'fgPct', myTeam: 0.485, opponent: 0.470, winning: true, result: 'win', myTeamMakes: 150, myTeamAttempts: 309, opponentMakes: 140, opponentAttempts: 298 },
+      { category: 'ftPct', myTeam: 0.82, opponent: 0.78, winning: true, result: 'win' },
+      { category: 'pts', myTeam: 1200, opponent: 1150, winning: true, result: 'win' },
+      { category: 'reb', myTeam: 450, opponent: 480, winning: false, result: 'loss' },
+      { category: 'ast', myTeam: 280, opponent: 260, winning: true, result: 'win' },
     ],
     score: { wins: 4, losses: 1, ties: 0 },
     metadata: { week: 5, currentWeek: 10, totalWeeks: 20 },
@@ -143,6 +143,26 @@ describe('MatchupTab', () => {
         expect(screen.getByTestId('matchup-category-pts')).toBeInTheDocument();
         expect(screen.getByTestId('matchup-category-reb')).toBeInTheDocument();
       });
+    });
+
+    it('shows a tied category as a tie rather than a loss', async () => {
+      const matchupUrl = '/api/viz/matchup/466.l.12345/466.l.12345.t.1';
+      queryClient.setQueryData([matchupUrl], {
+        ...mockMatchupData,
+        categories: [
+          ...mockMatchupData.categories,
+          { category: 'stl', myTeam: 17, opponent: 17, difference: 0, winning: false, result: 'tie' },
+        ],
+        score: { wins: 4, losses: 1, ties: 1 },
+      });
+
+      renderMatchupTab();
+
+      const tieRow = await screen.findByTestId('matchup-category-stl');
+      expect(tieRow).toHaveAttribute('data-result', 'tie');
+      expect(tieRow.className).toContain('bg-yellow-500/5');
+      expect(tieRow.className).not.toContain('bg-red-500/5');
+      expect(screen.getByTestId('matchup-category-reb').className).toContain('bg-red-500/5');
     });
 
     it('should display week number in description', async () => {

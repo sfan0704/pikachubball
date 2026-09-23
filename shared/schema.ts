@@ -94,6 +94,7 @@ export const categoryComparisonSchema = z.object({
   opponent: z.number(),
   difference: z.number(),
   winning: z.boolean(),
+  result: z.enum(['win', 'loss', 'tie']),
   myTeamMakes: z.number().optional(),
   myTeamAttempts: z.number().optional(),
   opponentMakes: z.number().optional(),

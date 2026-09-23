@@ -7,37 +7,43 @@ import type { TeamStats, CategoryKey } from '../../../shared/domain/index.js';
 import { CATEGORIES } from '../../../shared/domain/index.js';
 
 /**
- * Compute category ranks for all teams
+ * Value used to compare a category. Yahoo reports percentages rounded to three
+ * decimals, so FG% and FT% compare exact makes/attempts when attempts are known.
+ */
+export function comparableValue(team: TeamStats, cat: CategoryKey): number {
+  if (cat === 'fgPct' && team.fgAttempts) {
+    return (team.fgMakes ?? 0) / team.fgAttempts;
+  }
+  if (cat === 'ftPct' && team.ftAttempts) {
+    return (team.ftMakes ?? 0) / team.ftAttempts;
+  }
+  return team.stats[cat];
+}
+
+/**
+ * Compares two teams in a category: positive when `a` is better. Turnovers are
+ * better when lower; every other category is better when higher.
+ */
+export function compareCategory(a: TeamStats, b: TeamStats, cat: CategoryKey): number {
+  const difference = comparableValue(a, cat) - comparableValue(b, cat);
+  return cat === 'to' ? -difference : difference;
+}
+
+/**
+ * Compute category ranks for all teams using competition ranking: equal
+ * values share a rank and the next rank skips (1, 1, 3), whatever the input order.
  * @param teamStats Array of team stats
  * @returns Array of team stats with categoryRanks populated
  */
 export function computeCategoryRanks(teamStats: TeamStats[]): TeamStats[] {
-  const rankings = teamStats.map(team => ({
-    ...team,
-    categoryRanks: {} as Record<CategoryKey, number>,
-  }));
-
-  CATEGORIES.forEach(cat => {
-    // Sort teams by category value
-    // For turnovers (to), lower is better; for others, higher is better
-    const sorted = [...teamStats].sort((a, b) => {
-      if (cat === 'to') {
-        return a.stats[cat] - b.stats[cat];
-      } else {
-        return b.stats[cat] - a.stats[cat];
-      }
+  return teamStats.map(team => {
+    const categoryRanks = {} as Record<CategoryKey, number>;
+    CATEGORIES.forEach(cat => {
+      const better = teamStats.filter(other => compareCategory(other, team, cat) > 0).length;
+      categoryRanks[cat] = better + 1;
     });
-
-    // Assign ranks (1-based)
-    sorted.forEach((team, index) => {
-      const rankingTeam = rankings.find(r => r.teamKey === team.teamKey);
-      if (rankingTeam) {
-        rankingTeam.categoryRanks![cat] = index + 1;
-      }
-    });
+    return { ...team, categoryRanks };
   });
-
-  return rankings;
 }
 
 /**

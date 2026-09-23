@@ -100,21 +100,51 @@ describe('rankings-compute', () => {
       expect(result[0].categoryRanks?.pts).toBe(1);
     });
 
-    it('should handle ties correctly', () => {
-      // ARRANGE
-      const teamStats: TeamStats[] = [
-        createMockTeamStats('t.1', 'Team Alpha', { pts: 1000 }),
-        createMockTeamStats('t.2', 'Team Beta', { pts: 1000 }),
-        createMockTeamStats('t.3', 'Team Gamma', { pts: 900 }),
+    it('gives equal values the same competition rank regardless of input order', () => {
+      const orders = [
+        [['t.1', 10], ['t.2', 10], ['t.3', 5]],
+        [['t.3', 5], ['t.2', 10], ['t.1', 10]],
+        [['t.2', 10], ['t.3', 5], ['t.1', 10]],
+      ] as const;
+
+      for (const order of orders) {
+        const result = computeCategoryRanks(
+          order.map(([key, stl]) => createMockTeamStats(key, key, { stl })),
+        );
+        const ranks = Object.fromEntries(result.map(t => [t.teamKey, t.categoryRanks?.stl]));
+        expect(ranks).toEqual({ 't.1': 1, 't.2': 1, 't.3': 3 });
+      }
+    });
+
+    it('ranks turnovers ascending with ties sharing a rank', () => {
+      const result = computeCategoryRanks([
+        createMockTeamStats('t.1', 'A', { to: 5 }),
+        createMockTeamStats('t.2', 'B', { to: 10 }),
+        createMockTeamStats('t.3', 'C', { to: 5 }),
+      ]);
+
+      expect(result.map(t => t.categoryRanks?.to)).toEqual([1, 3, 1]);
+    });
+
+    it('compares percentages by makes/attempts instead of the rounded value', () => {
+      // Yahoo reports both as .478; the exact rates are 0.47826 and 0.47843.
+      const teams: TeamStats[] = [
+        { ...createMockTeamStats('t.1', 'A', { fgPct: 0.478 }), fgMakes: 440, fgAttempts: 920 },
+        { ...createMockTeamStats('t.2', 'B', { fgPct: 0.478 }), fgMakes: 445, fgAttempts: 930 },
       ];
 
-      // ACT
-      const result = computeCategoryRanks(teamStats);
+      const result = computeCategoryRanks(teams);
 
-      // ASSERT
-      // Both teams with 1000 pts should get ranks 1 and 2 (order depends on sort stability)
-      const ranks = result.map(t => t.categoryRanks?.pts).sort((a, b) => a! - b!);
-      expect(ranks).toEqual([1, 2, 3]);
+      expect(result.map(t => t.categoryRanks?.fgPct)).toEqual([2, 1]);
+    });
+
+    it('ties identical shooting rates even when volumes differ', () => {
+      const teams: TeamStats[] = [
+        { ...createMockTeamStats('t.1', 'A', { ftPct: 0.75 }), ftMakes: 3, ftAttempts: 4 },
+        { ...createMockTeamStats('t.2', 'B', { ftPct: 0.75 }), ftMakes: 75, ftAttempts: 100 },
+      ];
+
+      expect(computeCategoryRanks(teams).map(t => t.categoryRanks?.ftPct)).toEqual([1, 1]);
     });
   });
 

@@ -4,6 +4,7 @@ import { CATEGORIES } from './league-viz.js';
 import type { YahooApiTeamData } from '../../types/yahoo-api.js';
 import { extractTeamFromScoreboard, parseMatchupsFromScoreboard } from '../parsers/matchup-parser.js';
 import { parseTeamStats } from '../parsers/stats-parser.js';
+import { comparableValue, compareCategory } from '../parsers/rankings-compute.js';
 
 export async function getMatchupComparison(
   dataSource: FantasyDataSource,
@@ -87,21 +88,18 @@ export async function getMatchupComparison(
   const categories: CategoryComparison[] = CATEGORIES.map(cat => {
     const myValue = myTeamStats.stats[cat];
     const oppValue = opponentStats.stats[cat];
-    const difference = myValue - oppValue;
-    
-    let winning: boolean;
-    if (cat === 'to') {
-      winning = myValue < oppValue;
-    } else {
-      winning = myValue > oppValue;
-    }
-    
+    // Exact makes/attempts for FG%/FT%, so rounded equal percentages do not
+    // hide a winner and equal values are a tie rather than a loss.
+    const edge = compareCategory(myTeamStats, opponentStats, cat);
+    const result = edge > 0 ? 'win' : edge < 0 ? 'loss' : 'tie';
+
     const comparison: CategoryComparison = {
       category: cat,
       myTeam: myValue,
       opponent: oppValue,
-      difference,
-      winning
+      difference: comparableValue(myTeamStats, cat) - comparableValue(opponentStats, cat),
+      winning: result === 'win',
+      result,
     };
     
     // Add makes/attempts for FG and FT
@@ -120,19 +118,9 @@ export async function getMatchupComparison(
     return comparison;
   });
 
-  let wins = 0;
-  let losses = 0;
-  let ties = 0;
-  
-  categories.forEach(cat => {
-    if (cat.difference === 0) {
-      ties++;
-    } else if (cat.winning) {
-      wins++;
-    } else {
-      losses++;
-    }
-  });
+  const wins = categories.filter(cat => cat.result === 'win').length;
+  const losses = categories.filter(cat => cat.result === 'loss').length;
+  const ties = categories.filter(cat => cat.result === 'tie').length;
 
   return {
     myTeam: {
