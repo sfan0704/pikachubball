@@ -23,3 +23,6 @@ coverage/
 # Supabase CLI local state
 supabase/.branches
 supabase/.temp
+
+# Local HTTPS certificates (mkcert)
+.certs/

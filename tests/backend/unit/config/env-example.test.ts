@@ -27,6 +27,8 @@ describe(".env.example dev-tier template", () => {
     expect(Object.keys(example).sort()).toEqual(
       [
         "APP_ORIGIN",
+        "DEV_HTTPS_CERT",
+        "DEV_HTTPS_KEY",
         "ENCRYPTION_KEY",
         "NODE_ENV",
         "PORT",
@@ -42,11 +44,18 @@ describe(".env.example dev-tier template", () => {
   it("targets the dev tier on the documented local port", () => {
     expect(example.NODE_ENV).toBe("development");
     expect(example.PORT).toBe("5001");
-    expect(example.APP_ORIGIN).toBe("http://localhost:5001");
+    expect(example.APP_ORIGIN).toBe("https://localhost:5001");
     expect(example.SUPABASE_URL).toBe("https://ocqdxmfpezxpgutoicyh.supabase.co");
-    expect(example.YAHOO_PROVIDER_REDIRECT_URI).toBe(
-      `${example.SUPABASE_URL}/auth/v1/callback`,
-    );
+  });
+
+  it("points the Fantasy callback at this app over https, as the controller requires", () => {
+    const redirect = new URL(example.YAHOO_PROVIDER_REDIRECT_URI);
+
+    expect(redirect.protocol).toBe("https:");
+    expect(redirect.origin).toBe(example.APP_ORIGIN);
+    expect(redirect.pathname).toBe("/api/auth/yahoo/fantasy/callback");
+    expect(example.DEV_HTTPS_CERT).toMatch(/^\.certs\//);
+    expect(example.DEV_HTTPS_KEY).toMatch(/^\.certs\//);
   });
 
   it("never points at the production Supabase project", () => {
@@ -66,7 +75,7 @@ describe(".env.example dev-tier template", () => {
       SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic-test-key",
     });
 
-    expect(config.appOrigin).toBe("http://localhost:5001");
+    expect(config.appOrigin).toBe("https://localhost:5001");
     expect(config.supabaseUrl).toBe("https://ocqdxmfpezxpgutoicyh.supabase.co");
     expect(config.secureCookies).toBe(false);
   });

@@ -48,13 +48,13 @@ Decided in CAR-70 on 2026-09-22. A hosted dev tier amends the original "local di
 | --- | --- | --- | --- |
 | Supabase project | Disposable CLI stack, `project_id = "pikachubball"` | `Pikachu Basketball Development` / `ocqdxmfpezxpgutoicyh` | `Pikachu Basketball` / `fpdwtpwpmxsbgjxizuxa` |
 | Supabase region | Docker on the developer machine or CI | AWS North Virginia (`us-east-1`), Free | AWS North Virginia (`us-east-1`), Free |
-| Yahoo Developer app | `PikachuBball - Local` (app ID `i19hJ8X4`) once freed by the prod move (CAR-74) | `PikachuBball - Dev` (app ID `si6rpgJq`) | Today `PikachuBball - Local` (`i19hJ8X4`); moving to a dedicated prod app (CAR-57) |
-| Yahoo redirect URI | `http://127.0.0.1:54321/auth/v1/callback` (planned; loopback acceptance untested) | `https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback` only | `https://fpdwtpwpmxsbgjxizuxa.supabase.co/auth/v1/callback` only |
-| Application callback | None | `http://localhost:5001/api/auth/callback` | `https://<production-domain>/api/auth/callback` |
+| Yahoo Developer app | `PikachuBball - Local` (app ID `i19hJ8X4`) once freed by the prod move (CAR-74) | `PikachuBball - Dev` (app ID `si6rpgJq`), both flows | Sign-in: `PikachuBball - Local` (`i19hJ8X4`); Fantasy access: `PikachuBball` (`VZxFFbzH`); consolidating on `VZxFFbzH` (CAR-57) |
+| Yahoo redirect URI | `http://127.0.0.1:54321/auth/v1/callback` (planned; loopback acceptance untested) | `https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback` and `https://localhost:5001/api/auth/yahoo/fantasy/callback` | `i19hJ8X4`: the prod Supabase callback. `VZxFFbzH`: the prod Supabase callback, `https://pikachubball.vercel.app/api/auth/yahoo/fantasy/callback`, and a legacy Replit URI |
+| Application callback | None | `https://localhost:5001/api/auth/callback` | `https://<production-domain>/api/auth/callback` |
 | Secret location | None | Developer's `.env.local` | Vercel Production environment |
 | Migrations | `npm run test:db` on every change | Applied first and validated | Applied only after dev validation |
 
-Each Supabase project holds exactly one `custom:yahoo` provider, and therefore one Yahoo client, so every tier needs its own Yahoo app. Verified on 2026-09-22 from the `client_id` in each project's authorize redirect: production currently signs in through `PikachuBball - Local`. The legacy `PikachuBball` app (`VZxFFbzH`) is not used by either hosted project.
+Each Supabase project holds exactly one `custom:yahoo` provider, and therefore one Yahoo client, so every tier needs its own Yahoo app. Every sign-in also runs the app's own Fantasy access OAuth with the server's `YAHOO_CLIENT_ID`. Verified from the `client_id` in the production redirects on 2026-09-22 and 2026-09-23: production signs in through `PikachuBball - Local` (`i19hJ8X4`) and requests Fantasy access through `PikachuBball` (`VZxFFbzH`). Do not remove `VZxFFbzH`'s `/api/auth/yahoo/fantasy/callback`; doing so breaks Fantasy access for every league member.
 
 The Supabase organization is on the Free plan, which allows two active projects. Both basketball projects are active, and the two Card Benefits projects are paused. Restoring a Card Benefits project requires pausing one basketball project first.
 

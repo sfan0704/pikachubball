@@ -21,11 +21,11 @@ The app has three separated tiers. No tier holds another tier's credentials, and
 
 | Tier | Runs at | Supabase | Yahoo app | Credentials live in | Used for |
 | --- | --- | --- | --- | --- | --- |
-| Local | laptop and CI | disposable local stack (`npm run test:db`) | none today; `PikachuBball - Local` after it is freed (CAR-74) | nothing hosted | migrations and RLS tests |
-| Dev | `http://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
-| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball - Local` today; moving to a dedicated prod app (CAR-57) | Vercel Production environment only | league members |
+| Local | laptop and CI | disposable local stack (`npm run test:db`) | none today; `PikachuBball - Local` after it is freed (CAR-57, CAR-74) | nothing hosted | migrations and RLS tests |
+| Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
+| Prod | Vercel production alias | `Pikachu Basketball` | sign-in: `PikachuBball - Local`; Fantasy access: `PikachuBball` (consolidating on `PikachuBball`, CAR-57) | Vercel Production environment only | league members |
 
-Each tier has its own Yahoo app because a Supabase project holds exactly one `custom:yahoo` provider. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
+Yahoo is used twice on every sign-in: Supabase's `custom:yahoo` provider signs the user in, then the app runs its own Fantasy access OAuth (`/connect/start` → `/api/auth/yahoo/fantasy/callback`) with the server's `YAHOO_CLIENT_ID`. A tier's Yahoo app therefore registers both its Supabase callback and the app's Fantasy callback. Yahoo only accepts `https://` redirect URIs, which is why local dev runs over HTTPS. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
 
 ## Local setup
 
@@ -45,7 +45,15 @@ openssl rand -hex 32   # use as ENCRYPTION_KEY
 
 The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball - Dev` Yahoo app. Never copy production values into `.env.local`.
 
-Start the app with `npm run dev` and open `http://localhost:5001`. The dev server uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
+Create the local HTTPS certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
+
+```text
+brew install mkcert
+mkcert -install
+mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
+```
+
+Start the app with `npm run dev` and open `https://localhost:5001`. When `DEV_HTTPS_CERT` and `DEV_HTTPS_KEY` are set, the dev server serves HTTPS; it refuses those variables in production. It uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
 
 ## Checks
 
