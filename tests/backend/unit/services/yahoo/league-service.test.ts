@@ -100,6 +100,67 @@ describe('league-service', () => {
       }
     });
 
+    it('keeps finished and preseason leagues and labels their status', async () => {
+      const standingsFor = (leagueKey: string) => ({
+        ...mockStandings,
+        fantasy_content: {
+          ...mockStandings.fantasy_content,
+          league: [
+            mockStandings.fantasy_content.league[0],
+            {
+              ...mockStandings.fantasy_content.league[1],
+              standings: [
+                {
+                  ...mockStandings.fantasy_content.league[1].standings[0],
+                  teams: {
+                    count: 1,
+                    '0': {
+                      team: [
+                        [
+                          { team_key: `${leagueKey}.t.1` },
+                          { name: 'Test Team' },
+                          { managers: [{ manager: { guid: 'test-guid' } }] },
+                        ],
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      });
+      mockYahooApiClient.getUserGameLeagues.mockResolvedValue({
+        guid: 'test-guid',
+        games: [
+          {
+            code: 'nba',
+            game_key: '466',
+            season: '2025',
+            is_game_over: '0',
+            leagues: [
+              { league_key: '466.l.1', name: 'Last Season', is_finished: '1', current_week: '23', end_week: '23' },
+              { league_key: '466.l.2', name: 'Numeric Flag', is_finished: 1 },
+              { league_key: '466.l.3', name: 'Undrafted', is_finished: '0', draft_status: 'predraft' },
+              { league_key: '466.l.4', name: 'In Progress', is_finished: '0', current_week: '5', end_week: '23' },
+            ],
+          },
+        ],
+      });
+      mockYahooApiClient.getLeagueStandings.mockImplementation(async (leagueKey: string) =>
+        standingsFor(leagueKey),
+      );
+
+      const leagues = await getUserLeagues(userId);
+
+      expect(leagues.map(({ leagueKey, status }) => ({ leagueKey, status }))).toEqual([
+        { leagueKey: '466.l.1', status: 'finished' },
+        { leagueKey: '466.l.2', status: 'finished' },
+        { leagueKey: '466.l.3', status: 'preseason' },
+        { leagueKey: '466.l.4', status: 'active' },
+      ]);
+    });
+
     it('should handle credential errors', async () => {
       // ARRANGE
       const errorClient = {

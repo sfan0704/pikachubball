@@ -517,6 +517,8 @@ export class YahooApiClient {
             current_week: leagueProps?.current_week,
             end_week: leagueProps?.end_week,
             game_code: leagueProps?.game_code,
+            draft_status: leagueProps?.draft_status,
+            start_date: leagueProps?.start_date,
           };
         }
         // Direct object structure
@@ -527,6 +529,8 @@ export class YahooApiClient {
           current_week: league?.current_week,
           end_week: league?.end_week,
           game_code: league?.game_code,
+          draft_status: league?.draft_status,
+          start_date: league?.start_date,
         };
       });
       
@@ -726,6 +730,8 @@ export class YahooApiClient {
             current_week: leagueProps?.current_week,
             end_week: leagueProps?.end_week,
             game_code: leagueProps?.game_code,
+            draft_status: leagueProps?.draft_status,
+            start_date: leagueProps?.start_date,
           };
         }
         // Direct object structure
@@ -736,6 +742,8 @@ export class YahooApiClient {
           current_week: league?.current_week,
           end_week: league?.end_week,
           game_code: league?.game_code,
+          draft_status: league?.draft_status,
+          start_date: league?.start_date,
         };
       });
       

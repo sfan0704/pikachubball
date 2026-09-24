@@ -17,6 +17,7 @@ describe('useFirstLeague', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -227,6 +228,75 @@ describe('useFirstLeague', () => {
       expect(result.current.selectedLeagueKey).toBe('466.l.67890');
       expect(result.current.selectedLeague?.leagueKey).toBe('466.l.67890');
     }, { timeout: 2000 });
+  });
+
+  describe('status and remembered selection', () => {
+    const league = (key: string, overrides: Partial<League> = {}): League => ({
+      leagueKey: key,
+      leagueName: key,
+      teamKey: `${key}.t.1`,
+      teamName: 'Team',
+      season: 2026,
+      gameKey: '470',
+      ...overrides,
+    });
+    const respondWith = (leagues: League[]) =>
+      mockFetch.mockResolvedValue({ ok: true, json: async () => ({ leagues }) });
+
+    it('prefers an active league over a newer preseason or finished one', async () => {
+      respondWith([
+        league('466.l.1', { season: 2025, gameKey: '466', status: 'finished' }),
+        league('470.l.2', { status: 'preseason' }),
+        league('466.l.3', { season: 2025, gameKey: '466', status: 'active' }),
+      ]);
+
+      const { result } = renderHook(() => useFirstLeague(), { wrapper });
+
+      await waitFor(() => expect(result.current.selectedLeagueKey).toBe('466.l.3'));
+    });
+
+    it('restores an explicit selection after a reload, even a past season', async () => {
+      const leagues = [
+        league('470.l.2', { status: 'active' }),
+        league('466.l.1', { season: 2025, gameKey: '466', status: 'finished' }),
+      ];
+      respondWith(leagues);
+      const first = renderHook(() => useFirstLeague(), { wrapper });
+      await waitFor(() => expect(first.result.current.selectedLeagueKey).toBe('470.l.2'));
+
+      first.result.current.setSelectedLeagueKey('466.l.1');
+      first.unmount();
+      queryClient.clear();
+      const reloaded = renderHook(() => useFirstLeague(), { wrapper });
+
+      await waitFor(() => expect(reloaded.result.current.selectedLeagueKey).toBe('466.l.1'));
+    });
+
+    it('keeps the explicit selection when discovery results change', async () => {
+      respondWith([league('470.l.2', { status: 'active' }), league('466.l.1', { status: 'finished' })]);
+      const { result } = renderHook(() => useFirstLeague(), { wrapper });
+      await waitFor(() => expect(result.current.selectedLeagueKey).toBe('470.l.2'));
+      result.current.setSelectedLeagueKey('466.l.1');
+
+      respondWith([
+        league('470.l.9', { status: 'active', season: 2027 }),
+        league('470.l.2', { status: 'active' }),
+        league('466.l.1', { status: 'finished' }),
+      ]);
+      await queryClient.refetchQueries({ queryKey: ['/api/yahoo/leagues'] });
+
+      await waitFor(() => expect(result.current.leagues).toHaveLength(3));
+      expect(result.current.selectedLeagueKey).toBe('466.l.1');
+    });
+
+    it('ignores a remembered league that is no longer available', async () => {
+      window.localStorage.setItem('pikachubball:selected-league', '999.l.0');
+      respondWith([league('470.l.2', { status: 'active' })]);
+
+      const { result } = renderHook(() => useFirstLeague(), { wrapper });
+
+      await waitFor(() => expect(result.current.selectedLeagueKey).toBe('470.l.2'));
+    });
   });
 
   it('should handle empty leagues array', async () => {

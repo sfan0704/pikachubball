@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeagueRankings from "@/components/features/league/LeagueRankings";
 import MatchupTab from "@/components/features/league/MatchupTab";
@@ -16,7 +16,13 @@ import ThemeToggle from "@/components/common/ThemeToggle";
 import { RankingsSkeleton, LeagueSelectorSkeleton } from "@/components/common/RankingsSkeleton";
 import { ErrorBanner } from "@/components/common/ErrorBanner";
 import { useFirstLeague } from "@/hooks/useFirstLeague";
-import type { RankingsResponse } from "@shared/schema";
+import type { League, RankingsResponse } from "@shared/schema";
+
+const LEAGUE_GROUPS: { status: NonNullable<League["status"]>; label: string }[] = [
+  { status: "active", label: "Current" },
+  { status: "preseason", label: "Upcoming" },
+  { status: "finished", label: "Past seasons" },
+];
 
 export default function RankingsPage() {
   const [maxWeeks, setMaxWeeks] = useState<number>(0);
@@ -275,15 +281,27 @@ export default function RankingsPage() {
                         <SelectValue placeholder="Choose a league to view rankings" />
                       </SelectTrigger>
                       <SelectContent>
-                        {leagues.map((league) => (
-                          <SelectItem
-                            key={league.leagueKey}
-                            value={league.leagueKey}
-                            data-testid={`option-league-${league.leagueKey}`}
-                          >
-                            {league.leagueName} - {league.teamName}
-                          </SelectItem>
-                        ))}
+                        {LEAGUE_GROUPS.map(({ status, label }) => {
+                          const group = leagues.filter((league) => (league.status ?? "active") === status);
+                          if (group.length === 0) {
+                            return null;
+                          }
+                          return (
+                            <SelectGroup key={status} data-testid={`league-group-${status}`}>
+                              <SelectLabel>{label}</SelectLabel>
+                              {group.map((league) => (
+                                <SelectItem
+                                  key={league.leagueKey}
+                                  value={league.leagueKey}
+                                  data-testid={`option-league-${league.leagueKey}`}
+                                >
+                                  {league.leagueName} - {league.teamName}
+                                  {status === "finished" && league.season ? ` (${league.season})` : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

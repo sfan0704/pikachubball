@@ -10,6 +10,7 @@ export const leagueSchema = z.object({
   teamName: z.string(),
   season: z.number().optional(),
   gameKey: z.string().optional(),
+  status: z.enum(['active', 'preseason', 'finished']).optional(),
 });
 
 export const playerSchema = z.object({

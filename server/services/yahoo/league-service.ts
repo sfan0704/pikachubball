@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { parseTeamsFromStandings } from "../parsers/league-parser.js";
 import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
 import { AppError } from "../../middleware/error-handler";
+import { classifyLeague, type LeagueStatus } from "./league-status";
 
 /**
  * League Service
@@ -15,6 +16,7 @@ export interface LeagueWithTeam {
   teamKey: string;
   teamName: string;
   season?: number; // Season year (e.g., 2024, 2025)
+  status: LeagueStatus;
   gameKey?: string; // Game key (e.g., "466" for NBA 2024-25)
 }
 
@@ -88,7 +90,14 @@ export async function getUserLeagues(
 
     // Extract league keys from NBA games only
     const leagueKeys: string[] = [];
-    const leagueMap = new Map<string, { leagueKey: string; leagueName: string; season?: number; gameKey?: string }>();
+    const leagueMap = new Map<string, {
+      leagueKey: string;
+      leagueName: string;
+      season?: number;
+      gameKey?: string;
+      status: LeagueStatus;
+    }>();
+    const today = new Date().toISOString().slice(0, 10);
 
     for (const game of userData.games) {
       // Handle both array format [gameProps, leaguesData] and direct object format
@@ -102,24 +111,11 @@ export async function getUserLeagues(
         continue;
       }
       
-      // Filter out inactive games (game over or offseason)
-      const isGameOver = gameProps?.is_game_over === 1 || gameProps?.is_game_over === true;
-      const isOffseason = gameProps?.is_offseason === 1 || gameProps?.is_offseason === true;
-      
-      if (isGameOver || isOffseason) {
-        logger.debug("getUserLeagues: Skipping inactive game", {
-          gameKey: gameProps?.game_key || game.game_key,
-          isGameOver,
-          isOffseason
-        });
-        continue;
-      }
-      
       // Extract season from game (could be string or number)
       const gameSeason = gameProps?.season ? parseInt(String(gameProps.season), 10) : (game.season ? parseInt(String(game.season), 10) : undefined);
       const gameKey = gameProps?.game_key || game.game_key;
       
-      logger.debug("getUserLeagues: Processing active NBA game", {
+      logger.debug("getUserLeagues: Processing NBA game", {
         gameKey: game.game_key,
         season: gameSeason,
         hasLeagues: !!game.leagues,
@@ -129,41 +125,14 @@ export async function getUserLeagues(
       
       if (game.leagues && Array.isArray(game.leagues)) {
         for (const league of game.leagues) {
-          // Filter out finished leagues
-          const isFinished = league.is_finished === 1 || league.is_finished === true;
-          
-          // Check if league is still in progress (current_week <= end_week)
-          const currentWeek = league.current_week ? parseInt(String(league.current_week), 10) : undefined;
-          const endWeek = league.end_week ? parseInt(String(league.end_week), 10) : undefined;
-          const isInProgress = currentWeek !== undefined && endWeek !== undefined && currentWeek <= endWeek;
-          
-          if (isFinished) {
-            logger.debug("getUserLeagues: Skipping finished league", {
-              league_key: league.league_key,
-              name: league.name,
-              is_finished: league.is_finished
-            });
-            continue;
-          }
-          
-          if (!isInProgress && currentWeek !== undefined && endWeek !== undefined) {
-            logger.debug("getUserLeagues: Skipping league past end week", {
-              league_key: league.league_key,
-              name: league.name,
-              current_week: currentWeek,
-              end_week: endWeek
-            });
-            continue;
-          }
-          
-          logger.debug("getUserLeagues: Processing active league", {
+          // Finished and preseason leagues stay listed with their status so
+          // the user can still open last season or an undrafted league.
+          const status = classifyLeague({ game: gameProps ?? {}, league, today });
+          logger.debug("getUserLeagues: Classified league", {
             league_key: league.league_key,
-            name: league.name,
-            current_week: currentWeek,
-            end_week: endWeek,
-            is_finished: league.is_finished
+            status,
           });
-          
+
           if (league.league_key && league.name) {
             leagueKeys.push(league.league_key);
             leagueMap.set(league.league_key, {
@@ -171,6 +140,7 @@ export async function getUserLeagues(
               leagueName: league.name,
               season: gameSeason,
               gameKey: gameKey,
+              status,
             });
           } else {
             logger.warn("getUserLeagues: League missing required fields", { league });
@@ -241,6 +211,7 @@ export async function getUserLeagues(
           teamName: userTeam.teamName,
           season: leagueInfo.season,
           gameKey: leagueInfo.gameKey,
+          status: leagueInfo.status,
         });
       }
     }
