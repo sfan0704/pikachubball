@@ -186,6 +186,25 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(responseData);
     });
 
+    it('decodes HTML entities in Yahoo text before returning', async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { team: { name: 'Ball don&#39;t lie', team_key: '466.l.1.t.4' } },
+      });
+
+      const result = await (client as any).apiRequest('/team/466.l.1.t.4');
+
+      expect(result).toEqual({ team: { name: "Ball don't lie", team_key: '466.l.1.t.4' } });
+    });
+
+    it('returns the raw Yahoo response unchanged from getRawApiResponse', async () => {
+      const raw = { team: { name: 'Ball don&#39;t lie' } };
+      mockAxiosInstance.get.mockResolvedValue({ data: raw });
+
+      const result = await client.getRawApiResponse('/team/466.l.1.t.4');
+
+      expect(result).toEqual({ team: { name: 'Ball don&#39;t lie' } });
+    });
+
     it('should include query parameters in request', async () => {
       // ARRANGE
       const endpoint = '/test/endpoint';

@@ -19,6 +19,7 @@ import {
   YahooReconnectRequiredError,
   type YahooRequestClock,
 } from "./yahoo-request-policy";
+import { decodeYahooStrings } from "./yahoo-text";
 
 const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
 
@@ -168,10 +169,18 @@ export class YahooApiClient {
   }
 
   /**
+   * Make an authenticated API request to Yahoo Fantasy API and decode the
+   * HTML entities Yahoo puts in text fields (team and league names).
+   */
+  private async apiRequest<T = any>(endpoint: string, params?: Record<string, string | number>): Promise<T> {
+    return decodeYahooStrings(await this.fetchRaw<T>(endpoint, params));
+  }
+
+  /**
    * Make an authenticated API request to Yahoo Fantasy API within the request
    * budget. A 401 triggers one refresh and one retry of the request.
    */
-  private async apiRequest<T = any>(endpoint: string, params?: Record<string, string | number>): Promise<T> {
+  private async fetchRaw<T = any>(endpoint: string, params?: Record<string, string | number>): Promise<T> {
     if (!this.accessToken) {
       await this.initializeTokens();
     }
@@ -813,7 +822,7 @@ export class YahooApiClient {
    * Returns the unparsed API response exactly as Yahoo returns it
    */
   async getRawApiResponse(endpoint: string, params?: Record<string, string | number>): Promise<any> {
-    return this.apiRequest(endpoint, params);
+    return this.fetchRaw(endpoint, params);
   }
 }
 
