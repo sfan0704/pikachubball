@@ -16,7 +16,23 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-# `db start` is a no-op when the local database is already running.
-supabase db start
+# Postgres plus the Auth and Data API services the isolation tests call through
+# Kong. `start` is a no-op when anything is already running, so a database-only
+# stack left by `supabase db start` is stopped first.
+if supabase status -o env >/dev/null 2>&1 && ! supabase status -o env | grep -q '^API_URL='; then
+  supabase stop --no-backup
+fi
+supabase start \
+  -x studio,imgproxy,mailpit,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta
 supabase db reset --local
 supabase test db --local
+
+# Local stack values only; the check below refuses anything but loopback.
+SUPABASE_URL="$(supabase status -o env | sed -n 's/^API_URL="\(.*\)"$/\1/p')"
+SUPABASE_PUBLISHABLE_KEY="$(supabase status -o env | sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p')"
+case "$SUPABASE_URL" in
+  http://127.0.0.1:*|http://localhost:*) ;;
+  *) echo "Refusing to run Data API tests against '$SUPABASE_URL'." >&2; exit 1 ;;
+esac
+export SUPABASE_URL SUPABASE_PUBLISHABLE_KEY
+vitest run --config vitest.database.config.ts

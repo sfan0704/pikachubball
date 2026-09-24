@@ -10,6 +10,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.{ts,tsx}'],
+    // Needs the local Supabase stack; run through `npm run test:db`
+    exclude: ['**/node_modules/**', 'tests/database/**'],
     // Use happy-dom only for frontend tests
     environmentMatchGlobs: [
       ['tests/frontend/**', 'happy-dom'],
