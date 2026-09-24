@@ -57,6 +57,23 @@ describe("application routing", () => {
     });
   });
 
+  it("marks every API response private and uncacheable", async () => {
+    const app = createApiApp();
+    const responses = await Promise.all([
+      request(app).get("/api/health"),
+      request(app).get("/api/auth/yahoo/status"),
+      request(app).get("/api/yahoo/leagues"),
+      request(app).get("/api/does-not-exist"),
+    ]);
+
+    for (const response of responses) {
+      expect(response.headers["cache-control"]).toBe(
+        "private, no-cache, no-store, must-revalidate, max-age=0",
+      );
+      expect(response.headers.pragma).toBe("no-cache");
+    }
+  });
+
   it("does not register excluded chat, schedule, or AI credential endpoints", async () => {
     const app = createApiApp();
     const responses = await Promise.all([

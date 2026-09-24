@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import { AUTH_NO_STORE_HEADERS } from "./auth/supabase-auth";
 import { env } from "./config/env";
 import { requestLogger } from "./middleware/request-logger";
 import { registerRoutes } from "./routes/index";
@@ -38,6 +39,14 @@ export function configureApp(app: Express): Express {
   );
   app.use(express.urlencoded({ extended: false }));
   app.use(requestLogger);
+
+  // Every API response is per-user or auth-related. Without an explicit header
+  // Vercel sends "public, max-age=0, must-revalidate", so make them private and
+  // uncacheable by default; a route may still set its own header.
+  app.use("/api", (_req, res, next) => {
+    res.set(AUTH_NO_STORE_HEADERS);
+    next();
+  });
 
   registerRoutes(app);
 
