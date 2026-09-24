@@ -8,7 +8,6 @@ import { createMockResponse, createMockNext, createMockUser, createAuthenticated
 // Mock dependencies
 vi.mock('../../../../server/middleware/auth');
 vi.mock('../../../../server/yahoo-auth', () => ({
-  exchangeAuthorizationCode: vi.fn(),
   revokeYahooToken: vi.fn(),
 }));
 

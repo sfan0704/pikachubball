@@ -39,14 +39,14 @@ Do not authorize Vercel preview domains against the production Yahoo application
 
 The dev tier mirrors production with separate resources: the `Pikachu Basketball Development` Supabase project and the `PikachuBball - Dev` Yahoo application. Configure the same custom provider settings above in the dev project, using the dev Yahoo application's credentials.
 
-The dev Yahoo application registers exactly two redirect URIs: the dev project's Supabase callback (sign-in) and the app's Fantasy access callback. Yahoo rejects `http://` redirect URIs, so local dev serves HTTPS with a mkcert certificate (see the README):
+The dev tier uses the same Yahoo application as production (`PikachuBball`), because Yahoo only serves Fantasy data to apps it has activated. That application registers each project's Supabase callback:
 
 ```text
 https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback
-https://localhost:5001/api/auth/yahoo/fantasy/callback
+https://fpdwtpwpmxsbgjxizuxa.supabase.co/auth/v1/callback
 ```
 
-`YAHOO_PROVIDER_REDIRECT_URI` is the second one. The Fantasy controller requires it to be `https` on `APP_ORIGIN`. In the dev project's URL configuration, set the site URL to `https://localhost:5001` and allow:
+Sign-in stores the Yahoo tokens from the Supabase session; there is no second Yahoo authorization. `YAHOO_PROVIDER_REDIRECT_URI` is only sent as `redirect_uri` on token refresh. In the dev project's URL configuration, set the site URL to the local origin and allow its callback:
 
 ```text
 https://localhost:5001/api/auth/callback
@@ -66,7 +66,7 @@ SUPABASE_PUBLISHABLE_KEY=<project-publishable-key>
 ENCRYPTION_KEY=<64-hex-character key>
 YAHOO_CLIENT_ID=<Yahoo-application-client-id>
 YAHOO_CLIENT_SECRET=<Yahoo-application-client-secret>
-YAHOO_PROVIDER_REDIRECT_URI=https://<production-domain>/api/auth/yahoo/fantasy/callback
+YAHOO_PROVIDER_REDIRECT_URI=https://<production-domain>/api/auth/yahoo/fantasy/callback  # sent as redirect_uri on refresh only
 ```
 
 Storage configuration is defined by CAR-60. The final Vercel runtime must not receive a Supabase service-role key or database password.
