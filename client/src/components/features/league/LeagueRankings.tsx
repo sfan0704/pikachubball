@@ -92,17 +92,23 @@ export default function LeagueRankings({ rankings, userTeamKey }: LeagueRankings
     }
   };
 
-  // Pre-sort rankings by totalRank to get true master rank positions
-  const masterRankOrder = useMemo(() => {
-    return [...rankings].sort((a, b) => a.totalRank - b.totalRank);
+  // Competition ranking on the overall average: tied teams share a position
+  // and the next position skips (1, 1, 3), like the category ranks.
+  const masterPositions = useMemo(() => {
+    const positions = new Map<string, number>();
+    for (const team of rankings) {
+      const better = rankings.filter((other) => other.totalRank < team.totalRank - 1e-9).length;
+      positions.set(team.teamKey, better + 1);
+    }
+    return positions;
   }, [rankings]);
 
   const getMasterRankBadge = (teamKey: string) => {
-    const actualIndex = masterRankOrder.findIndex(r => r.teamKey === teamKey);
-    if (actualIndex === 0) return <Badge className="bg-yellow-500 text-yellow-950">1st</Badge>;
-    if (actualIndex === 1) return <Badge className="bg-gray-400 text-gray-950">2nd</Badge>;
-    if (actualIndex === 2) return <Badge className="bg-orange-600 text-orange-950">3rd</Badge>;
-    return <Badge variant="outline">{actualIndex + 1}</Badge>;
+    const position = masterPositions.get(teamKey) ?? rankings.length;
+    if (position === 1) return <Badge className="bg-yellow-500 text-yellow-950">1st</Badge>;
+    if (position === 2) return <Badge className="bg-gray-400 text-gray-950">2nd</Badge>;
+    if (position === 3) return <Badge className="bg-orange-600 text-orange-950">3rd</Badge>;
+    return <Badge variant="outline">{position}</Badge>;
   };
 
   const formatStat = (key: keyof TeamRanking['stats'], value: number, team?: any) => {
