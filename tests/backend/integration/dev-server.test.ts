@@ -65,6 +65,9 @@ beforeAll(async () => {
       ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       SUPABASE_URL: "http://127.0.0.1:54321",
       SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic-test-key",
+      // Plain HTTP here, even if a developer's .env.local enables local HTTPS.
+      DEV_HTTPS_CERT: "",
+      DEV_HTTPS_KEY: "",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

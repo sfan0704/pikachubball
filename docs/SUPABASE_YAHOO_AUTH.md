@@ -37,12 +37,19 @@ Do not authorize Vercel preview domains against the production Yahoo application
 
 ## Development tier
 
-The dev tier mirrors production with separate resources: the `Pikachu Basketball Development` Supabase project and the `PikachuBball - Dev` Yahoo application. Configure the same custom provider settings above in the dev project, using the dev Yahoo application's credentials. The dev Yahoo application's only redirect URI is the dev project's Supabase callback.
+The dev tier mirrors production with separate resources: the `Pikachu Basketball Development` Supabase project and the `PikachuBball - Dev` Yahoo application. Configure the same custom provider settings above in the dev project, using the dev Yahoo application's credentials.
 
-In the dev project's URL configuration, set the site URL to `http://localhost:5001` and allow exactly:
+The dev Yahoo application registers exactly two redirect URIs: the dev project's Supabase callback (sign-in) and the app's Fantasy access callback. Yahoo rejects `http://` redirect URIs, so local dev serves HTTPS with a mkcert certificate (see the README):
 
 ```text
-http://localhost:5001/api/auth/callback
+https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback
+https://localhost:5001/api/auth/yahoo/fantasy/callback
+```
+
+`YAHOO_PROVIDER_REDIRECT_URI` is the second one. The Fantasy controller requires it to be `https` on `APP_ORIGIN`. In the dev project's URL configuration, set the site URL to `https://localhost:5001` and allow:
+
+```text
+https://localhost:5001/api/auth/callback
 ```
 
 Developers keep dev values in `.env.local`, created from `.env.example`. Dev credentials never enter Vercel, and production credentials never enter `.env.local`.
@@ -59,7 +66,7 @@ SUPABASE_PUBLISHABLE_KEY=<project-publishable-key>
 ENCRYPTION_KEY=<64-hex-character key>
 YAHOO_CLIENT_ID=<Yahoo-application-client-id>
 YAHOO_CLIENT_SECRET=<Yahoo-application-client-secret>
-YAHOO_PROVIDER_REDIRECT_URI=<callback-URL-displayed-by-Supabase>
+YAHOO_PROVIDER_REDIRECT_URI=https://<production-domain>/api/auth/yahoo/fantasy/callback
 ```
 
 Storage configuration is defined by CAR-60. The final Vercel runtime must not receive a Supabase service-role key or database password.
