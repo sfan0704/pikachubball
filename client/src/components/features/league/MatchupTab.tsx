@@ -20,6 +20,20 @@ const CATEGORY_LABELS: Record<string, string> = {
   to: "TO"
 };
 
+type CategoryResult = MatchupComparisonResponse['categories'][number]['result'];
+
+const RESULT_ROW_CLASSES: Record<CategoryResult, string> = {
+  win: 'bg-green-500/5 dark:bg-green-500/5',
+  loss: 'bg-red-500/5 dark:bg-red-500/5',
+  tie: 'bg-yellow-500/5 dark:bg-yellow-500/5',
+};
+
+const RESULT_TEXT_CLASSES: Record<CategoryResult, string> = {
+  win: 'text-green-600 dark:text-green-400',
+  loss: 'text-red-600 dark:text-red-400',
+  tie: 'text-yellow-600 dark:text-yellow-400',
+};
+
 export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps) {
   const matchupUrl = week 
     ? `/api/viz/matchup/${leagueKey}/${teamKey}?week=${week}`
@@ -120,14 +134,15 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
               {categories.map(cat => (
                 <tr 
                   key={cat.category} 
-                  className={`border-b ${cat.winning ? 'bg-green-500/5 dark:bg-green-500/5' : 'bg-red-500/5 dark:bg-red-500/5'}`}
+                  className={`border-b ${RESULT_ROW_CLASSES[cat.result]}`}
                   data-testid={`matchup-category-${cat.category}`}
+                  data-result={cat.result}
                 >
                   <td className="py-3 px-2 font-medium">{CATEGORY_LABELS[cat.category]}</td>
                   <td className="text-center py-3 px-2">{formatValue(cat.myTeam, cat.category, cat.myTeamMakes, cat.myTeamAttempts)}</td>
                   <td className="text-center py-3 px-2">{formatValue(cat.opponent, cat.category, cat.opponentMakes, cat.opponentAttempts)}</td>
                   <td className="text-center py-3 px-2 font-semibold">
-                    <span className={cat.winning ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                    <span className={RESULT_TEXT_CLASSES[cat.result]}>
                       {calculateDiff(cat.myTeam, cat.opponent, cat.category)}
                     </span>
                   </td>

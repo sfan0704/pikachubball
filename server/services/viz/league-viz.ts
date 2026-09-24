@@ -2,7 +2,7 @@ import type { FantasyDataSource } from '../fantasy-data-source.js';
 import type { RankingsResponse, LeagueHeatmapResponse, TeamHeatmapData } from '../../../shared/schema.js';
 import { CATEGORIES, type CategoryKey, type TeamStats } from '../../../shared/domain/index.js';
 import { parseTeamStatsFromStandings, parseTeamStatsFromScoreboard } from '../parsers/stats-parser.js';
-import { computeRankings } from '../parsers/rankings-compute.js';
+import { computeCategoryRanks, computeRankings } from '../parsers/rankings-compute.js';
 
 // Re-export for other services
 export { CATEGORIES, type CategoryKey };
@@ -73,38 +73,20 @@ export async function getLeagueHeatmap(
   
   const teams: TeamHeatmapData[] = [];
   
-  CATEGORIES.forEach(cat => {
-    const sorted = [...teamStats].sort((a, b) => {
-      if (cat === 'to') {
-        return a.stats[cat] - b.stats[cat];
-      } else {
-        return b.stats[cat] - a.stats[cat];
-      }
-    });
-
-    sorted.forEach((team, index) => {
-      let teamData = teams.find(t => t.teamKey === team.teamKey);
-      if (!teamData) {
-        teamData = {
-          teamKey: team.teamKey,
-          teamName: team.teamName || 'Unknown Team',
-          categories: {} as any
-        };
-        teams.push(teamData);
-      }
-      
-      if (!teamData) {
-        return; // Type guard
-      }
-      
-      const rank = index + 1;
-      const percentile = ((teamStats.length - index) / teamStats.length) * 100;
-      
-      teamData.categories[cat] = {
+  computeCategoryRanks(teamStats).forEach(team => {
+    const categories = {} as TeamHeatmapData['categories'];
+    CATEGORIES.forEach(cat => {
+      const rank = team.categoryRanks?.[cat] ?? teamStats.length;
+      categories[cat] = {
         value: team.stats[cat],
         rank,
-        percentile
+        percentile: ((teamStats.length - rank + 1) / teamStats.length) * 100,
       };
+    });
+    teams.push({
+      teamKey: team.teamKey,
+      teamName: team.teamName || 'Unknown Team',
+      categories,
     });
   });
 

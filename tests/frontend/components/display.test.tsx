@@ -39,15 +39,15 @@ const mockMatchup = {
   myTeam: { teamKey: mockLeague.teamKey, teamName: mockLeague.teamName },
   opponent: { teamKey: '466.l.12345.t.2', teamName: 'Opponent Team' },
   categories: [
-    { category: 'fgPct', myTeam: 0.45, opponent: 0.44, winning: true, myTeamMakes: 100, myTeamAttempts: 222, opponentMakes: 98, opponentAttempts: 223 },
-    { category: 'ftPct', myTeam: 0.80, opponent: 0.78, winning: true, myTeamMakes: 80, myTeamAttempts: 100, opponentMakes: 78, opponentAttempts: 100 },
-    { category: 'tpm', myTeam: 5.5, opponent: 5.2, winning: true },
-    { category: 'pts', myTeam: 110, opponent: 105, winning: true },
-    { category: 'reb', myTeam: 45, opponent: 43, winning: true },
-    { category: 'ast', myTeam: 25, opponent: 24, winning: true },
-    { category: 'stl', myTeam: 8, opponent: 7, winning: true },
-    { category: 'blk', myTeam: 5, opponent: 4, winning: true },
-    { category: 'to', myTeam: 12, opponent: 14, winning: true }
+    { category: 'fgPct', myTeam: 0.45, opponent: 0.44, winning: true, result: 'win', myTeamMakes: 100, myTeamAttempts: 222, opponentMakes: 98, opponentAttempts: 223 },
+    { category: 'ftPct', myTeam: 0.80, opponent: 0.78, winning: true, result: 'win', myTeamMakes: 80, myTeamAttempts: 100, opponentMakes: 78, opponentAttempts: 100 },
+    { category: 'tpm', myTeam: 5.5, opponent: 5.2, winning: true, result: 'win' },
+    { category: 'pts', myTeam: 110, opponent: 105, winning: true, result: 'win' },
+    { category: 'reb', myTeam: 45, opponent: 43, winning: true, result: 'win' },
+    { category: 'ast', myTeam: 25, opponent: 24, winning: true, result: 'win' },
+    { category: 'stl', myTeam: 8, opponent: 7, winning: true, result: 'win' },
+    { category: 'blk', myTeam: 5, opponent: 4, winning: true, result: 'win' },
+    { category: 'to', myTeam: 12, opponent: 14, winning: true, result: 'win' }
   ],
   score: { wins: 9, losses: 0, ties: 0 },
   metadata: { scope: 'week', week: 1, currentWeek: 1, totalWeeks: 20 }
