@@ -7,9 +7,27 @@ import axios, { AxiosInstance } from "axios";
 import { env } from "../../config/env";
 import { logger } from "../../utils/logger";
 import { refreshAccessToken } from "../../yahoo-auth";
-import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
+import type {
+  StoredYahooToken,
+  YahooTokenStorage,
+} from "../../storage/yahoo-token-storage";
+import {
+  providerStatus,
+  systemClock,
+  withYahooRetries,
+  YAHOO_TOTAL_BUDGET_MS,
+  YahooReconnectRequiredError,
+  type YahooRequestClock,
+} from "./yahoo-request-policy";
 
 const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
+
+/**
+ * One refresh per user per server instance: concurrent requests await the same
+ * exchange instead of spending the refresh token twice. Across instances the
+ * storage compare-and-swap decides the winner (see refreshTokens).
+ */
+const refreshesInFlight = new Map<string, Promise<StoredYahooToken>>();
 
 /**
  * Yahoo API Client that handles authentication and makes direct API calls
@@ -28,6 +46,7 @@ export class YahooApiClient {
     clientId: string,
     clientSecret: string,
     private readonly tokenStorage: YahooTokenStorage,
+    private readonly clock: YahooRequestClock,
   ) {
     this.userId = userId;
     this.clientId = clientId;
@@ -48,6 +67,7 @@ export class YahooApiClient {
   static async create(
     userId: string,
     tokenStorage?: YahooTokenStorage,
+    clock: YahooRequestClock = systemClock,
   ): Promise<YahooApiClient> {
     // Use app-level credentials from environment variables
     const clientId = env.YAHOO_CLIENT_ID;
@@ -60,9 +80,19 @@ export class YahooApiClient {
       throw new Error("Owner-scoped Yahoo token storage is required");
     }
 
-    const client = new YahooApiClient(userId, clientId, clientSecret, tokenStorage);
+    const client = new YahooApiClient(userId, clientId, clientSecret, tokenStorage, clock);
     await client.initializeTokens();
     return client;
+  }
+
+  private nowSeconds(): number {
+    return Math.floor(this.clock.now() / 1000);
+  }
+
+  private adopt(token: StoredYahooToken): void {
+    this.accessToken = token.accessToken;
+    this.refreshToken = token.refreshToken;
+    this.tokenVersion = token.version;
   }
 
   /**
@@ -71,57 +101,75 @@ export class YahooApiClient {
   private async initializeTokens(): Promise<void> {
     const tokenData = await this.tokenStorage.getYahooToken(this.userId);
     if (!tokenData) {
-      throw new Error("No valid Yahoo access token available. Please reconnect your Yahoo account.");
+      throw new YahooReconnectRequiredError();
     }
 
-    const now = Math.floor(Date.now() / 1000);
-    let accessToken = tokenData.accessToken;
-    let refreshToken = tokenData.refreshToken;
-
-    // Check if token is expired and refresh if needed
-    if (tokenData.expiresAt <= now && refreshToken) {
-      logger.info("Access token expired, refreshing...", { 
-        userId: this.userId, 
-        expiresAt: tokenData.expiresAt, 
-        now 
-      });
-      
-      try {
-        const newTokens = await refreshAccessToken(refreshToken, this.clientId, this.clientSecret);
-        const newExpiresAt = Math.floor(Date.now() / 1000) + newTokens.expiresIn;
-        
-        const savedToken = await this.tokenStorage.saveYahooToken({
-          userId: this.userId,
-          accessToken: newTokens.accessToken,
-          refreshToken: newTokens.refreshToken,
-          expiresAt: newExpiresAt,
-        }, {
-          expectedVersion: tokenData.version,
-        });
-        
-        accessToken = newTokens.accessToken;
-        refreshToken = newTokens.refreshToken;
-        this.tokenVersion = savedToken.version;
-        
-        logger.info("Token refreshed successfully", { userId: this.userId });
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.error("Failed to refresh expired token:", {
-          userId: this.userId,
-          errorMessage,
-        });
-        throw new Error("Yahoo access token expired and refresh failed. Please reconnect your Yahoo account.");
-      }
+    this.adopt(tokenData);
+    if (tokenData.expiresAt <= this.nowSeconds()) {
+      logger.info("Yahoo access token expired, refreshing", { userId: this.userId });
+      await this.refreshTokens();
     }
-
-    this.accessToken = accessToken;
-    this.refreshToken = refreshToken;
-    this.tokenVersion ??= tokenData.version;
   }
 
   /**
-   * Make an authenticated API request to Yahoo Fantasy API
-   * Automatically handles token refresh on 401 errors
+   * Refreshes the access token, sharing an in-flight refresh for this user.
+   */
+  private async refreshTokens(): Promise<void> {
+    let pending = refreshesInFlight.get(this.userId);
+    if (!pending) {
+      pending = this.exchangeAndStore().finally(() => {
+        refreshesInFlight.delete(this.userId);
+      });
+      refreshesInFlight.set(this.userId, pending);
+    }
+    this.adopt(await pending);
+  }
+
+  private async exchangeAndStore(): Promise<StoredYahooToken> {
+    const currentRefreshToken = this.refreshToken;
+    const expectedVersion = this.tokenVersion;
+    if (!currentRefreshToken) {
+      throw new YahooReconnectRequiredError();
+    }
+
+    const refreshed = await refreshAccessToken(
+      currentRefreshToken,
+      this.clientId,
+      this.clientSecret,
+    );
+    const rotation = {
+      userId: this.userId,
+      accessToken: refreshed.accessToken,
+      // Yahoo may omit the refresh token; the current one stays valid then.
+      refreshToken: refreshed.refreshToken ?? currentRefreshToken,
+      expiresAt: this.nowSeconds() + refreshed.expiresIn,
+    };
+
+    try {
+      return await this.tokenStorage.saveYahooToken(rotation, { expectedVersion });
+    } catch (error) {
+      if (!(error instanceof Error) || !/stale result rejected/.test(error.message)) {
+        throw error;
+      }
+      // Another instance committed a newer token, or the user disconnected.
+      // Never write over either: use the committed token or fail closed.
+      const latest = await this.tokenStorage.getYahooToken(this.userId);
+      if (
+        latest &&
+        latest.version !== undefined &&
+        expectedVersion !== undefined &&
+        latest.version > expectedVersion &&
+        latest.expiresAt > this.nowSeconds()
+      ) {
+        return latest;
+      }
+      throw new YahooReconnectRequiredError();
+    }
+  }
+
+  /**
+   * Make an authenticated API request to Yahoo Fantasy API within the request
+   * budget. A 401 triggers one refresh and one retry of the request.
    */
   private async apiRequest<T = any>(endpoint: string, params?: Record<string, string | number>): Promise<T> {
     if (!this.accessToken) {
@@ -137,64 +185,46 @@ export class YahooApiClient {
     queryParams.append('format', 'json');
 
     const url = `${endpoint}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-
-    try {
-      const response = await this.axiosInstance.get(url, {
+    const deadline = this.clock.now() + YAHOO_TOTAL_BUDGET_MS;
+    const get = (timeout: number) =>
+      this.axiosInstance.get(url, {
+        timeout,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
         },
       });
 
+    try {
+      const response = await withYahooRetries(get, this.clock, deadline);
       return response.data;
-    } catch (error: any) {
-      // If we get a 401, try refreshing the token once
-      if (error.response?.status === 401 && this.refreshToken) {
-        logger.debug("Got 401, attempting token refresh", { userId: this.userId, endpoint });
-        
-        try {
-          const newTokens = await refreshAccessToken(this.refreshToken, this.clientId, this.clientSecret);
-          const newExpiresAt = Math.floor(Date.now() / 1000) + newTokens.expiresIn;
-          
-          const savedToken = await this.tokenStorage.saveYahooToken({
-            userId: this.userId,
-            accessToken: newTokens.accessToken,
-            refreshToken: newTokens.refreshToken,
-            expiresAt: newExpiresAt,
-          }, {
-            expectedVersion: this.tokenVersion,
-          });
-          
-          this.accessToken = newTokens.accessToken;
-          this.refreshToken = newTokens.refreshToken;
-          this.tokenVersion = savedToken.version;
-          
-          // Retry the request with new token
-          const response = await this.axiosInstance.get(url, {
-            headers: {
-              'Authorization': `Bearer ${this.accessToken}`,
-            },
-          });
-          
-          return response.data;
-        } catch (refreshError: any) {
-          logger.error("Token refresh failed during API request:", {
-            userId: this.userId,
-            error: refreshError.message,
-          });
-          throw new Error("Yahoo access token expired and refresh failed. Please reconnect your Yahoo account.");
-        }
+    } catch (error) {
+      if (providerStatus(error) !== 401) {
+        this.logFailure(endpoint, error);
+        throw error;
       }
+    }
 
-      // Re-throw other errors
-      logger.error("Yahoo API request failed:", {
-        userId: this.userId,
-        endpoint,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
+    logger.debug("Got 401, attempting token refresh", { userId: this.userId, endpoint });
+    await this.refreshTokens();
+    try {
+      const response = await withYahooRetries(get, this.clock, deadline);
+      return response.data;
+    } catch (error) {
+      if (providerStatus(error) === 401) {
+        throw new YahooReconnectRequiredError();
+      }
+      this.logFailure(endpoint, error);
       throw error;
     }
+  }
+
+  private logFailure(endpoint: string, error: unknown): void {
+    logger.error("Yahoo API request failed:", {
+      userId: this.userId,
+      endpoint,
+      status: providerStatus(error),
+      code: error instanceof Error ? (error as { code?: string }).code ?? error.name : undefined,
+    });
   }
 
   /**

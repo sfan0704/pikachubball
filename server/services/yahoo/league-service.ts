@@ -37,6 +37,11 @@ export async function getUserLeagues(
       logger.debug("Fetching NBA leagues");
       userData = await client.getUserGameLeagues("nba");
     } catch (error: any) {
+      // Provider-level failures (reconnect, rate limit, outage) would fail
+      // the fallback too; surface them without spending another call.
+      if (error instanceof AppError) {
+        throw error;
+      }
       // If getUserGameLeagues fails, try getAllUserLeagues and filter for NBA
       logger.debug("getUserGameLeagues failed, trying getAllUserLeagues", { error: error.message });
       try {
@@ -248,6 +253,9 @@ export async function getUserLeagues(
       response: error.response?.data,
       status: error.response?.status,
     });
+    if (error instanceof AppError) {
+      throw error;
+    }
     if (
       error.message?.includes("credentials") ||
       error.message?.includes("refresh") ||

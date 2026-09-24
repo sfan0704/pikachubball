@@ -5,7 +5,8 @@ import { env } from "../config/env";
 import { getAuthenticatedUserId } from "../middleware/auth";
 import { asyncHandler, UnauthorizedError, ValidationError } from "../middleware/error-handler";
 import { applyAuthNoStore, readHostedAuthConfig } from "../auth/supabase-auth";
-import { exchangeAuthorizationCode } from "../yahoo-auth";
+import { logger } from "../utils/logger";
+import { exchangeAuthorizationCode, revokeYahooToken } from "../yahoo-auth";
 
 const FANTASY_OAUTH_STATE_COOKIE = "pikachubball-yahoo-state";
 
@@ -134,7 +135,31 @@ export const yahooOAuthController = {
     if (!req.ownerStorage) {
       throw new ValidationError("Owner-scoped storage is unavailable");
     }
+    // Revoke at Yahoo first while the refresh token is still readable, then
+    // delete locally no matter what Yahoo answered, and report both outcomes.
+    let revokedAtYahoo = false;
+    try {
+      const token = await req.ownerStorage.getYahooToken(userId);
+      if (token) {
+        revokedAtYahoo = await revokeYahooToken(
+          token.refreshToken,
+          env.YAHOO_CLIENT_ID?.trim() ?? "",
+          env.YAHOO_CLIENT_SECRET?.trim() ?? "",
+        );
+      }
+    } catch (error) {
+      logger.warn("Could not read Yahoo tokens for revocation", {
+        userId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
     await req.ownerStorage.deleteYahooToken(userId);
-    res.json({ success: true, message: "Yahoo account disconnected." });
+    res.json({
+      success: true,
+      revokedAtYahoo,
+      message: revokedAtYahoo
+        ? "Yahoo account disconnected and access revoked at Yahoo."
+        : "Yahoo tokens were deleted from Pikachu Basketball, but Yahoo did not confirm revocation. To be sure, remove the app from your Yahoo account's connected apps.",
+    });
   }),
 };
