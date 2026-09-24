@@ -104,6 +104,37 @@ describe('LeagueRankings', () => {
     mockRankings = createMockRankings();
   });
 
+  describe('overall position ties', () => {
+    const withTotals = (totals: number[]) =>
+      createMockRankings()
+        .slice(0, totals.length)
+        .map((team, index) => ({ ...team, totalRank: totals[index] }));
+
+    const positionsInRowOrder = () =>
+      screen
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.querySelector('td')?.textContent?.trim());
+
+    it('gives tied overall averages the same position and skips the next', () => {
+      render(<LeagueRankings rankings={withTotals([9, 9, 12])} />);
+
+      expect(positionsInRowOrder()).toEqual(['1st', '1st', '3rd']);
+    });
+
+    it('shows every team first when all averages tie (preseason)', () => {
+      render(<LeagueRankings rankings={withTotals([9, 9, 9])} />);
+
+      expect(positionsInRowOrder()).toEqual(['1st', '1st', '1st']);
+    });
+
+    it('keeps distinct averages in order', () => {
+      render(<LeagueRankings rankings={withTotals([2.5, 3.8, 5])} />);
+
+      expect(positionsInRowOrder()).toEqual(['1st', '2nd', '3rd']);
+    });
+  });
+
   describe('rendering', () => {
     it('should render the rankings card', () => {
       // ARRANGE & ACT
