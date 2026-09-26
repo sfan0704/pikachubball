@@ -17,15 +17,15 @@ Vercel serves the client and API on one origin. The expected traffic is small, i
 
 ## Environments
 
-The app has three separated tiers. No tier holds another tier's credentials, and no Yahoo app redirects to another tier's Supabase project.
+The app has three separated tiers. Each tier has its own Supabase project (or local stack), users, database and stored tokens. All three sign in through the same Yahoo app, `PikachuBball`, which lists every tier's Supabase callback.
 
 | Tier | Runs at | Supabase | Yahoo app | Credentials live in | Used for |
 | --- | --- | --- | --- | --- | --- |
-| Local | laptop and CI | disposable local stack (`npm run test:db`) | none today; `PikachuBball - Local` after it is freed (CAR-57, CAR-74) | nothing hosted | migrations and RLS tests |
-| Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
-| Prod | Vercel production alias | `Pikachu Basketball` | sign-in: `PikachuBball - Local`; Fantasy access: `PikachuBball` (consolidating on `PikachuBball`, CAR-57) | Vercel Production environment only | league members |
+| Local | laptop and CI | disposable local stack (`npm run test:db`) | `PikachuBball` (planned; see below) | nothing hosted | migrations and RLS tests |
+| Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
+| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball` (switching from `PikachuBball - Local`, CAR-57) | Vercel Production environment only | league members |
 
-Yahoo is used twice on every sign-in: Supabase's `custom:yahoo` provider signs the user in, then the app runs its own Fantasy access OAuth (`/connect/start` → `/api/auth/yahoo/fantasy/callback`) with the server's `YAHOO_CLIENT_ID`. A tier's Yahoo app therefore registers both its Supabase callback and the app's Fantasy callback. Yahoo only accepts `https://` redirect URIs, which is why local dev runs over HTTPS. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
+Yahoo is used once per sign-in: Supabase's `custom:yahoo` provider requests `openid profile email fspt-r`, and the sign-in callback stores the Yahoo tokens that Supabase hands over (encrypted, owner-scoped). The server refreshes them with the same app's `YAHOO_CLIENT_ID`/`YAHOO_CLIENT_SECRET`, because a Yahoo refresh token only works with the app that issued it. Yahoo only grants Fantasy data to apps it has activated, and newly created apps return `403 This application is not authorized`. So every tier uses the activated `PikachuBball` app: each tier's Supabase `custom:yahoo` provider and server hold that app's client ID and secret, and the app lists each tier's Supabase callback as a redirect URI. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
 
 ## Local setup
 
@@ -43,9 +43,9 @@ cp .env.example .env.local
 openssl rand -hex 32   # use as ENCRYPTION_KEY
 ```
 
-The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball - Dev` Yahoo app. Never copy production values into `.env.local`.
+The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball` Yahoo app, the same one the dev Supabase provider uses. Never copy production values into `.env.local`.
 
-Create the local HTTPS certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
+Optionally, serve local dev over HTTPS. Create the certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
 
 ```text
 brew install mkcert

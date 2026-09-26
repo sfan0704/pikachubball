@@ -27,6 +27,8 @@ Create one custom OAuth/OIDC provider in the dedicated basketball Supabase proje
 
 Use the callback URL displayed by Supabase for this provider as the callback in the Yahoo Developer application. Configure the same Yahoo application credentials in the server-only Vercel environment because Yahoo requires them when the API access token is refreshed. They must never use a `VITE_` prefix or enter a client bundle.
 
+To set an existing project's provider credentials without the dashboard, run `npm run yahoo:provider -- prod` (or `dev`). It reads `YAHOO_CLIENT_ID`/`YAHOO_CLIENT_SECRET` from the environment or `.env.local`, refuses any app other than `PikachuBball` (`VZxFFbzH`), prompts for the project's secret key, updates `custom:yahoo` through the Auth admin API, and waits until the sign-in redirect uses the new app. `npm run yahoo:provider -- prod --check` only reports which Yahoo app the project signs in through.
+
 In Supabase URL configuration, set the site URL to the production Vercel origin and allow exactly:
 
 ```text
@@ -37,16 +39,16 @@ Do not authorize Vercel preview domains against the production Yahoo application
 
 ## Development tier
 
-The dev tier mirrors production with separate resources: the `Pikachu Basketball Development` Supabase project and the `PikachuBball - Dev` Yahoo application. Configure the same custom provider settings above in the dev project, using the dev Yahoo application's credentials.
+The dev tier mirrors production with its own Supabase project, `Pikachu Basketball Development`. Configure the same custom provider settings above in the dev project.
 
-The dev Yahoo application registers exactly two redirect URIs: the dev project's Supabase callback (sign-in) and the app's Fantasy access callback. Yahoo rejects `http://` redirect URIs, so local dev serves HTTPS with a mkcert certificate (see the README):
+Every tier (local, dev and prod) uses the same Yahoo application, `PikachuBball` (`VZxFFbzH`), because Yahoo only serves Fantasy data to apps it has activated. Each Supabase provider and each server environment holds that application's client ID and secret, and the application registers each tier's Supabase callback:
 
 ```text
 https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback
-https://localhost:5001/api/auth/yahoo/fantasy/callback
+https://fpdwtpwpmxsbgjxizuxa.supabase.co/auth/v1/callback
 ```
 
-`YAHOO_PROVIDER_REDIRECT_URI` is the second one. The Fantasy controller requires it to be `https` on `APP_ORIGIN`. In the dev project's URL configuration, set the site URL to `https://localhost:5001` and allow:
+Sign-in stores the Yahoo tokens from the Supabase session; there is no second Yahoo authorization. `YAHOO_PROVIDER_REDIRECT_URI` is only sent as `redirect_uri` on token refresh. In the dev project's URL configuration, set the site URL to the local origin and allow its callback:
 
 ```text
 https://localhost:5001/api/auth/callback
@@ -66,7 +68,7 @@ SUPABASE_PUBLISHABLE_KEY=<project-publishable-key>
 ENCRYPTION_KEY=<64-hex-character key>
 YAHOO_CLIENT_ID=<Yahoo-application-client-id>
 YAHOO_CLIENT_SECRET=<Yahoo-application-client-secret>
-YAHOO_PROVIDER_REDIRECT_URI=https://<production-domain>/api/auth/yahoo/fantasy/callback
+YAHOO_PROVIDER_REDIRECT_URI=https://<production-domain>/api/auth/yahoo/fantasy/callback  # sent as redirect_uri on refresh only
 ```
 
 Storage configuration is defined by CAR-60. The final Vercel runtime must not receive a Supabase service-role key or database password.
