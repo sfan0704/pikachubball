@@ -27,6 +27,8 @@ Create one custom OAuth/OIDC provider in the dedicated basketball Supabase proje
 
 Use the callback URL displayed by Supabase for this provider as the callback in the Yahoo Developer application. Configure the same Yahoo application credentials in the server-only Vercel environment because Yahoo requires them when the API access token is refreshed. They must never use a `VITE_` prefix or enter a client bundle.
 
+To set an existing project's provider credentials without the dashboard, run `npm run yahoo:provider -- prod` (or `dev`). It reads `YAHOO_CLIENT_ID`/`YAHOO_CLIENT_SECRET` from the environment or `.env.local`, refuses any app other than `PikachuBball` (`VZxFFbzH`), prompts for the project's secret key, updates `custom:yahoo` through the Auth admin API, and waits until the sign-in redirect uses the new app. `npm run yahoo:provider -- prod --check` only reports which Yahoo app the project signs in through.
+
 In Supabase URL configuration, set the site URL to the production Vercel origin and allow exactly:
 
 ```text
