@@ -20,7 +20,8 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
-    "test:db": "bash scripts/test-database.sh"
+    "test:db": "bash scripts/test-database.sh",
+    "yahoo:provider": "bash scripts/set-yahoo-provider.sh"
   },
   "dependencies": {
     "@jridgewell/trace-mapping": "^0.3.25",

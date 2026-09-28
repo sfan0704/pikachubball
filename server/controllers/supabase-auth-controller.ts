@@ -6,14 +6,29 @@ import {
   createSupabaseRequestClient,
   projectYahooIdentity,
   readHostedAuthConfig,
+  requireYahooProviderTokens,
   YAHOO_PROVIDER,
 } from "../auth/supabase-auth";
+import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
+import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
+
+// Yahoo access tokens last one hour; the Supabase session does not report
+// the provider token's own expiry.
+const YAHOO_ACCESS_TOKEN_SECONDS = 3600;
+
 export interface AuthControllerDependencies {
   createClient(req: Request, res: Response): SupabaseClient;
+  createStorage(
+    client: SupabaseClient,
+    ownerId: string,
+  ): Pick<OwnerScopedStorage, "saveYahooConnection">;
+  now(): number;
 }
 
 const defaultDependencies: AuthControllerDependencies = {
   createClient: createSupabaseRequestClient,
+  createStorage: createSupabaseOwnerStorage,
+  now: Date.now,
 };
 
 export function createSupabaseAuthController(
@@ -59,13 +74,27 @@ export function createSupabaseAuthController(
         throw new UnauthorizedError("Yahoo authentication callback was rejected");
       }
 
+      // One Yahoo sign-in covers Fantasy access: the provider's scopes include
+      // fspt-r, and Supabase hands its Yahoo tokens to this callback once.
+      let identity;
+      let tokens;
       try {
-        projectYahooIdentity(data.session.user);
+        identity = projectYahooIdentity(data.session.user);
+        tokens = requireYahooProviderTokens(data.session);
       } catch {
         throw new UnauthorizedError("Yahoo authentication response was incomplete");
       }
+      await dependencies.createStorage(client, identity.userId).saveYahooConnection({
+        userId: identity.userId,
+        yahooGuid: identity.yahooGuid,
+        displayName: identity.displayName,
+        email: identity.email,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: Math.floor(dependencies.now() / 1000) + YAHOO_ACCESS_TOKEN_SECONDS,
+      });
 
-      res.redirect(303, "/connect/start");
+      res.redirect(303, "/?yahoo_connected=true");
     }),
 
     getCurrentUser: asyncHandler(async (req: Request, res: Response) => {

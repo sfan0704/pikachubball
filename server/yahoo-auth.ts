@@ -8,68 +8,6 @@ import {
 } from "./services/yahoo/yahoo-request-policy";
 import { logger } from "./utils/logger";
 
-export interface YahooAuthorizationTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  yahooGuid?: string;
-}
-
-export async function exchangeAuthorizationCode(
-  code: string,
-  clientId: string,
-  clientSecret: string,
-  redirectUri: string,
-): Promise<YahooAuthorizationTokens> {
-  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
-  try {
-    const response = await axios({
-      url: "https://api.login.yahoo.com/oauth2/get_token",
-      method: "post",
-      timeout: YAHOO_CALL_TIMEOUT_MS,
-      headers: {
-        Authorization: `Basic ${authHeader}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      data: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-        code,
-      }).toString(),
-    });
-
-    const accessToken = response.data?.access_token;
-    const refreshToken = response.data?.refresh_token;
-    const expiresIn = Number(response.data?.expires_in);
-    const responseYahooGuid = response.data?.xoauth_yahoo_guid;
-    if (
-      typeof accessToken !== "string" ||
-      typeof refreshToken !== "string" ||
-      !Number.isFinite(expiresIn)
-    ) {
-      throw new Error("Yahoo token response was incomplete");
-    }
-
-    const yahooGuid =
-      typeof responseYahooGuid === "string" ? responseYahooGuid : undefined;
-
-    return { accessToken, refreshToken, expiresIn, yahooGuid };
-  } catch (error) {
-    logger.error("Yahoo authorization code exchange failed", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      status: axios.isAxiosError(error) ? error.response?.status : undefined,
-      yahooError: axios.isAxiosError(error) ? error.response?.data?.error : undefined,
-      yahooErrorDescription: axios.isAxiosError(error)
-        ? error.response?.data?.error_description
-        : undefined,
-    });
-    throw new Error("Failed to exchange Yahoo authorization code");
-  }
-}
-
 export interface YahooRefreshedTokens {
   accessToken: string;
   /** Present only when Yahoo rotated the refresh token. */
