@@ -54,7 +54,7 @@ Sign-in stores the Yahoo tokens from the Supabase session; there is no second Ya
 https://localhost:5001/api/auth/callback
 ```
 
-Developers keep dev values in `.env.local`, created from `.env.example`. Dev credentials never enter Vercel, and production credentials never enter `.env.local`.
+Developers keep dev values in `.env.local`, created from `.env.example`. Dev credentials never enter Vercel, and production credentials never enter `.env.local`, except the shared Yahoo client secret described above.
 
 ## Vercel environment
 

@@ -43,7 +43,7 @@ cp .env.example .env.local
 openssl rand -hex 32   # use as ENCRYPTION_KEY
 ```
 
-The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball` Yahoo app, the same one the dev Supabase provider uses. Never copy production values into `.env.local`.
+The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball` Yahoo app, the same one the dev Supabase provider uses. Never copy other production values into `.env.local`. The Yahoo client secret is the one exception: every tier shares the one Fantasy-activated Yahoo app, so dev's secret is also production's. Keep `.env.local` on the owner's machine only. If it is exposed, regenerate the secret in Yahoo and update production first (Vercel and `npm run yahoo:provider -- prod`), then dev.
 
 Optionally, serve local dev over HTTPS. Create the certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
 
