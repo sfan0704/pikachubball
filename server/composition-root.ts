@@ -20,7 +20,11 @@ export function createServerDependencies(
   clock: Clock = systemClock
 ): ServerDependencies {
   const logger = createLogger({ debug: config.nodeEnv === "development" });
-  const cipher = AesGcmOwnerTokenCipher.fromHex(config.encryptionKey);
+  const cipher = AesGcmOwnerTokenCipher.fromKeyring({
+    currentKey: config.encryptionKey,
+    currentVersion: config.encryptionKeyVersion,
+    previousKey: config.encryptionKeyPrevious,
+  });
 
   return {
     config,

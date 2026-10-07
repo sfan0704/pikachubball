@@ -109,7 +109,7 @@ One zod schema parses all configuration once at startup in the composition root;
 |---|---|---|
 | `APP_ORIGIN` | The app's public origin, for redirects | No |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | The environment's Supabase project | No; the key is public by design |
-| `ENCRYPTION_KEY`, `ENCRYPTION_KEY_PREVIOUS` | 32-byte keys for stored Yahoo tokens: the current one, and the previous one only during a rotation | Yes; one per environment |
+| `ENCRYPTION_KEY`, `ENCRYPTION_KEY_VERSION`, `ENCRYPTION_KEY_PREVIOUS` | 32-byte keys for stored Yahoo tokens: the current one with its version number (default 1, raised by one at each rotation), and the previous one (the version below) only during a rotation | Yes; one per environment |
 | `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | The `PikachuBball` app, for token refresh | The secret is; shared by dev and prod |
 | `YAHOO_PROVIDER_REDIRECT_URI` | The Supabase callback registered with Yahoo | No |
 | `NODE_ENV`, `TRUST_PROXY` | Runtime mode and proxy handling | No |

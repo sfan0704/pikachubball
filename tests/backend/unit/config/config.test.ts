@@ -46,10 +46,19 @@ describe("loadConfig", () => {
   it("accepts a previous key only in the same format, and leaves it unset by default", () => {
     expect(loadConfig(minimalEnvironment()).encryptionKeyPrevious).toBeNull();
     expect(
-      loadConfig(minimalEnvironment({ ENCRYPTION_KEY_PREVIOUS: OTHER_KEY })).encryptionKeyPrevious
+      loadConfig(
+        minimalEnvironment({ ENCRYPTION_KEY_PREVIOUS: OTHER_KEY, ENCRYPTION_KEY_VERSION: "2" })
+      ).encryptionKeyPrevious
     ).toBe(OTHER_KEY);
     expect(() => loadConfig(minimalEnvironment({ ENCRYPTION_KEY_PREVIOUS: "short" }))).toThrow(
       /ENCRYPTION_KEY_PREVIOUS/
+    );
+  });
+
+  it("defaults the key version to 1 and refuses a previous key without a newer version", () => {
+    expect(loadConfig(minimalEnvironment()).encryptionKeyVersion).toBe(1);
+    expect(() => loadConfig(minimalEnvironment({ ENCRYPTION_KEY_PREVIOUS: OTHER_KEY }))).toThrow(
+      /ENCRYPTION_KEY_VERSION/
     );
   });
 
