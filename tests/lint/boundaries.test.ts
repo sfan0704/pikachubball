@@ -6,7 +6,10 @@ const eslint = new ESLint({ cwd: process.cwd() });
 /** Lints a snippet as if it were the given existing file, returning the rule ids that fired as errors. */
 async function errorsFor(filePath: string, code: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath });
-  console.log(filePath, JSON.stringify(result.messages.map((m) => [m.ruleId, m.severity, m.message.slice(0, 80)])));
+  console.log(
+    filePath,
+    JSON.stringify(result.messages.map((m) => [m.ruleId, m.severity, m.message.slice(0, 80)]))
+  );
   return result.messages
     .filter((message) => message.severity === 2)
     .map((message) => message.ruleId ?? "parse");
