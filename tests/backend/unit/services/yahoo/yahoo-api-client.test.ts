@@ -159,6 +159,22 @@ describe("YahooApiClient", () => {
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
 
+    it("reports every HTTP attempt, including retries, through onRequest", async () => {
+      const onRequest = vi.fn();
+      const counted = await YahooApiClient.create(userId, storage, yahooApp, undefined, onRequest);
+      const unavailable = Object.assign(new Error("Service Unavailable"), {
+        isAxiosError: true,
+        response: { status: 503, headers: {} },
+      });
+      mockAxiosInstance.get
+        .mockRejectedValueOnce(unavailable)
+        .mockResolvedValueOnce({ data: { ok: true } });
+
+      await (counted as any).apiRequest("/one", undefined);
+
+      expect(onRequest).toHaveBeenCalledTimes(2);
+    });
+
     it("should make successful API request", async () => {
       // ARRANGE
       const endpoint = "/test/endpoint";
@@ -364,31 +380,49 @@ describe("YahooApiClient", () => {
       );
     });
 
-    it("shares one refresh between concurrent requests for the same user", async () => {
-      let release!: () => void;
-      const barrier = new Promise<void>((resolve) => (release = resolve));
+    it("uses the token a concurrent request stored when Yahoo rejects the already-used refresh token", async () => {
+      const refreshedElsewhere = {
+        userId,
+        accessToken: "refreshed-elsewhere",
+        refreshToken: "rotated-refresh",
+        expiresAt: now() + 3600,
+        version: 6,
+      };
+      vi.mocked(storage.getYahooToken)
+        .mockResolvedValueOnce(expired())
+        .mockResolvedValueOnce(refreshedElsewhere);
+      vi.mocked(refreshAccessToken).mockRejectedValue(new YahooReconnectRequiredError());
+
+      const client = await YahooApiClient.create(userId, storage, yahooApp);
+
+      expect((client as any).accessToken).toBe("refreshed-elsewhere");
+      expect((client as any).tokenVersion).toBe(6);
+      expect(storage.saveYahooToken).not.toHaveBeenCalled();
+    });
+
+    it("still asks to reconnect when Yahoo rejects the refresh and nothing newer is stored", async () => {
+      vi.mocked(storage.getYahooToken)
+        .mockResolvedValueOnce(expired())
+        .mockResolvedValueOnce(expired());
+      vi.mocked(refreshAccessToken).mockRejectedValue(new YahooReconnectRequiredError());
+
+      await expect(YahooApiClient.create(userId, storage, yahooApp)).rejects.toBeInstanceOf(
+        YahooReconnectRequiredError
+      );
+    });
+
+    it("keeps no refresh state between clients: each one refreshes from storage", async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue(expired());
-      vi.mocked(refreshAccessToken).mockImplementation(async () => {
-        await barrier;
-        return { accessToken: "shared-access", expiresIn: 3600 };
-      });
+      vi.mocked(refreshAccessToken).mockResolvedValue({ accessToken: "a", expiresIn: 3600 });
       vi.mocked(storage.saveYahooToken).mockImplementation(async (token) => ({
         ...token,
         version: 5,
       }));
 
-      const first = YahooApiClient.create(userId, storage, yahooApp);
-      const second = YahooApiClient.create(userId, storage, yahooApp);
-      await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalled());
-      release();
-      const clients = await Promise.all([first, second]);
+      await YahooApiClient.create(userId, storage, yahooApp);
+      await YahooApiClient.create(userId, storage, yahooApp);
 
-      expect(refreshAccessToken).toHaveBeenCalledTimes(1);
-      expect(storage.saveYahooToken).toHaveBeenCalledTimes(1);
-      for (const client of clients) {
-        expect((client as any).accessToken).toBe("shared-access");
-        expect((client as any).tokenVersion).toBe(5);
-      }
+      expect(refreshAccessToken).toHaveBeenCalledTimes(2);
     });
 
     it("adopts the token another instance committed instead of overwriting it", async () => {

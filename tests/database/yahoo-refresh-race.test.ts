@@ -16,8 +16,12 @@ vi.mock("../../server/yahoo-auth", () => ({ refreshAccessToken: vi.fn() }));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((settle) => (resolve = settle));
-  return { promise, resolve };
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((settle, fail) => {
+    resolve = settle;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
 }
 
 async function expireAccessToken(owner: Owner): Promise<number> {
@@ -99,7 +103,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     );
   });
 
-  it("commits one refresh for concurrent requests and keeps the refresh token Yahoo omitted", async () => {
+  it("commits only one of two concurrent refreshes; the other adopts it, and the omitted refresh token is kept", async () => {
     const owner = await signUpOwner("concurrent");
     await connect(owner, "concurrent");
     const readVersion = await expireAccessToken(owner);
@@ -110,15 +114,67 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
       YahooApiClient.create(owner.id, owner.storage, yahooApp),
       YahooApiClient.create(owner.id, owner.storage, yahooApp),
     ];
-    await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalled());
+    await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledTimes(2));
     yahoo.resolve({ accessToken: "shared-access", expiresIn: 3600 });
-    await Promise.all(requests);
+    const clients = await Promise.all(requests);
 
-    expect(refreshAccessToken).toHaveBeenCalledOnce();
+    // Both asked Yahoo, but storage accepted a single write at readVersion + 1.
+    for (const client of clients) {
+      expect(client as unknown as { tokenVersion: number }).toMatchObject({
+        tokenVersion: readVersion + 1,
+      });
+    }
     await expect(owner.storage.getYahooToken(owner.id)).resolves.toMatchObject({
       accessToken: "shared-access",
       refreshToken: "refresh-secret-concurrent",
       version: readVersion + 1,
     });
+  });
+
+  it("uses the token a concurrent request stored when Yahoo rejects the refresh token it already used", async () => {
+    const owner = await signUpOwner("rejected-reuse");
+    await connect(owner, "rejected-reuse");
+    const readVersion = await expireAccessToken(owner);
+    type Refreshed = { accessToken: string; refreshToken?: string; expiresIn: number };
+    const winnerYahoo = deferred<Refreshed>();
+    const loserYahoo = deferred<Refreshed>();
+    vi.mocked(refreshAccessToken)
+      .mockReturnValueOnce(winnerYahoo.promise)
+      .mockReturnValueOnce(loserYahoo.promise);
+
+    // Both requests read the same expired token and ask Yahoo to refresh it.
+    const winner = YahooApiClient.create(owner.id, owner.storage, yahooApp);
+    const loser = YahooApiClient.create(owner.id, owner.storage, yahooApp);
+    await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledTimes(2));
+
+    winnerYahoo.resolve({
+      accessToken: "rotated-access",
+      refreshToken: "rotated-refresh",
+      expiresIn: 3600,
+    });
+    await winner;
+    // Yahoo refuses the old refresh token the winner just spent.
+    loserYahoo.reject(new YahooReconnectRequiredError());
+    const loserClient = await loser;
+
+    expect(loserClient as unknown as { accessToken: string; tokenVersion: number }).toMatchObject({
+      accessToken: "rotated-access",
+      tokenVersion: readVersion + 1,
+    });
+    await expect(owner.storage.getYahooToken(owner.id)).resolves.toMatchObject({
+      refreshToken: "rotated-refresh",
+      version: readVersion + 1,
+    });
+  });
+
+  it("still asks to reconnect when Yahoo rejects the refresh and nothing newer was stored", async () => {
+    const owner = await signUpOwner("rejected-alone");
+    await connect(owner, "rejected-alone");
+    await expireAccessToken(owner);
+    vi.mocked(refreshAccessToken).mockRejectedValue(new YahooReconnectRequiredError());
+
+    await expect(YahooApiClient.create(owner.id, owner.storage, yahooApp)).rejects.toBeInstanceOf(
+      YahooReconnectRequiredError
+    );
   });
 });

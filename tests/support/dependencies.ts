@@ -2,9 +2,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppConfig } from "../../server/config/config";
 import type { ServerDependencies } from "../../server/dependencies";
 import type { Logger } from "../../server/utils/logger";
+import { fixedClock } from "./clock";
 
 /** A logger that records nothing and prints nothing. */
-export const silentLogger: Logger = { debug() {}, info() {}, warn() {}, error() {} };
+export const silentLogger: Logger = {
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+  child() {
+    return silentLogger;
+  },
+};
 
 /** Server configuration for tests; override only what a test cares about. */
 export function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
@@ -37,13 +46,14 @@ export const anonymousSupabaseClient = {
   },
 } as unknown as SupabaseClient;
 
-/** Server dependencies for tests: anonymous by default, with a silent logger. */
+/** Server dependencies for tests: anonymous by default, with a silent logger and a fixed clock. */
 export function buildTestDependencies(
   overrides: Partial<ServerDependencies> = {}
 ): ServerDependencies {
   return {
     config: buildTestConfig(),
     logger: silentLogger,
+    clock: fixedClock(),
     createSupabaseClient: () => anonymousSupabaseClient,
     createOwnerStorage: () => {
       throw new Error("createOwnerStorage was not provided by this test");

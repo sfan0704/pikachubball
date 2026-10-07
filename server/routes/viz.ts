@@ -1,5 +1,5 @@
 import type { Express, RequestHandler } from "express";
-import { requireOwnedFantasyResource, requireYahooAuth } from "../middleware/yahoo-auth";
+import { requireOwnedFantasyResource } from "../middleware/fantasy-resource";
 import type { createVizController } from "../controllers/viz-controller";
 
 /** What the visualization routes need. */
@@ -16,21 +16,18 @@ export function registerVizRoutes(
   app.get(
     "/api/yahoo/league-rankings/:leagueKey",
     requireAuth,
-    requireYahooAuth,
     requireOwnedFantasyResource,
     controller.getLeagueRankings
   );
   app.get(
     "/api/viz/heatmap/:leagueKey",
     requireAuth,
-    requireYahooAuth,
     requireOwnedFantasyResource,
     controller.getLeagueHeatmap
   );
   app.get(
     "/api/viz/matchup/:leagueKey/:teamKey",
     requireAuth,
-    requireYahooAuth,
     requireOwnedFantasyResource,
     controller.getMatchupComparison
   );

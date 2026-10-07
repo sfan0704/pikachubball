@@ -2,11 +2,10 @@ import type { Request, Response } from "express";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { parse, serialize } from "cookie";
 import type { AppConfig } from "../config/config";
-import { getAuthenticatedUserId } from "../middleware/auth";
+import { getRequestContext } from "../request-context";
 import { asyncHandler } from "../middleware/error-handler";
 import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
 import { applyAuthNoStore } from "../auth/supabase-auth";
-import type { Logger } from "../utils/logger";
 import { exchangeAuthorizationCode, revokeYahooToken } from "../yahoo-auth";
 
 const FANTASY_OAUTH_STATE_COOKIE = "pikachubball-yahoo-state";
@@ -25,12 +24,10 @@ function stateMatches(expected: string | undefined, received: unknown): boolean 
  */
 export interface YahooOAuthControllerDependencies {
   readonly config: AppConfig;
-  readonly logger: Logger;
 }
 
 export function createYahooOAuthController({
   config: appConfig,
-  logger,
 }: YahooOAuthControllerDependencies) {
   const fantasyOAuthConfig = () => {
     const { clientId, clientSecret, providerRedirectUri: redirectUri } = appConfig.yahoo;
@@ -73,10 +70,7 @@ export function createYahooOAuthController({
 
     completeFantasyAccess: asyncHandler(async (req: Request, res: Response) => {
       applyAuthNoStore(res);
-      const identity = req.authIdentity;
-      if (!identity || !req.ownerStorage) {
-        throw new UnauthorizedError("Authentication required");
-      }
+      const { user: identity, storage, clock } = getRequestContext(req);
       const cookies = parse(req.headers.cookie ?? "");
       if (!stateMatches(cookies[FANTASY_OAUTH_STATE_COOKIE], req.query.state)) {
         throw new ValidationError("Invalid Yahoo authorization state");
@@ -96,14 +90,14 @@ export function createYahooOAuthController({
       if (tokens.yahooGuid && tokens.yahooGuid !== identity.yahooGuid) {
         throw new UnauthorizedError("Yahoo Fantasy account does not match the signed-in account");
       }
-      await req.ownerStorage.saveYahooConnection({
+      await storage.saveYahooConnection({
         userId: identity.userId,
         yahooGuid: identity.yahooGuid,
         displayName: identity.displayName,
         email: identity.email,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        expiresAt: Math.floor(Date.now() / 1000) + tokens.expiresIn,
+        expiresAt: Math.floor(clock.now() / 1000) + tokens.expiresIn,
       });
       res.append("Set-Cookie", stateCookie("", 0));
       res.redirect(303, "/?yahoo_connected=true");
@@ -113,19 +107,12 @@ export function createYahooOAuthController({
      * Get Yahoo OAuth connection status
      */
     getStatus: asyncHandler(async (req: Request, res: Response) => {
-      const userId = getAuthenticatedUserId(req);
-      if (!userId) {
-        throw new ValidationError("Authentication required");
-      }
-
-      if (!req.ownerStorage) {
-        throw new ValidationError("Owner-scoped storage is unavailable");
-      }
-      const token = await req.ownerStorage.getYahooToken(userId);
+      const { user, storage, clock } = getRequestContext(req);
+      const token = await storage.getYahooToken(user.userId);
 
       res.json({
         connected: !!token,
-        hasValidToken: token ? token.expiresAt > Math.floor(Date.now() / 1000) : false,
+        hasValidToken: token ? token.expiresAt > Math.floor(clock.now() / 1000) : false,
       });
     }),
 
@@ -133,19 +120,13 @@ export function createYahooOAuthController({
      * Disconnect Yahoo account
      */
     disconnect: asyncHandler(async (req: Request, res: Response) => {
-      const userId = getAuthenticatedUserId(req);
-      if (!userId) {
-        throw new ValidationError("Authentication required");
-      }
-
-      if (!req.ownerStorage) {
-        throw new ValidationError("Owner-scoped storage is unavailable");
-      }
+      const { user, storage, logger } = getRequestContext(req);
+      const userId = user.userId;
       // Revoke at Yahoo first while the refresh token is still readable, then
       // delete locally no matter what Yahoo answered, and report both outcomes.
       let revokedAtYahoo = false;
       try {
-        const token = await req.ownerStorage.getYahooToken(userId);
+        const token = await storage.getYahooToken(userId);
         if (token) {
           revokedAtYahoo = await revokeYahooToken(
             token.refreshToken,
@@ -155,11 +136,10 @@ export function createYahooOAuthController({
         }
       } catch (error) {
         logger.warn("Could not read Yahoo tokens for revocation", {
-          userId,
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
-      await req.ownerStorage.deleteYahooToken(userId);
+      await storage.deleteYahooToken(userId);
       res.json({
         success: true,
         revokedAtYahoo,

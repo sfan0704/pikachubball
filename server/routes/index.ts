@@ -13,7 +13,7 @@ import { registerVizRoutes } from "./viz";
 
 /** Register all application routes, building each controller from the dependencies. */
 export function registerRoutes(app: Express, dependencies: ServerDependencies): void {
-  const { config, logger, createSupabaseClient, createYahooClient } = dependencies;
+  const { config, createSupabaseClient } = dependencies;
   const requireAuth = createRequireAuth(dependencies);
   const { auth: authLimiter } = createRateLimiters({ skip: config.nodeEnv === "development" });
 
@@ -31,15 +31,14 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   });
   registerYahooOAuthRoutes(app, {
     requireAuth,
-    controller: createYahooOAuthController({ config, logger }),
+    controller: createYahooOAuthController({ config }),
   });
   registerYahooRoutes(app, {
     requireAuth,
-    controller: createYahooController({ logger, createYahooClient }),
-    createYahooClient,
+    controller: createYahooController(),
   });
   registerVizRoutes(app, {
     requireAuth,
-    controller: createVizController({ createYahooClient }),
+    controller: createVizController(),
   });
 }

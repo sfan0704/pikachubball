@@ -18,8 +18,15 @@ import {
 } from "../../../../shared/api/errors";
 import { createMockRequest, createMockResponse, createMockNext } from "../../fixtures/test-helpers";
 import type { Logger } from "../../../../server/utils/logger";
+import { buildRequestScope } from "../../../support/context";
 
-const logger: Logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+const logger: Logger = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  child: vi.fn(),
+};
 const errorHandler = createErrorHandler({ logger, exposeErrorDetails: false });
 const developmentErrorHandler = createErrorHandler({ logger, exposeErrorDetails: true });
 
@@ -30,7 +37,10 @@ describe("errorHandler middleware", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockReq = { ...createMockRequest(), requestId: "req-123" } as unknown as Request;
+    mockReq = {
+      ...createMockRequest(),
+      scope: buildRequestScope({ requestId: "req-123" }),
+    } as unknown as Request;
     mockRes = createMockResponse() as Response;
     mockNext = createMockNext();
   });

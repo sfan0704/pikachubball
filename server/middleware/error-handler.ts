@@ -31,7 +31,7 @@ function sendError(
   const body: ErrorBody = {
     code,
     message,
-    requestId: req.requestId ?? "unknown",
+    requestId: req.scope?.requestId ?? "unknown",
     ...(details === undefined ? {} : { details }),
   };
   res.status(statusForCode(code)).json(body);
