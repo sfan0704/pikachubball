@@ -1,6 +1,5 @@
 /**
- * Domain Models Barrel Export
- * Types only - no runtime code
+ * Domain models and pure fantasy rules. No I/O, clock or framework imports.
  */
 
 export type { League, Team, ScoringType } from './league';
@@ -16,3 +15,23 @@ export type {
 
 export { CATEGORIES } from './stats';
 
+export type {
+  CategoryDirection,
+  LeagueCategory,
+  LeagueSettings,
+  TeamTotals,
+  TeamRow,
+  MatchupPairing,
+  Scope,
+  TeamTable,
+} from './team-table';
+export {
+  CATEGORY_DIRECTIONS,
+  percentage,
+  categoryValue,
+  competitionRanks,
+  categoryRanks,
+  rankSum,
+  scoringSupport,
+} from './fantasy-rules';
+export type { CategoryRanks, ScoringSupport } from './fantasy-rules';
