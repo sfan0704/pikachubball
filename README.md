@@ -77,9 +77,9 @@ For configuration and verification, see:
 
 - [Yahoo authentication](docs/SUPABASE_YAHOO_AUTH.md)
 - [Owner-scoped storage](docs/SUPABASE_STORAGE.md)
-- [Retained product contract](docs/RETAINED_PRODUCT_CONTRACT.md)
 - [Infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md)
 
-## Architecture
+## Architecture and contributing
 
-HTTP controllers remain thin. Yahoo integration lives in services, response parsing stays in parser modules, shared response contracts stay in `shared/schema.ts`, and persistence stays behind the owner-scoped repository interfaces in `server/storage/`. This preserves the useful boundaries in the original app while removing the legacy Replit, Passport, chat, schedule, and direct PostgreSQL runtime paths.
+- [Target state](docs/target-state.md): the agreed architecture the code follows, with its [changelog](docs/target-state-changelog.md).
+- [AGENTS.md](AGENTS.md): the rules for every contribution, by people or coding agents.
