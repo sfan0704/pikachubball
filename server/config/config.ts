@@ -26,7 +26,9 @@ export interface AppConfig {
   readonly auth: HostedAuthConfig;
   /** 64 hex characters: the key for new token writes. */
   readonly encryptionKey: string;
-  /** The previous key, set only while a key rotation is under way. */
+  /** Version recorded with tokens written under `encryptionKey`; raised by one at each rotation. */
+  readonly encryptionKeyVersion: number;
+  /** The previous key (version - 1), set only while a key rotation is under way. */
   readonly encryptionKeyPrevious: string | null;
   readonly yahoo: YahooAppConfig;
 }
@@ -52,6 +54,7 @@ const environmentSchema = z.object({
   SUPABASE_URL: z.string().optional(),
   SUPABASE_PUBLISHABLE_KEY: z.string().trim().min(1, "is required"),
   ENCRYPTION_KEY: hexKey,
+  ENCRYPTION_KEY_VERSION: z.coerce.number().int().min(1).max(32767).default(1),
   ENCRYPTION_KEY_PREVIOUS: hexKey.optional(),
   YAHOO_CLIENT_ID: optionalTrimmed,
   YAHOO_CLIENT_SECRET: optionalTrimmed,
@@ -96,6 +99,12 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
   const values = parsed.data;
   const production = values.NODE_ENV === "production";
 
+  if (values.ENCRYPTION_KEY_PREVIOUS && values.ENCRYPTION_KEY_VERSION < 2) {
+    throw new Error(
+      "Invalid configuration: ENCRYPTION_KEY_PREVIOUS needs ENCRYPTION_KEY_VERSION of 2 or more"
+    );
+  }
+
   const publishableKey = values.SUPABASE_PUBLISHABLE_KEY;
   if (
     production &&
@@ -125,6 +134,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
       secureCookies: production,
     },
     encryptionKey: values.ENCRYPTION_KEY,
+    encryptionKeyVersion: values.ENCRYPTION_KEY_VERSION,
     encryptionKeyPrevious: values.ENCRYPTION_KEY_PREVIOUS ?? null,
     yahoo: {
       clientId: values.YAHOO_CLIENT_ID,

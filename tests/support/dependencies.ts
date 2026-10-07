@@ -29,6 +29,7 @@ export function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       secureCookies: false,
     },
     encryptionKey: "0123456789abcdef".repeat(4),
+    encryptionKeyVersion: 1,
     encryptionKeyPrevious: null,
     yahoo: {
       clientId: "test-client-id",
