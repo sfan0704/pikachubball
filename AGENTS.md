@@ -14,14 +14,16 @@ These rules apply to everyone who changes this repository: people and coding age
 ```text
 npm ci             # install (Node 24, npm 11)
 npm run dev        # run locally
-npm run lint       # ESLint
+npm run lint       # ESLint, including the import-boundary and size rules
+npm run format     # Prettier (format:check only checks)
+npm run knip       # unused or unlisted packages and dead files
 npm run check      # TypeScript
 npm test           # unit and route tests
 npm run build      # production build
 npm run test:db    # database and access-rule tests (needs Docker)
 ```
 
-Run `lint`, `check` and `test` before opening a pull request, and `test:db` when you change anything in `supabase/`. Don't call a change done until they pass.
+Run `lint`, `format:check`, `knip`, `check` and `test` before opening a pull request, and `test:db` when you change anything in `supabase/`. Don't call a change done until they pass.
 
 ## Architecture rules
 

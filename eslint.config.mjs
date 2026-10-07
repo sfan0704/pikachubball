@@ -128,4 +128,91 @@ export default [
       },
     },
   },
+  // Layer boundaries: which module may import which (docs/target-state.md, Layout and dependency rules).
+  {
+    files: ["shared/domain/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^(?!\\./).+",
+              message:
+                "shared/domain imports nothing outside itself: no I/O, framework or other layers.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["shared/api/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^(?!\\./|\\.\\./domain(/|$)|zod$).+",
+              message: "shared/api may import only shared/domain and zod.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["client/**/*.{ts,tsx}"],
+    ignores: ["client/**/*.test.*"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { regex: "(^|/)server(/|$)", message: "The client never imports server code." },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["server/**/*.ts", "api/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { regex: "(^|/)client(/|$)", message: "The server never imports client code." },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Size, complexity and promise rules. Errors where the target layout is already in place;
+  // warnings elsewhere until the clean-up milestone makes them errors repo-wide.
+  {
+    files: ["client/src/**/*.{ts,tsx}", "server/**/*.ts", "shared/**/*.ts"],
+    ignores: ["**/*.test.*"],
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "warn",
+      "max-lines-per-function": ["warn", { max: 60, skipBlankLines: true, skipComments: true }],
+      complexity: ["warn", 10],
+      "max-lines": ["warn", { max: 400, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: ["shared/**/*.ts", "server/fantasy/**/*.ts", "server/http/**/*.ts"],
+    ignores: ["**/*.test.*"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "error",
+      "max-lines-per-function": ["error", { max: 60, skipBlankLines: true, skipComments: true }],
+      complexity: ["error", 10],
+      "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ];
