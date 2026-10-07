@@ -152,7 +152,7 @@ describe('errorHandler middleware', () => {
     it('passes a rejected promise to next', async () => {
       const error = new NotFoundError('League');
       await asyncHandler(vi.fn().mockRejectedValue(error))(mockReq, mockRes, mockNext);
-      await new Promise((resolve) => setImmediate(resolve));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       expect(mockNext).toHaveBeenCalledWith(error);
     });
   });
