@@ -1,4 +1,4 @@
-import { getYahooApiClient } from "./yahoo-api-client";
+import type { YahooClientFactory } from "./yahoo-api-client";
 import { logger } from "../../utils/logger";
 import { parseTeamsFromStandings } from "../parsers/league-parser.js";
 import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
@@ -26,11 +26,10 @@ export interface LeagueWithTeam {
  */
 export async function getUserLeagues(
   userId: string,
-  tokenStorage?: YahooTokenStorage,
+  tokenStorage: YahooTokenStorage,
+  createClient: YahooClientFactory,
 ): Promise<LeagueWithTeam[]> {
-  const client = tokenStorage
-    ? await getYahooApiClient(userId, tokenStorage)
-    : await getYahooApiClient(userId);
+  const client = await createClient(userId, tokenStorage);
 
   try {
     // Fetch NBA leagues and the user's GUID in one Yahoo request.

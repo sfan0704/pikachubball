@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
-import { yahooOAuthController } from '../../../../server/controllers/yahoo-oauth-controller';
+import { createYahooOAuthController } from '../../../../server/controllers/yahoo-oauth-controller';
+import { buildTestConfig, silentLogger } from '../../../support/dependencies';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { revokeYahooToken } from '../../../../server/yahoo-auth';
 import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
@@ -11,6 +12,8 @@ vi.mock('../../../../server/yahoo-auth', () => ({
   exchangeAuthorizationCode: vi.fn(),
   revokeYahooToken: vi.fn(),
 }));
+
+const yahooOAuthController = createYahooOAuthController({ config: buildTestConfig(), logger: silentLogger });
 
 describe('yahooOAuthController', () => {
   let mockReq: Request;
@@ -143,8 +146,8 @@ describe('yahooOAuthController', () => {
 
       expect(revokeYahooToken).toHaveBeenCalledWith(
         'refresh-token',
-        expect.any(String),
-        expect.any(String),
+        'test-client-id',
+        'test-client-secret',
       );
       expect(deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
       expect(mockRes.json).toHaveBeenCalledWith({

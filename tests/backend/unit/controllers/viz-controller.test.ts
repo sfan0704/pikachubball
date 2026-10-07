@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
-import { vizController } from '../../../../server/controllers/viz-controller';
+import { createVizController } from '../../../../server/controllers/viz-controller';
+import type { OwnerScopedStorage } from '../../../../server/storage/yahoo-token-storage';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { getLeagueRankings, getLeagueHeatmap } from '../../../../server/services/viz/league-viz';
 import { getMatchupComparison } from '../../../../server/services/viz/matchup-viz';
@@ -13,6 +14,9 @@ vi.mock('../../../../server/services/viz/league-viz');
 vi.mock('../../../../server/services/viz/matchup-viz');
 
 describe('vizController', () => {
+  const createYahooClient = vi.fn();
+  const vizController = createVizController({ createYahooClient });
+  const storage = {} as OwnerScopedStorage;
   let mockReq: Request;
   let mockRes: Response;
   let mockNext: NextFunction;
@@ -21,6 +25,7 @@ describe('vizController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReq = createAuthenticatedRequest() as Request;
+    mockReq.ownerStorage = storage;
     mockRes = createMockResponse() as Response;
     mockNext = createMockNext();
     vi.mocked(getAuthenticatedUserId).mockReturnValue(userId);

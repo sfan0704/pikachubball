@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { parse, serialize } from "cookie";
 import type { Request, Response } from "express";
+import type { HostedAuthConfig } from "../config/config";
 
 export const AUTH_COOKIE_NAME = "pikachubball-auth";
 export const YAHOO_PROVIDER = "custom:yahoo";
@@ -12,79 +13,11 @@ export const AUTH_NO_STORE_HEADERS = Object.freeze({
   Pragma: "no-cache",
 });
 
-export interface HostedAuthConfig {
-  appOrigin: string;
-  supabaseUrl: string;
-  supabasePublishableKey: string;
-  secureCookies: boolean;
-}
-
 export interface YahooSessionIdentity {
   userId: string;
   yahooGuid: string;
   displayName: string | null;
   email: string | null;
-}
-
-function parseOrigin(value: string, name: string, allowLoopback: boolean): string {
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error(`${name} must be an absolute URL`);
-  }
-
-  const loopback =
-    allowLoopback &&
-    url.protocol === "http:" &&
-    (url.hostname === "localhost" || url.hostname === "127.0.0.1");
-  if (url.protocol !== "https:" && !loopback) {
-    throw new Error(`${name} must use HTTPS`);
-  }
-  if (
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    url.pathname !== "/"
-  ) {
-    throw new Error(`${name} must be an origin without credentials or a path`);
-  }
-  return url.origin;
-}
-
-export function readHostedAuthConfig(
-  environment: NodeJS.ProcessEnv = process.env,
-): HostedAuthConfig {
-  const production = environment.NODE_ENV === "production";
-  const appOrigin = parseOrigin(
-    environment.APP_ORIGIN ?? "http://localhost:5000",
-    "APP_ORIGIN",
-    !production,
-  );
-  const supabaseUrl = parseOrigin(
-    environment.SUPABASE_URL ?? "http://127.0.0.1:54321",
-    "SUPABASE_URL",
-    !production,
-  );
-  const supabasePublishableKey = environment.SUPABASE_PUBLISHABLE_KEY?.trim();
-  if (!supabasePublishableKey) {
-    throw new Error("SUPABASE_PUBLISHABLE_KEY is required");
-  }
-  if (
-    production &&
-    !supabasePublishableKey.startsWith("sb_publishable_") &&
-    !supabasePublishableKey.startsWith("eyJ")
-  ) {
-    throw new Error("SUPABASE_PUBLISHABLE_KEY has an unsupported format");
-  }
-
-  return {
-    appOrigin,
-    supabaseUrl,
-    supabasePublishableKey,
-    secureCookies: production,
-  };
 }
 
 export function hardenCookieOptions(
@@ -105,12 +38,12 @@ export function applyAuthNoStore(res: Response): void {
   res.set(AUTH_NO_STORE_HEADERS);
 }
 
+/** A Supabase client acting as the request's user, reading and writing session cookies. */
 export function createSupabaseRequestClient(
   req: Request,
   res: Response,
-  environment: NodeJS.ProcessEnv = process.env,
+  config: HostedAuthConfig,
 ): SupabaseClient {
-  const config = readHostedAuthConfig(environment);
   const incomingCookies = parse(req.headers.cookie ?? "");
 
   return createServerClient(

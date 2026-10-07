@@ -1,18 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
-import { requestLogger } from '../../../../server/middleware/request-logger';
-import { logger } from '../../../../server/utils/logger';
+import { createRequestLogger } from '../../../../server/middleware/request-logger';
+import type { Logger } from '../../../../server/utils/logger';
 import { createMockRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
 
-// Mock logger
-vi.mock('../../../../server/utils/logger', () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
+const logger: Logger = {
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+};
+const requestLogger = createRequestLogger(logger);
 
 describe('requestLogger', () => {
   let mockReq: Request;

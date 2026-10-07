@@ -1,19 +1,22 @@
 import express from "express";
 import request from "supertest";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   AUTH_NO_STORE_HEADERS,
   hardenCookieOptions,
   projectYahooIdentity,
-  readHostedAuthConfig,
   readVerifiedYahooIdentity,
   requireYahooProviderTokens,
   YAHOO_ISSUER,
   YAHOO_PROVIDER,
 } from "../../../../server/auth/supabase-auth";
 import { createSupabaseAuthController } from "../../../../server/controllers/supabase-auth-controller";
-import { errorHandler } from "../../../../server/middleware/error-handler";
+import { createErrorHandler } from "../../../../server/middleware/error-handler";
+import { buildTestConfig, silentLogger } from "../../../support/dependencies";
+
+const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });
+const auth = buildTestConfig().auth;
 
 const USER_ID = "23f99d06-30ff-4767-8c41-21510b7fd5d0";
 
@@ -70,30 +73,6 @@ function fakeClient(auth: Record<string, unknown>): SupabaseClient {
 }
 
 describe("Supabase Yahoo auth boundary", () => {
-  beforeEach(() => {
-    process.env.NODE_ENV = "test";
-    process.env.APP_ORIGIN = "https://basketball.example.test";
-    process.env.SUPABASE_URL = "https://basketball-project.supabase.co";
-    process.env.SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test";
-  });
-
-  afterEach(() => {
-    delete process.env.APP_ORIGIN;
-    delete process.env.SUPABASE_URL;
-    delete process.env.SUPABASE_PUBLISHABLE_KEY;
-  });
-
-  it("accepts exact HTTPS origins and rejects path-bearing callbacks", () => {
-    expect(readHostedAuthConfig()).toMatchObject({
-      appOrigin: "https://basketball.example.test",
-      supabaseUrl: "https://basketball-project.supabase.co",
-      secureCookies: false,
-    });
-
-    process.env.APP_ORIGIN = "https://basketball.example.test/unexpected";
-    expect(() => readHostedAuthConfig()).toThrow(/origin without/);
-  });
-
   it("hardens every auth cookie and drops provider-supplied domains", () => {
     expect(
       hardenCookieOptions(
@@ -172,6 +151,7 @@ describe("Supabase Yahoo auth boundary", () => {
       error: null,
     });
     const controller = createSupabaseAuthController({
+      auth,
       createClient: () => fakeClient({ signInWithOAuth }),
     });
     const app = express();
@@ -206,6 +186,7 @@ describe("Supabase Yahoo auth boundary", () => {
       .mockResolvedValueOnce({ data: { session: yahooSession() }, error: null })
       .mockResolvedValueOnce({ data: { session: null }, error: new Error("used") });
     const controller = createSupabaseAuthController({
+      auth,
       createClient: () => fakeClient({ exchangeCodeForSession }),
     });
     const app = express();
@@ -224,6 +205,7 @@ describe("Supabase Yahoo auth boundary", () => {
 
   it("rejects callback completion when the Yahoo identity is incomplete", async () => {
     const controller = createSupabaseAuthController({
+      auth,
       createClient: () =>
         fakeClient({
           exchangeCodeForSession: vi.fn().mockResolvedValue({

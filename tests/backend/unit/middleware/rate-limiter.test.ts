@@ -1,49 +1,45 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
-import { apiLimiter, authLimiter, signupLimiter } from '../../../../server/middleware/rate-limiter';
-import { createMockRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
+import { describe, it, expect } from 'vitest';
+import express from 'express';
+import request from 'supertest';
+import { createRateLimiters } from '../../../../server/middleware/rate-limiter';
+import { createErrorHandler } from '../../../../server/middleware/error-handler';
+import { requestId } from '../../../../server/middleware/request-id';
+import type { Logger } from '../../../../server/utils/logger';
 
-describe('rateLimiter', () => {
-  let _mockReq: Request;
-  let _mockRes: Response;
-  let _mockNext: NextFunction;
+const silentLogger: Logger = { debug() {}, info() {}, warn() {}, error() {} };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    _mockReq = createMockRequest() as Request;
-    _mockRes = createMockResponse() as Response;
-    _mockNext = createMockNext();
+function appWith(skip: boolean) {
+  const app = express();
+  app.use(requestId);
+  const { auth } = createRateLimiters({ skip });
+  app.get('/login', auth, (_req, res) => res.status(401).json({ ok: false }));
+  app.use(createErrorHandler({ logger: silentLogger, exposeErrorDetails: false }));
+  return app;
+}
+
+describe('createRateLimiters', () => {
+  it('answers the sixth failed sign-in attempt with RATE_LIMITED and Retry-After', async () => {
+    const app = appWith(false);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await request(app).get('/login').expect(401);
+    }
+
+    const limited = await request(app).get('/login');
+
+    expect(limited.status).toBe(429);
+    expect(limited.body).toEqual({
+      code: 'RATE_LIMITED',
+      message: 'Too many login attempts, please try again later',
+      requestId: expect.any(String),
+      details: { retryAfterSeconds: expect.any(Number) },
+    });
+    expect(Number(limited.headers['retry-after'])).toBeGreaterThan(0);
   });
 
-  describe('apiLimiter', () => {
-    it('should be defined', () => {
-      // ARRANGE & ACT & ASSERT
-      expect(apiLimiter).toBeDefined();
-      expect(typeof apiLimiter).toBe('function');
-    });
-
-    it('should have correct configuration', () => {
-      // ARRANGE & ACT & ASSERT
-      // Rate limiter is a middleware function from express-rate-limit
-      // We can verify it's configured correctly by checking it's callable
-      expect(apiLimiter).toBeDefined();
-    });
-  });
-
-  describe('authLimiter', () => {
-    it('should be defined', () => {
-      // ARRANGE & ACT & ASSERT
-      expect(authLimiter).toBeDefined();
-      expect(typeof authLimiter).toBe('function');
-    });
-  });
-
-  describe('signupLimiter', () => {
-    it('should be defined', () => {
-      // ARRANGE & ACT & ASSERT
-      expect(signupLimiter).toBeDefined();
-      expect(typeof signupLimiter).toBe('function');
-    });
+  it('applies no limit when skipped', async () => {
+    const app = appWith(true);
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      await request(app).get('/login').expect(401);
+    }
   });
 });
-

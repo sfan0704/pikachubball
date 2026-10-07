@@ -2,28 +2,24 @@ import type { Request, Response } from "express";
 import type { Provider, SupabaseClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../middleware/error-handler";
 import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
+import type { HostedAuthConfig } from "../config/config";
 import {
   applyAuthNoStore,
-  createSupabaseRequestClient,
   projectYahooIdentity,
-  readHostedAuthConfig,
   YAHOO_PROVIDER,
 } from "../auth/supabase-auth";
+
+/** What the sign-in controller needs from the composition root. */
 export interface AuthControllerDependencies {
+  readonly auth: HostedAuthConfig;
   createClient(req: Request, res: Response): SupabaseClient;
 }
 
-const defaultDependencies: AuthControllerDependencies = {
-  createClient: createSupabaseRequestClient,
-};
-
-export function createSupabaseAuthController(
-  dependencies: AuthControllerDependencies = defaultDependencies,
-) {
+export function createSupabaseAuthController(dependencies: AuthControllerDependencies) {
   return {
     beginYahooLogin: asyncHandler(async (req: Request, res: Response) => {
       applyAuthNoStore(res);
-      const config = readHostedAuthConfig();
+      const config = dependencies.auth;
       const client = dependencies.createClient(req, res);
       const { data, error } = await client.auth.signInWithOAuth({
         provider: YAHOO_PROVIDER as Provider,
@@ -97,4 +93,3 @@ export function createSupabaseAuthController(
   };
 }
 
-export const supabaseAuthController = createSupabaseAuthController();

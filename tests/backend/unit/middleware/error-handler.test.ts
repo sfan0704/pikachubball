@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { errorHandler, asyncHandler, statusForCode } from '../../../../server/middleware/error-handler';
+import { createErrorHandler, asyncHandler, statusForCode } from '../../../../server/middleware/error-handler';
 import {
   AppError,
   ConflictError,
@@ -13,13 +13,11 @@ import {
   ValidationError,
 } from '../../../../shared/api/errors';
 import { createMockRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
-import { env } from '../../../../server/config/env';
+import type { Logger } from '../../../../server/utils/logger';
 
-vi.mock('../../../../server/config/env', () => ({
-  env: {
-    NODE_ENV: 'test',
-  },
-}));
+const logger: Logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+const errorHandler = createErrorHandler({ logger, exposeErrorDetails: false });
+const developmentErrorHandler = createErrorHandler({ logger, exposeErrorDetails: true });
 
 describe('errorHandler middleware', () => {
   let mockReq: Request;
@@ -129,16 +127,11 @@ describe('errorHandler middleware', () => {
       });
     });
 
-    it('adds the message and stack for unexpected errors in development', () => {
-      (env as { NODE_ENV: string }).NODE_ENV = 'development';
-      try {
-        errorHandler(new Error('database exploded'), mockReq, mockRes, mockNext);
-        const body = (mockRes as unknown as { body: { details: { message: string; stack: string } } }).body;
-        expect(body.details.message).toBe('database exploded');
-        expect(body.details.stack).toContain('database exploded');
-      } finally {
-        (env as { NODE_ENV: string }).NODE_ENV = 'test';
-      }
+    it('adds the message and stack for unexpected errors when details are exposed', () => {
+      developmentErrorHandler(new Error('database exploded'), mockReq, mockRes, mockNext);
+      const body = (mockRes as unknown as { body: { details: { message: string; stack: string } } }).body;
+      expect(body.details.message).toBe('database exploded');
+      expect(body.details.stack).toContain('database exploded');
     });
   });
 

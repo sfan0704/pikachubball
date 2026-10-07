@@ -5,10 +5,14 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../../../server/app";
 import { serveStatic } from "../../../server/config/vite";
-import { errorHandler } from "../../../server/middleware/error-handler";
+import { createAppErrorHandler } from "../../../server/composition-root";
+import { buildTestDependencies } from "../../support/dependencies";
+
+const dependencies = buildTestDependencies();
+const errorHandler = createAppErrorHandler(dependencies);
 
 function createApiApp() {
-  const app = createApp();
+  const app = createApp(dependencies);
   app.use(errorHandler);
   return app;
 }
@@ -16,7 +20,7 @@ function createApiApp() {
 let staticFixturePath: string;
 
 function createProductionApp() {
-  const app = createApp();
+  const app = createApp(dependencies);
   serveStatic(app, staticFixturePath);
   app.use(errorHandler);
   return app;

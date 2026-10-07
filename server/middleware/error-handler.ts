@@ -1,8 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AppError, type ErrorBody, type ErrorCode } from "../../shared/api/errors";
-import { logger } from "../utils/logger";
-import { env } from "../config/env";
+import type { Logger } from "../utils/logger";
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   UNAUTHORIZED: 401,
@@ -38,44 +37,53 @@ function sendError(
   res.status(statusForCode(code)).json(body);
 }
 
+/** What the error handler needs from the composition root. */
+export interface ErrorHandlerOptions {
+  readonly logger: Logger;
+  /** Include the message and stack of unexpected errors in the response (development only). */
+  readonly exposeErrorDetails: boolean;
+}
+
 /**
- * Global error handler middleware
- * Handles all errors and returns consistent JSON responses
+ * Builds the global error handler. Every error becomes one response body,
+ * `{ code, message, requestId }`, with the status mapped from its code.
  */
-export function errorHandler(
-  err: Error | AppError | ZodError,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
-  if (err instanceof ZodError) {
+export function createErrorHandler({ logger, exposeErrorDetails }: ErrorHandlerOptions) {
+  return function errorHandler(
+    err: Error | AppError | ZodError,
+    req: Request,
+    res: Response,
+    _next: NextFunction
+  ): void {
+    if (err instanceof ZodError) {
+      sendError(
+        req,
+        res,
+        "VALIDATION_ERROR",
+        "Validation error",
+        err.errors.map((e) => ({ path: e.path.join("."), message: e.message })),
+      );
+      return;
+    }
+
+    if (err instanceof AppError) {
+      const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)?.retryAfterSeconds;
+      if (typeof retryAfter === "number") {
+        res.setHeader("Retry-After", String(retryAfter));
+      }
+      sendError(req, res, err.code, err.message, err.details);
+      return;
+    }
+
+    logger.error("Unexpected error:", err);
     sendError(
       req,
       res,
-      "VALIDATION_ERROR",
-      "Validation error",
-      err.errors.map((e) => ({ path: e.path.join("."), message: e.message })),
+      "INTERNAL_ERROR",
+      "Internal server error",
+      exposeErrorDetails ? { message: err.message, stack: err.stack } : undefined,
     );
-    return;
-  }
-
-  if (err instanceof AppError) {
-    const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)?.retryAfterSeconds;
-    if (typeof retryAfter === "number") {
-      res.setHeader("Retry-After", String(retryAfter));
-    }
-    sendError(req, res, err.code, err.message, err.details);
-    return;
-  }
-
-  logger.error("Unexpected error:", err);
-  sendError(
-    req,
-    res,
-    "INTERNAL_ERROR",
-    "Internal server error",
-    env.NODE_ENV === "development" ? { message: err.message, stack: err.stack } : undefined,
-  );
+  };
 }
 
 /**

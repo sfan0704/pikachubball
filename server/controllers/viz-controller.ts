@@ -5,13 +5,27 @@ import { getMatchupComparison } from "../services/viz/matchup-viz";
 import { getAuthenticatedUserId } from "../middleware/auth";
 import { parseWeekParam } from "../utils/week-parser";
 import { asyncHandler } from "../middleware/error-handler";
-import { ValidationError } from "../../shared/api/errors";
+import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
+import type { YahooClientFactory } from "../services/yahoo/yahoo-api-client";
 
 /**
  * Visualization controller
  * Handles retained league rankings and matchup visualizations.
  */
-export const vizController = {
+export interface VizControllerDependencies {
+  readonly createYahooClient: YahooClientFactory;
+}
+
+export function createVizController({ createYahooClient }: VizControllerDependencies) {
+  /** A data source for the signed-in user, or UNAUTHORIZED when storage is missing. */
+  const dataSourceFor = (req: Request, userId: string) => {
+    if (!req.ownerStorage) {
+      throw new UnauthorizedError("Owner-scoped storage is unavailable");
+    }
+    return new YahooFantasyDataSource(userId, req.ownerStorage, createYahooClient);
+  };
+
+  return {
   /**
    * Get league rankings (9-category standings)
    */
@@ -27,7 +41,7 @@ export const vizController = {
     }
 
     const week = parseWeekParam(req.query.week);
-    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
+    const dataSource = dataSourceFor(req, userId);
     const response = await getLeagueRankings(dataSource, leagueKey, week);
 
     res.json(response);
@@ -48,7 +62,7 @@ export const vizController = {
     }
 
     const week = parseWeekParam(req.query.week);
-    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
+    const dataSource = dataSourceFor(req, userId);
     const response = await getLeagueHeatmap(dataSource, leagueKey, week);
 
     res.json(response);
@@ -70,7 +84,7 @@ export const vizController = {
 
     const week = parseWeekParam(req.query.week);
     const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
-    const dataSource = new YahooFantasyDataSource(userId, req.ownerStorage);
+    const dataSource = dataSourceFor(req, userId);
     const response = await getMatchupComparison(
       dataSource,
       leagueKey,
@@ -81,4 +95,5 @@ export const vizController = {
 
     res.json(response);
   }),
-};
+  };
+}

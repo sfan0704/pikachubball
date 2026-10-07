@@ -11,16 +11,7 @@ import {
 } from "../../../server/yahoo-auth";
 
 vi.mock("axios");
-vi.mock("../../../server/config/env", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../../server/config/env")>();
-  return {
-    ...original,
-    env: {
-      ...original.env,
-      YAHOO_PROVIDER_REDIRECT_URI: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
-    },
-  };
-});
+const REDIRECT_URI = "https://basketball.example.test/api/auth/yahoo/fantasy/callback";
 
 describe("exchangeAuthorizationCode", () => {
   beforeEach(() => {
@@ -87,7 +78,7 @@ describe("refreshAccessToken", () => {
       data: { access_token: "new-access", refresh_token: "new-refresh", expires_in: 3600 },
     });
 
-    await expect(refreshAccessToken("old-refresh", "id", "secret")).resolves.toEqual({
+    await expect(refreshAccessToken("old-refresh", "id", "secret", REDIRECT_URI)).resolves.toEqual({
       accessToken: "new-access",
       refreshToken: "new-refresh",
       expiresIn: 3600,
@@ -102,7 +93,7 @@ describe("refreshAccessToken", () => {
       data: { access_token: "new-access", expires_in: 3600 },
     });
 
-    const result = await refreshAccessToken("old-refresh", "id", "secret");
+    const result = await refreshAccessToken("old-refresh", "id", "secret", REDIRECT_URI);
 
     expect(result.refreshToken).toBeUndefined();
     expect(result.accessToken).toBe("new-access");
@@ -115,7 +106,7 @@ describe("refreshAccessToken", () => {
         response: { status, data: { error: "invalid_grant" } },
       });
 
-      await expect(refreshAccessToken("revoked", "id", "secret")).rejects.toBeInstanceOf(
+      await expect(refreshAccessToken("revoked", "id", "secret", REDIRECT_URI)).rejects.toBeInstanceOf(
         YahooReconnectRequiredError,
       );
     }
@@ -128,10 +119,25 @@ describe("refreshAccessToken", () => {
       .mockResolvedValueOnce({ data: { refresh_token: "only-refresh" } });
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      await expect(refreshAccessToken("current", "id", "secret")).rejects.toBeInstanceOf(
+      await expect(refreshAccessToken("current", "id", "secret", REDIRECT_URI)).rejects.toBeInstanceOf(
         YahooUnavailableError,
       );
     }
+  });
+});
+
+describe("refreshAccessToken configuration", () => {
+  it("sends the provider redirect it was given and refuses to run without one", async () => {
+    vi.mocked(axios).mockResolvedValueOnce({
+      data: { access_token: "a", expires_in: 3600 },
+    });
+    await refreshAccessToken("refresh", "id", "secret", REDIRECT_URI);
+    const request = vi.mocked(axios).mock.calls[0][0];
+    expect(new URLSearchParams(request.data).get("redirect_uri")).toBe(REDIRECT_URI);
+
+    await expect(refreshAccessToken("refresh", "id", "secret", null)).rejects.toThrow(
+      "refresh configuration is incomplete",
+    );
   });
 });
 

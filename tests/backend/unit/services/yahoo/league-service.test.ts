@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getUserLeagues } from '../../../../../server/services/yahoo/league-service';
-import { getYahooApiClient } from '../../../../../server/services/yahoo/yahoo-api-client';
+import type { YahooTokenStorage } from '../../../../../server/storage/yahoo-token-storage';
 import { mockStandings } from '../../../fixtures/yahoo-responses';
 
-// Mock the getYahooApiClient function
-vi.mock('../../../../../server/services/yahoo/yahoo-api-client', () => ({
-  getYahooApiClient: vi.fn(),
-}));
+const storage = {} as YahooTokenStorage;
+const getYahooApiClient = vi.fn();
 
 describe('league-service', () => {
   let mockYahooApiClient: any;
@@ -35,7 +33,7 @@ describe('league-service', () => {
       getLeagueStandings: vi.fn().mockResolvedValue(mockStandings),
     };
     
-    vi.mocked(getYahooApiClient).mockResolvedValue(mockYahooApiClient);
+    getYahooApiClient.mockResolvedValue(mockYahooApiClient);
   });
 
   describe('getUserLeagues', () => {
@@ -46,10 +44,10 @@ describe('league-service', () => {
         getUserGameLeagues: vi.fn().mockResolvedValue({ games: [] }),
         getLeagueStandings: vi.fn(),
       };
-      vi.mocked(getYahooApiClient).mockResolvedValue(emptyClient);
+      getYahooApiClient.mockResolvedValue(emptyClient);
 
       // ACT
-      const leagues = await getUserLeagues(userId);
+      const leagues = await getUserLeagues(userId, storage, getYahooApiClient);
 
       // ASSERT
       expect(leagues).toEqual([]);
@@ -88,7 +86,7 @@ describe('league-service', () => {
       mockYahooApiClient.getLeagueStandings.mockResolvedValue(standingsWithUserTeam);
 
       // ACT
-      const leagues = await getUserLeagues(userId);
+      const leagues = await getUserLeagues(userId, storage, getYahooApiClient);
 
       // ASSERT
       expect(Array.isArray(leagues)).toBe(true);
@@ -151,7 +149,7 @@ describe('league-service', () => {
         standingsFor(leagueKey),
       );
 
-      const leagues = await getUserLeagues(userId);
+      const leagues = await getUserLeagues(userId, storage, getYahooApiClient);
 
       expect(leagues.map(({ leagueKey, status }) => ({ leagueKey, status }))).toEqual([
         { leagueKey: '466.l.1', status: 'finished' },
@@ -172,10 +170,10 @@ describe('league-service', () => {
         ),
         getLeagueStandings: vi.fn(),
       };
-      vi.mocked(getYahooApiClient).mockResolvedValue(errorClient);
+      getYahooApiClient.mockResolvedValue(errorClient);
 
       // ACT & ASSERT
-      await expect(getUserLeagues(userId)).rejects.toThrow(
+      await expect(getUserLeagues(userId, storage, getYahooApiClient)).rejects.toThrow(
         'Yahoo Fantasy credentials expired or invalid'
       );
     });
@@ -191,11 +189,11 @@ describe('league-service', () => {
         ),
         getLeagueStandings: vi.fn(),
       };
-      vi.mocked(getYahooApiClient).mockResolvedValue(errorClient);
+      getYahooApiClient.mockResolvedValue(errorClient);
 
       // ACT & ASSERT
       // The service converts token/refresh errors to a specific message
-      await expect(getUserLeagues(userId)).rejects.toThrow();
+      await expect(getUserLeagues(userId, storage, getYahooApiClient)).rejects.toThrow();
       // The error should be thrown (either original or converted)
     });
 
@@ -210,12 +208,12 @@ describe('league-service', () => {
           },
         },
       });
-      vi.mocked(getYahooApiClient).mockResolvedValue({
+      getYahooApiClient.mockResolvedValue({
         getUserGameLeagues: vi.fn().mockRejectedValue(accessError),
         getAllUserLeagues: vi.fn().mockRejectedValue(accessError),
       } as any);
 
-      await expect(getUserLeagues(userId)).rejects.toMatchObject({
+      await expect(getUserLeagues(userId, storage, getYahooApiClient)).rejects.toMatchObject({
         code: 'YAHOO_UNAVAILABLE',
         message: 'Yahoo has not activated Fantasy API access for this application yet.',
         details: { reason: 'FANTASY_ACCESS_PENDING' },
@@ -276,7 +274,7 @@ describe('league-service', () => {
       mockYahooApiClient.getLeagueStandings.mockResolvedValue(standingsWithUserTeam);
 
       // ACT
-      await getUserLeagues(userId);
+      await getUserLeagues(userId, storage, getYahooApiClient);
 
       // ASSERT
       // Check that getLeagueStandings was called for each league
