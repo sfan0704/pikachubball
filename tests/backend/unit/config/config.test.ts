@@ -155,4 +155,14 @@ describe("loadConfig", () => {
     expect(loadConfig(minimalEnvironment({ TRUST_PROXY: "true" })).trustProxy).toBe(true);
     expect(loadConfig(minimalEnvironment({ TRUST_PROXY: "false" })).trustProxy).toBe(false);
   });
+
+  it("takes the build id from the deployed commit, or says it is a development build", () => {
+    expect(loadConfig(minimalEnvironment()).buildId).toBe("development");
+    expect(loadConfig(minimalEnvironment({ VERCEL_GIT_COMMIT_SHA: "abc1234" })).buildId).toBe(
+      "abc1234"
+    );
+    expect(loadConfig(minimalEnvironment({ VERCEL_GIT_COMMIT_SHA: "  " })).buildId).toBe(
+      "development"
+    );
+  });
 });

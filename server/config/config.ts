@@ -21,6 +21,8 @@ export interface AppConfig {
   readonly nodeEnv: "development" | "production" | "test";
   readonly port: number;
   readonly trustProxy: boolean;
+  /** The deployed commit, sent on every response so an old browser tab can tell it is out of date. */
+  readonly buildId: string;
   readonly auth: HostedAuthConfig;
   /** 64 hex characters: the key for new token writes. */
   readonly encryptionKey: string;
@@ -41,6 +43,7 @@ const optionalTrimmed = z
 const environmentSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().int().positive().default(5000),
+  VERCEL_GIT_COMMIT_SHA: optionalTrimmed,
   TRUST_PROXY: z
     .string()
     .optional()
@@ -106,6 +109,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
     nodeEnv: values.NODE_ENV,
     port: values.PORT,
     trustProxy: production || values.TRUST_PROXY,
+    buildId: values.VERCEL_GIT_COMMIT_SHA ?? "development",
     auth: {
       appOrigin: parseOrigin(
         values.APP_ORIGIN ?? "http://localhost:5000",

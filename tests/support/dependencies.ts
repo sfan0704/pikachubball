@@ -21,6 +21,7 @@ export function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     nodeEnv: "test",
     port: 5000,
     trustProxy: false,
+    buildId: "test-build",
     auth: {
       appOrigin: "https://basketball.example.test",
       supabaseUrl: "https://basketball-project.supabase.co",

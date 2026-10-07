@@ -7,18 +7,21 @@ import { getRequestContext } from "../request-context";
 /** What the Yahoo data routes need. */
 export interface YahooRouteDependencies {
   readonly requireAuth: RequestHandler;
+  /** Per-user request limit; runs after requireAuth. */
+  readonly dataLimiter: RequestHandler;
   readonly controller: ReturnType<typeof createYahooController>;
 }
 
 /** Register Yahoo Fantasy API data routes */
 export function registerYahooRoutes(
   app: Express,
-  { requireAuth, controller }: YahooRouteDependencies
+  { requireAuth, dataLimiter, controller }: YahooRouteDependencies
 ): void {
-  app.get("/api/yahoo/leagues", requireAuth, controller.getLeagues);
+  app.get("/api/yahoo/leagues", requireAuth, dataLimiter, controller.getLeagues);
   app.get(
     "/api/yahoo/roster-by-team/:teamKey",
     requireAuth,
+    dataLimiter,
     requireOwnedFantasyResource,
     controller.getRoster
   );
@@ -27,6 +30,7 @@ export function registerYahooRoutes(
   app.get(
     "/api/yahoo/test-auth",
     requireAuth,
+    dataLimiter,
     asyncHandler(async (req, res) => {
       try {
         const client = await getRequestContext(req).yahooClient();

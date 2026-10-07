@@ -15,10 +15,12 @@ import { registerVizRoutes } from "./viz";
 export function registerRoutes(app: Express, dependencies: ServerDependencies): void {
   const { config, createSupabaseClient } = dependencies;
   const requireAuth = createRequireAuth(dependencies);
-  const { auth: authLimiter } = createRateLimiters({ skip: config.nodeEnv === "development" });
+  const { auth: authLimiter, data: dataLimiter } = createRateLimiters({
+    skip: config.nodeEnv === "development",
+  });
 
   app.get("/api/health", (_req, res) => {
-    res.status(200).json({ status: "ok", service: "pikachubball" });
+    res.status(200).json({ status: "ok", service: "pikachubball", commit: config.buildId });
   });
 
   registerAuthRoutes(app, {
@@ -35,10 +37,12 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   });
   registerYahooRoutes(app, {
     requireAuth,
+    dataLimiter,
     controller: createYahooController(),
   });
   registerVizRoutes(app, {
     requireAuth,
+    dataLimiter,
     controller: createVizController(),
   });
 }

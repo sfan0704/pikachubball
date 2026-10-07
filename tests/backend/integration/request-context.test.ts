@@ -132,6 +132,19 @@ describe("the request context, end to end", () => {
     expect(signedOut.headers["x-request-id"]).toBe(lines[1].fields.requestId);
   });
 
+  it("answers the 61st data request in a minute with RATE_LIMITED and Retry-After", async () => {
+    const { app } = buildApp();
+
+    for (let i = 0; i < 60; i += 1) {
+      await request(app).get("/api/yahoo/league-rankings/466.l.12345?week=3").expect(200);
+    }
+    const limited = await request(app).get("/api/yahoo/league-rankings/466.l.12345?week=3");
+
+    expect(limited.status).toBe(429);
+    expect(limited.body).toMatchObject({ code: "RATE_LIMITED" });
+    expect(Number(limited.headers["retry-after"])).toBeGreaterThan(0);
+  });
+
   it("answers a user without a Yahoo connection with YAHOO_RECONNECT_REQUIRED", async () => {
     // The client creator reports the missing connection like the real client does.
     const { YahooReconnectRequiredError } =
