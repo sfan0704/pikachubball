@@ -8,6 +8,7 @@ import { yahooController } from "../controllers/yahoo-controller";
 import { getYahooApiClient } from "../services/yahoo/yahoo-api-client";
 import { getAuthenticatedUserId } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
+import { UnauthorizedError } from "../../shared/api/errors";
 
 /** Register Yahoo Fantasy API data routes */
 export function registerYahooRoutes(app: Express): void {
@@ -32,7 +33,7 @@ export function registerYahooRoutes(app: Express): void {
     asyncHandler(async (req, res) => {
       const userId = getAuthenticatedUserId(req);
       if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
+        throw new UnauthorizedError();
       }
       
       try {

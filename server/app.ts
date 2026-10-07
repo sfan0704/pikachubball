@@ -1,7 +1,9 @@
 import express, { type Express } from "express";
 import { AUTH_NO_STORE_HEADERS } from "./auth/supabase-auth";
 import { env } from "./config/env";
+import { requestId } from "./middleware/request-id";
 import { requestLogger } from "./middleware/request-logger";
+import { NotFoundError } from "../shared/api/errors";
 import { registerRoutes } from "./routes/index";
 import { logger } from "./utils/logger";
 
@@ -24,6 +26,7 @@ export function createApp(): Express {
 /** Configure an Express instance with the complete application API. */
 export function configureApp(app: Express): Express {
   app.disable("x-powered-by");
+  app.use(requestId);
 
   if (env.NODE_ENV === "production" || env.TRUST_PROXY) {
     app.set("trust proxy", 1);
@@ -50,11 +53,8 @@ export function configureApp(app: Express): Express {
 
   registerRoutes(app);
 
-  app.use("/api", (_req, res) => {
-    res.status(404).json({
-      error: "API route not found",
-      code: "NOT_FOUND",
-    });
+  app.use("/api", (_req, _res, next) => {
+    next(new NotFoundError("API route"));
   });
 
   return app;

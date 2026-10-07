@@ -1,10 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import {
-  ForbiddenError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from "./error-handler";
+import { ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from "../../shared/api/errors";
 import { getAuthenticatedUserId } from "./auth";
 
 /**

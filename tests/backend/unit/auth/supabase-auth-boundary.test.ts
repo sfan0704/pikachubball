@@ -240,8 +240,9 @@ describe("Supabase Yahoo auth boundary", () => {
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual({
-      error: "Yahoo authentication response was incomplete",
       code: "UNAUTHORIZED",
+      message: "Yahoo authentication response was incomplete",
+      requestId: expect.any(String),
     });
   });
 });

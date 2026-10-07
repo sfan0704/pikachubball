@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { UnauthorizedError } from "./error-handler";
+import { UnauthorizedError } from "../../shared/api/errors";
 import {
   createSupabaseRequestClient,
   readVerifiedYahooIdentity,
@@ -34,10 +34,7 @@ export async function requireAuth(
     req.ownerStorage = createSupabaseOwnerStorage(client, req.authIdentity.userId);
     next();
   } catch {
-    res.status(401).json({ 
-      error: "Authentication required",
-      code: "UNAUTHORIZED"
-    });
+    next(new UnauthorizedError());
   }
 }
 

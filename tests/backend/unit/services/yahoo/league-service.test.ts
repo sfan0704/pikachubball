@@ -216,8 +216,9 @@ describe('league-service', () => {
       } as any);
 
       await expect(getUserLeagues(userId)).rejects.toMatchObject({
-        statusCode: 503,
-        code: 'YAHOO_FANTASY_ACCESS_PENDING',
+        code: 'YAHOO_UNAVAILABLE',
+        message: 'Yahoo has not activated Fantasy API access for this application yet.',
+        details: { reason: 'FANTASY_ACCESS_PENDING' },
       });
     });
 

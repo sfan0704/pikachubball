@@ -1,5 +1,6 @@
 import rateLimit from "express-rate-limit";
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
+import { AppError } from "../../shared/api/errors";
 import { env } from "../config/env";
 
 /**
@@ -10,6 +11,17 @@ const skipInDevelopment = (_req: Request, _res: Response) => {
   return env.NODE_ENV === "development";
 };
 
+/** Passes a RATE_LIMITED error to the error handler, which sets Retry-After. */
+function rateLimited(message: string) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const resetTime = (req as Request & { rateLimit?: { resetTime?: Date } }).rateLimit?.resetTime;
+    const retryAfterSeconds = resetTime
+      ? Math.max(1, Math.ceil((resetTime.getTime() - Date.now()) / 1000))
+      : undefined;
+    next(new AppError("RATE_LIMITED", message, retryAfterSeconds === undefined ? undefined : { retryAfterSeconds }));
+  };
+}
+
 /**
  * General API rate limiter
  * Applies to all API endpoints
@@ -18,10 +30,7 @@ const skipInDevelopment = (_req: Request, _res: Response) => {
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // 100 requests per window per IP
-  message: {
-    error: "Too many requests from this IP, please try again later",
-    code: "RATE_LIMIT_EXCEEDED",
-  },
+  handler: rateLimited("Too many requests from this IP, please try again later"),
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInDevelopment, // Skip rate limiting in development
@@ -35,10 +44,7 @@ export const apiLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 login attempts per window per IP
-  message: {
-    error: "Too many login attempts, please try again later",
-    code: "RATE_LIMIT_EXCEEDED",
-  },
+  handler: rateLimited("Too many login attempts, please try again later"),
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
@@ -53,10 +59,7 @@ export const authLimiter = rateLimit({
 export const signupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 signups per hour per IP
-  message: {
-    error: "Too many signup attempts, please try again later",
-    code: "RATE_LIMIT_EXCEEDED",
-  },
+  handler: rateLimited("Too many signup attempts, please try again later"),
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInDevelopment, // Skip rate limiting in development

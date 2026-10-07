@@ -51,9 +51,11 @@ describe("application routing", () => {
 
     expect(response.status).toBe(404);
     expect(response.type).toBe("application/json");
+    expect(response.headers["x-request-id"]).toBe(response.body.requestId);
     expect(response.body).toEqual({
-      error: "API route not found",
       code: "NOT_FOUND",
+      message: "API route not found",
+      requestId: expect.any(String),
     });
   });
 
@@ -85,9 +87,10 @@ describe("application routing", () => {
     for (const response of responses) {
       expect(response.status).toBe(404);
       expect(response.body).toEqual({
-        error: "API route not found",
-        code: "NOT_FOUND",
-      });
+      code: "NOT_FOUND",
+      message: "API route not found",
+      requestId: expect.any(String),
+    });
     }
   });
 
@@ -99,8 +102,9 @@ describe("application routing", () => {
     expect(response.status).toBe(400);
     expect(response.type).toBe("application/json");
     expect(response.body).toEqual({
-      error: "Missing authorization code",
       code: "VALIDATION_ERROR",
+      message: "Missing authorization code",
+      requestId: expect.any(String),
     });
   });
 

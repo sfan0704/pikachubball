@@ -4,7 +4,8 @@ import { getLeagueRankings, getLeagueHeatmap } from "../services/viz/league-viz"
 import { getMatchupComparison } from "../services/viz/matchup-viz";
 import { getAuthenticatedUserId } from "../middleware/auth";
 import { parseWeekParam } from "../utils/week-parser";
-import { asyncHandler, ValidationError } from "../middleware/error-handler";
+import { asyncHandler } from "../middleware/error-handler";
+import { ValidationError } from "../../shared/api/errors";
 
 /**
  * Visualization controller

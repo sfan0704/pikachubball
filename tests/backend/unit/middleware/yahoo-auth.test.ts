@@ -6,11 +6,7 @@ import {
   requireYahooAuth,
 } from "../../../../server/middleware/yahoo-auth";
 import { getAuthenticatedUserId } from "../../../../server/middleware/auth";
-import {
-  ForbiddenError,
-  NotFoundError,
-  UnauthorizedError,
-} from "../../../../server/middleware/error-handler";
+import { ForbiddenError, NotFoundError, UnauthorizedError } from "../../../../shared/api/errors";
 import {
   createAuthenticatedRequest,
   createMockNext,

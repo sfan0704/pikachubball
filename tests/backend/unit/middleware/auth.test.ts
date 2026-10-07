@@ -6,7 +6,7 @@ import {
   getOptionalUserId,
   requireAuth,
 } from "../../../../server/middleware/auth";
-import { UnauthorizedError } from "../../../../server/middleware/error-handler";
+import { UnauthorizedError } from "../../../../shared/api/errors";
 import {
   createAuthenticatedRequest,
   createMockNext,
@@ -38,12 +38,8 @@ describe("Supabase auth middleware", () => {
   it("fails closed when no Supabase session can be verified", async () => {
     await requireAuth(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({
-      error: "Authentication required",
-      code: "UNAUTHORIZED",
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
   it("projects the verified subject and Yahoo identity", () => {

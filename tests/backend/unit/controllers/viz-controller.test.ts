@@ -4,7 +4,7 @@ import { vizController } from '../../../../server/controllers/viz-controller';
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { getLeagueRankings, getLeagueHeatmap } from '../../../../server/services/viz/league-viz';
 import { getMatchupComparison } from '../../../../server/services/viz/matchup-viz';
-import { ValidationError } from '../../../../server/middleware/error-handler';
+import { ValidationError } from '../../../../shared/api/errors';
 import { createAuthenticatedRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
 
 // Mock dependencies

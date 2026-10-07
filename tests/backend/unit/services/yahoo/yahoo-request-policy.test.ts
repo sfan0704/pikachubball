@@ -79,7 +79,7 @@ describe("withYahooRetries", () => {
     const missingError = await withYahooRetries(missing, clock).catch((error) => error);
 
     expect(longError).toBeInstanceOf(YahooRateLimitedError);
-    expect(longError.statusCode).toBe(429);
+    expect(longError.code).toBe("YAHOO_RATE_LIMITED");
     expect(longError.details).toEqual({ retryAfterSeconds: 30 });
     expect(missingError).toBeInstanceOf(YahooRateLimitedError);
     expect(tooLong).toHaveBeenCalledTimes(1);

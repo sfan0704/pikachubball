@@ -1,20 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { errorHandler, asyncHandler, statusForCode } from '../../../../server/middleware/error-handler';
 import {
-  errorHandler,
-  asyncHandler,
   AppError,
-  ValidationError,
+  ConflictError,
+  ERROR_CODES,
+  errorBodySchema,
+  ForbiddenError,
   NotFoundError,
   UnauthorizedError,
-  ForbiddenError,
-  ConflictError,
-} from '../../../../server/middleware/error-handler';
+  ValidationError,
+} from '../../../../shared/api/errors';
 import { createMockRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
 import { env } from '../../../../server/config/env';
 
-// Mock the env module
 vi.mock('../../../../server/config/env', () => ({
   env: {
     NODE_ENV: 'test',
@@ -28,181 +28,132 @@ describe('errorHandler middleware', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockReq = createMockRequest() as Request;
+    mockReq = { ...createMockRequest(), requestId: 'req-123' } as unknown as Request;
     mockRes = createMockResponse() as Response;
     mockNext = createMockNext();
   });
 
-  describe('Custom Error Classes', () => {
-    it('should create ValidationError with correct properties', () => {
-      const error = new ValidationError('Invalid input');
-      expect(error).toBeInstanceOf(Error);
+  describe('error classes', () => {
+    it.each([
+      [new ValidationError('Invalid input'), 'VALIDATION_ERROR', 'Invalid input'],
+      [new NotFoundError('User'), 'NOT_FOUND', 'User not found'],
+      [new UnauthorizedError('Not logged in'), 'UNAUTHORIZED', 'Not logged in'],
+      [new ForbiddenError('No access'), 'FORBIDDEN', 'No access'],
+      [new ConflictError('Already exists'), 'CONFLICT', 'Already exists'],
+    ])('%s carries its code and no HTTP status', (error, code, message) => {
       expect(error).toBeInstanceOf(AppError);
-      expect(error.statusCode).toBe(400);
-      expect(error.message).toBe('Invalid input');
-      expect(error.code).toBe('VALIDATION_ERROR');
+      expect(error.code).toBe(code);
+      expect(error.message).toBe(message);
+      expect(error).not.toHaveProperty('statusCode');
+    });
+  });
+
+  describe('statusForCode', () => {
+    it.each([
+      ['UNAUTHORIZED', 401],
+      ['YAHOO_RECONNECT_REQUIRED', 401],
+      ['FORBIDDEN', 403],
+      ['NOT_FOUND', 404],
+      ['CONFLICT', 409],
+      ['VALIDATION_ERROR', 400],
+      ['RATE_LIMITED', 429],
+      ['YAHOO_RATE_LIMITED', 429],
+      ['YAHOO_UNAVAILABLE', 503],
+      ['INTERNAL_ERROR', 500],
+    ] as const)('maps %s to %i', (code, status) => {
+      expect(statusForCode(code)).toBe(status);
     });
 
-    it('should create NotFoundError with correct properties', () => {
-      const error = new NotFoundError('User');
-      expect(error.statusCode).toBe(404);
-      expect(error.message).toBe('User not found');
-      expect(error.code).toBe('NOT_FOUND');
-    });
-
-    it('should create UnauthorizedError with correct properties', () => {
-      const error = new UnauthorizedError('Not logged in');
-      expect(error.statusCode).toBe(401);
-      expect(error.message).toBe('Not logged in');
-      expect(error.code).toBe('UNAUTHORIZED');
-    });
-
-    it('should create ForbiddenError with correct properties', () => {
-      const error = new ForbiddenError('No access');
-      expect(error.statusCode).toBe(403);
-      expect(error.message).toBe('No access');
-      expect(error.code).toBe('FORBIDDEN');
-    });
-
-    it('should create ConflictError with correct properties', () => {
-      const error = new ConflictError('Already exists');
-      expect(error.statusCode).toBe(409);
-      expect(error.message).toBe('Already exists');
-      expect(error.code).toBe('CONFLICT');
+    it('covers every error code', () => {
+      for (const code of ERROR_CODES) {
+        expect(statusForCode(code)).toBeGreaterThanOrEqual(400);
+      }
     });
   });
 
   describe('errorHandler', () => {
-    it('should handle ZodError and return 400 with details', () => {
+    it('sends { code, message, requestId } with the mapped status', () => {
+      errorHandler(new ForbiddenError('Not your league'), mockReq, mockRes, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(403);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        code: 'FORBIDDEN',
+        message: 'Not your league',
+        requestId: 'req-123',
+      });
+      expect(errorBodySchema.parse((mockRes as unknown as { body: unknown }).body)).toBeTruthy();
+    });
+
+    it('includes details when the error has them', () => {
+      errorHandler(new ValidationError('Bad week', { week: 'abc' }), mockReq, mockRes, mockNext);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        code: 'VALIDATION_ERROR',
+        message: 'Bad week',
+        requestId: 'req-123',
+        details: { week: 'abc' },
+      });
+    });
+
+    it('sets Retry-After when the error says how long to wait', () => {
+      errorHandler(new AppError('YAHOO_RATE_LIMITED', 'Slow down', { retryAfterSeconds: 30 }), mockReq, mockRes, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(429);
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Retry-After', '30');
+    });
+
+    it('turns a ZodError into VALIDATION_ERROR with the failing paths', () => {
       const zodError = new ZodError([
-        {
-          path: ['username'],
-          message: 'Required',
-          code: 'invalid_type',
-        },
-        {
-          path: ['password'],
-          message: 'Too short',
-          code: 'too_small',
-        },
+        { path: ['username'], message: 'Required', code: 'invalid_type', expected: 'string', received: 'undefined' },
       ]);
 
       errorHandler(zodError, mockReq, mockRes, mockNext);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Validation error',
         code: 'VALIDATION_ERROR',
-        details: [
-          { path: 'username', message: 'Required' },
-          { path: 'password', message: 'Too short' },
-        ],
+        message: 'Validation error',
+        requestId: 'req-123',
+        details: [{ path: 'username', message: 'Required' }],
       });
     });
 
-    it('should handle AppError and return correct status code', () => {
-      const error = new ValidationError('Invalid input');
+    it('hides unexpected errors behind INTERNAL_ERROR', () => {
+      errorHandler(new Error('database exploded'), mockReq, mockRes, mockNext);
 
-      errorHandler(error, mockReq, mockRes, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid input',
-        code: 'VALIDATION_ERROR',
-      });
-    });
-
-    it('should handle AppError with details', () => {
-      const error = new ValidationError('Invalid input');
-      error.details = { field: 'email', reason: 'Invalid format' };
-
-      errorHandler(error, mockReq, mockRes, mockNext);
-
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid input',
-        code: 'VALIDATION_ERROR',
-        details: { field: 'email', reason: 'Invalid format' },
-      });
-    });
-
-    it('should handle unexpected errors and return 500', () => {
-      const error = new Error('Unexpected error');
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      errorHandler(error, mockReq, mockRes, mockNext);
-
-      expect(consoleErrorSpy).toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Internal server error',
         code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        requestId: 'req-123',
       });
-
-      consoleErrorSpy.mockRestore();
     });
 
-    it('should include stack trace in development mode', () => {
-      // ARRANGE
-      const error = new Error('Unexpected error');
-      error.stack = 'Error stack trace';
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      // Mock env to return development mode
-      vi.mocked(env).NODE_ENV = 'development' as any;
-
-      // ACT
-      errorHandler(error, mockReq, mockRes, mockNext);
-
-      // ASSERT
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Internal server error',
-        code: 'INTERNAL_ERROR',
-        stack: 'Error stack trace',
-        message: 'Unexpected error',
-      });
-
-      // Restore
-      vi.mocked(env).NODE_ENV = 'test' as any;
-      consoleErrorSpy.mockRestore();
+    it('adds the message and stack for unexpected errors in development', () => {
+      (env as { NODE_ENV: string }).NODE_ENV = 'development';
+      try {
+        errorHandler(new Error('database exploded'), mockReq, mockRes, mockNext);
+        const body = (mockRes as unknown as { body: { details: { message: string; stack: string } } }).body;
+        expect(body.details.message).toBe('database exploded');
+        expect(body.details.stack).toContain('database exploded');
+      } finally {
+        (env as { NODE_ENV: string }).NODE_ENV = 'test';
+      }
     });
   });
 
   describe('asyncHandler', () => {
-    it('should call handler function with req, res, next', async () => {
-      const handler = vi.fn(async (_req: Request, res: Response, _next: NextFunction) => {
-        res.json({ success: true });
-      });
-
-      const wrapped = asyncHandler(handler);
-      await wrapped(mockReq, mockRes, mockNext);
-
+    it('calls the handler with req, res and next', async () => {
+      const handler = vi.fn().mockResolvedValue(undefined);
+      await asyncHandler(handler)(mockReq, mockRes, mockNext);
       expect(handler).toHaveBeenCalledWith(mockReq, mockRes, mockNext);
     });
 
-    it('should catch errors and pass to next', async () => {
-      const error = new Error('Handler error');
-      const handler = vi.fn(async () => {
-        throw error;
-      });
-
-      const wrapped = asyncHandler(handler);
-      await wrapped(mockReq, mockRes, mockNext);
-
+    it('passes a rejected promise to next', async () => {
+      const error = new NotFoundError('League');
+      await asyncHandler(vi.fn().mockRejectedValue(error))(mockReq, mockRes, mockNext);
+      await new Promise((resolve) => setTimeout(resolve, 0));
       expect(mockNext).toHaveBeenCalledWith(error);
-    });
-
-    it('should handle async errors', async () => {
-      const error = new Error('Async error');
-      const handler = vi.fn(async () => {
-        throw error;
-      });
-
-      const wrapped = asyncHandler(handler);
-      await wrapped(mockReq, mockRes, mockNext);
-
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockNext.mock.calls[0][0]).toBe(error);
     });
   });
 });
-
