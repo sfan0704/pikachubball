@@ -47,7 +47,7 @@ async function waitForDataApi(client: SupabaseClient): Promise<void> {
     }
     if (Date.now() > deadline) {
       throw new Error(
-        `Data API rejected a fresh session: ${error.code} ${error.message} ${error.details ?? ""}`,
+        `Data API rejected a fresh session: ${error.code} ${error.message} ${error.details ?? ""}`
       );
     }
     await new Promise((resolve) => setTimeout(resolve, 1_000));
@@ -67,11 +67,7 @@ export async function signUpOwner(label: string): Promise<Owner> {
   await database.query(
     `insert into auth.identities (provider_id, user_id, identity_data, provider, created_at, updated_at)
      values ($1, $2, $3, 'custom:yahoo', now(), now())`,
-    [
-      yahooGuid,
-      data.user.id,
-      { sub: yahooGuid, iss: "https://api.login.yahoo.com" },
-    ],
+    [yahooGuid, data.user.id, { sub: yahooGuid, iss: "https://api.login.yahoo.com" }]
   );
   await waitForDataApi(client);
   return {
@@ -93,4 +89,3 @@ export async function connect(owner: Owner, label: string) {
     expiresAt: 1_800_000_000,
   });
 }
-

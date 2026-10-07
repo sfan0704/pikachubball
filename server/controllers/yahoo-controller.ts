@@ -18,61 +18,66 @@ export interface YahooControllerDependencies {
 
 export function createYahooController({ logger, createYahooClient }: YahooControllerDependencies) {
   return {
-  /**
-   * Get all user's leagues and teams
-   */
-  getLeagues: asyncHandler(async (req: Request, res: Response) => {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      throw new ValidationError("Authentication required");
-    }
-    
-    const storage = req.ownerStorage;
-    if (!storage) {
-      throw new UnauthorizedError("Owner-scoped storage is unavailable");
-    }
+    /**
+     * Get all user's leagues and teams
+     */
+    getLeagues: asyncHandler(async (req: Request, res: Response) => {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        throw new ValidationError("Authentication required");
+      }
 
-    try {
-      const leagues = await getUserLeagues(userId, storage, createYahooClient);
-      await storage.replaceFantasyMemberships(
-        leagues.map(({ leagueKey, teamKey }) => ({ leagueKey, teamKey })),
-      );
-      logger.info("Returning leagues to client", {
-        userId,
-        leaguesCount: leagues.length,
-        leagues: leagues.map(l => ({ leagueKey: l.leagueKey, leagueName: l.leagueName, teamKey: l.teamKey, teamName: l.teamName }))
-      });
-      res.json({ leagues });
-    } catch (error: any) {
-      // Log detailed error for debugging
-      logger.error("Error in getLeagues controller:", {
-        userId,
-        error: error.message,
-        stack: error.stack,
-      });
-      throw error;
-    }
-  }),
+      const storage = req.ownerStorage;
+      if (!storage) {
+        throw new UnauthorizedError("Owner-scoped storage is unavailable");
+      }
 
-  /**
-   * Get roster for a specific team
-   */
-  getRoster: asyncHandler(async (req: Request, res: Response) => {
-    const { teamKey } = req.params;
-    if (!teamKey) {
-      throw new ValidationError("Team key required");
-    }
+      try {
+        const leagues = await getUserLeagues(userId, storage, createYahooClient);
+        await storage.replaceFantasyMemberships(
+          leagues.map(({ leagueKey, teamKey }) => ({ leagueKey, teamKey }))
+        );
+        logger.info("Returning leagues to client", {
+          userId,
+          leaguesCount: leagues.length,
+          leagues: leagues.map((l) => ({
+            leagueKey: l.leagueKey,
+            leagueName: l.leagueName,
+            teamKey: l.teamKey,
+            teamName: l.teamName,
+          })),
+        });
+        res.json({ leagues });
+      } catch (error: any) {
+        // Log detailed error for debugging
+        logger.error("Error in getLeagues controller:", {
+          userId,
+          error: error.message,
+          stack: error.stack,
+        });
+        throw error;
+      }
+    }),
 
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      throw new ValidationError("Authentication required");
-    }
-    const storage = req.ownerStorage;
-    if (!storage) {
-      throw new UnauthorizedError("Owner-scoped storage is unavailable");
-    }
-    const roster = await getTeamRoster(userId, teamKey, storage, createYahooClient);
-    res.json({ roster });
-  }),
+    /**
+     * Get roster for a specific team
+     */
+    getRoster: asyncHandler(async (req: Request, res: Response) => {
+      const { teamKey } = req.params;
+      if (!teamKey) {
+        throw new ValidationError("Team key required");
+      }
+
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        throw new ValidationError("Authentication required");
+      }
+      const storage = req.ownerStorage;
+      if (!storage) {
+        throw new UnauthorizedError("Owner-scoped storage is unavailable");
+      }
+      const roster = await getTeamRoster(userId, teamKey, storage, createYahooClient);
+      res.json({ roster });
+    }),
   };
 }

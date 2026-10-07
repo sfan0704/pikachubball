@@ -1,10 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": [
-    "api/index.ts",
-    "vitest.database.config.ts",
-    "tests/**/*.test.{ts,tsx}"
-  ],
+  "entry": ["api/index.ts", "vitest.database.config.ts", "tests/**/*.test.{ts,tsx}"],
   "project": [
     "client/src/**/*.{ts,tsx}",
     "server/**/*.ts",
@@ -13,18 +9,7 @@
     "tests/**/*.{ts,tsx}",
     "client/src/**/*.css"
   ],
-  "include": [
-    "dependencies",
-    "devDependencies",
-    "unlisted",
-    "binaries",
-    "unresolved",
-    "files"
-  ],
-  "ignoreDependencies": [
-    "supabase"
-  ],
-  "ignoreBinaries": [
-    "openssl"
-  ]
+  "include": ["dependencies", "devDependencies", "unlisted", "binaries", "unresolved", "files"],
+  "ignoreDependencies": ["supabase"],
+  "ignoreBinaries": ["openssl"]
 }

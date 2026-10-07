@@ -1,8 +1,15 @@
-import type { FantasyDataSource } from '../fantasy-data-source.js';
-import type { RankingsResponse, LeagueHeatmapResponse, TeamHeatmapData } from '../../../shared/schema.js';
-import { CATEGORIES, type CategoryKey, type TeamStats } from '../../../shared/domain/index.js';
-import { parseTeamStatsFromStandings, parseTeamStatsFromScoreboard } from '../parsers/stats-parser.js';
-import { computeCategoryRanks, computeRankings } from '../parsers/rankings-compute.js';
+import type { FantasyDataSource } from "../fantasy-data-source.js";
+import type {
+  RankingsResponse,
+  LeagueHeatmapResponse,
+  TeamHeatmapData,
+} from "../../../shared/schema.js";
+import { CATEGORIES, type CategoryKey, type TeamStats } from "../../../shared/domain/index.js";
+import {
+  parseTeamStatsFromStandings,
+  parseTeamStatsFromScoreboard,
+} from "../parsers/stats-parser.js";
+import { computeCategoryRanks, computeRankings } from "../parsers/rankings-compute.js";
 
 // Re-export for other services
 export { CATEGORIES, type CategoryKey };
@@ -15,27 +22,27 @@ export async function getLeagueRankings(
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
   // Handle both array and object formats for league properties
-  const leagueProps = Array.isArray(leagueData) 
-    ? (leagueData.find((p: any) => p.current_week) || leagueData[0]) 
+  const leagueProps = Array.isArray(leagueData)
+    ? leagueData.find((p: any) => p.current_week) || leagueData[0]
     : leagueData;
-  const currentWeek = parseInt((leagueProps as any)?.current_week || '1');
-  const endWeek = parseInt((leagueProps as any)?.end_week || '22');
-  
+  const currentWeek = parseInt((leagueProps as any)?.current_week || "1");
+  const endWeek = parseInt((leagueProps as any)?.end_week || "22");
+
   const teamStats = await extractTeamStats(dataSource, leagueKey, week, currentWeek, endWeek);
-  
+
   // Compute rankings using the new computation functions
   const rankings = computeRankings(teamStats);
-  
+
   // Sort by total rank
   rankings.sort((a, b) => (a.totalRank || 0) - (b.totalRank || 0));
 
   // Convert to DTO format (TeamRanking requires teamName)
-  const rankingsDto = rankings.map(team => ({
+  const rankingsDto = rankings.map((team) => ({
     teamKey: team.teamKey,
-    teamName: team.teamName || 'Unknown Team',
+    teamName: team.teamName || "Unknown Team",
     managerName: team.managerName,
     stats: team.stats,
-    categoryRanks: team.categoryRanks || {} as Record<CategoryKey, number>,
+    categoryRanks: team.categoryRanks || ({} as Record<CategoryKey, number>),
     totalRank: team.totalRank || 0,
     // Include makes/attempts data for percentage stats
     fgMakes: team.fgMakes,
@@ -47,11 +54,11 @@ export async function getLeagueRankings(
   return {
     rankings: rankingsDto,
     metadata: {
-      scope: week !== undefined ? 'week' : 'season',
+      scope: week !== undefined ? "week" : "season",
       week,
       currentWeek,
-      totalWeeks: endWeek
-    }
+      totalWeeks: endWeek,
+    },
   };
 }
 
@@ -63,19 +70,19 @@ export async function getLeagueHeatmap(
   const settings = await dataSource.getLeagueSettings(leagueKey);
   const leagueData = settings?.fantasy_content?.league?.[0];
   // Handle both array and object formats for league properties
-  const leagueProps = Array.isArray(leagueData) 
-    ? (leagueData.find((p: any) => p.current_week) || leagueData[0]) 
+  const leagueProps = Array.isArray(leagueData)
+    ? leagueData.find((p: any) => p.current_week) || leagueData[0]
     : leagueData;
-  const currentWeek = parseInt((leagueProps as any)?.current_week || '1');
-  const endWeek = parseInt((leagueProps as any)?.end_week || '22');
-  
+  const currentWeek = parseInt((leagueProps as any)?.current_week || "1");
+  const endWeek = parseInt((leagueProps as any)?.end_week || "22");
+
   const teamStats = await extractTeamStats(dataSource, leagueKey, week, currentWeek, endWeek);
-  
+
   const teams: TeamHeatmapData[] = [];
-  
-  computeCategoryRanks(teamStats).forEach(team => {
-    const categories = {} as TeamHeatmapData['categories'];
-    CATEGORIES.forEach(cat => {
+
+  computeCategoryRanks(teamStats).forEach((team) => {
+    const categories = {} as TeamHeatmapData["categories"];
+    CATEGORIES.forEach((cat) => {
       const rank = team.categoryRanks?.[cat] ?? teamStats.length;
       categories[cat] = {
         value: team.stats[cat],
@@ -85,7 +92,7 @@ export async function getLeagueHeatmap(
     });
     teams.push({
       teamKey: team.teamKey,
-      teamName: team.teamName || 'Unknown Team',
+      teamName: team.teamName || "Unknown Team",
       categories,
     });
   });
@@ -93,11 +100,11 @@ export async function getLeagueHeatmap(
   return {
     teams,
     metadata: {
-      scope: week !== undefined ? 'week' : 'season',
+      scope: week !== undefined ? "week" : "season",
       week,
       currentWeek,
-      totalWeeks: endWeek
-    }
+      totalWeeks: endWeek,
+    },
   };
 }
 
@@ -118,6 +125,6 @@ async function extractTeamStats(
     const standings = await dataSource.getLeagueStandings(leagueKey);
     // Use parser to extract team stats - this handles all Yahoo API format variations
     // Parser can accept raw Yahoo API response directly
-    return parseTeamStatsFromStandings(standings, 'season');
+    return parseTeamStatsFromStandings(standings, "season");
   }
 }

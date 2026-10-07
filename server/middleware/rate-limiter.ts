@@ -15,7 +15,13 @@ function rateLimited(message: string) {
     const retryAfterSeconds = resetTime
       ? Math.max(1, Math.ceil((resetTime.getTime() - Date.now()) / 1000))
       : undefined;
-    next(new AppError("RATE_LIMITED", message, retryAfterSeconds === undefined ? undefined : { retryAfterSeconds }));
+    next(
+      new AppError(
+        "RATE_LIMITED",
+        message,
+        retryAfterSeconds === undefined ? undefined : { retryAfterSeconds }
+      )
+    );
   };
 }
 

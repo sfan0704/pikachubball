@@ -26,74 +26,74 @@ export function createVizController({ createYahooClient }: VizControllerDependen
   };
 
   return {
-  /**
-   * Get league rankings (9-category standings)
-   */
-  getLeagueRankings: asyncHandler(async (req: Request, res: Response) => {
-    const { leagueKey } = req.params;
-    if (!leagueKey) {
-      throw new ValidationError("League key required");
-    }
+    /**
+     * Get league rankings (9-category standings)
+     */
+    getLeagueRankings: asyncHandler(async (req: Request, res: Response) => {
+      const { leagueKey } = req.params;
+      if (!leagueKey) {
+        throw new ValidationError("League key required");
+      }
 
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      throw new ValidationError("Authentication required");
-    }
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        throw new ValidationError("Authentication required");
+      }
 
-    const week = parseWeekParam(req.query.week);
-    const dataSource = dataSourceFor(req, userId);
-    const response = await getLeagueRankings(dataSource, leagueKey, week);
+      const week = parseWeekParam(req.query.week);
+      const dataSource = dataSourceFor(req, userId);
+      const response = await getLeagueRankings(dataSource, leagueKey, week);
 
-    res.json(response);
-  }),
+      res.json(response);
+    }),
 
-  /**
-   * Get league heatmap visualization
-   */
-  getLeagueHeatmap: asyncHandler(async (req: Request, res: Response) => {
-    const { leagueKey } = req.params;
-    if (!leagueKey) {
-      throw new ValidationError("League key required");
-    }
+    /**
+     * Get league heatmap visualization
+     */
+    getLeagueHeatmap: asyncHandler(async (req: Request, res: Response) => {
+      const { leagueKey } = req.params;
+      if (!leagueKey) {
+        throw new ValidationError("League key required");
+      }
 
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      throw new ValidationError("Authentication required");
-    }
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        throw new ValidationError("Authentication required");
+      }
 
-    const week = parseWeekParam(req.query.week);
-    const dataSource = dataSourceFor(req, userId);
-    const response = await getLeagueHeatmap(dataSource, leagueKey, week);
+      const week = parseWeekParam(req.query.week);
+      const dataSource = dataSourceFor(req, userId);
+      const response = await getLeagueHeatmap(dataSource, leagueKey, week);
 
-    res.json(response);
-  }),
+      res.json(response);
+    }),
 
-  /**
-   * Get matchup comparison visualization
-   */
-  getMatchupComparison: asyncHandler(async (req: Request, res: Response) => {
-    const { leagueKey, teamKey } = req.params;
-    if (!leagueKey || !teamKey) {
-      throw new ValidationError("League key and team key required");
-    }
+    /**
+     * Get matchup comparison visualization
+     */
+    getMatchupComparison: asyncHandler(async (req: Request, res: Response) => {
+      const { leagueKey, teamKey } = req.params;
+      if (!leagueKey || !teamKey) {
+        throw new ValidationError("League key and team key required");
+      }
 
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      throw new ValidationError("Authentication required");
-    }
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) {
+        throw new ValidationError("Authentication required");
+      }
 
-    const week = parseWeekParam(req.query.week);
-    const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
-    const dataSource = dataSourceFor(req, userId);
-    const response = await getMatchupComparison(
-      dataSource,
-      leagueKey,
-      teamKey,
-      week,
-      opponentTeamKey
-    );
+      const week = parseWeekParam(req.query.week);
+      const opponentTeamKey = req.query.opponentTeamKey as string | undefined;
+      const dataSource = dataSourceFor(req, userId);
+      const response = await getMatchupComparison(
+        dataSource,
+        leagueKey,
+        teamKey,
+        week,
+        opponentTeamKey
+      );
 
-    res.json(response);
-  }),
+      res.json(response);
+    }),
   };
 }

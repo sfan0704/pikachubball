@@ -1,45 +1,45 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { YahooApiClient } from '../../../../../server/services/yahoo/yahoo-api-client';
-import type { YahooTokenStorage } from '../../../../../server/storage/yahoo-token-storage';
-import type { YahooAppConfig } from '../../../../../server/config/config';
-import { refreshAccessToken } from '../../../../../server/yahoo-auth';
-import axios from 'axios';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { YahooApiClient } from "../../../../../server/services/yahoo/yahoo-api-client";
+import type { YahooTokenStorage } from "../../../../../server/storage/yahoo-token-storage";
+import type { YahooAppConfig } from "../../../../../server/config/config";
+import { refreshAccessToken } from "../../../../../server/yahoo-auth";
+import axios from "axios";
 import {
   YahooReconnectRequiredError,
   YahooUnavailableError,
-} from '../../../../../server/services/yahoo/yahoo-request-policy';
+} from "../../../../../server/services/yahoo/yahoo-request-policy";
 
 // Mock dependencies
-vi.mock('../../../../../server/yahoo-auth');
-vi.mock('axios');
+vi.mock("../../../../../server/yahoo-auth");
+vi.mock("axios");
 
-describe('YahooApiClient', () => {
+describe("YahooApiClient", () => {
   const storage = {
     getYahooToken: vi.fn(),
     saveYahooToken: vi.fn(),
     deleteYahooToken: vi.fn(),
   } as unknown as YahooTokenStorage;
-  const userId = 'test-user-id';
-  const clientId = 'test-client-id';
-  const clientSecret = 'test-client-secret';
+  const userId = "test-user-id";
+  const clientId = "test-client-id";
+  const clientSecret = "test-client-secret";
   const yahooApp: YahooAppConfig = {
     clientId,
     clientSecret,
-    providerRedirectUri: 'https://basketball.example.test/api/auth/yahoo/fantasy/callback',
+    providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
   };
-  const accessToken = 'test-access-token';
-  const refreshToken = 'test-refresh-token';
+  const accessToken = "test-access-token";
+  const refreshToken = "test-refresh-token";
   const expiresAt = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('create', () => {
-    it('should create client using the Yahoo app credentials', async () => {
+  describe("create", () => {
+    it("should create client using the Yahoo app credentials", async () => {
       // ARRANGE
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -56,16 +56,14 @@ describe('YahooApiClient', () => {
       expect(client).toBeInstanceOf(YahooApiClient);
     });
 
-    it('should throw error when the Yahoo app credentials are not configured', async () => {
+    it("should throw error when the Yahoo app credentials are not configured", async () => {
       // ACT & ASSERT
       await expect(
-        YahooApiClient.create(userId, storage, { ...yahooApp, clientId: null, clientSecret: null }),
-      ).rejects.toThrow(
-        'Yahoo OAuth credentials are not configured'
-      );
+        YahooApiClient.create(userId, storage, { ...yahooApp, clientId: null, clientSecret: null })
+      ).rejects.toThrow("Yahoo OAuth credentials are not configured");
     });
 
-    it('should throw error when no token available', async () => {
+    it("should throw error when no token available", async () => {
       // ARRANGE
       vi.mocked(storage.getYahooToken).mockResolvedValue(undefined); // No token
 
@@ -75,15 +73,15 @@ describe('YahooApiClient', () => {
       );
     });
 
-    it('should refresh token if expired', async () => {
+    it("should refresh token if expired", async () => {
       // ARRANGE
       const expiredExpiresAt = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
-      const newAccessToken = 'new-access-token';
-      const newRefreshToken = 'new-refresh-token';
+      const newAccessToken = "new-access-token";
+      const newRefreshToken = "new-refresh-token";
       const newExpiresIn = 3600;
 
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -95,7 +93,7 @@ describe('YahooApiClient', () => {
         expiresIn: newExpiresIn,
       });
       vi.mocked(storage.saveYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
@@ -114,18 +112,18 @@ describe('YahooApiClient', () => {
         refreshToken,
         clientId,
         clientSecret,
-        yahooApp.providerRedirectUri,
+        yahooApp.providerRedirectUri
       );
       expect(storage.saveYahooToken).toHaveBeenCalled();
       expect(client).toBeInstanceOf(YahooApiClient);
     });
 
-    it('should throw error if token refresh fails', async () => {
+    it("should throw error if token refresh fails", async () => {
       // ARRANGE
       const expiredExpiresAt = Math.floor(Date.now() / 1000) - 3600;
-      
+
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -140,13 +138,13 @@ describe('YahooApiClient', () => {
     });
   });
 
-  describe('apiRequest', () => {
+  describe("apiRequest", () => {
     let client: YahooApiClient;
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -161,10 +159,10 @@ describe('YahooApiClient', () => {
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
 
-    it('should make successful API request', async () => {
+    it("should make successful API request", async () => {
       // ARRANGE
-      const endpoint = '/test/endpoint';
-      const responseData = { data: 'test' };
+      const endpoint = "/test/endpoint";
+      const responseData = { data: "test" };
       mockAxiosInstance.get.mockResolvedValue({ data: responseData });
 
       // ACT
@@ -172,42 +170,39 @@ describe('YahooApiClient', () => {
       const result = await (client as any).apiRequest(endpoint);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        `${endpoint}?format=json`,
-        {
-          timeout: 8_000,
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      );
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(`${endpoint}?format=json`, {
+        timeout: 8_000,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       expect(result).toEqual(responseData);
     });
 
-    it('decodes HTML entities in Yahoo text before returning', async () => {
+    it("decodes HTML entities in Yahoo text before returning", async () => {
       mockAxiosInstance.get.mockResolvedValue({
-        data: { team: { name: 'Ball don&#39;t lie', team_key: '466.l.1.t.4' } },
+        data: { team: { name: "Ball don&#39;t lie", team_key: "466.l.1.t.4" } },
       });
 
-      const result = await (client as any).apiRequest('/team/466.l.1.t.4');
+      const result = await (client as any).apiRequest("/team/466.l.1.t.4");
 
-      expect(result).toEqual({ team: { name: "Ball don't lie", team_key: '466.l.1.t.4' } });
+      expect(result).toEqual({ team: { name: "Ball don't lie", team_key: "466.l.1.t.4" } });
     });
 
-    it('returns the raw Yahoo response unchanged from getRawApiResponse', async () => {
-      const raw = { team: { name: 'Ball don&#39;t lie' } };
+    it("returns the raw Yahoo response unchanged from getRawApiResponse", async () => {
+      const raw = { team: { name: "Ball don&#39;t lie" } };
       mockAxiosInstance.get.mockResolvedValue({ data: raw });
 
-      const result = await client.getRawApiResponse('/team/466.l.1.t.4');
+      const result = await client.getRawApiResponse("/team/466.l.1.t.4");
 
-      expect(result).toEqual({ team: { name: 'Ball don&#39;t lie' } });
+      expect(result).toEqual({ team: { name: "Ball don&#39;t lie" } });
     });
 
-    it('should include query parameters in request', async () => {
+    it("should include query parameters in request", async () => {
       // ARRANGE
-      const endpoint = '/test/endpoint';
-      const params = { key: 'value', num: 123 };
-      const responseData = { data: 'test' };
+      const endpoint = "/test/endpoint";
+      const params = { key: "value", num: 123 };
+      const responseData = { data: "test" };
       mockAxiosInstance.get.mockResolvedValue({ data: responseData });
 
       // ACT
@@ -215,23 +210,23 @@ describe('YahooApiClient', () => {
 
       // ASSERT
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        expect.stringContaining('key=value'),
+        expect.stringContaining("key=value"),
         expect.any(Object)
       );
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        expect.stringContaining('num=123'),
+        expect.stringContaining("num=123"),
         expect.any(Object)
       );
       expect(result).toEqual(responseData);
     });
 
-    it('should refresh token and retry on 401 error', async () => {
+    it("should refresh token and retry on 401 error", async () => {
       // ARRANGE
-      const endpoint = '/test/endpoint';
-      const newAccessToken = 'new-access-token';
-      const newRefreshToken = 'new-refresh-token';
+      const endpoint = "/test/endpoint";
+      const newAccessToken = "new-access-token";
+      const newRefreshToken = "new-refresh-token";
       const newExpiresIn = 3600;
-      
+
       // First call returns 401
       const error401 = {
         response: { status: 401 },
@@ -246,7 +241,7 @@ describe('YahooApiClient', () => {
         expiresIn: newExpiresIn,
       });
       vi.mocked(storage.saveYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
@@ -262,15 +257,15 @@ describe('YahooApiClient', () => {
         refreshToken,
         clientId,
         clientSecret,
-        yahooApp.providerRedirectUri,
+        yahooApp.providerRedirectUri
       );
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
       expect(result).toEqual({ success: true });
     });
 
-    it('should throw error if token refresh fails on 401', async () => {
+    it("should throw error if token refresh fails on 401", async () => {
       // ARRANGE
-      const endpoint = '/test/endpoint';
+      const endpoint = "/test/endpoint";
       const error401 = {
         response: { status: 401 },
       };
@@ -284,11 +279,11 @@ describe('YahooApiClient', () => {
       );
     });
 
-    it('should re-throw non-retryable client errors unchanged', async () => {
+    it("should re-throw non-retryable client errors unchanged", async () => {
       // ARRANGE
-      const endpoint = '/test/endpoint';
+      const endpoint = "/test/endpoint";
       const error404 = {
-        response: { status: 404, statusText: 'Not Found', data: { error: 'Missing' } },
+        response: { status: 404, statusText: "Not Found", data: { error: "Missing" } },
       };
       mockAxiosInstance.get.mockRejectedValueOnce(error404);
 
@@ -298,9 +293,15 @@ describe('YahooApiClient', () => {
     });
   });
 
-  describe('refresh coordination and provider failures', () => {
+  describe("refresh coordination and provider failures", () => {
     const now = () => Math.floor(Date.now() / 1000);
-    const expired = () => ({ userId, accessToken, refreshToken, expiresAt: now() - 60, version: 4 });
+    const expired = () => ({
+      userId,
+      accessToken,
+      refreshToken,
+      expiresAt: now() - 60,
+      version: 4,
+    });
     let mockAxiosInstance: { get: ReturnType<typeof vi.fn> };
 
     beforeEach(() => {
@@ -311,57 +312,70 @@ describe('YahooApiClient', () => {
       vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
     });
 
-    it('keeps the current refresh token when Yahoo omits a replacement', async () => {
+    it("keeps the current refresh token when Yahoo omits a replacement", async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue(expired());
-      vi.mocked(refreshAccessToken).mockResolvedValue({ accessToken: 'rotated-access', expiresIn: 3600 });
-      vi.mocked(storage.saveYahooToken).mockImplementation(async (token) => ({ ...token, version: 5 }));
+      vi.mocked(refreshAccessToken).mockResolvedValue({
+        accessToken: "rotated-access",
+        expiresIn: 3600,
+      });
+      vi.mocked(storage.saveYahooToken).mockImplementation(async (token) => ({
+        ...token,
+        version: 5,
+      }));
 
       await YahooApiClient.create(userId, storage, yahooApp);
 
       expect(storage.saveYahooToken).toHaveBeenCalledWith(
-        expect.objectContaining({ accessToken: 'rotated-access', refreshToken }),
-        { expectedVersion: 4 },
+        expect.objectContaining({ accessToken: "rotated-access", refreshToken }),
+        { expectedVersion: 4 }
       );
     });
 
-    it('uses a rotated refresh token for the next refresh', async () => {
+    it("uses a rotated refresh token for the next refresh", async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({ ...expired(), expiresAt: now() + 3600 });
       vi.mocked(refreshAccessToken)
-        .mockResolvedValueOnce({ accessToken: 'access-2', refreshToken: 'refresh-2', expiresIn: 3600 })
-        .mockResolvedValueOnce({ accessToken: 'access-3', expiresIn: 3600 });
+        .mockResolvedValueOnce({
+          accessToken: "access-2",
+          refreshToken: "refresh-2",
+          expiresIn: 3600,
+        })
+        .mockResolvedValueOnce({ accessToken: "access-3", expiresIn: 3600 });
       vi.mocked(storage.saveYahooToken).mockImplementation(async (token, options) => ({
         ...token,
         version: (options?.expectedVersion ?? 0) + 1,
       }));
       mockAxiosInstance.get
         .mockRejectedValueOnce({ response: { status: 401 } })
-        .mockResolvedValueOnce({ data: 'first' })
+        .mockResolvedValueOnce({ data: "first" })
         .mockRejectedValueOnce({ response: { status: 401 } })
-        .mockResolvedValueOnce({ data: 'second' });
+        .mockResolvedValueOnce({ data: "second" });
       const client = await YahooApiClient.create(userId, storage, yahooApp);
 
-      await (client as any).apiRequest('/one');
-      await (client as any).apiRequest('/two');
+      await (client as any).apiRequest("/one");
+      await (client as any).apiRequest("/two");
 
       expect(vi.mocked(refreshAccessToken).mock.calls.map(([token]) => token)).toEqual([
         refreshToken,
-        'refresh-2',
+        "refresh-2",
       ]);
       expect(storage.saveYahooToken).toHaveBeenLastCalledWith(
-        expect.objectContaining({ accessToken: 'access-3', refreshToken: 'refresh-2' }),
-        { expectedVersion: 5 },
+        expect.objectContaining({ accessToken: "access-3", refreshToken: "refresh-2" }),
+        { expectedVersion: 5 }
       );
     });
 
-    it('shares one refresh between concurrent requests for the same user', async () => {
+    it("shares one refresh between concurrent requests for the same user", async () => {
       let release!: () => void;
       const barrier = new Promise<void>((resolve) => (release = resolve));
       vi.mocked(storage.getYahooToken).mockResolvedValue(expired());
       vi.mocked(refreshAccessToken).mockImplementation(async () => {
         await barrier;
-        return { accessToken: 'shared-access', expiresIn: 3600 };
+        return { accessToken: "shared-access", expiresIn: 3600 };
       });
-      vi.mocked(storage.saveYahooToken).mockImplementation(async (token) => ({ ...token, version: 5 }));
+      vi.mocked(storage.saveYahooToken).mockImplementation(async (token) => ({
+        ...token,
+        version: 5,
+      }));
 
       const first = YahooApiClient.create(userId, storage, yahooApp);
       const second = YahooApiClient.create(userId, storage, yahooApp);
@@ -372,58 +386,76 @@ describe('YahooApiClient', () => {
       expect(refreshAccessToken).toHaveBeenCalledTimes(1);
       expect(storage.saveYahooToken).toHaveBeenCalledTimes(1);
       for (const client of clients) {
-        expect((client as any).accessToken).toBe('shared-access');
+        expect((client as any).accessToken).toBe("shared-access");
         expect((client as any).tokenVersion).toBe(5);
       }
     });
 
-    it('adopts the token another instance committed instead of overwriting it', async () => {
-      const winner = { userId, accessToken: 'winner-access', refreshToken, expiresAt: now() + 3600, version: 5 };
+    it("adopts the token another instance committed instead of overwriting it", async () => {
+      const winner = {
+        userId,
+        accessToken: "winner-access",
+        refreshToken,
+        expiresAt: now() + 3600,
+        version: 5,
+      };
       vi.mocked(storage.getYahooToken)
         .mockResolvedValueOnce(expired())
         .mockResolvedValueOnce(winner);
-      vi.mocked(refreshAccessToken).mockResolvedValue({ accessToken: 'late-access', expiresIn: 3600 });
+      vi.mocked(refreshAccessToken).mockResolvedValue({
+        accessToken: "late-access",
+        expiresIn: 3600,
+      });
       vi.mocked(storage.saveYahooToken).mockRejectedValue(
-        new Error('Yahoo token changed during refresh; stale result rejected'),
+        new Error("Yahoo token changed during refresh; stale result rejected")
       );
 
       const client = await YahooApiClient.create(userId, storage, yahooApp);
 
       expect(storage.saveYahooToken).toHaveBeenCalledTimes(1);
-      expect((client as any).accessToken).toBe('winner-access');
+      expect((client as any).accessToken).toBe("winner-access");
       expect((client as any).tokenVersion).toBe(5);
     });
 
-    it('fails closed when the user disconnected during the refresh', async () => {
+    it("fails closed when the user disconnected during the refresh", async () => {
       vi.mocked(storage.getYahooToken)
         .mockResolvedValueOnce(expired())
         .mockResolvedValueOnce(undefined);
-      vi.mocked(refreshAccessToken).mockResolvedValue({ accessToken: 'late-access', expiresIn: 3600 });
+      vi.mocked(refreshAccessToken).mockResolvedValue({
+        accessToken: "late-access",
+        expiresIn: 3600,
+      });
       vi.mocked(storage.saveYahooToken).mockRejectedValue(
-        new Error('Yahoo token changed during refresh; stale result rejected'),
+        new Error("Yahoo token changed during refresh; stale result rejected")
       );
 
       await expect(YahooApiClient.create(userId, storage, yahooApp)).rejects.toBeInstanceOf(
-        YahooReconnectRequiredError,
+        YahooReconnectRequiredError
       );
       expect(storage.saveYahooToken).toHaveBeenCalledTimes(1);
     });
 
-    it('requires reconnecting when Yahoo still returns 401 after a refresh', async () => {
+    it("requires reconnecting when Yahoo still returns 401 after a refresh", async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({ ...expired(), expiresAt: now() + 3600 });
-      vi.mocked(refreshAccessToken).mockResolvedValue({ accessToken: 'new-access', expiresIn: 3600 });
-      vi.mocked(storage.saveYahooToken).mockImplementation(async (token) => ({ ...token, version: 5 }));
+      vi.mocked(refreshAccessToken).mockResolvedValue({
+        accessToken: "new-access",
+        expiresIn: 3600,
+      });
+      vi.mocked(storage.saveYahooToken).mockImplementation(async (token) => ({
+        ...token,
+        version: 5,
+      }));
       mockAxiosInstance.get.mockRejectedValue({ response: { status: 401 } });
       const client = await YahooApiClient.create(userId, storage, yahooApp);
 
-      await expect((client as any).apiRequest('/endpoint')).rejects.toBeInstanceOf(
-        YahooReconnectRequiredError,
+      await expect((client as any).apiRequest("/endpoint")).rejects.toBeInstanceOf(
+        YahooReconnectRequiredError
       );
       expect(refreshAccessToken).toHaveBeenCalledTimes(1);
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
     });
 
-    it('gives up on repeated 5xx within the request budget', async () => {
+    it("gives up on repeated 5xx within the request budget", async () => {
       let clockNow = Date.now();
       const clock = {
         now: () => clockNow,
@@ -435,21 +467,21 @@ describe('YahooApiClient', () => {
       mockAxiosInstance.get.mockRejectedValue({ isAxiosError: true, response: { status: 503 } });
       const client = await YahooApiClient.create(userId, storage, yahooApp, clock);
 
-      await expect((client as any).apiRequest('/endpoint')).rejects.toBeInstanceOf(
-        YahooUnavailableError,
+      await expect((client as any).apiRequest("/endpoint")).rejects.toBeInstanceOf(
+        YahooUnavailableError
       );
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
       expect(refreshAccessToken).not.toHaveBeenCalled();
     });
   });
 
-  describe('getUserGames', () => {
+  describe("getUserGames", () => {
     let client: YahooApiClient;
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -464,22 +496,22 @@ describe('YahooApiClient', () => {
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
 
-    it('should return games array when games exist', async () => {
+    it("should return games array when games exist", async () => {
       // ARRANGE
       const apiResponse = {
         fantasy_content: {
           users: [
             {
               user: [
-                { guid: 'test-guid' },
+                { guid: "test-guid" },
                 {
                   games: {
-                    '0': {
+                    "0": {
                       game: {
-                        game_key: '466',
-                        name: 'Basketball',
-                        code: 'nba',
-                        season: '2024',
+                        game_key: "466",
+                        name: "Basketball",
+                        code: "nba",
+                        season: "2024",
                       },
                     },
                   },
@@ -495,24 +527,24 @@ describe('YahooApiClient', () => {
       const result = await client.getUserGames();
 
       // ASSERT
-      expect(result.guid).toBe('test-guid');
+      expect(result.guid).toBe("test-guid");
       expect(result.games).toHaveLength(1);
       expect(result.games[0]).toMatchObject({
-        game_key: '466',
-        name: 'Basketball',
-        code: 'nba',
-        season: '2024',
+        game_key: "466",
+        name: "Basketball",
+        code: "nba",
+        season: "2024",
       });
     });
 
-    it('should return empty games array when no games', async () => {
+    it("should return empty games array when no games", async () => {
       // ARRANGE
       const apiResponse = {
         fantasy_content: {
           users: [
             {
               user: [
-                { guid: 'test-guid' },
+                { guid: "test-guid" },
                 {
                   games: {},
                 },
@@ -528,26 +560,26 @@ describe('YahooApiClient', () => {
 
       // ASSERT
       expect(result).toEqual({
-        guid: 'test-guid',
+        guid: "test-guid",
         games: [],
       });
     });
 
-    it('should handle single game object (not array)', async () => {
+    it("should handle single game object (not array)", async () => {
       // ARRANGE
       const apiResponse = {
         fantasy_content: {
           users: [
             {
               user: [
-                { guid: 'test-guid' },
+                { guid: "test-guid" },
                 {
                   games: {
                     game: {
-                      game_key: '466',
-                      name: 'Basketball',
-                      code: 'nba',
-                      season: '2024',
+                      game_key: "466",
+                      name: "Basketball",
+                      code: "nba",
+                      season: "2024",
                     },
                   },
                 },
@@ -564,14 +596,14 @@ describe('YahooApiClient', () => {
       // ASSERT
       expect(result.games).toHaveLength(1);
       expect(result.games[0]).toEqual({
-        game_key: '466',
-        name: 'Basketball',
-        code: 'nba',
-        season: '2024',
+        game_key: "466",
+        name: "Basketball",
+        code: "nba",
+        season: "2024",
       });
     });
 
-    it('should return empty games when users array is empty', async () => {
+    it("should return empty games when users array is empty", async () => {
       // ARRANGE
       const apiResponse = {
         fantasy_content: {
@@ -588,13 +620,13 @@ describe('YahooApiClient', () => {
     });
   });
 
-  describe('getUserGameLeagues', () => {
+  describe("getUserGameLeagues", () => {
     let client: YahooApiClient;
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -609,33 +641,33 @@ describe('YahooApiClient', () => {
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
 
-    it('should return leagues for game code', async () => {
+    it("should return leagues for game code", async () => {
       // ARRANGE
-      const gameCode = 'nba';
-      
+      const gameCode = "nba";
+
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: {
           fantasy_content: {
             users: [
               {
                 user: [
-                  { guid: 'test-guid' },
+                  { guid: "test-guid" },
                   {
                     games: {
                       game: [
                         [
                           {
-                            game_key: '466',
-                            name: 'Basketball',
-                            code: 'nba',
+                            game_key: "466",
+                            name: "Basketball",
+                            code: "nba",
                           },
                           {
                             leagues: {
                               league: [
                                 [
                                   {
-                                    league_key: '466.l.12345',
-                                    name: 'Test League',
+                                    league_key: "466.l.12345",
+                                    name: "Test League",
                                   },
                                 ],
                               ],
@@ -659,27 +691,27 @@ describe('YahooApiClient', () => {
       expect(result.games).toHaveLength(1);
       expect(result.games[0].leagues).toHaveLength(1);
       expect(result.games[0].leagues[0]).toEqual({
-        league_key: '466.l.12345',
-        name: 'Test League',
+        league_key: "466.l.12345",
+        name: "Test League",
       });
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        '/users;use_login=1/games;game_codes=nba/leagues?format=json',
-        { timeout: 8_000, headers: { Authorization: `Bearer ${accessToken}` } },
+        "/users;use_login=1/games;game_codes=nba/leagues?format=json",
+        { timeout: 8_000, headers: { Authorization: `Bearer ${accessToken}` } }
       );
     });
 
-    it('should return no games if Yahoo has no leagues for the game code', async () => {
+    it("should return no games if Yahoo has no leagues for the game code", async () => {
       // ARRANGE
-      const gameCode = 'invalid';
-      
+      const gameCode = "invalid";
+
       mockAxiosInstance.get.mockResolvedValueOnce({
         data: {
           fantasy_content: {
             users: [
               {
                 user: [
-                  { guid: 'test-guid' },
+                  { guid: "test-guid" },
                   {
                     games: {
                       game: [],
@@ -694,23 +726,23 @@ describe('YahooApiClient', () => {
 
       // ACT & ASSERT
       await expect(client.getUserGameLeagues(gameCode)).resolves.toEqual({
-        guid: 'test-guid',
+        guid: "test-guid",
         games: [{ leagues: [] }],
       });
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        '/users;use_login=1/games;game_codes=invalid/leagues?format=json',
-        { timeout: 8_000, headers: { Authorization: `Bearer ${accessToken}` } },
+        "/users;use_login=1/games;game_codes=invalid/leagues?format=json",
+        { timeout: 8_000, headers: { Authorization: `Bearer ${accessToken}` } }
       );
     });
   });
 
-  describe('League resource methods', () => {
+  describe("League resource methods", () => {
     let client: YahooApiClient;
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -725,10 +757,10 @@ describe('YahooApiClient', () => {
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
 
-    it('should get league standings', async () => {
+    it("should get league standings", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
-      const standingsData = { standings: 'data' };
+      const leagueKey = "466.l.12345";
+      const standingsData = { standings: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: standingsData });
 
       // ACT
@@ -742,10 +774,10 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(standingsData);
     });
 
-    it('should get league settings', async () => {
+    it("should get league settings", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
-      const settingsData = { settings: 'data' };
+      const leagueKey = "466.l.12345";
+      const settingsData = { settings: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: settingsData });
 
       // ACT
@@ -759,10 +791,10 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(settingsData);
     });
 
-    it('should get league scoreboard without week', async () => {
+    it("should get league scoreboard without week", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
-      const scoreboardData = { scoreboard: 'data' };
+      const leagueKey = "466.l.12345";
+      const scoreboardData = { scoreboard: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: scoreboardData });
 
       // ACT
@@ -776,11 +808,11 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(scoreboardData);
     });
 
-    it('should get league scoreboard with week', async () => {
+    it("should get league scoreboard with week", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const week = 5;
-      const scoreboardData = { scoreboard: 'data' };
+      const scoreboardData = { scoreboard: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: scoreboardData });
 
       // ACT
@@ -799,13 +831,13 @@ describe('YahooApiClient', () => {
     });
   });
 
-  describe('Team resource methods', () => {
+  describe("Team resource methods", () => {
     let client: YahooApiClient;
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -820,10 +852,10 @@ describe('YahooApiClient', () => {
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
 
-    it('should get team roster without week', async () => {
+    it("should get team roster without week", async () => {
       // ARRANGE
-      const teamKey = '466.l.12345.t.1';
-      const rosterData = { roster: 'data' };
+      const teamKey = "466.l.12345.t.1";
+      const rosterData = { roster: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: rosterData });
 
       // ACT
@@ -837,11 +869,11 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(rosterData);
     });
 
-    it('should get team roster with week', async () => {
+    it("should get team roster with week", async () => {
       // ARRANGE
-      const teamKey = '466.l.12345.t.1';
+      const teamKey = "466.l.12345.t.1";
       const week = 5;
-      const rosterData = { roster: 'data' };
+      const rosterData = { roster: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: rosterData });
 
       // ACT
@@ -860,13 +892,13 @@ describe('YahooApiClient', () => {
     });
   });
 
-  describe('Player resource methods', () => {
+  describe("Player resource methods", () => {
     let client: YahooApiClient;
     let mockAxiosInstance: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: 'token-1',
+        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -881,10 +913,10 @@ describe('YahooApiClient', () => {
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
 
-    it('should get player stats without week', async () => {
+    it("should get player stats without week", async () => {
       // ARRANGE
-      const playerKey = '466.p.12345';
-      const statsData = { stats: 'data' };
+      const playerKey = "466.p.12345";
+      const statsData = { stats: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: statsData });
 
       // ACT
@@ -898,11 +930,11 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(statsData);
     });
 
-    it('should get player stats with numeric week', async () => {
+    it("should get player stats with numeric week", async () => {
       // ARRANGE
-      const playerKey = '466.p.12345';
+      const playerKey = "466.p.12345";
       const week = 5;
-      const statsData = { stats: 'data' };
+      const statsData = { stats: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: statsData });
 
       // ACT
@@ -920,11 +952,11 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(statsData);
     });
 
-    it('should get player stats with lastweek type', async () => {
+    it("should get player stats with lastweek type", async () => {
       // ARRANGE
-      const playerKey = '466.p.12345';
-      const week = 'lastweek';
-      const statsData = { stats: 'data' };
+      const playerKey = "466.p.12345";
+      const week = "lastweek";
+      const statsData = { stats: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: statsData });
 
       // ACT
@@ -942,11 +974,11 @@ describe('YahooApiClient', () => {
       expect(result).toEqual(statsData);
     });
 
-    it('should get player stats with lastmonth type', async () => {
+    it("should get player stats with lastmonth type", async () => {
       // ARRANGE
-      const playerKey = '466.p.12345';
-      const week = 'lastmonth';
-      const statsData = { stats: 'data' };
+      const playerKey = "466.p.12345";
+      const week = "lastmonth";
+      const statsData = { stats: "data" };
       mockAxiosInstance.get.mockResolvedValue({ data: statsData });
 
       // ACT

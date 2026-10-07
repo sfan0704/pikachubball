@@ -18,7 +18,7 @@ export async function exchangeAuthorizationCode(
   code: string,
   clientId: string,
   clientSecret: string,
-  redirectUri: string,
+  redirectUri: string
 ): Promise<YahooAuthorizationTokens> {
   const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
@@ -52,8 +52,7 @@ export async function exchangeAuthorizationCode(
       throw new Error("Yahoo token response was incomplete");
     }
 
-    const yahooGuid =
-      typeof responseYahooGuid === "string" ? responseYahooGuid : undefined;
+    const yahooGuid = typeof responseYahooGuid === "string" ? responseYahooGuid : undefined;
 
     return { accessToken, refreshToken, expiresIn, yahooGuid };
   } catch (error) {
@@ -84,7 +83,7 @@ export async function refreshAccessToken(
   refreshToken: string,
   clientId: string,
   clientSecret: string,
-  redirectUri: string | null,
+  redirectUri: string | null
 ): Promise<YahooRefreshedTokens> {
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Yahoo refresh configuration is incomplete");
@@ -144,7 +143,7 @@ export async function refreshAccessToken(
 export async function revokeYahooToken(
   token: string,
   clientId: string,
-  clientSecret: string,
+  clientSecret: string
 ): Promise<boolean> {
   if (!token || !clientId || !clientSecret) {
     return false;

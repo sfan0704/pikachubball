@@ -6,14 +6,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AesGcmOwnerTokenCipher } from "../../server/storage/owner-token-cipher";
 import { SupabaseOwnerStorage } from "../../server/storage/supabase-owner-storage";
-import {
-  cipher,
-  connect,
-  database,
-  newClient,
-  signUpOwner,
-  type Owner,
-} from "./local-stack";
+import { cipher, connect, database, newClient, signUpOwner, type Owner } from "./local-stack";
 
 let ownerA: Owner;
 let ownerB: Owner;
@@ -46,10 +39,7 @@ describe("owner access through the Data API", () => {
   });
 
   it("persists only ciphertext bound to the current key version", async () => {
-    const { data, error } = await ownerA.client
-      .from("yahoo_connections")
-      .select("*")
-      .single();
+    const { data, error } = await ownerA.client.from("yahoo_connections").select("*").single();
 
     expect(error).toBeNull();
     const serialized = JSON.stringify(data);
@@ -59,26 +49,24 @@ describe("owner access through the Data API", () => {
     expect(data.encryption_key_version).toBe(cipher.keyVersion);
 
     const wrongKey = AesGcmOwnerTokenCipher.fromHex("33".repeat(32));
-    expect(() =>
-      wrongKey.decrypt(ownerA.id, "access", data.access_token_ciphertext),
-    ).toThrow(/could not be authenticated/);
-    expect(() =>
-      cipher.decrypt(ownerB.id, "access", data.access_token_ciphertext),
-    ).toThrow(/could not be authenticated/);
+    expect(() => wrongKey.decrypt(ownerA.id, "access", data.access_token_ciphertext)).toThrow(
+      /could not be authenticated/
+    );
+    expect(() => cipher.decrypt(ownerB.id, "access", data.access_token_ciphertext)).toThrow(
+      /could not be authenticated/
+    );
   });
 
   it("authorizes only its own league and team pairs", async () => {
     await expect(
-      ownerA.storage.ownsFantasyResource(leagueA.leagueKey, leagueA.teamKey),
+      ownerA.storage.ownsFantasyResource(leagueA.leagueKey, leagueA.teamKey)
     ).resolves.toBe(true);
+    await expect(ownerA.storage.ownsFantasyResource(leagueB.leagueKey)).resolves.toBe(false);
     await expect(
-      ownerA.storage.ownsFantasyResource(leagueB.leagueKey),
+      ownerA.storage.ownsFantasyResource(leagueB.leagueKey, leagueB.teamKey)
     ).resolves.toBe(false);
     await expect(
-      ownerA.storage.ownsFantasyResource(leagueB.leagueKey, leagueB.teamKey),
-    ).resolves.toBe(false);
-    await expect(
-      ownerA.storage.ownsFantasyResource(leagueA.leagueKey, leagueB.teamKey),
+      ownerA.storage.ownsFantasyResource(leagueA.leagueKey, leagueB.teamKey)
     ).resolves.toBe(false);
   });
 });
@@ -140,13 +128,10 @@ describe("cross-owner isolation through the Data API", () => {
     expect(deleteConnection.data).toEqual([]);
     expect(deleteMembership.data).toEqual([]);
 
-    const { data } = await ownerA.client
-      .from("yahoo_connections")
-      .select("display_name")
-      .single();
+    const { data } = await ownerA.client.from("yahoo_connections").select("display_name").single();
     expect(data?.display_name).toBe("Manager a");
     await expect(
-      ownerA.storage.ownsFantasyResource(leagueA.leagueKey, leagueA.teamKey),
+      ownerA.storage.ownsFantasyResource(leagueA.leagueKey, leagueA.teamKey)
     ).resolves.toBe(true);
   });
 
@@ -162,9 +147,7 @@ describe("cross-owner isolation through the Data API", () => {
 
     expect(connection.error?.code).toBe("42501");
     expect(membership.error?.code).toBe("42501");
-    await expect(
-      ownerA.storage.ownsFantasyResource(leagueB.leagueKey),
-    ).resolves.toBe(false);
+    await expect(ownerA.storage.ownsFantasyResource(leagueB.leagueKey)).resolves.toBe(false);
   });
 
   it("cannot claim another manager's Yahoo GUID", async () => {
@@ -190,20 +173,13 @@ describe("cross-owner isolation through the Data API", () => {
 
     const reconnect = await connect(ownerA, "a");
     expect(reconnect.version).toBeGreaterThan(1);
-    const { data } = await ownerB.client
-      .from("yahoo_connections")
-      .select("yahoo_guid")
-      .single();
+    const { data } = await ownerB.client.from("yahoo_connections").select("yahoo_guid").single();
     expect(data?.yahoo_guid).toBe(ownerB.yahooGuid);
   });
 
   it("rejects a repository call for a foreign owner before any request", async () => {
-    await expect(ownerB.storage.getYahooToken(ownerA.id)).rejects.toThrow(
-      /foreign user id/,
-    );
-    await expect(ownerB.storage.deleteYahooToken(ownerA.id)).rejects.toThrow(
-      /foreign user id/,
-    );
+    await expect(ownerB.storage.getYahooToken(ownerA.id)).rejects.toThrow(/foreign user id/);
+    await expect(ownerB.storage.deleteYahooToken(ownerA.id)).rejects.toThrow(/foreign user id/);
   });
 });
 
@@ -294,7 +270,7 @@ describe("tampering and concurrent refresh", () => {
 
     const fulfilled = results.filter((result) => result.status === "fulfilled");
     const rejected = results.filter(
-      (result): result is PromiseRejectedResult => result.status === "rejected",
+      (result): result is PromiseRejectedResult => result.status === "rejected"
     );
     expect(fulfilled).toHaveLength(1);
     expect(rejected).toHaveLength(1);
@@ -306,7 +282,7 @@ describe("tampering and concurrent refresh", () => {
     expect(stored?.accessToken).toBe(winner.accessToken);
 
     await expect(
-      owner.storage.saveYahooToken(rotation("stale"), { expectedVersion: version }),
+      owner.storage.saveYahooToken(rotation("stale"), { expectedVersion: version })
     ).rejects.toThrow(/stale result rejected/);
   });
 });

@@ -27,7 +27,7 @@ export interface LeagueWithTeam {
 export async function getUserLeagues(
   userId: string,
   tokenStorage: YahooTokenStorage,
-  createClient: YahooClientFactory,
+  createClient: YahooClientFactory
 ): Promise<LeagueWithTeam[]> {
   const client = await createClient(userId, tokenStorage);
 
@@ -52,30 +52,31 @@ export async function getUserLeagues(
           userData.games = userData.games.filter((game: any) => game.code === "nba");
         }
       } catch (fallbackError: any) {
-        logger.warn("Failed to fetch NBA leagues", { 
+        logger.warn("Failed to fetch NBA leagues", {
           error: error.message,
-          fallbackError: fallbackError.message
+          fallbackError: fallbackError.message,
         });
         throw fallbackError;
       }
     }
-    
+
     logger.debug("getUserLeagues: User data received", {
       hasGames: !!userData?.games,
       gamesIsArray: Array.isArray(userData?.games),
       gamesCount: userData?.games?.length || 0,
-      games: userData?.games?.map((g: any) => ({
-        code: g.code,
-        game_key: g.game_key,
-        name: g.name,
-        leaguesCount: g.leagues?.length || 0,
-        leagues: g.leagues?.map((l: any) => ({ league_key: l.league_key, name: l.name })) || []
-      })) || []
+      games:
+        userData?.games?.map((g: any) => ({
+          code: g.code,
+          game_key: g.game_key,
+          name: g.name,
+          leaguesCount: g.leagues?.length || 0,
+          leagues: g.leagues?.map((l: any) => ({ league_key: l.league_key, name: l.name })) || [],
+        })) || [],
     });
-    
+
     if (!userData?.games || !Array.isArray(userData.games) || userData.games.length === 0) {
-      logger.warn("No NBA games found for user", { 
-        userDataResponse: userData 
+      logger.warn("No NBA games found for user", {
+        userDataResponse: userData,
       });
       return [];
     }
@@ -89,39 +90,46 @@ export async function getUserLeagues(
 
     // Extract league keys from NBA games only
     const leagueKeys: string[] = [];
-    const leagueMap = new Map<string, {
-      leagueKey: string;
-      leagueName: string;
-      season?: number;
-      gameKey?: string;
-      status: LeagueStatus;
-    }>();
+    const leagueMap = new Map<
+      string,
+      {
+        leagueKey: string;
+        leagueName: string;
+        season?: number;
+        gameKey?: string;
+        status: LeagueStatus;
+      }
+    >();
     const today = new Date().toISOString().slice(0, 10);
 
     for (const game of userData.games) {
       // Handle both array format [gameProps, leaguesData] and direct object format
       const gameProps = Array.isArray(game) ? game[0] : game;
-      
+
       // Only process NBA games
       if (gameProps?.code !== "nba" && game.code !== "nba") {
-        logger.debug("getUserLeagues: Skipping non-NBA game", { 
-          code: gameProps?.code || game.code 
+        logger.debug("getUserLeagues: Skipping non-NBA game", {
+          code: gameProps?.code || game.code,
         });
         continue;
       }
-      
+
       // Extract season from game (could be string or number)
-      const gameSeason = gameProps?.season ? parseInt(String(gameProps.season), 10) : (game.season ? parseInt(String(game.season), 10) : undefined);
+      const gameSeason = gameProps?.season
+        ? parseInt(String(gameProps.season), 10)
+        : game.season
+          ? parseInt(String(game.season), 10)
+          : undefined;
       const gameKey = gameProps?.game_key || game.game_key;
-      
+
       logger.debug("getUserLeagues: Processing NBA game", {
         gameKey: game.game_key,
         season: gameSeason,
         hasLeagues: !!game.leagues,
         leaguesIsArray: Array.isArray(game.leagues),
-        leaguesCount: game.leagues?.length || 0
+        leaguesCount: game.leagues?.length || 0,
       });
-      
+
       if (game.leagues && Array.isArray(game.leagues)) {
         for (const league of game.leagues) {
           // Finished and preseason leagues stay listed with their status so
@@ -149,14 +157,14 @@ export async function getUserLeagues(
         logger.warn("getUserLeagues: Game has no leagues or leagues is not an array", {
           gameKey: game.game_key,
           leagues: game.leagues,
-          leaguesType: typeof game.leagues
+          leaguesType: typeof game.leagues,
         });
       }
     }
-    
+
     logger.debug("getUserLeagues: Extracted league keys", {
       leagueKeysCount: leagueKeys.length,
-      leagueKeys: leagueKeys
+      leagueKeys: leagueKeys,
     });
 
     if (leagueKeys.length === 0) {
@@ -198,10 +206,10 @@ export async function getUserLeagues(
 
       // Use parser to get all teams
       const teams = parseTeamsFromStandings({ standings }, leagueKey);
-      
+
       // Find user's team by GUID
-      const userTeam = teams.find(team => team.managerGuid === finalUserGuid);
-      
+      const userTeam = teams.find((team) => team.managerGuid === finalUserGuid);
+
       if (userTeam) {
         leagues.push({
           leagueKey: leagueInfo.leagueKey,
@@ -236,9 +244,7 @@ export async function getUserLeagues(
       );
     }
     const yahooError = error.response?.data?.error;
-    const yahooDescription = typeof yahooError === "object"
-      ? yahooError?.description
-      : undefined;
+    const yahooDescription = typeof yahooError === "object" ? yahooError?.description : undefined;
 
     if (
       error.response?.status === 403 &&
@@ -247,15 +253,16 @@ export async function getUserLeagues(
       throw new AppError(
         "YAHOO_UNAVAILABLE",
         "Yahoo has not activated Fantasy API access for this application yet.",
-        { reason: "FANTASY_ACCESS_PENDING" },
+        { reason: "FANTASY_ACCESS_PENDING" }
       );
     }
 
-    const errorMsg = error.response?.data?.error_description
-      || yahooDescription
-      || (typeof yahooError === "string" ? yahooError : undefined)
-      || error.message
-      || "Failed to retrieve leagues from Yahoo Fantasy API";
+    const errorMsg =
+      error.response?.data?.error_description ||
+      yahooDescription ||
+      (typeof yahooError === "string" ? yahooError : undefined) ||
+      error.message ||
+      "Failed to retrieve leagues from Yahoo Fantasy API";
     throw new Error(`Failed to get leagues: ${errorMsg}`);
   }
 }

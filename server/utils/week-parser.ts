@@ -13,4 +13,3 @@ export function parseWeekParam(weekParam: unknown): number | undefined {
 
   return parsed;
 }
-

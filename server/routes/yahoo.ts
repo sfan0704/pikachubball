@@ -16,14 +16,9 @@ export interface YahooRouteDependencies {
 /** Register Yahoo Fantasy API data routes */
 export function registerYahooRoutes(
   app: Express,
-  { requireAuth, controller, createYahooClient }: YahooRouteDependencies,
+  { requireAuth, controller, createYahooClient }: YahooRouteDependencies
 ): void {
-  app.get(
-    "/api/yahoo/leagues",
-    requireAuth,
-    requireYahooAuth,
-    controller.getLeagues
-  );
+  app.get("/api/yahoo/leagues", requireAuth, requireYahooAuth, controller.getLeagues);
   app.get(
     "/api/yahoo/roster-by-team/:teamKey",
     requireAuth,
@@ -31,7 +26,7 @@ export function registerYahooRoutes(
     requireOwnedFantasyResource,
     controller.getRoster
   );
-  
+
   // Test endpoint to verify Yahoo API authentication (removed by CAR-84)
   app.get(
     "/api/yahoo/test-auth",
@@ -41,7 +36,7 @@ export function registerYahooRoutes(
       if (!req.ownerStorage) {
         throw new UnauthorizedError();
       }
-      
+
       try {
         const client = await createYahooClient(userId, req.ownerStorage);
         const games = await client.getUserGames();

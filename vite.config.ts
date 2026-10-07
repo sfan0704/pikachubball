@@ -17,10 +17,7 @@ export default defineConfig({
   },
   root: path.resolve(projectRoot, "client"),
   build: {
-    outDir: path.resolve(
-      projectRoot,
-      process.env.VERCEL ? "public" : "dist/public",
-    ),
+    outDir: path.resolve(projectRoot, process.env.VERCEL ? "public" : "dist/public"),
     emptyOutDir: true,
   },
   server: {

@@ -17,29 +17,33 @@ const CATEGORY_LABELS: Record<string, string> = {
   ast: "AST",
   stl: "STL",
   blk: "BLK",
-  to: "TO"
+  to: "TO",
 };
 
-type CategoryResult = MatchupComparisonResponse['categories'][number]['result'];
+type CategoryResult = MatchupComparisonResponse["categories"][number]["result"];
 
 const RESULT_ROW_CLASSES: Record<CategoryResult, string> = {
-  win: 'bg-green-500/5 dark:bg-green-500/5',
-  loss: 'bg-red-500/5 dark:bg-red-500/5',
-  tie: 'bg-yellow-500/5 dark:bg-yellow-500/5',
+  win: "bg-green-500/5 dark:bg-green-500/5",
+  loss: "bg-red-500/5 dark:bg-red-500/5",
+  tie: "bg-yellow-500/5 dark:bg-yellow-500/5",
 };
 
 const RESULT_TEXT_CLASSES: Record<CategoryResult, string> = {
-  win: 'text-green-600 dark:text-green-400',
-  loss: 'text-red-600 dark:text-red-400',
-  tie: 'text-yellow-600 dark:text-yellow-400',
+  win: "text-green-600 dark:text-green-400",
+  loss: "text-red-600 dark:text-red-400",
+  tie: "text-yellow-600 dark:text-yellow-400",
 };
 
 export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps) {
-  const matchupUrl = week 
+  const matchupUrl = week
     ? `/api/viz/matchup/${leagueKey}/${teamKey}?week=${week}`
     : `/api/viz/matchup/${leagueKey}/${teamKey}`;
 
-  const { data: matchupData, isLoading, error } = useQuery<MatchupComparisonResponse>({
+  const {
+    data: matchupData,
+    isLoading,
+    error,
+  } = useQuery<MatchupComparisonResponse>({
     queryKey: [matchupUrl],
     enabled: !!leagueKey && !!teamKey,
     retry: false,
@@ -47,9 +51,7 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
 
   if (isLoading) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        Loading matchup comparison...
-      </div>
+      <div className="text-center py-12 text-muted-foreground">Loading matchup comparison...</div>
     );
   }
 
@@ -57,9 +59,7 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
     return (
       <Card>
         <CardContent className="py-12">
-          <p className="text-center text-destructive">
-            Failed to load matchup data
-          </p>
+          <p className="text-center text-destructive">Failed to load matchup data</p>
         </CardContent>
       </Card>
     );
@@ -69,9 +69,7 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
     return (
       <Card>
         <CardContent className="py-12">
-          <p className="text-center text-muted-foreground">
-            No matchup data available
-          </p>
+          <p className="text-center text-muted-foreground">No matchup data available</p>
         </CardContent>
       </Card>
     );
@@ -80,38 +78,46 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
   const { myTeam, opponent, categories, score, metadata } = matchupData;
 
   const formatValue = (value: number, category: string, makes?: number, attempts?: number) => {
-    if ((category === 'fgPct' || category === 'ftPct') && makes !== undefined && attempts !== undefined) {
+    if (
+      (category === "fgPct" || category === "ftPct") &&
+      makes !== undefined &&
+      attempts !== undefined
+    ) {
       return `${makes}/${attempts} (${(value * 100).toFixed(1)}%)`;
     }
-    const isPct = category === 'fgPct' || category === 'ftPct';
+    const isPct = category === "fgPct" || category === "ftPct";
     return isPct ? `${(value * 100).toFixed(1)}%` : Math.round(value).toString();
   };
 
   const calculateDiff = (myVal: number, oppVal: number, category: string) => {
-    const isPct = category === 'fgPct' || category === 'ftPct';
+    const isPct = category === "fgPct" || category === "ftPct";
     const diff = myVal - oppVal;
     if (isPct) {
       return `${(diff * 100).toFixed(1)}%`;
     }
-    return (diff >= 0 ? '+' : '') + Math.round(diff).toString();
+    return (diff >= 0 ? "+" : "") + Math.round(diff).toString();
   };
 
   return (
     <Card data-testid="card-matchup">
       <CardHeader>
-        <CardTitle>Weekly Matchup: {myTeam.teamName} vs {opponent.teamName}</CardTitle>
-        <CardDescription>
-          Week {metadata.week || metadata.currentWeek}
-        </CardDescription>
+        <CardTitle>
+          Weekly Matchup: {myTeam.teamName} vs {opponent.teamName}
+        </CardTitle>
+        <CardDescription>Week {metadata.week || metadata.currentWeek}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex justify-center gap-12 text-sm">
           <div className="text-center">
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">{score.wins}</div>
+            <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+              {score.wins}
+            </div>
             <div className="text-muted-foreground text-xs">Wins</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{score.ties}</div>
+            <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+              {score.ties}
+            </div>
             <div className="text-muted-foreground text-xs">Ties</div>
           </div>
           <div className="text-center">
@@ -131,16 +137,25 @@ export default function MatchupTab({ leagueKey, teamKey, week }: MatchupTabProps
               </tr>
             </thead>
             <tbody>
-              {categories.map(cat => (
-                <tr 
-                  key={cat.category} 
+              {categories.map((cat) => (
+                <tr
+                  key={cat.category}
                   className={`border-b ${RESULT_ROW_CLASSES[cat.result]}`}
                   data-testid={`matchup-category-${cat.category}`}
                   data-result={cat.result}
                 >
                   <td className="py-3 px-2 font-medium">{CATEGORY_LABELS[cat.category]}</td>
-                  <td className="text-center py-3 px-2">{formatValue(cat.myTeam, cat.category, cat.myTeamMakes, cat.myTeamAttempts)}</td>
-                  <td className="text-center py-3 px-2">{formatValue(cat.opponent, cat.category, cat.opponentMakes, cat.opponentAttempts)}</td>
+                  <td className="text-center py-3 px-2">
+                    {formatValue(cat.myTeam, cat.category, cat.myTeamMakes, cat.myTeamAttempts)}
+                  </td>
+                  <td className="text-center py-3 px-2">
+                    {formatValue(
+                      cat.opponent,
+                      cat.category,
+                      cat.opponentMakes,
+                      cat.opponentAttempts
+                    )}
+                  </td>
                   <td className="text-center py-3 px-2 font-semibold">
                     <span className={RESULT_TEXT_CLASSES[cat.result]}>
                       {calculateDiff(cat.myTeam, cat.opponent, cat.category)}

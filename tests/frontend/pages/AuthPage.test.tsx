@@ -12,9 +12,7 @@ describe("AuthPage", () => {
     render(<AuthPage />);
 
     expect(screen.getByText("Yahoo Fantasy Basketball")).toBeInTheDocument();
-    expect(screen.getByTestId("button-yahoo-login")).toHaveTextContent(
-      "Continue with Yahoo",
-    );
+    expect(screen.getByTestId("button-yahoo-login")).toHaveTextContent("Continue with Yahoo");
     expect(screen.getByText(/read-only access/i)).toBeInTheDocument();
     expect(screen.queryByText(/admin login/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();

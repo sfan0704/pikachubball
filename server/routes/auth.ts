@@ -11,7 +11,10 @@ export interface AuthRouteDependencies {
 /**
  * Register the Yahoo-only Supabase authentication boundary.
  */
-export function registerAuthRoutes(app: Express, { requireAuth, authLimiter, controller }: AuthRouteDependencies): void {
+export function registerAuthRoutes(
+  app: Express,
+  { requireAuth, authLimiter, controller }: AuthRouteDependencies
+): void {
   app.get("/api/auth/yahoo", authLimiter, controller.beginYahooLogin);
   app.get("/api/auth/callback", controller.completeYahooLogin);
   app.post("/api/auth/logout", controller.logout);

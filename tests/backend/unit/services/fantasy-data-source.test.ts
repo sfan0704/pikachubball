@@ -1,18 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { YahooFantasyDataSource } from '../../../../server/services/fantasy-data-source';
-import type { YahooTokenStorage } from '../../../../server/storage/yahoo-token-storage';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { YahooFantasyDataSource } from "../../../../server/services/fantasy-data-source";
+import type { YahooTokenStorage } from "../../../../server/storage/yahoo-token-storage";
 
 const storage = {} as YahooTokenStorage;
 const getYahooApiClient = vi.fn();
 
-describe('YahooFantasyDataSource', () => {
+describe("YahooFantasyDataSource", () => {
   let dataSource: YahooFantasyDataSource;
   let mockYahooApiClient: any;
-  const userId = 'test-user-id';
+  const userId = "test-user-id";
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a mock YahooApiClient
     mockYahooApiClient = {
       getLeagueStandings: vi.fn().mockResolvedValue({ fantasy_content: { league: [] } }),
@@ -21,15 +21,15 @@ describe('YahooFantasyDataSource', () => {
       getTeamRoster: vi.fn().mockResolvedValue({ fantasy_content: { team: [] } }),
       getPlayerStats: vi.fn().mockResolvedValue({ fantasy_content: { players: [] } }),
     };
-    
+
     getYahooApiClient.mockResolvedValue(mockYahooApiClient);
     dataSource = new YahooFantasyDataSource(userId, storage, getYahooApiClient);
   });
 
-  describe('getLeagueStandings', () => {
-    it('should call yahooApiClient.getLeagueStandings', async () => {
+  describe("getLeagueStandings", () => {
+    it("should call yahooApiClient.getLeagueStandings", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const expectedResponse = { fantasy_content: { league: [] } };
       mockYahooApiClient.getLeagueStandings.mockResolvedValue(expectedResponse);
 
@@ -43,10 +43,10 @@ describe('YahooFantasyDataSource', () => {
     });
   });
 
-  describe('getLeagueSettings', () => {
-    it('should call yahooApiClient.getLeagueSettings', async () => {
+  describe("getLeagueSettings", () => {
+    it("should call yahooApiClient.getLeagueSettings", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const expectedResponse = { fantasy_content: { league: [] } };
       mockYahooApiClient.getLeagueSettings.mockResolvedValue(expectedResponse);
 
@@ -60,10 +60,10 @@ describe('YahooFantasyDataSource', () => {
     });
   });
 
-  describe('getLeagueScoreboard', () => {
-    it('should call yahooApiClient.getLeagueScoreboard with week', async () => {
+  describe("getLeagueScoreboard", () => {
+    it("should call yahooApiClient.getLeagueScoreboard with week", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const week = 5;
       const expectedResponse = { fantasy_content: { league: [] } };
       mockYahooApiClient.getLeagueScoreboard.mockResolvedValue(expectedResponse);
@@ -77,9 +77,9 @@ describe('YahooFantasyDataSource', () => {
       expect(result).toEqual(expectedResponse);
     });
 
-    it('should call yahooApiClient.getLeagueScoreboard without week', async () => {
+    it("should call yahooApiClient.getLeagueScoreboard without week", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const expectedResponse = { fantasy_content: { league: [] } };
       mockYahooApiClient.getLeagueScoreboard.mockResolvedValue(expectedResponse);
 
@@ -93,10 +93,10 @@ describe('YahooFantasyDataSource', () => {
     });
   });
 
-  describe('getTeamRoster', () => {
-    it('should call yahooApiClient.getTeamRoster', async () => {
+  describe("getTeamRoster", () => {
+    it("should call yahooApiClient.getTeamRoster", async () => {
       // ARRANGE
-      const teamKey = '466.l.12345.t.1';
+      const teamKey = "466.l.12345.t.1";
       const expectedResponse = { fantasy_content: { team: [] } };
       mockYahooApiClient.getTeamRoster.mockResolvedValue(expectedResponse);
 
@@ -110,10 +110,10 @@ describe('YahooFantasyDataSource', () => {
     });
   });
 
-  describe('getPlayerStats', () => {
-    it('should call yahooApiClient.getPlayerStats with first player key', async () => {
+  describe("getPlayerStats", () => {
+    it("should call yahooApiClient.getPlayerStats with first player key", async () => {
       // ARRANGE
-      const playerKeys = ['466.p.123', '466.p.456'];
+      const playerKeys = ["466.p.123", "466.p.456"];
       const expectedResponse = { fantasy_content: { players: [] } };
       mockYahooApiClient.getPlayerStats.mockResolvedValue(expectedResponse);
 
@@ -128,4 +128,3 @@ describe('YahooFantasyDataSource', () => {
     });
   });
 });
-

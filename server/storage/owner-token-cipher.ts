@@ -49,11 +49,7 @@ export class AesGcmOwnerTokenCipher implements OwnerTokenCipher {
       throw new Error("Stored Yahoo credential is invalid");
     }
     try {
-      const decipher = createDecipheriv(
-        ALGORITHM,
-        this.key,
-        Buffer.from(ivPart, "base64url"),
-      );
+      const decipher = createDecipheriv(ALGORITHM, this.key, Buffer.from(ivPart, "base64url"));
       decipher.setAAD(associatedData(ownerId, purpose, this.keyVersion));
       decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
       return Buffer.concat([

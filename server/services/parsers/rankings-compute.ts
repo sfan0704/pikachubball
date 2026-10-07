@@ -3,18 +3,18 @@
  * Compute category ranks and total ranks from team stats
  */
 
-import type { TeamStats, CategoryKey } from '../../../shared/domain/index.js';
-import { CATEGORIES } from '../../../shared/domain/index.js';
+import type { TeamStats, CategoryKey } from "../../../shared/domain/index.js";
+import { CATEGORIES } from "../../../shared/domain/index.js";
 
 /**
  * Value used to compare a category. Yahoo reports percentages rounded to three
  * decimals, so FG% and FT% compare exact makes/attempts when attempts are known.
  */
 export function comparableValue(team: TeamStats, cat: CategoryKey): number {
-  if (cat === 'fgPct' && team.fgAttempts) {
+  if (cat === "fgPct" && team.fgAttempts) {
     return (team.fgMakes ?? 0) / team.fgAttempts;
   }
-  if (cat === 'ftPct' && team.ftAttempts) {
+  if (cat === "ftPct" && team.ftAttempts) {
     return (team.ftMakes ?? 0) / team.ftAttempts;
   }
   return team.stats[cat];
@@ -26,7 +26,7 @@ export function comparableValue(team: TeamStats, cat: CategoryKey): number {
  */
 export function compareCategory(a: TeamStats, b: TeamStats, cat: CategoryKey): number {
   const difference = comparableValue(a, cat) - comparableValue(b, cat);
-  return cat === 'to' ? -difference : difference;
+  return cat === "to" ? -difference : difference;
 }
 
 /**
@@ -36,10 +36,10 @@ export function compareCategory(a: TeamStats, b: TeamStats, cat: CategoryKey): n
  * @returns Array of team stats with categoryRanks populated
  */
 export function computeCategoryRanks(teamStats: TeamStats[]): TeamStats[] {
-  return teamStats.map(team => {
+  return teamStats.map((team) => {
     const categoryRanks = {} as Record<CategoryKey, number>;
-    CATEGORIES.forEach(cat => {
-      const better = teamStats.filter(other => compareCategory(other, team, cat) > 0).length;
+    CATEGORIES.forEach((cat) => {
+      const better = teamStats.filter((other) => compareCategory(other, team, cat) > 0).length;
       categoryRanks[cat] = better + 1;
     });
     return { ...team, categoryRanks };
@@ -52,7 +52,7 @@ export function computeCategoryRanks(teamStats: TeamStats[]): TeamStats[] {
  * @returns Array of team stats with totalRank populated
  */
 export function computeTotalRanks(teamStats: TeamStats[]): TeamStats[] {
-  return teamStats.map(team => {
+  return teamStats.map((team) => {
     if (!team.categoryRanks) {
       return { ...team, totalRank: 0 };
     }

@@ -37,7 +37,7 @@ describe(".env.example dev-tier template", () => {
         "YAHOO_CLIENT_ID",
         "YAHOO_CLIENT_SECRET",
         "YAHOO_PROVIDER_REDIRECT_URI",
-      ].sort(),
+      ].sort()
     );
   });
 

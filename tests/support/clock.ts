@@ -6,7 +6,7 @@ export interface FixedClock {
 }
 
 /** Creates a fixed clock starting at `isoTime` (UTC). */
-export function fixedClock(isoTime = '2026-01-15T12:00:00.000Z'): FixedClock {
+export function fixedClock(isoTime = "2026-01-15T12:00:00.000Z"): FixedClock {
   let current = Date.parse(isoTime);
   if (Number.isNaN(current)) {
     throw new Error(`fixedClock: invalid ISO time ${isoTime}`);

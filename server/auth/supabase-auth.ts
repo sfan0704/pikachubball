@@ -20,10 +20,7 @@ export interface YahooSessionIdentity {
   email: string | null;
 }
 
-export function hardenCookieOptions(
-  options: CookieOptions,
-  secure: boolean,
-): CookieOptions {
+export function hardenCookieOptions(options: CookieOptions, secure: boolean): CookieOptions {
   const { domain: _discardedDomain, ...safeOptions } = options;
   return {
     ...safeOptions,
@@ -42,32 +39,28 @@ export function applyAuthNoStore(res: Response): void {
 export function createSupabaseRequestClient(
   req: Request,
   res: Response,
-  config: HostedAuthConfig,
+  config: HostedAuthConfig
 ): SupabaseClient {
   const incomingCookies = parse(req.headers.cookie ?? "");
 
-  return createServerClient(
-    config.supabaseUrl,
-    config.supabasePublishableKey,
-    {
-      cookieOptions: { name: AUTH_COOKIE_NAME },
-      cookies: {
-        getAll() {
-          return Object.entries(incomingCookies).flatMap(([name, value]) =>
-            value === undefined ? [] : [{ name, value }],
+  return createServerClient(config.supabaseUrl, config.supabasePublishableKey, {
+    cookieOptions: { name: AUTH_COOKIE_NAME },
+    cookies: {
+      getAll() {
+        return Object.entries(incomingCookies).flatMap(([name, value]) =>
+          value === undefined ? [] : [{ name, value }]
+        );
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value, options } of cookiesToSet) {
+          res.append(
+            "Set-Cookie",
+            serialize(name, value, hardenCookieOptions(options, config.secureCookies))
           );
-        },
-        setAll(cookiesToSet) {
-          for (const { name, value, options } of cookiesToSet) {
-            res.append(
-              "Set-Cookie",
-              serialize(name, value, hardenCookieOptions(options, config.secureCookies)),
-            );
-          }
-        },
+        }
       },
     },
-  );
+  });
 }
 
 function requiredString(value: unknown, field: string): string {
@@ -78,9 +71,7 @@ function requiredString(value: unknown, field: string): string {
 }
 
 export function projectYahooIdentity(user: User): YahooSessionIdentity {
-  const identity = user.identities?.find(
-    (candidate) => candidate.provider === YAHOO_PROVIDER,
-  );
+  const identity = user.identities?.find((candidate) => candidate.provider === YAHOO_PROVIDER);
   if (!identity) {
     throw new Error("Authenticated session is not a Yahoo identity");
   }
@@ -94,8 +85,7 @@ export function projectYahooIdentity(user: User): YahooSessionIdentity {
   return {
     userId: requiredString(user.id, "Supabase subject"),
     yahooGuid: requiredString(identityData.sub, "provider subject"),
-    displayName:
-      typeof identityData.name === "string" ? identityData.name : null,
+    displayName: typeof identityData.name === "string" ? identityData.name : null,
     email: typeof user.email === "string" ? user.email : null,
   };
 }
@@ -106,15 +96,12 @@ export function requireYahooProviderTokens(session: Session): {
 } {
   return {
     accessToken: requiredString(session.provider_token, "provider access token"),
-    refreshToken: requiredString(
-      session.provider_refresh_token,
-      "provider refresh token",
-    ),
+    refreshToken: requiredString(session.provider_refresh_token, "provider refresh token"),
   };
 }
 
 export async function readVerifiedYahooIdentity(
-  client: SupabaseClient,
+  client: SupabaseClient
 ): Promise<YahooSessionIdentity> {
   const { data: claimsData, error: claimsError } = await client.auth.getClaims();
   if (claimsError || !claimsData?.claims?.sub) {

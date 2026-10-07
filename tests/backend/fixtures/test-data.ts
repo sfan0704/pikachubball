@@ -1,4 +1,4 @@
-import type { TeamRanking, CategoryStats } from '../../../shared/schema';
+import type { TeamRanking, CategoryStats } from "../../../shared/schema";
 
 /**
  * Test data factories for creating test fixtures
@@ -30,9 +30,9 @@ export function createTestTeamRanking(overrides?: Partial<TeamRanking>): TeamRan
   };
 
   const baseRanking: TeamRanking = {
-    teamKey: '466.l.12345.t.1',
-    teamName: 'Test Team',
-    managerName: 'Test Manager',
+    teamKey: "466.l.12345.t.1",
+    teamName: "Test Team",
+    managerName: "Test Manager",
     stats: defaultStats,
     categoryRanks: defaultRanks,
     totalRank: 1.0,
@@ -54,6 +54,6 @@ export function createTestTeamRanking(overrides?: Partial<TeamRanking>): TeamRan
   };
 }
 
-export const testLeagueKey = '466.l.12345';
-export const testTeamKey = '466.l.12345.t.1';
-export const testUserGuid = 'test-user-guid';
+export const testLeagueKey = "466.l.12345";
+export const testTeamKey = "466.l.12345.t.1";
+export const testUserGuid = "test-user-guid";

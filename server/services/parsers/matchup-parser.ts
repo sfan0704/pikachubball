@@ -3,9 +3,13 @@
  * Transform raw Yahoo API scoreboard responses into domain models
  */
 
-import type { Matchup, MatchupScore } from '../../../shared/domain/index.js';
-import type { YahooApiScoreboardResponse, YahooApiMatchupData, YahooApiTeamData } from '../../types/yahoo-api.js';
-import { logger } from '../../utils/logger.js';
+import type { Matchup, MatchupScore } from "../../../shared/domain/index.js";
+import type {
+  YahooApiScoreboardResponse,
+  YahooApiMatchupData,
+  YahooApiTeamData,
+} from "../../types/yahoo-api.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Parse matchup score from Yahoo API format
@@ -13,17 +17,14 @@ import { logger } from '../../utils/logger.js';
  * @param teamStats Yahoo API team stats (for category wins/losses)
  * @returns MatchupScore or default score
  */
-function parseMatchupScore(
-  teamPoints: any,
-  _teamStats?: any
-): MatchupScore {
+function parseMatchupScore(teamPoints: any, _teamStats?: any): MatchupScore {
   // Yahoo API may provide wins/losses/ties in different formats
   // For now, we'll extract from team_points if available, otherwise default
   if (teamPoints?.wins !== undefined && teamPoints?.losses !== undefined) {
     return {
       wins: parseInt(String(teamPoints.wins), 10) || 0,
       losses: parseInt(String(teamPoints.losses), 10) || 0,
-      ties: parseInt(String(teamPoints.ties || '0'), 10) || 0,
+      ties: parseInt(String(teamPoints.ties || "0"), 10) || 0,
     };
   }
 
@@ -36,19 +37,19 @@ function parseMatchupScore(
  * @param status Yahoo API status string
  * @returns MatchupStatus
  */
-function parseMatchupStatus(status: string | undefined): 'completed' | 'live' | 'upcoming' {
+function parseMatchupStatus(status: string | undefined): "completed" | "live" | "upcoming" {
   if (!status) {
-    return 'upcoming';
+    return "upcoming";
   }
 
   const statusLower = status.toLowerCase();
-  if (statusLower === 'postevent' || statusLower === 'post') {
-    return 'completed';
+  if (statusLower === "postevent" || statusLower === "post") {
+    return "completed";
   }
-  if (statusLower === 'live' || statusLower === 'inprogress') {
-    return 'live';
+  if (statusLower === "live" || statusLower === "inprogress") {
+    return "live";
   }
-  return 'upcoming';
+  return "upcoming";
 }
 
 /**
@@ -64,7 +65,7 @@ export function parseMatchup(
   week: number
 ): Matchup | null {
   if (!matchupData) {
-    logger.warn('Invalid matchup data: missing matchup', { leagueKey, week });
+    logger.warn("Invalid matchup data: missing matchup", { leagueKey, week });
     return null;
   }
 
@@ -72,21 +73,21 @@ export function parseMatchup(
   const subresources = matchupData[1];
 
   if (!subresources?.teams) {
-    logger.warn('Invalid matchup data: missing teams', { leagueKey, week });
+    logger.warn("Invalid matchup data: missing teams", { leagueKey, week });
     return null;
   }
 
   // Extract team data (Yahoo API uses indexed teams: "0", "1")
-  const team0Raw = subresources.teams['0'];
-  const team1Raw = subresources.teams['1'];
+  const team0Raw = subresources.teams["0"];
+  const team1Raw = subresources.teams["1"];
 
   // Type guard: ensure we have YahooApiMatchupTeam objects, not numbers
-  if (!team0Raw || typeof team0Raw === 'number' || !team0Raw.team) {
-    logger.warn('Invalid matchup data: missing team 0 data', { leagueKey, week });
+  if (!team0Raw || typeof team0Raw === "number" || !team0Raw.team) {
+    logger.warn("Invalid matchup data: missing team 0 data", { leagueKey, week });
     return null;
   }
-  if (!team1Raw || typeof team1Raw === 'number' || !team1Raw.team) {
-    logger.warn('Invalid matchup data: missing team 1 data', { leagueKey, week });
+  if (!team1Raw || typeof team1Raw === "number" || !team1Raw.team) {
+    logger.warn("Invalid matchup data: missing team 1 data", { leagueKey, week });
     return null;
   }
 
@@ -98,7 +99,7 @@ export function parseMatchup(
   const team1Props = team1.team[0];
 
   if (!Array.isArray(team0Props) || !Array.isArray(team1Props)) {
-    logger.warn('Invalid matchup data: team properties not arrays', { leagueKey, week });
+    logger.warn("Invalid matchup data: team properties not arrays", { leagueKey, week });
     return null;
   }
 
@@ -106,7 +107,7 @@ export function parseMatchup(
   const team1KeyObj = team1Props.find((prop: any) => prop.team_key);
 
   if (!team0KeyObj?.team_key || !team1KeyObj?.team_key) {
-    logger.warn('Invalid matchup data: missing team keys', { leagueKey, week });
+    logger.warn("Invalid matchup data: missing team keys", { leagueKey, week });
     return null;
   }
 
@@ -122,7 +123,7 @@ export function parseMatchup(
   let statusValue: string | undefined;
   if (Array.isArray(properties) && properties.length > 0) {
     statusValue = properties[0]?.status;
-  } else if (properties && typeof properties === 'object' && 'status' in properties) {
+  } else if (properties && typeof properties === "object" && "status" in properties) {
     statusValue = (properties as any).status;
   }
   const status = parseMatchupStatus(statusValue);
@@ -138,7 +139,7 @@ export function parseMatchup(
       status,
     };
   } catch (error: any) {
-    logger.error('Error parsing matchup:', { error: error.message, leagueKey, week });
+    logger.error("Error parsing matchup:", { error: error.message, leagueKey, week });
     return null;
   }
 }
@@ -152,7 +153,9 @@ export function parseMatchup(
  * @param scoreboardSubresource Raw scoreboard subresource from Yahoo API
  * @returns Normalized matchups object with numeric keys, or null if invalid
  */
-function extractMatchupsFromScoreboard(scoreboardSubresource: any): { count: number; [key: string]: any } | null {
+function extractMatchupsFromScoreboard(
+  scoreboardSubresource: any
+): { count: number; [key: string]: any } | null {
   if (!scoreboardSubresource) {
     return null;
   }
@@ -165,10 +168,10 @@ function extractMatchupsFromScoreboard(scoreboardSubresource: any): { count: num
   if (Array.isArray(scoreboardSubresource) && scoreboardSubresource.length > 0) {
     // Format 1: Array - get first element's matchups
     matchups = scoreboardSubresource[0]?.matchups;
-  } else if (scoreboardSubresource && typeof scoreboardSubresource === 'object') {
+  } else if (scoreboardSubresource && typeof scoreboardSubresource === "object") {
     // Check for format 2: { "0": { matchups: {...} } }
-    if (scoreboardSubresource['0']?.matchups) {
-      matchups = scoreboardSubresource['0'].matchups;
+    if (scoreboardSubresource["0"]?.matchups) {
+      matchups = scoreboardSubresource["0"].matchups;
     } else if (scoreboardSubresource.matchups) {
       // Format 3: { matchups: {...} }
       matchups = scoreboardSubresource.matchups;
@@ -186,7 +189,7 @@ function extractMatchupsFromScoreboard(scoreboardSubresource: any): { count: num
       normalized[i.toString()] = m;
     });
     return normalized;
-  } else if (matchups && typeof matchups === 'object' && matchups.count !== undefined) {
+  } else if (matchups && typeof matchups === "object" && matchups.count !== undefined) {
     // Already in object format with count
     return matchups;
   }
@@ -213,7 +216,7 @@ function extractTeamsFromMatchup(matchupEntry: any): YahooApiTeamData[] | null {
 
   // Yahoo API structure from scoreboard: matchup['0'] contains teams
   // matchup['0'] = { teams: { count: 2, "0": { team: [...] }, "1": { team: [...] } } }
-  const teamsData = matchup['0'];
+  const teamsData = matchup["0"];
   if (!teamsData || !teamsData.teams) {
     return null;
   }
@@ -251,13 +254,13 @@ export function parseMatchupsFromScoreboard(
   week: number
 ): Matchup[] {
   if (!scoreboardData?.fantasy_content?.league) {
-    logger.warn('Invalid scoreboard data: missing fantasy_content.league', { leagueKey, week });
+    logger.warn("Invalid scoreboard data: missing fantasy_content.league", { leagueKey, week });
     return [];
   }
 
   const leagueArray = scoreboardData.fantasy_content.league;
   if (!Array.isArray(leagueArray) || leagueArray.length < 2) {
-    logger.warn('Invalid scoreboard data: league array invalid', { leagueKey, week });
+    logger.warn("Invalid scoreboard data: league array invalid", { leagueKey, week });
     return [];
   }
 
@@ -265,7 +268,7 @@ export function parseMatchupsFromScoreboard(
   const normalizedMatchups = extractMatchupsFromScoreboard(scoreboardSubresource);
 
   if (!normalizedMatchups || !normalizedMatchups.count || normalizedMatchups.count === 0) {
-    logger.warn('Invalid scoreboard data: missing or invalid matchups', { leagueKey, week });
+    logger.warn("Invalid scoreboard data: missing or invalid matchups", { leagueKey, week });
     return [];
   }
 
@@ -313,7 +316,7 @@ export function parseMatchupsFromScoreboard(
               team2Key: team1KeyObj.team_key,
               team1Score: parseMatchupScore(team0Points, team0Stats),
               team2Score: parseMatchupScore(team1Points, team1Stats),
-              status: 'upcoming', // Default, can be enhanced if status is available
+              status: "upcoming", // Default, can be enhanced if status is available
             });
           }
         }

@@ -7,10 +7,7 @@ import axios, { AxiosInstance } from "axios";
 import type { YahooAppConfig } from "../../config/config";
 import { logger } from "../../utils/logger";
 import { refreshAccessToken } from "../../yahoo-auth";
-import type {
-  StoredYahooToken,
-  YahooTokenStorage,
-} from "../../storage/yahoo-token-storage";
+import type { StoredYahooToken, YahooTokenStorage } from "../../storage/yahoo-token-storage";
 import {
   providerStatus,
   systemClock,
@@ -49,17 +46,17 @@ export class YahooApiClient {
     clientSecret: string,
     providerRedirectUri: string | null,
     private readonly tokenStorage: YahooTokenStorage,
-    private readonly clock: YahooRequestClock,
+    private readonly clock: YahooRequestClock
   ) {
     this.userId = userId;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.providerRedirectUri = providerRedirectUri;
-    
+
     this.axiosInstance = axios.create({
       baseURL: YAHOO_API_BASE,
       headers: {
-        'Accept': 'application/json',
+        Accept: "application/json",
       },
     });
   }
@@ -72,10 +69,12 @@ export class YahooApiClient {
     userId: string,
     tokenStorage: YahooTokenStorage,
     app: YahooAppConfig,
-    clock: YahooRequestClock = systemClock,
+    clock: YahooRequestClock = systemClock
   ): Promise<YahooApiClient> {
     if (!app.clientId || !app.clientSecret) {
-      throw new Error("Yahoo OAuth credentials are not configured. Please set YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET environment variables.");
+      throw new Error(
+        "Yahoo OAuth credentials are not configured. Please set YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET environment variables."
+      );
     }
 
     const client = new YahooApiClient(
@@ -84,7 +83,7 @@ export class YahooApiClient {
       app.clientSecret,
       app.providerRedirectUri,
       tokenStorage,
-      clock,
+      clock
     );
     await client.initializeTokens();
     return client;
@@ -141,7 +140,7 @@ export class YahooApiClient {
       currentRefreshToken,
       this.clientId,
       this.clientSecret,
-      this.providerRedirectUri,
+      this.providerRedirectUri
     );
     const rotation = {
       userId: this.userId,
@@ -177,7 +176,10 @@ export class YahooApiClient {
    * Make an authenticated API request to Yahoo Fantasy API and decode the
    * HTML entities Yahoo puts in text fields (team and league names).
    */
-  private async apiRequest<T = any>(endpoint: string, params?: Record<string, string | number>): Promise<T> {
+  private async apiRequest<T = any>(
+    endpoint: string,
+    params?: Record<string, string | number>
+  ): Promise<T> {
     return decodeYahooStrings(await this.fetchRaw<T>(endpoint, params));
   }
 
@@ -185,7 +187,10 @@ export class YahooApiClient {
    * Make an authenticated API request to Yahoo Fantasy API within the request
    * budget. A 401 triggers one refresh and one retry of the request.
    */
-  private async fetchRaw<T = any>(endpoint: string, params?: Record<string, string | number>): Promise<T> {
+  private async fetchRaw<T = any>(
+    endpoint: string,
+    params?: Record<string, string | number>
+  ): Promise<T> {
     if (!this.accessToken) {
       await this.initializeTokens();
     }
@@ -196,15 +201,15 @@ export class YahooApiClient {
         queryParams.append(key, String(value));
       });
     }
-    queryParams.append('format', 'json');
+    queryParams.append("format", "json");
 
-    const url = `${endpoint}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const url = `${endpoint}${queryParams.toString() ? "?" + queryParams.toString() : ""}`;
     const deadline = this.clock.now() + YAHOO_TOTAL_BUDGET_MS;
     const get = (timeout: number) =>
       this.axiosInstance.get(url, {
         timeout,
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
         },
       });
 
@@ -237,7 +242,7 @@ export class YahooApiClient {
       userId: this.userId,
       endpoint,
       status: providerStatus(error),
-      code: error instanceof Error ? (error as { code?: string }).code ?? error.name : undefined,
+      code: error instanceof Error ? ((error as { code?: string }).code ?? error.name) : undefined,
     });
   }
 
@@ -246,76 +251,76 @@ export class YahooApiClient {
    */
   async getUserGames(): Promise<any> {
     const response = await this.apiRequest("/users;use_login=1/games");
-    
+
     // Log raw response for debugging when games are empty
     const users = response?.fantasy_content?.users;
-    
+
     // Handle both array and object formats for users
     // Yahoo API can return: users: [{ user: [...] }] or users: { '0': { user: [...] }, count: ... }
     let userData: any = null;
     if (Array.isArray(users) && users.length > 0) {
       // Format: users: [{ user: [...] }]
       userData = users[0]?.user;
-    } else if (users && typeof users === 'object') {
+    } else if (users && typeof users === "object") {
       // Try users.user first (simple object format)
       if (users.user) {
         userData = users.user;
-      } 
+      }
       // Try users['0'] or users[0] (numeric string key format)
-      else if (users['0']?.user) {
-        userData = users['0'].user;
+      else if (users["0"]?.user) {
+        userData = users["0"].user;
       } else if (users[0]?.user) {
         userData = users[0].user;
       }
     }
-    
+
     if (!userData) {
       // Log the actual structure to help debug
       const usersInfo: any = {
         type: typeof users,
         isArray: Array.isArray(users),
         isNull: users === null,
-        isUndefined: users === undefined
+        isUndefined: users === undefined,
       };
-      if (users && typeof users === 'object') {
+      if (users && typeof users === "object") {
         usersInfo.keys = Object.keys(users);
         // Log a sample of the structure (first level only)
         usersInfo.sample = JSON.stringify(users).substring(0, 500);
       }
-      
-      logger.debug("getUserGames: No users in response or invalid format", { 
+
+      logger.debug("getUserGames: No users in response or invalid format", {
         responseKeys: Object.keys(response || {}),
         fantasyContentKeys: Object.keys(response?.fantasy_content || {}),
-        usersInfo
+        usersInfo,
       });
       return { games: [] };
     }
-    
+
     if (!userData || !Array.isArray(userData) || userData.length < 2) {
-      logger.debug("getUserGames: Invalid user data structure", { 
+      logger.debug("getUserGames: Invalid user data structure", {
         userDataType: typeof userData,
         isArray: Array.isArray(userData),
         length: userData?.length,
         userDataKeys: userData && !Array.isArray(userData) ? Object.keys(userData) : undefined,
-        userDataValue: userData
+        userDataValue: userData,
       });
       return { games: [] };
     }
-    
+
     const gamesData = userData[1]?.games;
     if (!gamesData) {
-      logger.debug("getUserGames: No games data", { 
+      logger.debug("getUserGames: No games data", {
         userDataKeys: Object.keys(userData[1] || {}),
-        userDataLength: userData.length
+        userDataLength: userData.length,
       });
       return { games: [] };
     }
-    
+
     // Handle games structure - can be numeric string keys like {"0": {game: [...]}, "1": {game: [...]}}
     let games: any[] = [];
-    
+
     // First, try to collect all games from numeric string keys
-    const gameKeys = Object.keys(gamesData).filter(key => key !== 'count' && !isNaN(Number(key)));
+    const gameKeys = Object.keys(gamesData).filter((key) => key !== "count" && !isNaN(Number(key)));
     if (gameKeys.length > 0) {
       // Games are stored under numeric string keys
       // Each gameEntry.game is an array: [gameProps, leaguesData]
@@ -343,16 +348,16 @@ export class YahooApiClient {
     } else if (gamesData.game) {
       games = [gamesData.game];
     }
-    
+
     if (games.length === 0) {
       logger.debug("getUserGames: Games array is empty", {
         gamesDataType: typeof gamesData.game,
         gamesDataKeys: Object.keys(gamesData),
         gamesDataCount: gamesData.count,
-        gameKeys
+        gameKeys,
       });
     }
-    
+
     return {
       guid: userData[0]?.guid,
       games: games.map((g: any) => ({
@@ -370,57 +375,57 @@ export class YahooApiClient {
    */
   async getAllUserLeagues(): Promise<any> {
     const response = await this.apiRequest("/users;use_login=1/games/leagues");
-    
+
     // Parse the raw Yahoo API response
     const users = response?.fantasy_content?.users;
-    
+
     // Handle both array and object formats for users
     // Yahoo API can return: users: [{ user: [...] }] or users: { '0': { user: [...] }, count: ... }
     let userData: any = null;
     if (Array.isArray(users) && users.length > 0) {
       // Format: users: [{ user: [...] }]
       userData = users[0]?.user;
-    } else if (users && typeof users === 'object') {
+    } else if (users && typeof users === "object") {
       // Try users.user first (simple object format)
       if (users.user) {
         userData = users.user;
-      } 
+      }
       // Try users['0'] or users[0] (numeric string key format)
-      else if (users['0']?.user) {
-        userData = users['0'].user;
+      else if (users["0"]?.user) {
+        userData = users["0"].user;
       } else if (users[0]?.user) {
         userData = users[0].user;
       }
     }
-    
+
     if (!userData) {
       logger.debug("getAllUserLeagues: No users in response or invalid format", {
         usersType: typeof users,
         usersIsArray: Array.isArray(users),
-        usersKeys: users && typeof users === 'object' ? Object.keys(users) : undefined
+        usersKeys: users && typeof users === "object" ? Object.keys(users) : undefined,
       });
       return { games: [], guid: undefined };
     }
-    
+
     if (!userData || !Array.isArray(userData) || userData.length < 2) {
       logger.debug("getAllUserLeagues: Invalid user data structure", {
         userDataType: typeof userData,
         isArray: Array.isArray(userData),
-        length: userData?.length
+        length: userData?.length,
       });
       return { games: [], guid: userData?.[0]?.guid };
     }
-    
+
     const gamesData = userData[1]?.games;
     if (!gamesData) {
       return { games: [], guid: userData[0]?.guid };
     }
-    
+
     // Handle games structure - can be numeric string keys like {"0": {game: [...]}, "1": {game: [...]}}
     let games: any[] = [];
-    
+
     // First, try to collect all games from numeric string keys
-    const gameKeys = Object.keys(gamesData).filter(key => key !== 'count' && !isNaN(Number(key)));
+    const gameKeys = Object.keys(gamesData).filter((key) => key !== "count" && !isNaN(Number(key)));
     if (gameKeys.length > 0) {
       // Games are stored under numeric string keys
       // Each gameEntry.game is an array: [gameProps, leaguesData]
@@ -448,7 +453,7 @@ export class YahooApiClient {
     } else if (gamesData.game) {
       games = [gamesData.game];
     }
-    
+
     // Parse leagues from each game
     // Yahoo API structure: game[0] = game properties, game[1] = leagues subresource
     const parsedGames = games.map((game: any) => {
@@ -456,34 +461,40 @@ export class YahooApiClient {
         logger.debug("getAllUserLeagues: Invalid game structure", {
           isArray: Array.isArray(game),
           length: game?.length,
-          gameType: typeof game
+          gameType: typeof game,
         });
         return { leagues: [] };
       }
-      
+
       const gameProps = game[0];
       const leaguesData = game[1]?.leagues;
-      
+
       logger.debug("getAllUserLeagues: Parsing leagues for game", {
         gameKey: gameProps?.game_key,
         gameCode: gameProps?.code,
         hasLeaguesData: !!leaguesData,
         leaguesDataType: typeof leaguesData,
-        leaguesDataKeys: leaguesData && typeof leaguesData === 'object' ? Object.keys(leaguesData) : undefined
+        leaguesDataKeys:
+          leaguesData && typeof leaguesData === "object" ? Object.keys(leaguesData) : undefined,
       });
-      
+
       if (!leaguesData) {
         logger.debug("getAllUserLeagues: No leagues data found", { gameProps });
         return { ...gameProps, leagues: [] };
       }
-      
+
       // Handle leagues structure - can be numeric string keys like {"0": {league: [...]}, "1": {league: [...]}}
       let leagues: any[] = [];
-      
+
       // First, try to collect all leagues from numeric string keys
-      const leagueKeys = Object.keys(leaguesData).filter(key => key !== 'count' && !isNaN(Number(key)));
-      logger.debug("getAllUserLeagues: Found league keys", { leagueKeys, count: leaguesData.count });
-      
+      const leagueKeys = Object.keys(leaguesData).filter(
+        (key) => key !== "count" && !isNaN(Number(key))
+      );
+      logger.debug("getAllUserLeagues: Found league keys", {
+        leagueKeys,
+        count: leaguesData.count,
+      });
+
       if (leagueKeys.length > 0) {
         // Leagues are stored under numeric string keys
         for (const key of leagueKeys) {
@@ -492,9 +503,9 @@ export class YahooApiClient {
             key,
             hasLeague: !!leagueEntry?.league,
             leagueIsArray: Array.isArray(leagueEntry?.league),
-            leagueType: typeof leagueEntry?.league
+            leagueType: typeof leagueEntry?.league,
           });
-          
+
           if (leagueEntry?.league) {
             if (Array.isArray(leagueEntry.league)) {
               leagues.push(...leagueEntry.league);
@@ -510,18 +521,19 @@ export class YahooApiClient {
       } else if (leaguesData.league) {
         leagues = [leaguesData.league];
       }
-      
+
       logger.debug("getAllUserLeagues: Extracted leagues array", {
         gameCode: gameProps?.code,
         leaguesCount: leagues.length,
-        leaguesSample: leagues.length > 0 ? JSON.stringify(leagues[0]).substring(0, 200) : undefined
+        leaguesSample:
+          leagues.length > 0 ? JSON.stringify(leagues[0]).substring(0, 200) : undefined,
       });
-      
+
       // Parse league structure: league[0] = league properties (if array), or direct object
       const parsedLeagues = leagues.map((league: any) => {
         if (Array.isArray(league) && league.length > 0) {
           // Handle array structure: league[0] = properties
-          const leagueProps = Array.isArray(league[0]) 
+          const leagueProps = Array.isArray(league[0])
             ? league[0].find((prop: any) => prop?.league_key) || league[0][0]
             : league[0];
           return {
@@ -547,19 +559,19 @@ export class YahooApiClient {
           start_date: league?.start_date,
         };
       });
-      
+
       logger.debug("getAllUserLeagues: Parsed leagues", {
         gameCode: gameProps?.code,
         parsedLeaguesCount: parsedLeagues.length,
-        parsedLeagues: parsedLeagues
+        parsedLeagues: parsedLeagues,
       });
-      
+
       return {
         ...gameProps,
         leagues: parsedLeagues,
       };
     });
-    
+
     return {
       guid: userData[0]?.guid,
       games: parsedGames,
@@ -570,70 +582,72 @@ export class YahooApiClient {
     // Yahoo supports filtering the games collection by code. Going directly to
     // the leagues subresource avoids a separate, broader user-games request.
     const response = await this.apiRequest(
-      `/users;use_login=1/games;game_codes=${encodeURIComponent(gameCode)}/leagues`,
+      `/users;use_login=1/games;game_codes=${encodeURIComponent(gameCode)}/leagues`
     );
-    
+
     // Parse the raw Yahoo API response
     const users = response?.fantasy_content?.users;
-    
+
     // Handle both array and object formats for users
     // Yahoo API can return: users: [{ user: [...] }] or users: { '0': { user: [...] }, count: ... }
     let userData: any = null;
     if (Array.isArray(users) && users.length > 0) {
       // Format: users: [{ user: [...] }]
       userData = users[0]?.user;
-    } else if (users && typeof users === 'object') {
+    } else if (users && typeof users === "object") {
       // Try users.user first (simple object format)
       if (users.user) {
         userData = users.user;
-      } 
+      }
       // Try users['0'] or users[0] (numeric string key format)
-      else if (users['0']?.user) {
-        userData = users['0'].user;
+      else if (users["0"]?.user) {
+        userData = users["0"].user;
       } else if (users[0]?.user) {
         userData = users[0].user;
       }
     }
-    
+
     if (!userData) {
       logger.debug("getUserGameLeagues: No users in response or invalid format", {
         usersType: typeof users,
         usersIsArray: Array.isArray(users),
-        usersKeys: users && typeof users === 'object' ? Object.keys(users) : undefined
+        usersKeys: users && typeof users === "object" ? Object.keys(users) : undefined,
       });
       return { games: [], guid: undefined };
     }
-    
+
     if (!userData || !Array.isArray(userData) || userData.length < 2) {
       logger.debug("getUserGameLeagues: Invalid user data structure", {
         userDataType: typeof userData,
         isArray: Array.isArray(userData),
-        length: userData?.length
+        length: userData?.length,
       });
       return { games: [], guid: userData?.[0]?.guid };
     }
-    
+
     const gamesData = userData[1]?.games;
     if (!gamesData) {
       logger.debug("getUserGameLeagues: No games data", {
         userDataKeys: Object.keys(userData[1] || {}),
-        userDataLength: userData.length
+        userDataLength: userData.length,
       });
       return { games: [], guid: userData[0]?.guid };
     }
-    
+
     logger.debug("getUserGameLeagues: Games data structure", {
       gamesDataType: typeof gamesData,
       gamesDataKeys: Object.keys(gamesData),
       gamesDataCount: gamesData.count,
-      sampleGameEntry: gamesData['0'] ? JSON.stringify(gamesData['0']).substring(0, 300) : undefined
+      sampleGameEntry: gamesData["0"]
+        ? JSON.stringify(gamesData["0"]).substring(0, 300)
+        : undefined,
     });
-    
+
     // Handle games structure - can be numeric string keys like {"0": {game: [...]}, "1": {game: [...]}}
     let games: any[] = [];
-    
+
     // First, try to collect all games from numeric string keys
-    const gameKeys = Object.keys(gamesData).filter(key => key !== 'count' && !isNaN(Number(key)));
+    const gameKeys = Object.keys(gamesData).filter((key) => key !== "count" && !isNaN(Number(key)));
     if (gameKeys.length > 0) {
       // Games are stored under numeric string keys
       // Each gameEntry.game is an array: [gameProps, leaguesData]
@@ -661,7 +675,7 @@ export class YahooApiClient {
     } else if (gamesData.game) {
       games = [gamesData.game];
     }
-    
+
     // Parse leagues from each game
     // Yahoo API structure: game[0] = game properties, game[1] = leagues subresource
     const parsedGames = games.map((game: any) => {
@@ -669,34 +683,40 @@ export class YahooApiClient {
         logger.debug("getUserGameLeagues: Invalid game structure", {
           isArray: Array.isArray(game),
           length: game?.length,
-          gameType: typeof game
+          gameType: typeof game,
         });
         return { leagues: [] };
       }
-      
+
       const gameProps = game[0];
       const leaguesData = game[1]?.leagues;
-      
+
       logger.debug("getUserGameLeagues: Parsing leagues for game", {
         gameKey: gameProps?.game_key,
         gameCode: gameProps?.code,
         hasLeaguesData: !!leaguesData,
         leaguesDataType: typeof leaguesData,
-        leaguesDataKeys: leaguesData && typeof leaguesData === 'object' ? Object.keys(leaguesData) : undefined
+        leaguesDataKeys:
+          leaguesData && typeof leaguesData === "object" ? Object.keys(leaguesData) : undefined,
       });
-      
+
       if (!leaguesData) {
         logger.debug("getUserGameLeagues: No leagues data found", { gameProps });
         return { ...gameProps, leagues: [] };
       }
-      
+
       // Handle leagues structure - can be numeric string keys like {"0": {league: [...]}, "1": {league: [...]}}
       let leagues: any[] = [];
-      
+
       // First, try to collect all leagues from numeric string keys
-      const leagueKeys = Object.keys(leaguesData).filter(key => key !== 'count' && !isNaN(Number(key)));
-      logger.debug("getUserGameLeagues: Found league keys", { leagueKeys, count: leaguesData.count });
-      
+      const leagueKeys = Object.keys(leaguesData).filter(
+        (key) => key !== "count" && !isNaN(Number(key))
+      );
+      logger.debug("getUserGameLeagues: Found league keys", {
+        leagueKeys,
+        count: leaguesData.count,
+      });
+
       if (leagueKeys.length > 0) {
         // Leagues are stored under numeric string keys
         for (const key of leagueKeys) {
@@ -705,9 +725,9 @@ export class YahooApiClient {
             key,
             hasLeague: !!leagueEntry?.league,
             leagueIsArray: Array.isArray(leagueEntry?.league),
-            leagueType: typeof leagueEntry?.league
+            leagueType: typeof leagueEntry?.league,
           });
-          
+
           if (leagueEntry?.league) {
             if (Array.isArray(leagueEntry.league)) {
               leagues.push(...leagueEntry.league);
@@ -723,18 +743,19 @@ export class YahooApiClient {
       } else if (leaguesData.league) {
         leagues = [leaguesData.league];
       }
-      
+
       logger.debug("getUserGameLeagues: Extracted leagues array", {
         gameCode: gameProps?.code,
         leaguesCount: leagues.length,
-        leaguesSample: leagues.length > 0 ? JSON.stringify(leagues[0]).substring(0, 200) : undefined
+        leaguesSample:
+          leagues.length > 0 ? JSON.stringify(leagues[0]).substring(0, 200) : undefined,
       });
-      
+
       // Parse league structure: league[0] = league properties (if array), or direct object
       const parsedLeagues = leagues.map((league: any) => {
         if (Array.isArray(league) && league.length > 0) {
           // Handle array structure: league[0] = properties
-          const leagueProps = Array.isArray(league[0]) 
+          const leagueProps = Array.isArray(league[0])
             ? league[0].find((prop: any) => prop?.league_key) || league[0][0]
             : league[0];
           return {
@@ -760,19 +781,19 @@ export class YahooApiClient {
           start_date: league?.start_date,
         };
       });
-      
+
       logger.debug("getUserGameLeagues: Parsed leagues", {
         gameCode: gameProps?.code,
         parsedLeaguesCount: parsedLeagues.length,
-        parsedLeagues: parsedLeagues
+        parsedLeagues: parsedLeagues,
       });
-      
+
       return {
         ...gameProps,
         leagues: parsedLeagues,
       };
     });
-    
+
     return {
       guid: userData[0]?.guid,
       games: parsedGames,
@@ -791,7 +812,7 @@ export class YahooApiClient {
   }
 
   async getLeagueScoreboard(leagueKey: string, week?: number): Promise<any> {
-    const endpoint = week 
+    const endpoint = week
       ? `/league/${leagueKey}/scoreboard;week=${week}`
       : `/league/${leagueKey}/scoreboard`;
     return this.apiRequest(endpoint);
@@ -801,9 +822,7 @@ export class YahooApiClient {
    * Team resource methods
    */
   async getTeamRoster(teamKey: string, week?: number): Promise<any> {
-    const endpoint = week
-      ? `/team/${teamKey}/roster;week=${week}`
-      : `/team/${teamKey}/roster`;
+    const endpoint = week ? `/team/${teamKey}/roster;week=${week}` : `/team/${teamKey}/roster`;
     return this.apiRequest(endpoint);
   }
 
@@ -813,7 +832,7 @@ export class YahooApiClient {
   async getPlayerStats(playerKey: string, week?: number | string): Promise<any> {
     let endpoint = `/player/${playerKey}/stats`;
     if (week) {
-      if (typeof week === 'string' && (week === 'lastweek' || week === 'lastmonth')) {
+      if (typeof week === "string" && (week === "lastweek" || week === "lastmonth")) {
         endpoint += `;type=${week}`;
       } else {
         endpoint += `;type=week;week=${week}`;
@@ -826,7 +845,10 @@ export class YahooApiClient {
    * Make a raw API request (for documentation/debugging purposes)
    * Returns the unparsed API response exactly as Yahoo returns it
    */
-  async getRawApiResponse(endpoint: string, params?: Record<string, string | number>): Promise<any> {
+  async getRawApiResponse(
+    endpoint: string,
+    params?: Record<string, string | number>
+  ): Promise<any> {
     return this.fetchRaw(endpoint, params);
   }
 }
@@ -834,5 +856,5 @@ export class YahooApiClient {
 /** Creates a Yahoo API client for one user; the composition root supplies the Yahoo app's credentials. */
 export type YahooClientFactory = (
   userId: string,
-  tokenStorage: YahooTokenStorage,
+  tokenStorage: YahooTokenStorage
 ) => Promise<YahooApiClient>;

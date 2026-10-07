@@ -1,5 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LeagueRankings from "@/components/features/league/LeagueRankings";
 import MatchupTab from "@/components/features/league/MatchupTab";
@@ -30,9 +38,16 @@ export default function RankingsPage() {
   const searchParams = useSearch();
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  
+
   // Use the shared hook for league selection
-  const { leagues, selectedLeagueKey, setSelectedLeagueKey, selectedLeague, isLoadingLeagues, error: leaguesError } = useFirstLeague();
+  const {
+    leagues,
+    selectedLeagueKey,
+    setSelectedLeagueKey,
+    selectedLeague,
+    isLoadingLeagues,
+    error: leaguesError,
+  } = useFirstLeague();
 
   // Check Yahoo connection status
   const { data: yahooStatus, isLoading: isLoadingYahooStatus } = useQuery<{
@@ -45,91 +60,94 @@ export default function RankingsPage() {
   // Check for OAuth errors in URL and display them
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const error = params.get('error');
-    const details = params.get('details');
-    const description = params.get('description');
-    
+    const error = params.get("error");
+    const details = params.get("details");
+    const description = params.get("description");
+
     if (error) {
       let errorMessage = "Yahoo OAuth error occurred";
-      
-      if (error === 'yahoo_oauth_error') {
+
+      if (error === "yahoo_oauth_error") {
         errorMessage = details || description || "Yahoo OAuth authorization failed";
-      } else if (error === 'token_exchange_failed') {
+      } else if (error === "token_exchange_failed") {
         errorMessage = details || "Failed to exchange authorization code.";
-      } else if (error === 'missing_code') {
+      } else if (error === "missing_code") {
         errorMessage = "Missing authorization code. Please try connecting again.";
-      } else if (error === 'invalid_state') {
+      } else if (error === "invalid_state") {
         errorMessage = "Invalid OAuth state. Please try connecting again.";
-      } else if (error === 'not_authenticated') {
+      } else if (error === "not_authenticated") {
         errorMessage = "You must be logged in to connect Yahoo.";
       }
-      
+
       toast({
         title: "Yahoo Connection Error",
         description: errorMessage,
         variant: "destructive",
         duration: 10000,
       });
-      
+
       // Clean up URL
-      params.delete('error');
-      params.delete('details');
-      params.delete('description');
+      params.delete("error");
+      params.delete("details");
+      params.delete("description");
       const newSearch = params.toString();
-      const path = location.split('?')[0];
-      setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
-    } else if (params.get('yahoo_connected') === 'true') {
+      const path = location.split("?")[0];
+      setLocation(`${path}${newSearch ? "?" + newSearch : ""}`, { replace: true });
+    } else if (params.get("yahoo_connected") === "true") {
       toast({
         title: "Successfully Connected",
         description: "Your Yahoo Fantasy account has been connected!",
       });
       // Invalidate status query to refresh connection state
       queryClient.invalidateQueries({ queryKey: ["/api/auth/yahoo/status"] });
-      params.delete('yahoo_connected');
+      params.delete("yahoo_connected");
       const newSearch = params.toString();
-      const path = location.split('?')[0];
-      setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
+      const path = location.split("?")[0];
+      setLocation(`${path}${newSearch ? "?" + newSearch : ""}`, { replace: true });
     }
   }, [location, setLocation, toast]);
 
   // Parse week from URL query params using useMemo to avoid redundant parsing
   const selectedWeek = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
-    const weekParam = params.get('week');
+    const weekParam = params.get("week");
     if (!weekParam) return null;
-    
+
     const parsed = parseInt(weekParam, 10);
-    return (Number.isFinite(parsed) && parsed > 0) ? parsed : null;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [searchParams]);
 
   // Clean up invalid week from URL if needed (runs once per invalid value)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const weekParam = params.get('week');
-    
+    const weekParam = params.get("week");
+
     if (weekParam) {
       const parsed = parseInt(weekParam, 10);
       if (!Number.isFinite(parsed) || parsed < 1) {
         // Invalid week - remove from URL once
-        params.delete('week');
-        const path = location.split('?')[0];
+        params.delete("week");
+        const path = location.split("?")[0];
         const newSearch = params.toString();
-        setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
+        setLocation(`${path}${newSearch ? "?" + newSearch : ""}`, { replace: true });
       }
     }
     // Only run when searchParams changes, not on every render
   }, [searchParams, location, setLocation]);
 
-
   // Build query URL with week parameter
   const rankingsUrl = useMemo(() => {
     if (!selectedLeagueKey) return null;
-    return selectedWeek 
+    return selectedWeek
       ? `/api/yahoo/league-rankings/${selectedLeagueKey}?week=${selectedWeek}`
       : `/api/yahoo/league-rankings/${selectedLeagueKey}`;
   }, [selectedLeagueKey, selectedWeek]);
 
-  const { data: rankingsData, isLoading: isLoadingRankings, error: rankingsError } = useQuery<RankingsResponse>({
+  const {
+    data: rankingsData,
+    isLoading: isLoadingRankings,
+    error: rankingsError,
+  } = useQuery<RankingsResponse>({
     queryKey: [rankingsUrl],
     enabled: !!rankingsUrl,
     retry: false,
@@ -137,7 +155,7 @@ export default function RankingsPage() {
 
   const rankings = rankingsData?.rankings || [];
   const metadata = rankingsData?.metadata;
-  
+
   // Preserve max weeks count so dropdown options don't disappear during loading
   useEffect(() => {
     if (metadata?.currentWeek) {
@@ -149,13 +167,13 @@ export default function RankingsPage() {
     // Use fresh params from window.location to avoid stale state
     const params = new URLSearchParams(window.location.search);
     if (week !== null) {
-      params.set('week', week.toString());
+      params.set("week", week.toString());
     } else {
-      params.delete('week');
+      params.delete("week");
     }
-    const path = location.split('?')[0];
+    const path = location.split("?")[0];
     const newSearch = params.toString();
-    setLocation(`${path}${newSearch ? '?' + newSearch : ''}`, { replace: true });
+    setLocation(`${path}${newSearch ? "?" + newSearch : ""}`, { replace: true });
   };
 
   const isLoading = isLoadingLeagues || isLoadingYahooStatus;
@@ -167,17 +185,23 @@ export default function RankingsPage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between gap-2 py-3 md:py-4">
             <div className="min-w-0">
-              <h1 className="text-lg md:text-xl font-semibold truncate" data-testid="heading-app-title">
+              <h1
+                className="text-lg md:text-xl font-semibold truncate"
+                data-testid="heading-app-title"
+              >
                 <span className="hidden sm:inline">Fantasy Basketball Rankings</span>
                 <span className="sm:hidden">FB Rankings</span>
               </h1>
             </div>
             <div className="flex items-center gap-1 md:gap-2 shrink-0">
-{user && (
-                    <span className="hidden lg:inline text-sm text-muted-foreground mr-2" data-testid="text-username">
-                      {selectedLeague?.teamName || user.email || user.displayName || user.username}
-                    </span>
-                  )}
+              {user && (
+                <span
+                  className="hidden lg:inline text-sm text-muted-foreground mr-2"
+                  data-testid="text-username"
+                >
+                  {selectedLeague?.teamName || user.email || user.displayName || user.username}
+                </span>
+              )}
               <ThemeToggle />
               <Button
                 variant="ghost"
@@ -211,19 +235,27 @@ export default function RankingsPage() {
         {/* Error Banners */}
         {leaguesError && yahooStatus?.connected && (
           <ErrorBanner
-            title={leaguesError.message.includes("FANTASY_ACCESS_PENDING")
-              ? "Yahoo Access Is Pending"
-              : "Failed to Load Leagues"}
-            message={leaguesError.message.includes("FANTASY_ACCESS_PENDING")
-              ? "Yahoo sign-in is working, but Yahoo still needs to activate Fantasy API access for this app."
-              : leaguesError.message || "Unable to load your leagues. Please try again."}
+            title={
+              leaguesError.message.includes("FANTASY_ACCESS_PENDING")
+                ? "Yahoo Access Is Pending"
+                : "Failed to Load Leagues"
+            }
+            message={
+              leaguesError.message.includes("FANTASY_ACCESS_PENDING")
+                ? "Yahoo sign-in is working, but Yahoo still needs to activate Fantasy API access for this app."
+                : leaguesError.message || "Unable to load your leagues. Please try again."
+            }
             onRetry={() => queryClient.invalidateQueries({ queryKey: ["/api/yahoo/leagues"] })}
           />
         )}
         {rankingsError && selectedLeagueKey && yahooStatus?.connected && (
           <ErrorBanner
             title="Failed to Load Rankings"
-            message={rankingsError instanceof Error ? rankingsError.message : "Unable to load rankings data. Please try again."}
+            message={
+              rankingsError instanceof Error
+                ? rankingsError.message
+                : "Unable to load rankings data. Please try again."
+            }
             onRetry={() => queryClient.invalidateQueries({ queryKey: [rankingsUrl] })}
           />
         )}
@@ -255,9 +287,7 @@ export default function RankingsPage() {
           <Card>
             <CardContent className="py-12">
               <div className="text-center space-y-4">
-                <p className="text-lg font-medium text-muted-foreground">
-                  No leagues found
-                </p>
+                <p className="text-lg font-medium text-muted-foreground">No leagues found</p>
                 <p className="text-sm text-muted-foreground">
                   You don't have any Yahoo Fantasy Basketball leagues yet.
                 </p>
@@ -273,7 +303,10 @@ export default function RankingsPage() {
               <CardContent>
                 <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                   <div className="flex-1">
-                    <label htmlFor="league-select" className="text-xs md:text-sm font-medium mb-2 block">
+                    <label
+                      htmlFor="league-select"
+                      className="text-xs md:text-sm font-medium mb-2 block"
+                    >
                       League
                     </label>
                     <Select value={selectedLeagueKey} onValueChange={setSelectedLeagueKey}>
@@ -282,7 +315,9 @@ export default function RankingsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {LEAGUE_GROUPS.map(({ status, label }) => {
-                          const group = leagues.filter((league) => (league.status ?? "active") === status);
+                          const group = leagues.filter(
+                            (league) => (league.status ?? "active") === status
+                          );
                           if (group.length === 0) {
                             return null;
                           }
@@ -296,7 +331,9 @@ export default function RankingsPage() {
                                   data-testid={`option-league-${league.leagueKey}`}
                                 >
                                   {league.leagueName} - {league.teamName}
-                                  {status === "finished" && league.season ? ` (${league.season})` : ""}
+                                  {status === "finished" && league.season
+                                    ? ` (${league.season})`
+                                    : ""}
                                 </SelectItem>
                               ))}
                             </SelectGroup>
@@ -305,27 +342,41 @@ export default function RankingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   {selectedLeagueKey && (
                     <div className="flex-1">
-                      <label htmlFor="week-select" className="text-xs md:text-sm font-medium mb-2 block">
+                      <label
+                        htmlFor="week-select"
+                        className="text-xs md:text-sm font-medium mb-2 block"
+                      >
                         Time Period
                       </label>
-                      <Select 
-                        value={selectedWeek?.toString() || "season"} 
-                        onValueChange={(value) => handleWeekChange(value === "season" ? null : parseInt(value))}
+                      <Select
+                        value={selectedWeek?.toString() || "season"}
+                        onValueChange={(value) =>
+                          handleWeekChange(value === "season" ? null : parseInt(value))
+                        }
                         disabled={isLoadingRankings}
                       >
                         <SelectTrigger id="week-select" data-testid="select-week">
                           <SelectValue placeholder="Select week" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="season" data-testid="option-season">Season (to date)</SelectItem>
-                          {maxWeeks > 0 && Array.from({ length: maxWeeks }, (_, i) => i + 1).reverse().map((week) => (
-                            <SelectItem key={week} value={week.toString()} data-testid={`option-week-${week}`}>
-                              Week {week}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="season" data-testid="option-season">
+                            Season (to date)
+                          </SelectItem>
+                          {maxWeeks > 0 &&
+                            Array.from({ length: maxWeeks }, (_, i) => i + 1)
+                              .reverse()
+                              .map((week) => (
+                                <SelectItem
+                                  key={week}
+                                  value={week.toString()}
+                                  data-testid={`option-week-${week}`}
+                                >
+                                  Week {week}
+                                </SelectItem>
+                              ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -355,10 +406,7 @@ export default function RankingsPage() {
                   {isLoadingRankings ? (
                     <RankingsSkeleton />
                   ) : rankings.length > 0 && selectedLeague ? (
-                    <LeagueRankings 
-                      rankings={rankings} 
-                      userTeamKey={selectedLeague.teamKey}
-                    />
+                    <LeagueRankings rankings={rankings} userTeamKey={selectedLeague.teamKey} />
                   ) : (
                     <Card>
                       <CardContent className="py-12">
@@ -372,10 +420,10 @@ export default function RankingsPage() {
 
                 <TabsContent value="matchup">
                   {selectedLeague ? (
-                    <MatchupTab 
-                      leagueKey={selectedLeagueKey} 
+                    <MatchupTab
+                      leagueKey={selectedLeagueKey}
                       teamKey={selectedLeague.teamKey}
-                      week={selectedWeek} 
+                      week={selectedWeek}
                     />
                   ) : (
                     <Card>
@@ -390,7 +438,7 @@ export default function RankingsPage() {
 
                 <TabsContent value="simulator">
                   {selectedLeague && rankings.length > 0 ? (
-                    <MatchupSimulator 
+                    <MatchupSimulator
                       leagueKey={selectedLeagueKey}
                       userTeamKey={selectedLeague.teamKey}
                       week={selectedWeek}
@@ -406,7 +454,6 @@ export default function RankingsPage() {
                     </Card>
                   )}
                 </TabsContent>
-
               </Tabs>
             ) : (
               <Card>

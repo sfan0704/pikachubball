@@ -26,7 +26,7 @@ function sendError(
   res: Response,
   code: ErrorCode,
   message: string,
-  details?: unknown,
+  details?: unknown
 ): void {
   const body: ErrorBody = {
     code,
@@ -61,13 +61,14 @@ export function createErrorHandler({ logger, exposeErrorDetails }: ErrorHandlerO
         res,
         "VALIDATION_ERROR",
         "Validation error",
-        err.errors.map((e) => ({ path: e.path.join("."), message: e.message })),
+        err.errors.map((e) => ({ path: e.path.join("."), message: e.message }))
       );
       return;
     }
 
     if (err instanceof AppError) {
-      const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)?.retryAfterSeconds;
+      const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)
+        ?.retryAfterSeconds;
       if (typeof retryAfter === "number") {
         res.setHeader("Retry-After", String(retryAfter));
       }
@@ -81,7 +82,7 @@ export function createErrorHandler({ logger, exposeErrorDetails }: ErrorHandlerO
       res,
       "INTERNAL_ERROR",
       "Internal server error",
-      exposeErrorDetails ? { message: err.message, stack: err.stack } : undefined,
+      exposeErrorDetails ? { message: err.message, stack: err.stack } : undefined
     );
   };
 }
@@ -89,7 +90,7 @@ export function createErrorHandler({ logger, exposeErrorDetails }: ErrorHandlerO
 /**
  * Async handler wrapper
  * Automatically catches async errors and passes them to error handler
- * 
+ *
  * Usage:
  *   app.post("/api/endpoint", asyncHandler(async (req, res) => {
  *     // No need for try/catch - errors are automatically caught

@@ -1,23 +1,23 @@
 /**
  * @vitest-environment happy-dom
  */
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import LeagueRankings from '../../../../../client/src/components/features/league/LeagueRankings';
-import type { TeamRanking } from '@shared/schema';
+import React from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import LeagueRankings from "../../../../../client/src/components/features/league/LeagueRankings";
+import type { TeamRanking } from "@shared/schema";
 
 // Sample test data
 const createMockRankings = (): TeamRanking[] => [
   {
-    teamKey: '466.l.12345.t.1',
-    teamName: 'Team One',
-    managerName: 'Manager 1',
+    teamKey: "466.l.12345.t.1",
+    teamName: "Team One",
+    managerName: "Manager 1",
     totalRank: 2.5,
     stats: {
       fgPct: 0.485,
-      ftPct: 0.820,
+      ftPct: 0.82,
       tpm: 150,
       pts: 1200,
       reb: 500,
@@ -39,13 +39,13 @@ const createMockRankings = (): TeamRanking[] => [
     },
   },
   {
-    teamKey: '466.l.12345.t.2',
-    teamName: 'Team Two',
-    managerName: 'Manager 2',
+    teamKey: "466.l.12345.t.2",
+    teamName: "Team Two",
+    managerName: "Manager 2",
     totalRank: 3.8,
     stats: {
       fgPct: 0.465,
-      ftPct: 0.780,
+      ftPct: 0.78,
       tpm: 180,
       pts: 1350,
       reb: 450,
@@ -67,13 +67,13 @@ const createMockRankings = (): TeamRanking[] => [
     },
   },
   {
-    teamKey: '466.l.12345.t.3',
-    teamName: 'Team Three',
-    managerName: 'Manager 3',
+    teamKey: "466.l.12345.t.3",
+    teamName: "Team Three",
+    managerName: "Manager 3",
     totalRank: 1.5,
     stats: {
       fgPct: 0.505,
-      ftPct: 0.800,
+      ftPct: 0.8,
       tpm: 160,
       pts: 1100,
       reb: 600,
@@ -96,7 +96,7 @@ const createMockRankings = (): TeamRanking[] => [
   },
 ];
 
-describe('LeagueRankings', () => {
+describe("LeagueRankings", () => {
   let mockRankings: TeamRanking[];
 
   beforeEach(() => {
@@ -104,7 +104,7 @@ describe('LeagueRankings', () => {
     mockRankings = createMockRankings();
   });
 
-  describe('overall position ties', () => {
+  describe("overall position ties", () => {
     const withTotals = (totals: number[]) =>
       createMockRankings()
         .slice(0, totals.length)
@@ -112,166 +112,151 @@ describe('LeagueRankings', () => {
 
     const positionsInRowOrder = () =>
       screen
-        .getAllByRole('row')
+        .getAllByRole("row")
         .slice(1)
-        .map((row) => row.querySelector('td')?.textContent?.trim());
+        .map((row) => row.querySelector("td")?.textContent?.trim());
 
-    it('gives tied overall averages the same position and skips the next', () => {
+    it("gives tied overall averages the same position and skips the next", () => {
       render(<LeagueRankings rankings={withTotals([9, 9, 12])} />);
 
-      expect(positionsInRowOrder()).toEqual(['1st', '1st', '3rd']);
+      expect(positionsInRowOrder()).toEqual(["1st", "1st", "3rd"]);
     });
 
-    it('shows every team first when all averages tie (preseason)', () => {
+    it("shows every team first when all averages tie (preseason)", () => {
       render(<LeagueRankings rankings={withTotals([9, 9, 9])} />);
 
-      expect(positionsInRowOrder()).toEqual(['1st', '1st', '1st']);
+      expect(positionsInRowOrder()).toEqual(["1st", "1st", "1st"]);
     });
 
-    it('keeps distinct averages in order', () => {
+    it("keeps distinct averages in order", () => {
       render(<LeagueRankings rankings={withTotals([2.5, 3.8, 5])} />);
 
-      expect(positionsInRowOrder()).toEqual(['1st', '2nd', '3rd']);
+      expect(positionsInRowOrder()).toEqual(["1st", "2nd", "3rd"]);
     });
   });
 
-  describe('rendering', () => {
-    it('should render the rankings card', () => {
+  describe("rendering", () => {
+    it("should render the rankings card", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByTestId('card-league-rankings')).toBeInTheDocument();
+      expect(screen.getByTestId("card-league-rankings")).toBeInTheDocument();
     });
 
-    it('should render the title', () => {
+    it("should render the title", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByTestId('heading-rankings')).toBeInTheDocument();
-      expect(screen.getByText('9-Cat Master Rankings')).toBeInTheDocument();
+      expect(screen.getByTestId("heading-rankings")).toBeInTheDocument();
+      expect(screen.getByText("9-Cat Master Rankings")).toBeInTheDocument();
     });
 
-    it('should render all team rows', () => {
+    it("should render all team rows", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      mockRankings.forEach(team => {
+      mockRankings.forEach((team) => {
         expect(screen.getByText(team.teamName)).toBeInTheDocument();
       });
     });
 
-    it('should render view toggle switch', () => {
+    it("should render view toggle switch", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByTestId('switch-view-toggle')).toBeInTheDocument();
+      expect(screen.getByTestId("switch-view-toggle")).toBeInTheDocument();
     });
 
-    it('should render category headers', () => {
+    it("should render category headers", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByTestId('header-fgpct')).toBeInTheDocument();
-      expect(screen.getByTestId('header-ftpct')).toBeInTheDocument();
-      expect(screen.getByTestId('header-tpm')).toBeInTheDocument();
-      expect(screen.getByTestId('header-pts')).toBeInTheDocument();
-      expect(screen.getByTestId('header-reb')).toBeInTheDocument();
-      expect(screen.getByTestId('header-ast')).toBeInTheDocument();
-      expect(screen.getByTestId('header-stl')).toBeInTheDocument();
-      expect(screen.getByTestId('header-blk')).toBeInTheDocument();
-      expect(screen.getByTestId('header-to')).toBeInTheDocument();
-      expect(screen.getByTestId('header-avg')).toBeInTheDocument();
+      expect(screen.getByTestId("header-fgpct")).toBeInTheDocument();
+      expect(screen.getByTestId("header-ftpct")).toBeInTheDocument();
+      expect(screen.getByTestId("header-tpm")).toBeInTheDocument();
+      expect(screen.getByTestId("header-pts")).toBeInTheDocument();
+      expect(screen.getByTestId("header-reb")).toBeInTheDocument();
+      expect(screen.getByTestId("header-ast")).toBeInTheDocument();
+      expect(screen.getByTestId("header-stl")).toBeInTheDocument();
+      expect(screen.getByTestId("header-blk")).toBeInTheDocument();
+      expect(screen.getByTestId("header-to")).toBeInTheDocument();
+      expect(screen.getByTestId("header-avg")).toBeInTheDocument();
     });
   });
 
-  describe('rankings display', () => {
-    it('should display category ranks by default', () => {
+  describe("rankings display", () => {
+    it("should display category ranks by default", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT - Team One has FG% rank of 2
-      const teamOneRow = screen.getByTestId('row-ranking-466.l.12345.t.1');
-      expect(teamOneRow).toHaveTextContent('2'); // FG% rank
+      const teamOneRow = screen.getByTestId("row-ranking-466.l.12345.t.1");
+      expect(teamOneRow).toHaveTextContent("2"); // FG% rank
     });
 
-    it('should display total rank for each team', () => {
+    it("should display total rank for each team", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByText('2.5')).toBeInTheDocument(); // Team One total rank
-      expect(screen.getByText('3.8')).toBeInTheDocument(); // Team Two total rank
-      expect(screen.getByText('1.5')).toBeInTheDocument(); // Team Three total rank
+      expect(screen.getByText("2.5")).toBeInTheDocument(); // Team One total rank
+      expect(screen.getByText("3.8")).toBeInTheDocument(); // Team Two total rank
+      expect(screen.getByText("1.5")).toBeInTheDocument(); // Team Three total rank
     });
 
-    it('should sort by totalRank ascending by default', () => {
+    it("should sort by totalRank ascending by default", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT - Team Three (1.5) should be first, then Team One (2.5), then Team Two (3.8)
       const rows = screen.getAllByTestId(/^row-ranking-/);
-      expect(rows[0]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.3');
-      expect(rows[1]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.1');
-      expect(rows[2]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.2');
+      expect(rows[0]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.3");
+      expect(rows[1]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.1");
+      expect(rows[2]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.2");
     });
   });
 
-  describe('user team highlighting', () => {
-    it('should highlight user team row', () => {
+  describe("user team highlighting", () => {
+    it("should highlight user team row", () => {
       // ARRANGE & ACT
-      render(
-        <LeagueRankings 
-          rankings={mockRankings} 
-          userTeamKey="466.l.12345.t.2"
-        />
-      );
+      render(<LeagueRankings rankings={mockRankings} userTeamKey="466.l.12345.t.2" />);
 
       // ASSERT
-      const userTeamRow = screen.getByTestId('row-ranking-466.l.12345.t.2');
-      expect(userTeamRow).toHaveClass('bg-primary/5');
+      const userTeamRow = screen.getByTestId("row-ranking-466.l.12345.t.2");
+      expect(userTeamRow).toHaveClass("bg-primary/5");
     });
 
-    it('should show star icon for user team', () => {
+    it("should show star icon for user team", () => {
       // ARRANGE & ACT
-      render(
-        <LeagueRankings 
-          rankings={mockRankings} 
-          userTeamKey="466.l.12345.t.1"
-        />
-      );
+      render(<LeagueRankings rankings={mockRankings} userTeamKey="466.l.12345.t.1" />);
 
       // ASSERT
-      const userTeamRow = screen.getByTestId('row-ranking-466.l.12345.t.1');
-      expect(userTeamRow).toHaveTextContent('★');
+      const userTeamRow = screen.getByTestId("row-ranking-466.l.12345.t.1");
+      expect(userTeamRow).toHaveTextContent("★");
     });
 
-    it('should not highlight non-user team rows', () => {
+    it("should not highlight non-user team rows", () => {
       // ARRANGE & ACT
-      render(
-        <LeagueRankings 
-          rankings={mockRankings} 
-          userTeamKey="466.l.12345.t.1"
-        />
-      );
+      render(<LeagueRankings rankings={mockRankings} userTeamKey="466.l.12345.t.1" />);
 
       // ASSERT
-      const otherTeamRow = screen.getByTestId('row-ranking-466.l.12345.t.2');
-      expect(otherTeamRow).not.toHaveClass('bg-primary/5');
+      const otherTeamRow = screen.getByTestId("row-ranking-466.l.12345.t.2");
+      expect(otherTeamRow).not.toHaveClass("bg-primary/5");
     });
   });
 
-  describe('view toggle', () => {
+  describe("view toggle", () => {
     it('should show "Rankings" label by default', () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByText('Rankings')).toBeInTheDocument();
+      expect(screen.getByText("Rankings")).toBeInTheDocument();
     });
 
     it('should switch to "Actual Stats" label when toggled', async () => {
@@ -280,104 +265,104 @@ describe('LeagueRankings', () => {
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT
-      await user.click(screen.getByTestId('switch-view-toggle'));
+      await user.click(screen.getByTestId("switch-view-toggle"));
 
       // ASSERT
-      expect(screen.getByText('Actual Stats')).toBeInTheDocument();
+      expect(screen.getByText("Actual Stats")).toBeInTheDocument();
     });
 
-    it('should display actual stats after toggle', async () => {
+    it("should display actual stats after toggle", async () => {
       // ARRANGE
       const user = userEvent.setup();
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT
-      await user.click(screen.getByTestId('switch-view-toggle'));
+      await user.click(screen.getByTestId("switch-view-toggle"));
 
       // ASSERT - Should show stat values instead of ranks
       // Team One has 1200 pts
-      expect(screen.getByText('1200')).toBeInTheDocument();
+      expect(screen.getByText("1200")).toBeInTheDocument();
     });
   });
 
-  describe('sorting', () => {
-    it('should sort by PTS when PTS header is clicked', async () => {
+  describe("sorting", () => {
+    it("should sort by PTS when PTS header is clicked", async () => {
       // ARRANGE
       const user = userEvent.setup();
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT
-      await user.click(screen.getByTestId('header-pts'));
+      await user.click(screen.getByTestId("header-pts"));
 
       // ASSERT - Should be sorted by PTS rank (ascending): Team Two=1, Team One=2, Team Three=3
       const rows = screen.getAllByTestId(/^row-ranking-/);
-      expect(rows[0]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.2');
-      expect(rows[1]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.1');
-      expect(rows[2]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.3');
+      expect(rows[0]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.2");
+      expect(rows[1]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.1");
+      expect(rows[2]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.3");
     });
 
-    it('should toggle sort direction when clicking same header twice', async () => {
+    it("should toggle sort direction when clicking same header twice", async () => {
       // ARRANGE
       const user = userEvent.setup();
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ACT - Click PTS twice
-      await user.click(screen.getByTestId('header-pts'));
-      await user.click(screen.getByTestId('header-pts'));
+      await user.click(screen.getByTestId("header-pts"));
+      await user.click(screen.getByTestId("header-pts"));
 
       // ASSERT - Should be sorted descending: Team Three=3, Team One=2, Team Two=1
       const rows = screen.getAllByTestId(/^row-ranking-/);
-      expect(rows[0]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.3');
-      expect(rows[1]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.1');
-      expect(rows[2]).toHaveAttribute('data-testid', 'row-ranking-466.l.12345.t.2');
+      expect(rows[0]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.3");
+      expect(rows[1]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.1");
+      expect(rows[2]).toHaveAttribute("data-testid", "row-ranking-466.l.12345.t.2");
     });
   });
 
-  describe('manager name display', () => {
-    it('should display manager names', () => {
+  describe("manager name display", () => {
+    it("should display manager names", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByText('Manager 1')).toBeInTheDocument();
-      expect(screen.getByText('Manager 2')).toBeInTheDocument();
-      expect(screen.getByText('Manager 3')).toBeInTheDocument();
+      expect(screen.getByText("Manager 1")).toBeInTheDocument();
+      expect(screen.getByText("Manager 2")).toBeInTheDocument();
+      expect(screen.getByText("Manager 3")).toBeInTheDocument();
     });
   });
 
-  describe('rank badges', () => {
-    it('should display 1st badge for top ranked team', () => {
+  describe("rank badges", () => {
+    it("should display 1st badge for top ranked team", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByText('1st')).toBeInTheDocument();
+      expect(screen.getByText("1st")).toBeInTheDocument();
     });
 
-    it('should display 2nd badge for second ranked team', () => {
+    it("should display 2nd badge for second ranked team", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByText('2nd')).toBeInTheDocument();
+      expect(screen.getByText("2nd")).toBeInTheDocument();
     });
 
-    it('should display 3rd badge for third ranked team', () => {
+    it("should display 3rd badge for third ranked team", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={mockRankings} />);
 
       // ASSERT
-      expect(screen.getByText('3rd')).toBeInTheDocument();
+      expect(screen.getByText("3rd")).toBeInTheDocument();
     });
   });
 
-  describe('empty state', () => {
-    it('should render table with no rows when rankings is empty', () => {
+  describe("empty state", () => {
+    it("should render table with no rows when rankings is empty", () => {
       // ARRANGE & ACT
       render(<LeagueRankings rankings={[]} />);
 
       // ASSERT
-      expect(screen.getByTestId('card-league-rankings')).toBeInTheDocument();
+      expect(screen.getByTestId("card-league-rankings")).toBeInTheDocument();
       expect(screen.queryByTestId(/^row-ranking-/)).not.toBeInTheDocument();
     });
   });

@@ -59,7 +59,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     // OAuth scope here can yield a token that Yahoo rejects at the Fantasy API.
     expect(location.searchParams.has("scope")).toBe(false);
     expect(location.searchParams.get("redirect_uri")).toBe(
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback"
     );
     expect(location.searchParams.get("state")).toHaveLength(43);
     expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
@@ -89,7 +89,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
       "one-time-code",
       "fantasy-client-id",
       "fantasy-client-secret",
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback"
     );
     expect(saveYahooConnection).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -97,7 +97,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
         yahooGuid: IDENTITY.yahooGuid,
         accessToken: "approved-access-token",
         refreshToken: "approved-refresh-token",
-      }),
+      })
     );
   });
 
@@ -122,7 +122,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
         userId: IDENTITY.userId,
         yahooGuid: IDENTITY.yahooGuid,
         accessToken: "legacy-access-token",
-      }),
+      })
     );
   });
 

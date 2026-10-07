@@ -66,7 +66,7 @@ describe("Supabase auth middleware", () => {
       buildTestDependencies({
         createSupabaseClient: () => verifiedClient as never,
         createOwnerStorage,
-      }),
+      })
     );
 
     await middleware(req, res, next);

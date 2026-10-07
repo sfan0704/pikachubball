@@ -1,11 +1,16 @@
 import type { Request, Response, NextFunction } from "express";
-import { ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from "../../shared/api/errors";
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from "../../shared/api/errors";
 import { getAuthenticatedUserId } from "./auth";
 
 /**
  * Middleware to validate Yahoo Fantasy authentication
  * Verifies that user has a valid Yahoo token
- * 
+ *
  * Usage:
  *   app.get("/api/endpoint", requireAuth, requireYahooAuth, handler);
  */
@@ -46,15 +51,14 @@ export function leagueKeyFromTeamKey(teamKey: string): string | null {
 export async function requireOwnedFantasyResource(
   req: Request,
   _res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> {
   try {
     if (!req.ownerStorage) {
       throw new UnauthorizedError("Owner-scoped storage is unavailable");
     }
     const teamKey = req.params.teamKey;
-    const leagueKey = req.params.leagueKey ??
-      (teamKey ? leagueKeyFromTeamKey(teamKey) : null);
+    const leagueKey = req.params.leagueKey ?? (teamKey ? leagueKeyFromTeamKey(teamKey) : null);
     if (!leagueKey) {
       throw new ValidationError("A valid Yahoo league key is required");
     }

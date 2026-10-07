@@ -24,7 +24,10 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   registerAuthRoutes(app, {
     requireAuth,
     authLimiter,
-    controller: createSupabaseAuthController({ auth: config.auth, createClient: createSupabaseClient }),
+    controller: createSupabaseAuthController({
+      auth: config.auth,
+      createClient: createSupabaseClient,
+    }),
   });
   registerYahooOAuthRoutes(app, {
     requireAuth,

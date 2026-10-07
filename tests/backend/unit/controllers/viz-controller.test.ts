@@ -1,26 +1,30 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
-import { createVizController } from '../../../../server/controllers/viz-controller';
-import type { OwnerScopedStorage } from '../../../../server/storage/yahoo-token-storage';
-import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
-import { getLeagueRankings, getLeagueHeatmap } from '../../../../server/services/viz/league-viz';
-import { getMatchupComparison } from '../../../../server/services/viz/matchup-viz';
-import { ValidationError } from '../../../../shared/api/errors';
-import { createAuthenticatedRequest, createMockResponse, createMockNext } from '../../fixtures/test-helpers';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response, NextFunction } from "express";
+import { createVizController } from "../../../../server/controllers/viz-controller";
+import type { OwnerScopedStorage } from "../../../../server/storage/yahoo-token-storage";
+import { getAuthenticatedUserId } from "../../../../server/middleware/auth";
+import { getLeagueRankings, getLeagueHeatmap } from "../../../../server/services/viz/league-viz";
+import { getMatchupComparison } from "../../../../server/services/viz/matchup-viz";
+import { ValidationError } from "../../../../shared/api/errors";
+import {
+  createAuthenticatedRequest,
+  createMockResponse,
+  createMockNext,
+} from "../../fixtures/test-helpers";
 
 // Mock dependencies
-vi.mock('../../../../server/middleware/auth');
-vi.mock('../../../../server/services/viz/league-viz');
-vi.mock('../../../../server/services/viz/matchup-viz');
+vi.mock("../../../../server/middleware/auth");
+vi.mock("../../../../server/services/viz/league-viz");
+vi.mock("../../../../server/services/viz/matchup-viz");
 
-describe('vizController', () => {
+describe("vizController", () => {
   const createYahooClient = vi.fn();
   const vizController = createVizController({ createYahooClient });
   const storage = {} as OwnerScopedStorage;
   let mockReq: Request;
   let mockRes: Response;
   let mockNext: NextFunction;
-  const userId = 'test-user-id';
+  const userId = "test-user-id";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,14 +35,14 @@ describe('vizController', () => {
     vi.mocked(getAuthenticatedUserId).mockReturnValue(userId);
   });
 
-  describe('getLeagueRankings', () => {
-    it('should return league rankings', async () => {
+  describe("getLeagueRankings", () => {
+    it("should return league rankings", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const week = 5;
       const mockResponse = {
         rankings: [],
-        metadata: { scope: 'week', week, currentWeek: 10, totalWeeks: 20 },
+        metadata: { scope: "week", week, currentWeek: 10, totalWeeks: 20 },
       };
 
       mockReq.params = { leagueKey };
@@ -59,7 +63,7 @@ describe('vizController', () => {
       expect(mockRes.json).toHaveBeenCalledWith(mockResponse);
     });
 
-    it('should throw ValidationError if leagueKey is missing', async () => {
+    it("should throw ValidationError if leagueKey is missing", async () => {
       // ARRANGE
       mockReq.params = {};
 
@@ -71,16 +75,16 @@ describe('vizController', () => {
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.message).toBe('League key required');
+      expect(error.message).toBe("League key required");
       expect(getLeagueRankings).not.toHaveBeenCalled();
     });
 
-    it('should handle optional week parameter', async () => {
+    it("should handle optional week parameter", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const mockResponse = {
         rankings: [],
-        metadata: { scope: 'season', currentWeek: 10, totalWeeks: 20 },
+        metadata: { scope: "season", currentWeek: 10, totalWeeks: 20 },
       };
 
       mockReq.params = { leagueKey };
@@ -101,14 +105,14 @@ describe('vizController', () => {
     });
   });
 
-  describe('getLeagueHeatmap', () => {
-    it('should return league heatmap', async () => {
+  describe("getLeagueHeatmap", () => {
+    it("should return league heatmap", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
+      const leagueKey = "466.l.12345";
       const week = 5;
       const mockResponse = {
         heatmap: [],
-        metadata: { scope: 'week', week, currentWeek: 10, totalWeeks: 20 },
+        metadata: { scope: "week", week, currentWeek: 10, totalWeeks: 20 },
       };
 
       mockReq.params = { leagueKey };
@@ -129,7 +133,7 @@ describe('vizController', () => {
       expect(mockRes.json).toHaveBeenCalledWith(mockResponse);
     });
 
-    it('should throw ValidationError if leagueKey is missing', async () => {
+    it("should throw ValidationError if leagueKey is missing", async () => {
       // ARRANGE
       mockReq.params = {};
 
@@ -141,23 +145,23 @@ describe('vizController', () => {
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.message).toBe('League key required');
+      expect(error.message).toBe("League key required");
     });
   });
 
-  describe('getMatchupComparison', () => {
-    it('should return matchup comparison', async () => {
+  describe("getMatchupComparison", () => {
+    it("should return matchup comparison", async () => {
       // ARRANGE
-      const leagueKey = '466.l.12345';
-      const teamKey = '466.l.12345.t.1';
+      const leagueKey = "466.l.12345";
+      const teamKey = "466.l.12345.t.1";
       const week = 5;
-      const opponentTeamKey = '466.l.12345.t.2';
+      const opponentTeamKey = "466.l.12345.t.2";
       const mockResponse = {
-        myTeam: { teamKey, teamName: 'My Team' },
-        opponent: { teamKey: opponentTeamKey, teamName: 'Opponent' },
+        myTeam: { teamKey, teamName: "My Team" },
+        opponent: { teamKey: opponentTeamKey, teamName: "Opponent" },
         categories: [],
         score: { wins: 5, losses: 4, ties: 0 },
-        metadata: { scope: 'week', week, currentWeek: 10, totalWeeks: 20 },
+        metadata: { scope: "week", week, currentWeek: 10, totalWeeks: 20 },
       };
 
       mockReq.params = { leagueKey, teamKey };
@@ -180,9 +184,9 @@ describe('vizController', () => {
       expect(mockRes.json).toHaveBeenCalledWith(mockResponse);
     });
 
-    it('should throw ValidationError if leagueKey is missing', async () => {
+    it("should throw ValidationError if leagueKey is missing", async () => {
       // ARRANGE
-      mockReq.params = { teamKey: '466.l.12345.t.1' };
+      mockReq.params = { teamKey: "466.l.12345.t.1" };
 
       // ACT
       const handler = vizController.getMatchupComparison as any;
@@ -192,12 +196,12 @@ describe('vizController', () => {
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.message).toBe('League key and team key required');
+      expect(error.message).toBe("League key and team key required");
     });
 
-    it('should throw ValidationError if teamKey is missing', async () => {
+    it("should throw ValidationError if teamKey is missing", async () => {
       // ARRANGE
-      mockReq.params = { leagueKey: '466.l.12345' };
+      mockReq.params = { leagueKey: "466.l.12345" };
 
       // ACT
       const handler = vizController.getMatchupComparison as any;
@@ -207,7 +211,7 @@ describe('vizController', () => {
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.message).toBe('League key and team key required');
+      expect(error.message).toBe("League key and team key required");
     });
   });
 });

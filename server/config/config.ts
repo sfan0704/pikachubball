@@ -94,7 +94,11 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
   const production = values.NODE_ENV === "production";
 
   const publishableKey = values.SUPABASE_PUBLISHABLE_KEY;
-  if (production && !publishableKey.startsWith("sb_publishable_") && !publishableKey.startsWith("eyJ")) {
+  if (
+    production &&
+    !publishableKey.startsWith("sb_publishable_") &&
+    !publishableKey.startsWith("eyJ")
+  ) {
     throw new Error("Invalid configuration: SUPABASE_PUBLISHABLE_KEY has an unsupported format");
   }
 
@@ -103,8 +107,16 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
     port: values.PORT,
     trustProxy: production || values.TRUST_PROXY,
     auth: {
-      appOrigin: parseOrigin(values.APP_ORIGIN ?? "http://localhost:5000", "APP_ORIGIN", !production),
-      supabaseUrl: parseOrigin(values.SUPABASE_URL ?? "http://127.0.0.1:54321", "SUPABASE_URL", !production),
+      appOrigin: parseOrigin(
+        values.APP_ORIGIN ?? "http://localhost:5000",
+        "APP_ORIGIN",
+        !production
+      ),
+      supabaseUrl: parseOrigin(
+        values.SUPABASE_URL ?? "http://127.0.0.1:54321",
+        "SUPABASE_URL",
+        !production
+      ),
       supabasePublishableKey: publishableKey,
       secureCookies: production,
     },

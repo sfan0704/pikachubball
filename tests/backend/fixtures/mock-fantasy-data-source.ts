@@ -1,5 +1,5 @@
-import type { FantasyDataSource } from '../../../server/services/fantasy-data-source.js';
-import { mockLeagueSettings, mockStandings, mockScoreboard } from './yahoo-responses';
+import type { FantasyDataSource } from "../../../server/services/fantasy-data-source.js";
+import { mockLeagueSettings, mockStandings, mockScoreboard } from "./yahoo-responses";
 
 /**
  * Mock implementation of FantasyDataSource for testing
@@ -22,10 +22,7 @@ export class MockFantasyDataSource implements FantasyDataSource {
     return {
       fantasy_content: {
         team: [
-          [
-            { team_key: teamKey },
-            { name: "Test Team" },
-          ],
+          [{ team_key: teamKey }, { name: "Test Team" }],
           {
             roster: [
               {
@@ -67,10 +64,7 @@ export class MockFantasyDataSource implements FantasyDataSource {
       fantasy_content: {
         players: playerKeys.map((key, index) => ({
           player: [
-            [
-              { player_key: key },
-              { name: { full: `Player ${index + 1}` } },
-            ],
+            [{ player_key: key }, { name: { full: `Player ${index + 1}` } }],
             {
               player_stats: {
                 stats: [
@@ -105,4 +99,3 @@ export function createMalformedFantasyDataSource(): FantasyDataSource {
     getPlayerStats: async () => ({ fantasy_content: null }),
   };
 }
-
