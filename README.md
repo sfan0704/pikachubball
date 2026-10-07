@@ -77,9 +77,8 @@ For configuration and verification, see:
 
 - [Yahoo authentication](docs/SUPABASE_YAHOO_AUTH.md)
 - [Owner-scoped storage](docs/SUPABASE_STORAGE.md)
-- [Retained product contract](docs/RETAINED_PRODUCT_CONTRACT.md)
 - [Infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md)
 
 ## Architecture
 
-HTTP controllers remain thin. Yahoo integration lives in services, response parsing stays in parser modules, shared response contracts stay in `shared/schema.ts`, and persistence stays behind the owner-scoped repository interfaces in `server/storage/`. This preserves the useful boundaries in the original app while removing the legacy Replit, Passport, chat, schedule, and direct PostgreSQL runtime paths.
+The target architecture, data design and product rules live in one place: the [Target state](https://app.notion.com/p/3e7e5e12624c81e8b5cedb5b13722ae0) page in Notion. The documents in `docs/` are runbooks and reference material for the current setup; where they differ from the target state, the target state describes where the code is heading.
