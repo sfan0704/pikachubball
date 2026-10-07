@@ -6,10 +6,6 @@ const eslint = new ESLint({ cwd: process.cwd() });
 /** Lints a snippet as if it were the given existing file, returning the rule ids that fired as errors. */
 async function errorsFor(filePath: string, code: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath });
-  console.log(
-    filePath,
-    JSON.stringify(result.messages.map((m) => [m.ruleId, m.severity, m.message.slice(0, 80)]))
-  );
   return result.messages
     .filter((message) => message.severity === 2)
     .map((message) => message.ruleId ?? "parse");
@@ -86,7 +82,9 @@ describe("import boundaries", () => {
 describe("promises and size limits where the target layout applies", () => {
   it("fails an unawaited promise in shared code", async () => {
     const code = "async function load() { return 1; }\nexport function run() {\n  load();\n}\n";
-    expect(await errorsFor("shared/domain/league.ts", code)).toContain(
+    // A path no other test lints: the type-aware rules must not see a cached
+    // program for the same file with different code.
+    expect(await errorsFor("shared/domain/player.ts", code)).toContain(
       "@typescript-eslint/no-floating-promises"
     );
   });
