@@ -3,6 +3,7 @@ import { AUTH_NO_STORE_HEADERS } from "./auth/supabase-auth";
 import { createBuildIdHeader } from "./middleware/build-id";
 import { createOriginCheck } from "./middleware/origin-check";
 import { createRequestScope } from "./middleware/request-scope";
+import { createSecurityHeaders } from "./middleware/security-headers";
 import { NotFoundError } from "../shared/api/errors";
 import { registerRoutes } from "./routes/index";
 import type { ServerDependencies } from "./dependencies";
@@ -29,6 +30,7 @@ export function configureApp(app: Express, dependencies: ServerDependencies): Ex
   app.disable("x-powered-by");
   app.use(createRequestScope(dependencies));
   app.use(createBuildIdHeader(config.buildId));
+  app.use(createSecurityHeaders({ development: config.nodeEnv === "development" }));
 
   if (config.trustProxy) {
     app.set("trust proxy", 1);
