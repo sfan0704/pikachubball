@@ -29,3 +29,14 @@ export {
   scoringSupport,
 } from "./fantasy-rules";
 export type { CategoryRanks, ScoringSupport } from "./fantasy-rules";
+export { rankings, heatmap, headToHead, compareWithAll, opponentOf, officialResult } from "./views";
+export type {
+  RankedTeam,
+  HeatmapCell,
+  HeatmapRow,
+  CategoryResult,
+  CategoryComparison,
+  Score,
+  HeadToHead,
+  OfficialResult,
+} from "./views";
