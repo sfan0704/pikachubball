@@ -1,18 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getTeamRoster } from '../../../../../server/services/yahoo/roster-service';
-import type { YahooTokenStorage } from '../../../../../server/storage/yahoo-token-storage';
-import { testTeamKey } from '../../../fixtures/test-data';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { getTeamRoster } from "../../../../../server/services/yahoo/roster-service";
+import type { YahooTokenStorage } from "../../../../../server/storage/yahoo-token-storage";
+import { testTeamKey } from "../../../fixtures/test-data";
 
 const storage = {} as YahooTokenStorage;
 const getYahooApiClient = vi.fn();
 
-describe('roster-service', () => {
+describe("roster-service", () => {
   let mockYahooApiClient: any;
-  const userId = 'test-user-id';
+  const userId = "test-user-id";
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a mock YahooApiClient
     mockYahooApiClient = {
       getTeamRoster: vi.fn().mockResolvedValue({
@@ -24,22 +24,22 @@ describe('roster-service', () => {
                 {
                   players: {
                     count: 2,
-                    '0': {
+                    "0": {
                       player: [
-                        [{ player_key: '466.p.123' }],
-                        { name: { full: 'LeBron James' } },
-                        { display_position: 'SF' },
-                        { editorial_team_abbr: 'LAL' },
-                        { status: '' },
+                        [{ player_key: "466.p.123" }],
+                        { name: { full: "LeBron James" } },
+                        { display_position: "SF" },
+                        { editorial_team_abbr: "LAL" },
+                        { status: "" },
                       ],
                     },
-                    '1': {
+                    "1": {
                       player: [
-                        [{ player_key: '466.p.456' }],
-                        { name: { full: 'Stephen Curry' } },
-                        { display_position: 'PG' },
-                        { editorial_team_abbr: 'GSW' },
-                        { status: '' },
+                        [{ player_key: "466.p.456" }],
+                        { name: { full: "Stephen Curry" } },
+                        { display_position: "PG" },
+                        { editorial_team_abbr: "GSW" },
+                        { status: "" },
                       ],
                     },
                   },
@@ -50,29 +50,29 @@ describe('roster-service', () => {
         },
       }),
     };
-    
+
     getYahooApiClient.mockResolvedValue(mockYahooApiClient);
   });
 
-  describe('getTeamRoster', () => {
-    it('should return roster for a team', async () => {
+  describe("getTeamRoster", () => {
+    it("should return roster for a team", async () => {
       // ACT
       const roster = await getTeamRoster(userId, testTeamKey, storage, getYahooApiClient);
 
       // ASSERT
       expect(Array.isArray(roster)).toBe(true);
       if (roster.length > 0) {
-        expect(roster[0]).toHaveProperty('name');
-        expect(roster[0]).toHaveProperty('position');
-        expect(roster[0]).toHaveProperty('team');
-        expect(roster[0]).toHaveProperty('status');
-        expect(roster[0]).toHaveProperty('playerKey');
+        expect(roster[0]).toHaveProperty("name");
+        expect(roster[0]).toHaveProperty("position");
+        expect(roster[0]).toHaveProperty("team");
+        expect(roster[0]).toHaveProperty("status");
+        expect(roster[0]).toHaveProperty("playerKey");
       }
       expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
       expect(mockYahooApiClient.getTeamRoster).toHaveBeenCalledWith(testTeamKey);
     });
 
-    it('should return empty array if no roster data', async () => {
+    it("should return empty array if no roster data", async () => {
       // ARRANGE
       // Create a client that returns empty roster
       const emptyClient = {
@@ -89,17 +89,17 @@ describe('roster-service', () => {
       expect(roster).toEqual([]);
     });
 
-    it('should parse player status correctly', async () => {
+    it("should parse player status correctly", async () => {
       // ACT
       const roster = await getTeamRoster(userId, testTeamKey, storage, getYahooApiClient);
 
       // ASSERT
       roster.forEach((player) => {
-        expect(['active', 'injured', 'out']).toContain(player.status);
+        expect(["active", "injured", "out"]).toContain(player.status);
       });
     });
 
-    it('should handle missing player data gracefully', async () => {
+    it("should handle missing player data gracefully", async () => {
       // ARRANGE
       // Create a client that returns malformed player data
       const malformedClient = {
@@ -112,7 +112,7 @@ describe('roster-service', () => {
                   {
                     players: {
                       count: 1,
-                      '0': { player: null },
+                      "0": { player: null },
                     },
                   },
                 ],
@@ -132,4 +132,3 @@ describe('roster-service', () => {
     });
   });
 });
-

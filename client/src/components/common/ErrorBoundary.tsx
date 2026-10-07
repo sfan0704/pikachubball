@@ -85,10 +85,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Try Again
                 </Button>
-                <Button
-                  onClick={() => window.location.reload()}
-                  className="flex-1"
-                >
+                <Button onClick={() => window.location.reload()} className="flex-1">
                   Reload Page
                 </Button>
               </div>
@@ -101,4 +98,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

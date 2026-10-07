@@ -1,40 +1,40 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { logger } from '../../../../server/utils/logger';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { logger } from "../../../../server/utils/logger";
 
-describe('logger', () => {
+describe("logger", () => {
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe('debug', () => {
-    it('should log in development mode', () => {
+  describe("debug", () => {
+    it("should log in development mode", () => {
       // ACT
       // In test environment, debug might not log, but we can test the function exists
-      logger.debug('Debug message', { key: 'value' });
+      logger.debug("Debug message", { key: "value" });
 
       // ASSERT
       // Debug only logs in development, test env is 'test'
       // So it might not log, but function should not throw
-      expect(typeof logger.debug).toBe('function');
+      expect(typeof logger.debug).toBe("function");
     });
 
-    it('should not log in production mode', () => {
+    it("should not log in production mode", () => {
       // ARRANGE
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
       // ACT
-      logger.debug('Debug message');
+      logger.debug("Debug message");
 
       // ASSERT
       expect(consoleLogSpy).not.toHaveBeenCalled();
@@ -44,21 +44,21 @@ describe('logger', () => {
     });
   });
 
-  describe('info', () => {
-    it('should log info messages', () => {
+  describe("info", () => {
+    it("should log info messages", () => {
       // ACT
-      logger.info('Info message', 'arg1', 'arg2');
+      logger.info("Info message", "arg1", "arg2");
 
       // ASSERT
       expect(consoleLogSpy).toHaveBeenCalled();
       const call = consoleLogSpy.mock.calls[0][0];
-      expect(call).toContain('[INFO]');
-      expect(call).toContain('Info message');
+      expect(call).toContain("[INFO]");
+      expect(call).toContain("Info message");
     });
 
-    it('should include timestamp', () => {
+    it("should include timestamp", () => {
       // ACT
-      logger.info('Test message');
+      logger.info("Test message");
 
       // ASSERT
       const call = consoleLogSpy.mock.calls[0][0];
@@ -67,37 +67,37 @@ describe('logger', () => {
     });
   });
 
-  describe('warn', () => {
-    it('should log warning messages', () => {
+  describe("warn", () => {
+    it("should log warning messages", () => {
       // ACT
-      logger.warn('Warning message');
+      logger.warn("Warning message");
 
       // ASSERT
       expect(consoleWarnSpy).toHaveBeenCalled();
       const call = consoleWarnSpy.mock.calls[0][0];
-      expect(call).toContain('[WARN]');
-      expect(call).toContain('Warning message');
+      expect(call).toContain("[WARN]");
+      expect(call).toContain("Warning message");
     });
   });
 
-  describe('error', () => {
-    it('should log error messages', () => {
+  describe("error", () => {
+    it("should log error messages", () => {
       // ACT
-      logger.error('Error message', new Error('test error'));
+      logger.error("Error message", new Error("test error"));
 
       // ASSERT
       expect(consoleErrorSpy).toHaveBeenCalled();
       const call = consoleErrorSpy.mock.calls[0][0];
-      expect(call).toContain('[ERROR]');
-      expect(call).toContain('Error message');
+      expect(call).toContain("[ERROR]");
+      expect(call).toContain("Error message");
     });
 
-    it('should handle error objects', () => {
+    it("should handle error objects", () => {
       // ARRANGE
-      const error = new Error('Test error');
-      
+      const error = new Error("Test error");
+
       // ACT
-      logger.error('Failed operation', error);
+      logger.error("Failed operation", error);
 
       // ASSERT
       expect(consoleErrorSpy).toHaveBeenCalled();
@@ -105,4 +105,3 @@ describe('logger', () => {
     });
   });
 });
-

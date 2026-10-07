@@ -3,27 +3,37 @@
  * Statistical performance for teams and players
  */
 
-export type StatScope = 'season' | 'week';
+export type StatScope = "season" | "week";
 
 /**
  * The 9 standard fantasy basketball categories
  */
-export const CATEGORIES = ['fgPct', 'ftPct', 'tpm', 'pts', 'reb', 'ast', 'stl', 'blk', 'to'] as const;
-export type CategoryKey = typeof CATEGORIES[number];
+export const CATEGORIES = [
+  "fgPct",
+  "ftPct",
+  "tpm",
+  "pts",
+  "reb",
+  "ast",
+  "stl",
+  "blk",
+  "to",
+] as const;
+export type CategoryKey = (typeof CATEGORIES)[number];
 
 /**
  * Category statistics (the 9 categories)
  */
 export interface CategoryStats {
-  fgPct: number;   // Field Goal Percentage
-  ftPct: number;   // Free Throw Percentage
-  tpm: number;     // Three Pointers Made
-  pts: number;     // Points
-  reb: number;     // Rebounds
-  ast: number;     // Assists
-  stl: number;     // Steals
-  blk: number;     // Blocks
-  to: number;       // Turnovers
+  fgPct: number; // Field Goal Percentage
+  ftPct: number; // Free Throw Percentage
+  tpm: number; // Three Pointers Made
+  pts: number; // Points
+  reb: number; // Rebounds
+  ast: number; // Assists
+  stl: number; // Steals
+  blk: number; // Blocks
+  to: number; // Turnovers
 }
 
 /**
@@ -31,18 +41,18 @@ export interface CategoryStats {
  */
 export interface TeamStats {
   teamKey: string;
-  teamName?: string;  // Optional, for DTO conversion convenience
-  managerName?: string;  // Optional, for DTO conversion convenience
+  teamName?: string; // Optional, for DTO conversion convenience
+  managerName?: string; // Optional, for DTO conversion convenience
   scope: StatScope;
-  week?: number;    // Required if scope is 'week'
+  week?: number; // Required if scope is 'week'
   stats: CategoryStats;
-  
+
   // Makes/attempts for percentage calculations
   fgMakes?: number;
   fgAttempts?: number;
   ftMakes?: number;
   ftAttempts?: number;
-  
+
   // Computed rankings (not stored, computed on-demand)
   categoryRanks?: Record<CategoryKey, number>;
   totalRank?: number;
@@ -57,4 +67,3 @@ export interface PlayerStats {
   week?: number;
   stats: CategoryStats;
 }
-

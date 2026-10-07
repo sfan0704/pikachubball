@@ -1,12 +1,12 @@
 /**
  * @vitest-environment happy-dom
  */
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import RankingsPage from '../../../client/src/pages/RankingsPage';
+import React from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import RankingsPage from "../../../client/src/pages/RankingsPage";
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -25,7 +25,7 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
@@ -46,21 +46,21 @@ const sessionStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(window, 'sessionStorage', {
+Object.defineProperty(window, "sessionStorage", {
   value: sessionStorageMock,
 });
 
 // Mock useLocation and useSearch from wouter
-vi.mock('wouter', () => ({
-  useLocation: () => ['/', vi.fn()],
-  useSearch: () => '',
+vi.mock("wouter", () => ({
+  useLocation: () => ["/", vi.fn()],
+  useSearch: () => "",
 }));
 
 // Mock useAuth hook
 const mockLogout = vi.fn();
-vi.mock('../../../client/src/lib/auth', () => ({
+vi.mock("../../../client/src/lib/auth", () => ({
   useAuth: () => ({
-    user: { id: '1', username: 'testuser' },
+    user: { id: "1", username: "testuser" },
     logout: mockLogout,
     login: vi.fn(),
     signup: vi.fn(),
@@ -70,30 +70,30 @@ vi.mock('../../../client/src/lib/auth', () => ({
 
 // Mock useToast hook
 const mockToast = vi.fn();
-vi.mock('../../../client/src/hooks/use-toast', () => ({
+vi.mock("../../../client/src/hooks/use-toast", () => ({
   useToast: () => ({
     toast: mockToast,
   }),
 }));
 
 // Mock useFirstLeague hook - with connected state
-vi.mock('../../../client/src/hooks/useFirstLeague', () => ({
+vi.mock("../../../client/src/hooks/useFirstLeague", () => ({
   useFirstLeague: () => ({
     leagues: [
       {
-        leagueKey: '466.l.12345',
-        leagueName: 'Test League',
-        teamKey: '466.l.12345.t.1',
-        teamName: 'Test Team',
+        leagueKey: "466.l.12345",
+        leagueName: "Test League",
+        teamKey: "466.l.12345.t.1",
+        teamName: "Test Team",
       },
     ],
-    selectedLeagueKey: '466.l.12345',
+    selectedLeagueKey: "466.l.12345",
     setSelectedLeagueKey: vi.fn(),
     selectedLeague: {
-      leagueKey: '466.l.12345',
-      leagueName: 'Test League',
-      teamKey: '466.l.12345.t.1',
-      teamName: 'Test Team',
+      leagueKey: "466.l.12345",
+      leagueName: "Test League",
+      teamKey: "466.l.12345.t.1",
+      teamName: "Test Team",
     },
     isLoadingLeagues: false,
     error: null,
@@ -104,14 +104,14 @@ vi.mock('../../../client/src/hooks/useFirstLeague', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-describe('RankingsPage', () => {
+describe("RankingsPage", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
     sessionStorageMock.clear();
-    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.remove("dark");
 
     queryClient = new QueryClient({
       defaultOptions: {
@@ -125,27 +125,47 @@ describe('RankingsPage', () => {
 
     // Default fetch mocks - all return connected/valid state
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/auth/yahoo/status')) {
+      if (url.includes("/api/auth/yahoo/status")) {
         return Promise.resolve({
           ok: true,
           json: async () => ({ connected: true, hasValidToken: true, hasCredentials: true }),
         });
       }
-      if (url.includes('/api/yahoo/league-rankings')) {
+      if (url.includes("/api/yahoo/league-rankings")) {
         return Promise.resolve({
           ok: true,
           json: async () => ({
             rankings: [
               {
-                teamKey: '466.l.12345.t.1',
-                teamName: 'Test Team',
-                managerName: 'Manager',
+                teamKey: "466.l.12345.t.1",
+                teamName: "Test Team",
+                managerName: "Manager",
                 totalRank: 2.5,
-                stats: { fgPct: 0.48, ftPct: 0.82, tpm: 150, pts: 1200, reb: 500, ast: 300, stl: 100, blk: 50, to: 120 },
-                categoryRanks: { fgPct: 2, ftPct: 1, tpm: 3, pts: 2, reb: 4, ast: 2, stl: 3, blk: 4, to: 2 },
+                stats: {
+                  fgPct: 0.48,
+                  ftPct: 0.82,
+                  tpm: 150,
+                  pts: 1200,
+                  reb: 500,
+                  ast: 300,
+                  stl: 100,
+                  blk: 50,
+                  to: 120,
+                },
+                categoryRanks: {
+                  fgPct: 2,
+                  ftPct: 1,
+                  tpm: 3,
+                  pts: 2,
+                  reb: 4,
+                  ast: 2,
+                  stl: 3,
+                  blk: 4,
+                  to: 2,
+                },
               },
             ],
-            metadata: { scope: 'season', currentWeek: 10, totalWeeks: 20 },
+            metadata: { scope: "season", currentWeek: 10, totalWeeks: 20 },
           }),
         });
       }
@@ -161,61 +181,63 @@ describe('RankingsPage', () => {
     );
   };
 
-  describe('header', () => {
-    it('should render app title', async () => {
+  describe("header", () => {
+    it("should render app title", async () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
       // ASSERT
       await waitFor(() => {
-        expect(screen.getByTestId('heading-app-title')).toBeInTheDocument();
+        expect(screen.getByTestId("heading-app-title")).toBeInTheDocument();
       });
     });
 
-    it('should render team name or user display name', async () => {
+    it("should render team name or user display name", async () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
       // ASSERT - Shows team name when league is selected
       await waitFor(() => {
-        expect(screen.getByTestId('text-username')).toHaveTextContent('Test Team');
+        expect(screen.getByTestId("text-username")).toHaveTextContent("Test Team");
       });
     });
 
-    it('should render logout button', async () => {
+    it("should render logout button", async () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
       // ASSERT
       await waitFor(() => {
-        expect(screen.getByTestId('button-logout')).toBeInTheDocument();
+        expect(screen.getByTestId("button-logout")).toBeInTheDocument();
       });
     });
 
-    it('should render theme toggle button', async () => {
+    it("should render theme toggle button", async () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
       // ASSERT
       await waitFor(() => {
-        expect(screen.getByTestId('button-theme-toggle')).toBeInTheDocument();
+        expect(screen.getByTestId("button-theme-toggle")).toBeInTheDocument();
       });
     });
   });
 
-  describe('page content', () => {
-    it('should render page heading', async () => {
+  describe("page content", () => {
+    it("should render page heading", async () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
       // ASSERT
       await waitFor(() => {
-        expect(screen.getByTestId('heading-rankings-page')).toBeInTheDocument();
-        expect(screen.getByTestId('heading-rankings-page')).toHaveTextContent('9-Cat Master Rankings');
+        expect(screen.getByTestId("heading-rankings-page")).toBeInTheDocument();
+        expect(screen.getByTestId("heading-rankings-page")).toHaveTextContent(
+          "9-Cat Master Rankings"
+        );
       });
     });
 
-    it('should render page description', async () => {
+    it("should render page description", async () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
@@ -226,17 +248,17 @@ describe('RankingsPage', () => {
     });
   });
 
-  describe('interactions', () => {
-    it('should call logout when logout button is clicked', async () => {
+  describe("interactions", () => {
+    it("should call logout when logout button is clicked", async () => {
       // ARRANGE
       const user = userEvent.setup();
       renderRankingsPage();
 
       // ACT
       await waitFor(() => {
-        expect(screen.getByTestId('button-logout')).toBeInTheDocument();
+        expect(screen.getByTestId("button-logout")).toBeInTheDocument();
       });
-      await user.click(screen.getByTestId('button-logout'));
+      await user.click(screen.getByTestId("button-logout"));
 
       // ASSERT
       await waitFor(() => {
@@ -245,33 +267,33 @@ describe('RankingsPage', () => {
     });
   });
 
-  describe('structure', () => {
-    it('should render a container with min-h-screen', () => {
+  describe("structure", () => {
+    it("should render a container with min-h-screen", () => {
       // ARRANGE & ACT
       const { container } = renderRankingsPage();
 
       // ASSERT
-      const mainDiv = container.querySelector('.min-h-screen');
+      const mainDiv = container.querySelector(".min-h-screen");
       expect(mainDiv).toBeInTheDocument();
     });
 
-    it('should render sticky header', () => {
+    it("should render sticky header", () => {
       // ARRANGE & ACT
       const { container } = renderRankingsPage();
 
       // ASSERT
-      const header = container.querySelector('header.sticky');
+      const header = container.querySelector("header.sticky");
       expect(header).toBeInTheDocument();
     });
 
-    it('should retain theme and logout controls while excluding chat and schedule', () => {
+    it("should retain theme and logout controls while excluding chat and schedule", () => {
       // ARRANGE & ACT
       renderRankingsPage();
 
-      expect(screen.getByTestId('button-theme-toggle')).toBeInTheDocument();
-      expect(screen.getByTestId('button-logout')).toBeInTheDocument();
-      expect(screen.queryByTestId('button-header-chat')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('tab-schedule')).not.toBeInTheDocument();
+      expect(screen.getByTestId("button-theme-toggle")).toBeInTheDocument();
+      expect(screen.getByTestId("button-logout")).toBeInTheDocument();
+      expect(screen.queryByTestId("button-header-chat")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("tab-schedule")).not.toBeInTheDocument();
     });
   });
 });

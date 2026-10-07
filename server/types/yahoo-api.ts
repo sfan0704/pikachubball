@@ -49,9 +49,11 @@ export interface YahooApiStandings {
   standings: Array<{
     teams: {
       count: number;
-      [teamIndex: string]: {
-        team: YahooApiTeamData;
-      } | number; // count property is a number
+      [teamIndex: string]:
+        | {
+            team: YahooApiTeamData;
+          }
+        | number; // count property is a number
     };
   }>;
 }
@@ -62,14 +64,19 @@ export interface YahooApiSettings {
 
 export interface YahooApiScoreboard {
   scoreboard?: {
-    matchups?: Array<{
-      matchup?: YahooApiMatchupData;
-    }> | {
-      count?: number;
-      [index: string]: {
-        matchup?: YahooApiMatchupData;
-      } | number | undefined;
-    };
+    matchups?:
+      | Array<{
+          matchup?: YahooApiMatchupData;
+        }>
+      | {
+          count?: number;
+          [index: string]:
+            | {
+                matchup?: YahooApiMatchupData;
+              }
+            | number
+            | undefined;
+        };
   };
 }
 
@@ -83,7 +90,7 @@ export interface YahooApiLeagueResponse {
   fantasy_content: {
     league: [
       YahooApiLeagueProperties[] | YahooApiLeagueProperties, // [0] = properties array OR object (settings/standings use object)
-      YahooApiLeagueSubresources  // [1] = subresources
+      YahooApiLeagueSubresources, // [1] = subresources
     ];
   };
 }
@@ -109,9 +116,11 @@ export interface YahooApiRoster {
   roster?: {
     players?: {
       count: number;
-      [playerIndex: string]: {
-        player: YahooApiPlayerData;
-      } | number; // count property is a number
+      [playerIndex: string]:
+        | {
+            player: YahooApiPlayerData;
+          }
+        | number; // count property is a number
     };
   };
 }
@@ -122,7 +131,7 @@ export interface YahooApiTeamSubresources {
 }
 
 export interface YahooApiTeamData {
-  0: YahooApiTeamProperties[];  // Properties array
+  0: YahooApiTeamProperties[]; // Properties array
   1?: YahooApiTeamSubresources; // Subresources
 }
 
@@ -138,11 +147,13 @@ export interface YahooApiTeamResponse {
 
 export interface YahooApiPlayerProperties {
   player_key: string;
-  name?: {
-    full?: string;
-    first?: string;
-    last?: string;
-  } | string;
+  name?:
+    | {
+        full?: string;
+        first?: string;
+        last?: string;
+      }
+    | string;
   display_position?: string;
   eligible_positions?: Array<{
     position: string;
@@ -212,12 +223,14 @@ export interface YahooApiMatchupProperties {
 }
 
 export interface YahooApiMatchupData {
-  0?: YahooApiMatchupProperties[] | {
-    teams?: {
-      count?: number;
-      [teamIndex: string]: YahooApiMatchupTeam | number | undefined;
-    };
-  };
+  0?:
+    | YahooApiMatchupProperties[]
+    | {
+        teams?: {
+          count?: number;
+          [teamIndex: string]: YahooApiMatchupTeam | number | undefined;
+        };
+      };
   1?: {
     teams?: {
       count?: number;
@@ -236,7 +249,7 @@ export interface YahooApiScoreboardResponse {
             matchup?: YahooApiMatchupData;
           }>;
         };
-      }
+      },
     ];
   };
 }
@@ -269,7 +282,7 @@ export interface YahooApiUserGamesResponse {
             game?: YahooApiGame[] | YahooApiGame;
             count?: number;
           };
-        }
+        },
       ];
     }>;
   };
@@ -291,9 +304,8 @@ export interface YahooApiUserLeaguesResponse {
               };
             }>;
           };
-        }
+        },
       ];
     }>;
   };
 }
-

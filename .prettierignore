@@ -8,3 +8,7 @@ yarn.lock
 .next
 public
 .env*
+
+coverage
+.claude
+*.md

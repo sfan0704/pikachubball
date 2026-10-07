@@ -88,10 +88,7 @@ describe("Yahoo owner middleware", () => {
     await requireOwnedFantasyResource(req, res, next);
 
     expect(leagueKeyFromTeamKey("466.l.12345.t.7")).toBe("466.l.12345");
-    expect(ownsFantasyResource).toHaveBeenCalledWith(
-      "466.l.12345",
-      "466.l.12345.t.7",
-    );
+    expect(ownsFantasyResource).toHaveBeenCalledWith("466.l.12345", "466.l.12345.t.7");
     expect(next).toHaveBeenCalledWith();
   });
 
@@ -107,7 +104,7 @@ describe("Yahoo owner middleware", () => {
 
     expect(ownsFantasyResource).toHaveBeenCalledWith(
       "466.l.owner-league",
-      "466.l.foreign-league.t.9",
+      "466.l.foreign-league.t.9"
     );
     expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError));
   });

@@ -1,6 +1,12 @@
 import { useQueries } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import type { MatchupComparisonResponse, RankingsResponse } from "@shared/schema";
 
@@ -8,7 +14,7 @@ interface MatchupSimulatorProps {
   leagueKey: string;
   userTeamKey: string;
   week: number | null;
-  rankings: RankingsResponse['rankings'];
+  rankings: RankingsResponse["rankings"];
 }
 
 interface MatchupRow {
@@ -23,25 +29,32 @@ interface MatchupRow {
 type SortColumn = "teamName" | "wins" | "ties" | "losses";
 type SortDirection = "asc" | "desc";
 
-export default function MatchupSimulator({ leagueKey, userTeamKey, week, rankings }: MatchupSimulatorProps) {
+export default function MatchupSimulator({
+  leagueKey,
+  userTeamKey,
+  week,
+  rankings,
+}: MatchupSimulatorProps) {
   const [selectedTeam, setSelectedTeam] = useState<string>(userTeamKey);
   const [sortColumn, setSortColumn] = useState<SortColumn>("wins");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   // Get all other teams (opponents)
-  const opponentTeams = rankings.filter(r => r.teamKey !== selectedTeam);
-  
+  const opponentTeams = rankings.filter((r) => r.teamKey !== selectedTeam);
+
   // Fetch matchups for selected team against all others
   const matchupQueries = useQueries({
-    queries: opponentTeams.map(opponent => {
+    queries: opponentTeams.map((opponent) => {
       const params = new URLSearchParams();
       params.append("opponentTeamKey", opponent.teamKey);
       if (week) params.append("week", week.toString());
       return {
         queryKey: [`/api/viz/matchup/${leagueKey}/${selectedTeam}`, opponent.teamKey, week],
         queryFn: async () => {
-          const response = await fetch(`/api/viz/matchup/${leagueKey}/${selectedTeam}?${params.toString()}`);
-          if (!response.ok) throw new Error('Failed to fetch matchup');
+          const response = await fetch(
+            `/api/viz/matchup/${leagueKey}/${selectedTeam}?${params.toString()}`
+          );
+          if (!response.ok) throw new Error("Failed to fetch matchup");
           return response.json() as Promise<MatchupComparisonResponse>;
         },
         retry: false,
@@ -65,8 +78,8 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
     })
     .filter((row) => row !== null) as MatchupRow[];
 
-  const isLoading = matchupQueries.some(q => q.isLoading);
-  const hasError = matchupQueries.some(q => q.error);
+  const isLoading = matchupQueries.some((q) => q.isLoading);
+  const hasError = matchupQueries.some((q) => q.error);
 
   // Sort function
   const handleSort = (column: SortColumn) => {
@@ -95,10 +108,14 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
 
   const SortIndicator = ({ column }: { column: SortColumn }) => {
     if (sortColumn !== column) return <span className="text-muted-foreground ml-1">↕</span>;
-    return sortDirection === "asc" ? <span className="ml-1">↑</span> : <span className="ml-1">↓</span>;
+    return sortDirection === "asc" ? (
+      <span className="ml-1">↑</span>
+    ) : (
+      <span className="ml-1">↓</span>
+    );
   };
 
-  const _selectedTeamName = rankings.find(r => r.teamKey === selectedTeam)?.teamName || "Unknown";
+  const _selectedTeamName = rankings.find((r) => r.teamKey === selectedTeam)?.teamName || "Unknown";
 
   const getRowColor = (row: MatchupRow) => {
     if (row.wins > row.losses) {
@@ -126,9 +143,9 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
               <SelectValue placeholder="Choose a team" />
             </SelectTrigger>
             <SelectContent>
-              {rankings.map(team => (
-                <SelectItem 
-                  key={team.teamKey} 
+              {rankings.map((team) => (
+                <SelectItem
+                  key={team.teamKey}
                   value={team.teamKey}
                   data-testid={`option-simulator-team-${team.teamKey}`}
                 >
@@ -140,9 +157,7 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
         </div>
 
         {hasError && (
-          <p className="text-center text-destructive py-8">
-            Failed to load matchup data
-          </p>
+          <p className="text-center text-destructive py-8">Failed to load matchup data</p>
         )}
 
         {isLoading && (
@@ -151,9 +166,15 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-2 px-2 font-semibold">Team</th>
-                  <th className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400">Wins</th>
-                  <th className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400">Ties</th>
-                  <th className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400">Losses</th>
+                  <th className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400">
+                    Wins
+                  </th>
+                  <th className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400">
+                    Ties
+                  </th>
+                  <th className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400">
+                    Losses
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -183,28 +204,28 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th 
+                  <th
                     className="text-left py-2 px-2 font-semibold cursor-pointer hover:bg-accent/50"
                     onClick={() => handleSort("teamName")}
                     data-testid="header-teamname"
                   >
                     Team <SortIndicator column="teamName" />
                   </th>
-                  <th 
+                  <th
                     className="text-center py-2 px-2 font-semibold text-green-600 dark:text-green-400 cursor-pointer hover:bg-accent/50"
                     onClick={() => handleSort("wins")}
                     data-testid="header-wins"
                   >
                     Wins <SortIndicator column="wins" />
                   </th>
-                  <th 
+                  <th
                     className="text-center py-2 px-2 font-semibold text-yellow-600 dark:text-yellow-400 cursor-pointer hover:bg-accent/50"
                     onClick={() => handleSort("ties")}
                     data-testid="header-ties"
                   >
                     Ties <SortIndicator column="ties" />
                   </th>
-                  <th 
+                  <th
                     className="text-center py-2 px-2 font-semibold text-red-600 dark:text-red-400 cursor-pointer hover:bg-accent/50"
                     onClick={() => handleSort("losses")}
                     data-testid="header-losses"
@@ -214,15 +235,26 @@ export default function MatchupSimulator({ leagueKey, userTeamKey, week, ranking
                 </tr>
               </thead>
               <tbody>
-                {sortedRows.map(row => (
-                  <tr key={row.teamKey} className={`border-b hover:bg-accent/50 ${getRowColor(row)}`}>
+                {sortedRows.map((row) => (
+                  <tr
+                    key={row.teamKey}
+                    className={`border-b hover:bg-accent/50 ${getRowColor(row)}`}
+                  >
                     <td className="py-2 px-2">
                       <div className="font-medium">{row.teamName}</div>
-                      {row.managerName && <div className="text-xs text-muted-foreground">{row.managerName}</div>}
+                      {row.managerName && (
+                        <div className="text-xs text-muted-foreground">{row.managerName}</div>
+                      )}
                     </td>
-                    <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">{row.wins}</td>
-                    <td className="text-center py-2 px-2 text-yellow-600 dark:text-yellow-400 font-semibold">{row.ties}</td>
-                    <td className="text-center py-2 px-2 text-red-600 dark:text-red-400 font-semibold">{row.losses}</td>
+                    <td className="text-center py-2 px-2 text-green-600 dark:text-green-400 font-semibold">
+                      {row.wins}
+                    </td>
+                    <td className="text-center py-2 px-2 text-yellow-600 dark:text-yellow-400 font-semibold">
+                      {row.ties}
+                    </td>
+                    <td className="text-center py-2 px-2 text-red-600 dark:text-red-400 font-semibold">
+                      {row.losses}
+                    </td>
                   </tr>
                 ))}
               </tbody>

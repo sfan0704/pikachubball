@@ -29,7 +29,9 @@ export default function TeamRoster({ players }: TeamRosterProps) {
 
   return (
     <Card className="p-4">
-      <h3 className="font-semibold text-lg mb-4" data-testid="heading-roster">My Roster</h3>
+      <h3 className="font-semibold text-lg mb-4" data-testid="heading-roster">
+        My Roster
+      </h3>
       <ScrollArea className="h-[400px]">
         <div className="space-y-2">
           {players.map((player, idx) => (
@@ -39,7 +41,9 @@ export default function TeamRoster({ players }: TeamRosterProps) {
               data-testid={`roster-player-${idx}`}
             >
               <div className="flex-1">
-                <p className="font-medium text-sm" data-testid="text-player-name">{player.name}</p>
+                <p className="font-medium text-sm" data-testid="text-player-name">
+                  {player.name}
+                </p>
                 <p className="text-xs text-muted-foreground" data-testid="text-player-info">
                   {player.position} • {player.team}
                 </p>

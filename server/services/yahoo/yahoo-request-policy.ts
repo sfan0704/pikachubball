@@ -13,7 +13,10 @@ const RETRY_BASE_DELAY_MS = 250;
 /** The stored Yahoo grant is unusable; the user must connect Yahoo again. */
 export class YahooReconnectRequiredError extends AppError {
   constructor() {
-    super("YAHOO_RECONNECT_REQUIRED", "Yahoo Fantasy credentials expired or were revoked. Please reconnect your Yahoo account.");
+    super(
+      "YAHOO_RECONNECT_REQUIRED",
+      "Yahoo Fantasy credentials expired or were revoked. Please reconnect your Yahoo account."
+    );
     this.name = "YahooReconnectRequiredError";
   }
 }
@@ -24,7 +27,7 @@ export class YahooRateLimitedError extends AppError {
     super(
       "YAHOO_RATE_LIMITED",
       "Yahoo is rate limiting requests. Please try again shortly.",
-      retryAfterSeconds === undefined ? undefined : { retryAfterSeconds },
+      retryAfterSeconds === undefined ? undefined : { retryAfterSeconds }
     );
     this.name = "YahooRateLimitedError";
   }
@@ -33,7 +36,10 @@ export class YahooRateLimitedError extends AppError {
 /** Yahoo timed out, was unreachable, or kept failing within the budget. */
 export class YahooUnavailableError extends AppError {
   constructor() {
-    super("YAHOO_UNAVAILABLE", "Yahoo Fantasy is not responding right now. Please try again shortly.");
+    super(
+      "YAHOO_UNAVAILABLE",
+      "Yahoo Fantasy is not responding right now. Please try again shortly."
+    );
     this.name = "YahooUnavailableError";
   }
 }
@@ -103,7 +109,7 @@ function isTransient(error: unknown): boolean {
 export async function withYahooRetries<T>(
   call: (timeoutMs: number) => Promise<T>,
   clock: YahooRequestClock = systemClock,
-  deadline: number = clock.now() + YAHOO_TOTAL_BUDGET_MS,
+  deadline: number = clock.now() + YAHOO_TOTAL_BUDGET_MS
 ): Promise<T> {
   for (let attempt = 1; ; attempt += 1) {
     const remaining = deadline - clock.now();
@@ -119,7 +125,7 @@ export async function withYahooRetries<T>(
       if (providerStatus(error) === 429) {
         const retryAfter = parseRetryAfter(
           asFailure(error).response?.headers?.["retry-after"],
-          clock.now(),
+          clock.now()
         );
         const waitMs = (retryAfter ?? 0) * 1000;
         if (lastAttempt || retryAfter === undefined || clock.now() + waitMs >= deadline) {

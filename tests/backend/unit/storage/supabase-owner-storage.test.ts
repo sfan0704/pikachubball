@@ -59,7 +59,7 @@ describe("Supabase owner storage", () => {
         accessToken: "foreign-access",
         refreshToken: "foreign-refresh",
         expiresAt: 1_800_000_000,
-      }),
+      })
     ).rejects.toThrow(/foreign user id/);
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -77,16 +77,16 @@ describe("Supabase owner storage", () => {
       expiresAt: 1_800_003_600,
     };
 
-    await expect(
-      storage.saveYahooToken(rotation, { expectedVersion: 4 }),
-    ).resolves.toMatchObject({ version: 5 });
-    await expect(
-      storage.saveYahooToken(rotation, { expectedVersion: 4 }),
-    ).rejects.toThrow(/stale result rejected/);
+    await expect(storage.saveYahooToken(rotation, { expectedVersion: 4 })).resolves.toMatchObject({
+      version: 5,
+    });
+    await expect(storage.saveYahooToken(rotation, { expectedVersion: 4 })).rejects.toThrow(
+      /stale result rejected/
+    );
     expect(rpc).toHaveBeenNthCalledWith(
       1,
       "rotate_yahoo_tokens",
-      expect.objectContaining({ p_expected_version: 4 }),
+      expect.objectContaining({ p_expected_version: 4 })
     );
   });
 });

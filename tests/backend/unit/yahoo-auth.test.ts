@@ -32,7 +32,7 @@ describe("exchangeAuthorizationCode", () => {
       "authorization-code",
       "client-id",
       "client-secret",
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback"
     );
 
     expect(axios).toHaveBeenCalledOnce();
@@ -41,7 +41,7 @@ describe("exchangeAuthorizationCode", () => {
     expect(body.get("client_id")).toBe("client-id");
     expect(body.get("client_secret")).toBe("client-secret");
     expect(body.get("redirect_uri")).toBe(
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback"
     );
     expect(body.get("code")).toBe("authorization-code");
     expect(body.get("grant_type")).toBe("authorization_code");
@@ -60,7 +60,7 @@ describe("exchangeAuthorizationCode", () => {
       "authorization-code",
       "client-id",
       "client-secret",
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback"
     );
 
     expect(result.yahooGuid).toBeUndefined();
@@ -106,9 +106,9 @@ describe("refreshAccessToken", () => {
         response: { status, data: { error: "invalid_grant" } },
       });
 
-      await expect(refreshAccessToken("revoked", "id", "secret", REDIRECT_URI)).rejects.toBeInstanceOf(
-        YahooReconnectRequiredError,
-      );
+      await expect(
+        refreshAccessToken("revoked", "id", "secret", REDIRECT_URI)
+      ).rejects.toBeInstanceOf(YahooReconnectRequiredError);
     }
   });
 
@@ -119,9 +119,9 @@ describe("refreshAccessToken", () => {
       .mockResolvedValueOnce({ data: { refresh_token: "only-refresh" } });
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      await expect(refreshAccessToken("current", "id", "secret", REDIRECT_URI)).rejects.toBeInstanceOf(
-        YahooUnavailableError,
-      );
+      await expect(
+        refreshAccessToken("current", "id", "secret", REDIRECT_URI)
+      ).rejects.toBeInstanceOf(YahooUnavailableError);
     }
   });
 });
@@ -136,7 +136,7 @@ describe("refreshAccessToken configuration", () => {
     expect(new URLSearchParams(request.data).get("redirect_uri")).toBe(REDIRECT_URI);
 
     await expect(refreshAccessToken("refresh", "id", "secret", null)).rejects.toThrow(
-      "refresh configuration is incomplete",
+      "refresh configuration is incomplete"
     );
   });
 });

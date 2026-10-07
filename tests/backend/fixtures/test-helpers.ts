@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from "express";
 
 export interface TestUser {
   id: string;
@@ -62,7 +62,7 @@ export function createMockRequest(overrides: Partial<MockRequest> = {}): MockReq
  */
 export function createMockResponse(): MockResponse {
   const eventListeners: Record<string, ((...args: unknown[]) => void)[]> = {};
-  
+
   const res: MockResponse = {
     statusCode: 200,
     body: null,
@@ -99,7 +99,7 @@ export function createMockResponse(): MockResponse {
     }),
     emit: vi.fn((event: string, ...args: any[]) => {
       if (eventListeners[event]) {
-        eventListeners[event].forEach(callback => callback(...args));
+        eventListeners[event].forEach((callback) => callback(...args));
       }
       return true;
     }),
@@ -120,9 +120,9 @@ export function createMockNext(): ReturnType<typeof vi.fn<NextFunction>> {
  */
 export function createMockUser(overrides: Partial<TestUser> = {}): TestUser {
   return {
-    id: 'test-user-id',
-    username: 'testuser',
-    password: 'hashed-password',
+    id: "test-user-id",
+    username: "testuser",
+    password: "hashed-password",
     yahooGuid: null,
     displayName: null,
     email: null,
@@ -136,12 +136,12 @@ export function createMockUser(overrides: Partial<TestUser> = {}): TestUser {
  */
 export function createMockOAuthUser(overrides: Partial<TestUser> = {}): TestUser {
   return {
-    id: 'test-oauth-user-id',
-    username: 'yahoo_user_abc123',
+    id: "test-oauth-user-id",
+    username: "yahoo_user_abc123",
     password: null,
-    yahooGuid: 'YAHOO_GUID_ABC123',
-    displayName: 'Test Yahoo User',
-    email: 'test@yahoo.com',
+    yahooGuid: "YAHOO_GUID_ABC123",
+    displayName: "Test Yahoo User",
+    email: "test@yahoo.com",
     createdAt: new Date(),
     ...overrides,
   };
@@ -168,25 +168,22 @@ export function createAuthenticatedRequest(user?: TestUser): MockRequest {
 /**
  * Create a mock Yahoo authenticated request
  */
-export function createYahooAuthenticatedRequest(
-  user?: TestUser,
-  mcpClient?: any
-): MockRequest {
+export function createYahooAuthenticatedRequest(user?: TestUser, mcpClient?: any): MockRequest {
   const mockUser = user || createMockUser();
   const req = createAuthenticatedRequest(mockUser);
-  
+
   // Add Yahoo-specific properties
   (req as any).yahooToken = {
-    accessToken: 'test-access-token',
-    refreshToken: 'test-refresh-token',
+    accessToken: "test-access-token",
+    refreshToken: "test-refresh-token",
     expiresAt: Date.now() / 1000 + 3600,
   };
-  
+
   (req as any).mcpClient = mcpClient || {
     getUserLeagues: vi.fn(),
     getTeamRoster: vi.fn(),
     getLeagueStandings: vi.fn(),
   };
-  
+
   return req;
 }

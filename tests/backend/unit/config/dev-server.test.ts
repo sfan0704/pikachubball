@@ -16,10 +16,25 @@ beforeAll(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "pikachubball-dev-https-"));
   certFile = path.join(dir, "cert.pem");
   keyFile = path.join(dir, "key.pem");
-  execFileSync("openssl", [
-    "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
-    "-subj", "/CN=localhost", "-keyout", keyFile, "-out", certFile,
-  ], { stdio: "ignore" });
+  execFileSync(
+    "openssl",
+    [
+      "req",
+      "-x509",
+      "-newkey",
+      "rsa:2048",
+      "-nodes",
+      "-days",
+      "1",
+      "-subj",
+      "/CN=localhost",
+      "-keyout",
+      keyFile,
+      "-out",
+      certFile,
+    ],
+    { stdio: "ignore" }
+  );
 });
 
 afterAll(() => {
@@ -64,7 +79,7 @@ describe("createDevServer", () => {
 
   it("requires the certificate and key together", () => {
     expect(() =>
-      createDevServer(ok as never, { NODE_ENV: "development", DEV_HTTPS_CERT: certFile }),
+      createDevServer(ok as never, { NODE_ENV: "development", DEV_HTTPS_CERT: certFile })
     ).toThrow("DEV_HTTPS_CERT and DEV_HTTPS_KEY must be set together");
   });
 
@@ -74,7 +89,7 @@ describe("createDevServer", () => {
         NODE_ENV: "production",
         DEV_HTTPS_CERT: certFile,
         DEV_HTTPS_KEY: keyFile,
-      }),
+      })
     ).toThrow("for local development only");
   });
 });

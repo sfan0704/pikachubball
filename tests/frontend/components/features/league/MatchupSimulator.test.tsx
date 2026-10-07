@@ -1,28 +1,49 @@
 /**
  * @vitest-environment happy-dom
  */
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import MatchupSimulator from '../../../../../client/src/components/features/league/MatchupSimulator';
+import React from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import MatchupSimulator from "../../../../../client/src/components/features/league/MatchupSimulator";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-describe('MatchupSimulator', () => {
+describe("MatchupSimulator", () => {
   let queryClient: QueryClient;
 
   const mockRankings = [
-    { teamKey: '466.l.12345.t.1', teamName: 'Team One', managerName: 'Manager 1', totalRank: 1.5, stats: {}, categoryRanks: {} },
-    { teamKey: '466.l.12345.t.2', teamName: 'Team Two', managerName: 'Manager 2', totalRank: 2.0, stats: {}, categoryRanks: {} },
-    { teamKey: '466.l.12345.t.3', teamName: 'Team Three', managerName: 'Manager 3', totalRank: 3.5, stats: {}, categoryRanks: {} },
+    {
+      teamKey: "466.l.12345.t.1",
+      teamName: "Team One",
+      managerName: "Manager 1",
+      totalRank: 1.5,
+      stats: {},
+      categoryRanks: {},
+    },
+    {
+      teamKey: "466.l.12345.t.2",
+      teamName: "Team Two",
+      managerName: "Manager 2",
+      totalRank: 2.0,
+      stats: {},
+      categoryRanks: {},
+    },
+    {
+      teamKey: "466.l.12345.t.3",
+      teamName: "Team Three",
+      managerName: "Manager 3",
+      totalRank: 3.5,
+      stats: {},
+      categoryRanks: {},
+    },
   ];
 
   const mockMatchupResponse = {
-    myTeam: { teamKey: '466.l.12345.t.1', teamName: 'Team One' },
-    opponent: { teamKey: '466.l.12345.t.2', teamName: 'Team Two' },
+    myTeam: { teamKey: "466.l.12345.t.1", teamName: "Team One" },
+    opponent: { teamKey: "466.l.12345.t.2", teamName: "Team Two" },
     categories: [],
     score: { wins: 5, losses: 3, ties: 1 },
     metadata: { week: 5, currentWeek: 10, totalWeeks: 20 },
@@ -47,12 +68,14 @@ describe('MatchupSimulator', () => {
     });
   });
 
-  const renderMatchupSimulator = (props = {
-    leagueKey: '466.l.12345',
-    userTeamKey: '466.l.12345.t.1',
-    week: null as number | null,
-    rankings: mockRankings,
-  }) => {
+  const renderMatchupSimulator = (
+    props = {
+      leagueKey: "466.l.12345",
+      userTeamKey: "466.l.12345.t.1",
+      week: null as number | null,
+      rankings: mockRankings,
+    }
+  ) => {
     return render(
       <QueryClientProvider client={queryClient}>
         <MatchupSimulator {...props} />
@@ -60,24 +83,24 @@ describe('MatchupSimulator', () => {
     );
   };
 
-  describe('rendering', () => {
-    it('should render simulator card', () => {
+  describe("rendering", () => {
+    it("should render simulator card", () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
       // ASSERT
-      expect(screen.getByTestId('card-simulator')).toBeInTheDocument();
+      expect(screen.getByTestId("card-simulator")).toBeInTheDocument();
     });
 
-    it('should render title', () => {
+    it("should render title", () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
       // ASSERT
-      expect(screen.getByText('Matchup Simulator')).toBeInTheDocument();
+      expect(screen.getByText("Matchup Simulator")).toBeInTheDocument();
     });
 
-    it('should render description', () => {
+    it("should render description", () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
@@ -85,25 +108,25 @@ describe('MatchupSimulator', () => {
       expect(screen.getByText(/See how any team would fare/i)).toBeInTheDocument();
     });
 
-    it('should render team selector', () => {
+    it("should render team selector", () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
       // ASSERT
-      expect(screen.getByTestId('select-simulator-team')).toBeInTheDocument();
+      expect(screen.getByTestId("select-simulator-team")).toBeInTheDocument();
     });
 
-    it('should render Select Team label', () => {
+    it("should render Select Team label", () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
       // ASSERT
-      expect(screen.getByText('Select Team')).toBeInTheDocument();
+      expect(screen.getByText("Select Team")).toBeInTheDocument();
     });
   });
 
-  describe('loading state', () => {
-    it('should show loading skeleton while fetching matchups', async () => {
+  describe("loading state", () => {
+    it("should show loading skeleton while fetching matchups", async () => {
       // ARRANGE - Make fetch hang
       mockFetch.mockImplementation(() => new Promise(() => {}));
 
@@ -112,14 +135,14 @@ describe('MatchupSimulator', () => {
 
       // ASSERT - Look for skeleton rows
       await waitFor(() => {
-        const skeletons = container.querySelectorAll('.animate-pulse');
+        const skeletons = container.querySelectorAll(".animate-pulse");
         expect(skeletons.length).toBeGreaterThan(0);
       });
     });
   });
 
-  describe('table headers', () => {
-    it('should render sortable column headers when data is loaded', async () => {
+  describe("table headers", () => {
+    it("should render sortable column headers when data is loaded", async () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
@@ -129,29 +152,32 @@ describe('MatchupSimulator', () => {
       });
 
       // Wait a bit for the component to update
-      await waitFor(() => {
-        const teamHeader = screen.queryByTestId('header-teamname');
-        // If headers are rendered, check them. If not, that's okay too since data might still be loading
-        if (teamHeader) {
-          expect(teamHeader).toBeInTheDocument();
-        }
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          const teamHeader = screen.queryByTestId("header-teamname");
+          // If headers are rendered, check them. If not, that's okay too since data might still be loading
+          if (teamHeader) {
+            expect(teamHeader).toBeInTheDocument();
+          }
+        },
+        { timeout: 2000 }
+      );
     });
   });
 
-  describe('team selection', () => {
-    it('should default to userTeamKey', () => {
+  describe("team selection", () => {
+    it("should default to userTeamKey", () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
       // ASSERT - The selector should have the user's team selected by default
-      const selector = screen.getByTestId('select-simulator-team');
+      const selector = screen.getByTestId("select-simulator-team");
       expect(selector).toBeInTheDocument();
     });
   });
 
-  describe('API calls', () => {
-    it('should fetch matchups against other teams', async () => {
+  describe("API calls", () => {
+    it("should fetch matchups against other teams", async () => {
       // ARRANGE & ACT
       renderMatchupSimulator();
 
@@ -161,11 +187,11 @@ describe('MatchupSimulator', () => {
       });
     });
 
-    it('should include week parameter in API call when provided', async () => {
+    it("should include week parameter in API call when provided", async () => {
       // ARRANGE & ACT
       renderMatchupSimulator({
-        leagueKey: '466.l.12345',
-        userTeamKey: '466.l.12345.t.1',
+        leagueKey: "466.l.12345",
+        userTeamKey: "466.l.12345.t.1",
         week: 5,
         rankings: mockRankings,
       });
@@ -173,18 +199,16 @@ describe('MatchupSimulator', () => {
       // ASSERT
       await waitFor(() => {
         const calls = mockFetch.mock.calls;
-        const hasWeekParam = calls.some((call: any[]) => 
-          call[0]?.includes('week=5')
-        );
+        const hasWeekParam = calls.some((call: any[]) => call[0]?.includes("week=5"));
         expect(hasWeekParam).toBe(true);
       });
     });
   });
 
-  describe('error handling', () => {
-    it('should display error message when fetch fails', async () => {
+  describe("error handling", () => {
+    it("should display error message when fetch fails", async () => {
       // ARRANGE
-      mockFetch.mockRejectedValue(new Error('API Error'));
+      mockFetch.mockRejectedValue(new Error("API Error"));
 
       // ACT
       renderMatchupSimulator();

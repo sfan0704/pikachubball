@@ -48,9 +48,7 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/auth">
-        {user ? <Redirect to="/" /> : <AuthPage />}
-      </Route>
+      <Route path="/auth">{user ? <Redirect to="/" /> : <AuthPage />}</Route>
       <Route path="/">
         <ProtectedRoute component={RankingsPage} />
       </Route>

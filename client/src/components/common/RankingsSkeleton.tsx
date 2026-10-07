@@ -15,7 +15,7 @@ export function RankingsSkeleton() {
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
@@ -28,7 +28,7 @@ export function RankingsSkeleton() {
               <Skeleton className="h-5 w-16" />
               <Skeleton className="h-5 w-16" />
             </div>
-            
+
             {/* Table rows */}
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex gap-4 py-3 border-b last:border-0">
@@ -63,4 +63,3 @@ export function LeagueSelectorSkeleton() {
     </Card>
   );
 }
-

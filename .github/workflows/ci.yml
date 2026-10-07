@@ -18,14 +18,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
       - name: Lint
         run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Unused code and packages
+        run: npm run knip
 
       - name: Type check
         run: npm run check
@@ -53,8 +59,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci

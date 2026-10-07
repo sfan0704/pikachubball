@@ -38,7 +38,7 @@ export function configureApp(app: Express, dependencies: ServerDependencies): Ex
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       },
-    }),
+    })
   );
   app.use(express.urlencoded({ extended: false }));
   app.use(createRequestLogger(logger));

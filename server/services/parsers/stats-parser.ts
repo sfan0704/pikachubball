@@ -3,10 +3,10 @@
  * Transform raw Yahoo API stats responses into domain models
  */
 
-import type { TeamStats, CategoryStats } from '../../../shared/domain/index.js';
-import type { YahooApiTeamData, YahooApiScoreboardResponse } from '../../types/yahoo-api.js';
-import { YAHOO_STAT_IDS } from '../../types/yahoo-stat-ids.js';
-import { logger } from '../../utils/logger.js';
+import type { TeamStats, CategoryStats } from "../../../shared/domain/index.js";
+import type { YahooApiTeamData, YahooApiScoreboardResponse } from "../../types/yahoo-api.js";
+import { YAHOO_STAT_IDS } from "../../types/yahoo-stat-ids.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Parse CategoryStats from Yahoo API stat map
@@ -16,19 +16,19 @@ import { logger } from '../../utils/logger.js';
 function parseCategoryStats(statMap: Record<string, string | number>): CategoryStats | null {
   try {
     return {
-      fgPct: parseFloat(String(statMap[YAHOO_STAT_IDS.FG_PCT] || '0')) || 0,
-      ftPct: parseFloat(String(statMap[YAHOO_STAT_IDS.FT_PCT] || '0')) || 0,
-      tpm: parseInt(String(statMap[YAHOO_STAT_IDS.TPM] || '0'), 10) || 0,
-      pts: parseInt(String(statMap[YAHOO_STAT_IDS.PTS] || '0'), 10) || 0,
-      reb: parseInt(String(statMap[YAHOO_STAT_IDS.REB] || '0'), 10) || 0,
-      ast: parseInt(String(statMap[YAHOO_STAT_IDS.AST] || '0'), 10) || 0,
-      stl: parseInt(String(statMap[YAHOO_STAT_IDS.STL] || '0'), 10) || 0,
-      blk: parseInt(String(statMap[YAHOO_STAT_IDS.BLK] || '0'), 10) || 0,
-      to: parseInt(String(statMap[YAHOO_STAT_IDS.TO] || '0'), 10) || 0,
+      fgPct: parseFloat(String(statMap[YAHOO_STAT_IDS.FG_PCT] || "0")) || 0,
+      ftPct: parseFloat(String(statMap[YAHOO_STAT_IDS.FT_PCT] || "0")) || 0,
+      tpm: parseInt(String(statMap[YAHOO_STAT_IDS.TPM] || "0"), 10) || 0,
+      pts: parseInt(String(statMap[YAHOO_STAT_IDS.PTS] || "0"), 10) || 0,
+      reb: parseInt(String(statMap[YAHOO_STAT_IDS.REB] || "0"), 10) || 0,
+      ast: parseInt(String(statMap[YAHOO_STAT_IDS.AST] || "0"), 10) || 0,
+      stl: parseInt(String(statMap[YAHOO_STAT_IDS.STL] || "0"), 10) || 0,
+      blk: parseInt(String(statMap[YAHOO_STAT_IDS.BLK] || "0"), 10) || 0,
+      to: parseInt(String(statMap[YAHOO_STAT_IDS.TO] || "0"), 10) || 0,
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Error parsing category stats:', { error: errorMessage });
+    logger.error("Error parsing category stats:", { error: errorMessage });
     return null;
   }
 }
@@ -38,12 +38,14 @@ function parseCategoryStats(statMap: Record<string, string | number>): CategoryS
  * @param value String value in format "makes/attempts"
  * @returns Object with makes and attempts, or null if invalid
  */
-function parseMakesAttempts(value: string | number | undefined): { makes: number; attempts: number } | null {
+function parseMakesAttempts(
+  value: string | number | undefined
+): { makes: number; attempts: number } | null {
   if (!value) {
     return { makes: 0, attempts: 0 };
   }
 
-  const parts = String(value).split('/');
+  const parts = String(value).split("/");
   if (parts.length !== 2) {
     return { makes: 0, attempts: 0 };
   }
@@ -63,47 +65,53 @@ function parseMakesAttempts(value: string | number | undefined): { makes: number
  */
 export function parseTeamStats(
   teamData: YahooApiTeamData | null | undefined,
-  scope: 'season' | 'week',
+  scope: "season" | "week",
   week?: number
 ): TeamStats | null {
   if (!teamData || !Array.isArray(teamData[0])) {
-    logger.warn('Invalid team data: missing team properties', { scope, week });
+    logger.warn("Invalid team data: missing team properties", { scope, week });
     return null;
   }
 
   const properties = teamData[0];
   if (!Array.isArray(properties) || properties.length === 0) {
-    logger.warn('Invalid team data: properties array is empty', { scope, week });
+    logger.warn("Invalid team data: properties array is empty", { scope, week });
     return null;
   }
 
   const teamKeyObj = properties.find((prop: { team_key?: string }) => prop.team_key);
   if (!teamKeyObj?.team_key) {
-    logger.warn('Invalid team data: team_key not found', { scope, week });
+    logger.warn("Invalid team data: team_key not found", { scope, week });
     return null;
   }
 
   const statsData = teamData[1]?.team_stats;
   if (!statsData || !statsData.stats) {
-    logger.warn('Invalid team data: missing team_stats', { teamKey: teamKeyObj.team_key, scope, week });
+    logger.warn("Invalid team data: missing team_stats", {
+      teamKey: teamKeyObj.team_key,
+      scope,
+      week,
+    });
     return null;
   }
 
   // Build stat map from Yahoo API structure
   const statMap: Record<string, string | number> = {};
-  
+
   if (Array.isArray(statsData.stats)) {
-    statsData.stats.forEach((statWrapper: { stat?: { stat_id: string; value: string | number } }) => {
-      if (statWrapper.stat) {
-        statMap[statWrapper.stat.stat_id] = statWrapper.stat.value;
+    statsData.stats.forEach(
+      (statWrapper: { stat?: { stat_id: string; value: string | number } }) => {
+        if (statWrapper.stat) {
+          statMap[statWrapper.stat.stat_id] = statWrapper.stat.value;
+        }
       }
-    });
+    );
   }
 
   // Parse category stats
   const categoryStats = parseCategoryStats(statMap);
   if (!categoryStats) {
-    logger.warn('Failed to parse category stats', { teamKey: teamKeyObj.team_key, scope, week });
+    logger.warn("Failed to parse category stats", { teamKey: teamKeyObj.team_key, scope, week });
     return null;
   }
 
@@ -114,11 +122,11 @@ export function parseTeamStats(
   // Extract team name and manager name from properties
   const teamNameObj = properties.find((prop: any) => prop.name);
   const managersObj = properties.find((prop: any) => prop.managers);
-  
+
   let managerName: string | undefined;
   if (managersObj?.managers && Array.isArray(managersObj.managers)) {
     const manager = managersObj.managers[0]?.manager;
-    if (manager && typeof manager === 'object') {
+    if (manager && typeof manager === "object") {
       managerName = manager.nickname;
     }
   }
@@ -136,13 +144,16 @@ export function parseTeamStats(
       ftAttempts: ftData?.attempts,
     };
 
-    if (scope === 'week' && week !== undefined) {
+    if (scope === "week" && week !== undefined) {
       teamStats.week = week;
     }
 
     return teamStats;
   } catch (error: any) {
-    logger.error('Error parsing team stats:', { error: error.message, teamKey: teamKeyObj.team_key });
+    logger.error("Error parsing team stats:", {
+      error: error.message,
+      teamKey: teamKeyObj.team_key,
+    });
     return null;
   }
 }
@@ -155,7 +166,9 @@ export function parseTeamStats(
  * @param standingsSubresource Raw standings subresource from Yahoo API
  * @returns Normalized standings data with teams, or null if invalid
  */
-function extractStandingsData(standingsSubresource: any): { standings: Array<{ teams: any }> } | null {
+function extractStandingsData(
+  standingsSubresource: any
+): { standings: Array<{ teams: any }> } | null {
   if (!standingsSubresource) {
     return null;
   }
@@ -184,7 +197,7 @@ function extractStandingsData(standingsSubresource: any): { standings: Array<{ t
  */
 export function parseTeamStatsFromStandings(
   standingsResponse: any,
-  scope: 'season' | 'week',
+  scope: "season" | "week",
   week?: number
 ): TeamStats[] {
   // Handle both raw Yahoo API response and pre-processed data
@@ -202,14 +215,18 @@ export function parseTeamStatsFromStandings(
     standingsData = extractStandingsData(standingsResponse);
   }
 
-  if (!standingsData?.standings || !Array.isArray(standingsData.standings) || standingsData.standings.length === 0) {
-    logger.warn('Invalid standings data: missing or empty standings', { scope, week });
+  if (
+    !standingsData?.standings ||
+    !Array.isArray(standingsData.standings) ||
+    standingsData.standings.length === 0
+  ) {
+    logger.warn("Invalid standings data: missing or empty standings", { scope, week });
     return [];
   }
 
   const teams = standingsData.standings[0]?.teams;
   if (!teams || !teams.count) {
-    logger.warn('Invalid standings data: missing teams or count', { scope, week });
+    logger.warn("Invalid standings data: missing teams or count", { scope, week });
     return [];
   }
 
@@ -240,18 +257,18 @@ export function parseTeamStatsFromScoreboard(
   week: number
 ): TeamStats[] {
   if (!scoreboardData?.fantasy_content?.league) {
-    logger.warn('Invalid scoreboard data: missing fantasy_content.league', { week });
+    logger.warn("Invalid scoreboard data: missing fantasy_content.league", { week });
     return [];
   }
 
   const leagueArray = scoreboardData.fantasy_content.league;
   if (!Array.isArray(leagueArray) || leagueArray.length < 2) {
-    logger.warn('Invalid scoreboard data: league array invalid', { week });
+    logger.warn("Invalid scoreboard data: league array invalid", { week });
     return [];
   }
 
   const scoreboardSubresource = leagueArray[1]?.scoreboard;
-  
+
   // Handle scoreboard structure: can be:
   // 1. Array: [{ matchups: {...} }]
   // 2. Object with numeric key: { "0": { matchups: {...} } }
@@ -259,11 +276,11 @@ export function parseTeamStatsFromScoreboard(
   let matchups: any = null;
   if (Array.isArray(scoreboardSubresource) && scoreboardSubresource.length > 0) {
     matchups = scoreboardSubresource[0]?.matchups;
-  } else if (scoreboardSubresource && typeof scoreboardSubresource === 'object') {
+  } else if (scoreboardSubresource && typeof scoreboardSubresource === "object") {
     // Check for format 2: { "0": { matchups: {...} } }
     const scoreboardObj = scoreboardSubresource as any;
-    if (scoreboardObj['0']?.matchups) {
-      matchups = scoreboardObj['0'].matchups;
+    if (scoreboardObj["0"]?.matchups) {
+      matchups = scoreboardObj["0"].matchups;
     } else if (scoreboardObj.matchups) {
       // Format 3: { matchups: {...} }
       matchups = scoreboardObj.matchups;
@@ -271,7 +288,7 @@ export function parseTeamStatsFromScoreboard(
   }
 
   if (!matchups) {
-    logger.warn('No matchups found in scoreboard', { week });
+    logger.warn("No matchups found in scoreboard", { week });
     return [];
   }
 
@@ -282,15 +299,15 @@ export function parseTeamStatsFromScoreboard(
     matchups.forEach((m: any, i: number) => {
       normalizedMatchups[i.toString()] = m;
     });
-  } else if (matchups && typeof matchups === 'object' && matchups.count !== undefined) {
+  } else if (matchups && typeof matchups === "object" && matchups.count !== undefined) {
     normalizedMatchups = matchups;
   } else {
-    logger.warn('Invalid matchups structure', { week });
+    logger.warn("Invalid matchups structure", { week });
     return [];
   }
 
   if (!normalizedMatchups.count) {
-    logger.warn('No matchups found in scoreboard', { week });
+    logger.warn("No matchups found in scoreboard", { week });
     return [];
   }
 
@@ -305,7 +322,7 @@ export function parseTeamStatsFromScoreboard(
     if (!matchup) continue;
 
     // Yahoo API structure from scoreboard: matchup['0'] contains teams
-    const teamsData = matchup['0'];
+    const teamsData = matchup["0"];
     if (!teamsData || !teamsData.teams) continue;
 
     const matchupTeams = teamsData.teams;
@@ -317,7 +334,7 @@ export function parseTeamStatsFromScoreboard(
 
       const teamData = teamEntry.team;
       if (teamData) {
-        const stats = parseTeamStats(teamData, 'week', week);
+        const stats = parseTeamStats(teamData, "week", week);
         if (stats) {
           teamStats.push(stats);
         }

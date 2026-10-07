@@ -156,10 +156,7 @@ export const mockScoreboard = {
                       count: 2,
                       "0": {
                         team: [
-                          [
-                            { team_key: "466.l.12345.t.1" },
-                            { name: "Team Alpha" },
-                          ],
+                          [{ team_key: "466.l.12345.t.1" }, { name: "Team Alpha" }],
                           {
                             team_points: {
                               total: 5,
@@ -187,10 +184,7 @@ export const mockScoreboard = {
                       },
                       "1": {
                         team: [
-                          [
-                            { team_key: "466.l.12345.t.2" },
-                            { name: "Team Beta" },
-                          ],
+                          [{ team_key: "466.l.12345.t.2" }, { name: "Team Beta" }],
                           {
                             team_points: {
                               total: 4,

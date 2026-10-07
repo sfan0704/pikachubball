@@ -10,7 +10,7 @@ export const leagueSchema = z.object({
   teamName: z.string(),
   season: z.number().optional(),
   gameKey: z.string().optional(),
-  status: z.enum(['active', 'preseason', 'finished']).optional(),
+  status: z.enum(["active", "preseason", "finished"]).optional(),
 });
 
 export const playerSchema = z.object({
@@ -43,7 +43,7 @@ export const teamRankingSchema = z.object({
 });
 
 export const rankingsMetadataSchema = z.object({
-  scope: z.enum(['season', 'week']),
+  scope: z.enum(["season", "week"]),
   week: z.number().optional(),
   currentWeek: z.number(),
   totalWeeks: z.number(),
@@ -95,7 +95,7 @@ export const categoryComparisonSchema = z.object({
   opponent: z.number(),
   difference: z.number(),
   winning: z.boolean(),
-  result: z.enum(['win', 'loss', 'tie']),
+  result: z.enum(["win", "loss", "tie"]),
   myTeamMakes: z.number().optional(),
   myTeamAttempts: z.number().optional(),
   opponentMakes: z.number().optional(),

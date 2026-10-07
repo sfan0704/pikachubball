@@ -62,7 +62,11 @@ export function pickDefaultLeague(leagues: League[]): League | undefined {
 export function useFirstLeague() {
   const [selectedLeagueKey, setSelectedLeagueKeyState] = useState<string>("");
 
-  const { data: leaguesData, isLoading: isLoadingLeagues, error } = useQuery<{
+  const {
+    data: leaguesData,
+    isLoading: isLoadingLeagues,
+    error,
+  } = useQuery<{
     leagues: League[];
   }>({
     queryKey: ["/api/yahoo/leagues"],

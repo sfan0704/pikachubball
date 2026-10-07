@@ -9,7 +9,10 @@ export interface VizRouteDependencies {
 }
 
 /** Register retained rankings and matchup visualization routes. */
-export function registerVizRoutes(app: Express, { requireAuth, controller }: VizRouteDependencies): void {
+export function registerVizRoutes(
+  app: Express,
+  { requireAuth, controller }: VizRouteDependencies
+): void {
   app.get(
     "/api/yahoo/league-rankings/:leagueKey",
     requireAuth,

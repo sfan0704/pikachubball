@@ -12,7 +12,7 @@ export interface StoredYahooToken extends YahooTokenInput {
 export interface YahooTokenStorage {
   saveYahooToken(
     token: YahooTokenInput,
-    options?: { expectedVersion?: number },
+    options?: { expectedVersion?: number }
   ): Promise<StoredYahooToken>;
   getYahooToken(userId: string): Promise<StoredYahooToken | undefined>;
   deleteYahooToken(userId: string): Promise<void>;

@@ -1,15 +1,15 @@
 /**
  * @vitest-environment happy-dom
  */
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, renderHook, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '../../../client/src/lib/auth';
+import React from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor, renderHook, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider, useAuth } from "../../../client/src/lib/auth";
 
 // Mock apiRequest
 const mockApiRequest = vi.fn();
-vi.mock('../../../client/src/lib/queryClient', () => ({
+vi.mock("../../../client/src/lib/queryClient", () => ({
   queryClient: {
     invalidateQueries: vi.fn(),
     clear: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('../../../client/src/lib/queryClient', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-describe('auth', () => {
+describe("auth", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -43,10 +43,10 @@ describe('auth', () => {
     </QueryClientProvider>
   );
 
-  describe('useAuth', () => {
-    it('should throw error when used outside AuthProvider', () => {
+  describe("useAuth", () => {
+    it("should throw error when used outside AuthProvider", () => {
       // ARRANGE
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
       // ACT & ASSERT
       expect(() => {
@@ -55,12 +55,12 @@ describe('auth', () => {
             <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
           ),
         });
-      }).toThrow('useAuth must be used within an AuthProvider');
+      }).toThrow("useAuth must be used within an AuthProvider");
 
       consoleError.mockRestore();
     });
 
-    it('should return context when used within AuthProvider', () => {
+    it("should return context when used within AuthProvider", () => {
       // ARRANGE & ACT
       const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -71,7 +71,7 @@ describe('auth', () => {
       expect(result.current.logout).toBeInstanceOf(Function);
     });
 
-    it('should return isLoading true initially', () => {
+    it("should return isLoading true initially", () => {
       // ARRANGE - Make query hang to test loading state
       mockFetch.mockImplementation(() => new Promise(() => {}));
 
@@ -83,8 +83,8 @@ describe('auth', () => {
     });
   });
 
-  describe('AuthProvider', () => {
-    it('should render children', () => {
+  describe("AuthProvider", () => {
+    it("should render children", () => {
       // ARRANGE & ACT
       render(
         <QueryClientProvider client={queryClient}>
@@ -95,25 +95,25 @@ describe('auth', () => {
       );
 
       // ASSERT
-      expect(screen.getByTestId('child')).toBeInTheDocument();
+      expect(screen.getByTestId("child")).toBeInTheDocument();
     });
 
-    it('should set user when query returns user data', async () => {
+    it("should set user when query returns user data", async () => {
       // ARRANGE
-      queryClient.setQueryData(['/api/auth/me'], { user: { id: '1', username: 'testuser' } });
+      queryClient.setQueryData(["/api/auth/me"], { user: { id: "1", username: "testuser" } });
 
       // ACT
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       // ASSERT
       await waitFor(() => {
-        expect(result.current.user).toEqual({ id: '1', username: 'testuser' });
+        expect(result.current.user).toEqual({ id: "1", username: "testuser" });
       });
     });
 
-    it('should set user to null when query returns no user', async () => {
+    it("should set user to null when query returns no user", async () => {
       // ARRANGE
-      queryClient.setQueryData(['/api/auth/me'], { user: null });
+      queryClient.setQueryData(["/api/auth/me"], { user: null });
 
       // ACT
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -125,8 +125,8 @@ describe('auth', () => {
     });
   });
 
-  describe('logout', () => {
-    it('should call apiRequest for logout', async () => {
+  describe("logout", () => {
+    it("should call apiRequest for logout", async () => {
       // ARRANGE
       mockApiRequest.mockResolvedValue(undefined);
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -137,18 +137,18 @@ describe('auth', () => {
       });
 
       // ASSERT
-      expect(mockApiRequest).toHaveBeenCalledWith('/api/auth/logout', 'POST', {});
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/auth/logout", "POST", {});
     });
 
-    it('should clear user after logout', async () => {
+    it("should clear user after logout", async () => {
       // ARRANGE
-      queryClient.setQueryData(['/api/auth/me'], { user: { id: '1', username: 'testuser' } });
+      queryClient.setQueryData(["/api/auth/me"], { user: { id: "1", username: "testuser" } });
       mockApiRequest.mockResolvedValue(undefined);
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       // Wait for initial user to be set
       await waitFor(() => {
-        expect(result.current.user).toEqual({ id: '1', username: 'testuser' });
+        expect(result.current.user).toEqual({ id: "1", username: "testuser" });
       });
 
       // ACT

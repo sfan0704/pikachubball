@@ -27,7 +27,7 @@ async function expireAccessToken(owner: Owner): Promise<number> {
   }
   const rotated = await owner.storage.saveYahooToken(
     { ...token, expiresAt: Math.floor(Date.now() / 1000) - 60 },
-    { expectedVersion: token.version },
+    { expectedVersion: token.version }
   );
   return rotated.version ?? 0;
 }
@@ -52,7 +52,9 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     const yahoo = deferred<{ accessToken: string; refreshToken: string; expiresIn: number }>();
     vi.mocked(refreshAccessToken).mockReturnValue(yahoo.promise);
 
-    const pending = YahooApiClient.create(owner.id, owner.storage, yahooApp).catch((error) => error);
+    const pending = YahooApiClient.create(owner.id, owner.storage, yahooApp).catch(
+      (error) => error
+    );
     await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledOnce());
     await owner.storage.deleteYahooToken(owner.id);
     yahoo.resolve({ accessToken: "late-access", refreshToken: "late-refresh", expiresIn: 3600 });
@@ -60,7 +62,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     expect(await pending).toBeInstanceOf(YahooReconnectRequiredError);
     await expect(owner.storage.getYahooToken(owner.id)).resolves.toBeUndefined();
     await expect(YahooApiClient.create(owner.id, owner.storage, yahooApp)).rejects.toBeInstanceOf(
-      YahooReconnectRequiredError,
+      YahooReconnectRequiredError
     );
   });
 
@@ -81,7 +83,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
         refreshToken: "other-instance-refresh",
         expiresAt: Math.floor(Date.now() / 1000) + 3600,
       },
-      { expectedVersion: readVersion },
+      { expectedVersion: readVersion }
     );
     yahoo.resolve({ accessToken: "late-access", expiresIn: 3600 });
     const client = await pending;
@@ -93,7 +95,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
       version: readVersion + 1,
     });
     expect((client as unknown as { accessToken: string }).accessToken).toBe(
-      "other-instance-access",
+      "other-instance-access"
     );
   });
 

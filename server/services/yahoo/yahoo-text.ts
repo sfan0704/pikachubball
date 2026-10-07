@@ -52,7 +52,7 @@ export function decodeYahooStrings<T>(value: T): T {
   }
   if (value && typeof value === "object") {
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, decodeYahooStrings(item)]),
+      Object.entries(value).map(([key, item]) => [key, decodeYahooStrings(item)])
     ) as T;
   }
   return value;

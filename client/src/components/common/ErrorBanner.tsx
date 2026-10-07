@@ -39,23 +39,13 @@ export function ErrorBanner({
         <span className="flex-1">{message}</span>
         <div className="flex items-center gap-2 shrink-0">
           {onRetry && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRetry}
-              className="h-8"
-            >
+            <Button variant="outline" size="sm" onClick={onRetry} className="h-8">
               <RefreshCw className="h-3 w-3 mr-1" />
               Retry
             </Button>
           )}
           {dismissible && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDismiss}
-              className="h-8 w-8"
-            >
+            <Button variant="ghost" size="icon" onClick={handleDismiss} className="h-8 w-8">
               <X className="h-4 w-4" />
             </Button>
           )}
@@ -64,4 +54,3 @@ export function ErrorBanner({
     </Alert>
   );
 }
-

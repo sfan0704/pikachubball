@@ -1,61 +1,101 @@
 /**
  * @vitest-environment happy-dom
  */
-import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { describe, it, expect } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 // Mock data for testing
 const mockLeague = {
-  leagueKey: '466.l.12345',
-  leagueName: 'Elite 9-Cat',
-  teamKey: '466.l.12345.t.1',
-  teamName: 'Dream Team'
+  leagueKey: "466.l.12345",
+  leagueName: "Elite 9-Cat",
+  teamKey: "466.l.12345.t.1",
+  teamName: "Dream Team",
 };
 
 const mockRankings = {
   rankings: [
     {
-      teamKey: '466.l.12345.t.1',
-      teamName: 'Dream Team',
-      managerName: 'Player1',
-      stats: { fgPct: 0.45, ftPct: 0.80, tpm: 5.5, pts: 110, reb: 45, ast: 25, stl: 8, blk: 5, to: 12 },
+      teamKey: "466.l.12345.t.1",
+      teamName: "Dream Team",
+      managerName: "Player1",
+      stats: {
+        fgPct: 0.45,
+        ftPct: 0.8,
+        tpm: 5.5,
+        pts: 110,
+        reb: 45,
+        ast: 25,
+        stl: 8,
+        blk: 5,
+        to: 12,
+      },
       categoryRanks: { fgPct: 1, ftPct: 2, tpm: 1, pts: 1, reb: 2, ast: 1, stl: 1, blk: 1, to: 9 },
-      totalRank: 1.4
+      totalRank: 1.4,
     },
     {
-      teamKey: '466.l.12345.t.2',
-      teamName: 'Rivals',
-      managerName: 'Player2',
-      stats: { fgPct: 0.44, ftPct: 0.78, tpm: 5.2, pts: 105, reb: 43, ast: 24, stl: 7, blk: 4, to: 14 },
+      teamKey: "466.l.12345.t.2",
+      teamName: "Rivals",
+      managerName: "Player2",
+      stats: {
+        fgPct: 0.44,
+        ftPct: 0.78,
+        tpm: 5.2,
+        pts: 105,
+        reb: 43,
+        ast: 24,
+        stl: 7,
+        blk: 4,
+        to: 14,
+      },
       categoryRanks: { fgPct: 2, ftPct: 3, tpm: 2, pts: 2, reb: 3, ast: 2, stl: 2, blk: 2, to: 8 },
-      totalRank: 2.3
-    }
+      totalRank: 2.3,
+    },
   ],
-  metadata: { scope: 'season', week: 1, currentWeek: 20, totalWeeks: 20 }
+  metadata: { scope: "season", week: 1, currentWeek: 20, totalWeeks: 20 },
 };
 
 const mockMatchup = {
   myTeam: { teamKey: mockLeague.teamKey, teamName: mockLeague.teamName },
-  opponent: { teamKey: '466.l.12345.t.2', teamName: 'Opponent Team' },
+  opponent: { teamKey: "466.l.12345.t.2", teamName: "Opponent Team" },
   categories: [
-    { category: 'fgPct', myTeam: 0.45, opponent: 0.44, winning: true, result: 'win', myTeamMakes: 100, myTeamAttempts: 222, opponentMakes: 98, opponentAttempts: 223 },
-    { category: 'ftPct', myTeam: 0.80, opponent: 0.78, winning: true, result: 'win', myTeamMakes: 80, myTeamAttempts: 100, opponentMakes: 78, opponentAttempts: 100 },
-    { category: 'tpm', myTeam: 5.5, opponent: 5.2, winning: true, result: 'win' },
-    { category: 'pts', myTeam: 110, opponent: 105, winning: true, result: 'win' },
-    { category: 'reb', myTeam: 45, opponent: 43, winning: true, result: 'win' },
-    { category: 'ast', myTeam: 25, opponent: 24, winning: true, result: 'win' },
-    { category: 'stl', myTeam: 8, opponent: 7, winning: true, result: 'win' },
-    { category: 'blk', myTeam: 5, opponent: 4, winning: true, result: 'win' },
-    { category: 'to', myTeam: 12, opponent: 14, winning: true, result: 'win' }
+    {
+      category: "fgPct",
+      myTeam: 0.45,
+      opponent: 0.44,
+      winning: true,
+      result: "win",
+      myTeamMakes: 100,
+      myTeamAttempts: 222,
+      opponentMakes: 98,
+      opponentAttempts: 223,
+    },
+    {
+      category: "ftPct",
+      myTeam: 0.8,
+      opponent: 0.78,
+      winning: true,
+      result: "win",
+      myTeamMakes: 80,
+      myTeamAttempts: 100,
+      opponentMakes: 78,
+      opponentAttempts: 100,
+    },
+    { category: "tpm", myTeam: 5.5, opponent: 5.2, winning: true, result: "win" },
+    { category: "pts", myTeam: 110, opponent: 105, winning: true, result: "win" },
+    { category: "reb", myTeam: 45, opponent: 43, winning: true, result: "win" },
+    { category: "ast", myTeam: 25, opponent: 24, winning: true, result: "win" },
+    { category: "stl", myTeam: 8, opponent: 7, winning: true, result: "win" },
+    { category: "blk", myTeam: 5, opponent: 4, winning: true, result: "win" },
+    { category: "to", myTeam: 12, opponent: 14, winning: true, result: "win" },
   ],
   score: { wins: 9, losses: 0, ties: 0 },
-  metadata: { scope: 'week', week: 1, currentWeek: 1, totalWeeks: 20 }
+  metadata: { scope: "week", week: 1, currentWeek: 1, totalWeeks: 20 },
 };
 
-describe('Display Functionality Tests', () => {
-  describe('League Rankings Display', () => {
-    it('should render rankings table with all teams', () => {
+describe("Display Functionality Tests", () => {
+  describe("League Rankings Display", () => {
+    it("should render rankings table with all teams", () => {
       // ARRANGE & ACT
       render(
         <div>
@@ -100,26 +140,26 @@ describe('Display Functionality Tests', () => {
 
       // ASSERT
       // Verify all teams rendered
-      expect(screen.getByText('Dream Team')).toBeInTheDocument();
-      expect(screen.getByText('Rivals')).toBeInTheDocument();
-      expect(screen.getByText('Player1')).toBeInTheDocument();
-      expect(screen.getByText('Player2')).toBeInTheDocument();
+      expect(screen.getByText("Dream Team")).toBeInTheDocument();
+      expect(screen.getByText("Rivals")).toBeInTheDocument();
+      expect(screen.getByText("Player1")).toBeInTheDocument();
+      expect(screen.getByText("Player2")).toBeInTheDocument();
 
       // Verify stats displayed correctly
-      expect(screen.getByText('0.45')).toBeInTheDocument(); // FG%
-      expect(screen.getByText('110')).toBeInTheDocument(); // PTS
+      expect(screen.getByText("0.45")).toBeInTheDocument(); // FG%
+      expect(screen.getByText("110")).toBeInTheDocument(); // PTS
     });
 
-    it('should display category rankings with color coding', () => {
+    it("should display category rankings with color coding", () => {
       // ARRANGE & ACT
       render(
         <div>
           {mockRankings.rankings.map((team) => (
             <div key={team.teamKey} data-testid={`card-team-${team.teamKey}`}>
-              <div className={team.categoryRanks.fgPct === 1 ? 'bg-green-100' : 'bg-gray-100'}>
+              <div className={team.categoryRanks.fgPct === 1 ? "bg-green-100" : "bg-gray-100"}>
                 FG% Rank: {team.categoryRanks.fgPct}
               </div>
-              <div className={team.categoryRanks.pts === 1 ? 'bg-green-100' : 'bg-gray-100'}>
+              <div className={team.categoryRanks.pts === 1 ? "bg-green-100" : "bg-gray-100"}>
                 PTS Rank: {team.categoryRanks.pts}
               </div>
             </div>
@@ -134,12 +174,12 @@ describe('Display Functionality Tests', () => {
       expect(within(topTeamCard).getByText(/FG% Rank: 1/)).toBeInTheDocument();
     });
 
-    it('should display makes/attempts for percentage stats (FG%, FT%)', () => {
+    it("should display makes/attempts for percentage stats (FG%, FT%)", () => {
       // ARRANGE & ACT
       render(
         <div>
           {mockMatchup.categories
-            .filter(c => ['fgPct', 'ftPct'].includes(c.category))
+            .filter((c) => ["fgPct", "ftPct"].includes(c.category))
             .map((cat) => (
               <div key={cat.category} data-testid={`stat-${cat.category}`}>
                 <span data-testid={`text-my-makes-${cat.category}`}>
@@ -156,11 +196,11 @@ describe('Display Functionality Tests', () => {
 
       // ASSERT
       // Verify makes/attempts displayed
-      expect(screen.getByText('100/222')).toBeInTheDocument();
-      expect(screen.getByText('98/223')).toBeInTheDocument();
+      expect(screen.getByText("100/222")).toBeInTheDocument();
+      expect(screen.getByText("98/223")).toBeInTheDocument();
     });
 
-    it('should handle week selection dropdown', async () => {
+    it("should handle week selection dropdown", async () => {
       // ARRANGE
       const user = userEvent.setup();
       const weeks = Array.from({ length: mockRankings.metadata.currentWeek }, (_, i) => i + 1);
@@ -177,16 +217,16 @@ describe('Display Functionality Tests', () => {
         </select>
       );
 
-      const select = screen.getByTestId('select-week');
-      await user.selectOptions(select, '5');
-      
+      const select = screen.getByTestId("select-week");
+      await user.selectOptions(select, "5");
+
       // ASSERT
-      expect((select as HTMLSelectElement).value).toBe('5');
+      expect((select as HTMLSelectElement).value).toBe("5");
     });
   });
 
-  describe('Matchup Tab Display', () => {
-    it('should render matchup comparison with team names', () => {
+  describe("Matchup Tab Display", () => {
+    it("should render matchup comparison with team names", () => {
       // ARRANGE & ACT
       render(
         <div data-testid="matchup-container">
@@ -199,12 +239,12 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      expect(screen.getByTestId('my-team-header')).toHaveTextContent(mockLeague.teamName);
-      expect(screen.getByTestId('opponent-header')).toHaveTextContent('Opponent Team');
-      expect(screen.getByTestId('text-wlt-score')).toHaveTextContent('9W - 0L - 0T');
+      expect(screen.getByTestId("my-team-header")).toHaveTextContent(mockLeague.teamName);
+      expect(screen.getByTestId("opponent-header")).toHaveTextContent("Opponent Team");
+      expect(screen.getByTestId("text-wlt-score")).toHaveTextContent("9W - 0L - 0T");
     });
 
-    it('should display all 9 categories with stats', () => {
+    it("should display all 9 categories with stats", () => {
       // ARRANGE & ACT
       render(
         <table>
@@ -220,10 +260,17 @@ describe('Display Functionality Tests', () => {
             {mockMatchup.categories.map((cat) => (
               <tr key={cat.category} data-testid={`row-category-${cat.category}`}>
                 <td data-testid={`text-category-${cat.category}`}>{cat.category}</td>
-                <td data-testid={`text-myteam-${cat.category}`}>{typeof cat.myTeam === 'number' ? cat.myTeam.toFixed(2) : cat.myTeam}</td>
-                <td data-testid={`text-opponent-${cat.category}`}>{typeof cat.opponent === 'number' ? cat.opponent.toFixed(2) : cat.opponent}</td>
-                <td className={cat.winning ? 'text-green-600' : 'text-red-600'} data-testid={`text-diff-${cat.category}`}>
-                  {cat.winning ? '+' : '-'}
+                <td data-testid={`text-myteam-${cat.category}`}>
+                  {typeof cat.myTeam === "number" ? cat.myTeam.toFixed(2) : cat.myTeam}
+                </td>
+                <td data-testid={`text-opponent-${cat.category}`}>
+                  {typeof cat.opponent === "number" ? cat.opponent.toFixed(2) : cat.opponent}
+                </td>
+                <td
+                  className={cat.winning ? "text-green-600" : "text-red-600"}
+                  data-testid={`text-diff-${cat.category}`}
+                >
+                  {cat.winning ? "+" : "-"}
                 </td>
               </tr>
             ))}
@@ -239,7 +286,7 @@ describe('Display Functionality Tests', () => {
       });
     });
 
-    it('should color-code winning/losing categories (green/red)', () => {
+    it("should color-code winning/losing categories (green/red)", () => {
       // ARRANGE & ACT
       render(
         <div>
@@ -247,9 +294,9 @@ describe('Display Functionality Tests', () => {
             <div
               key={cat.category}
               data-testid={`diff-cell-${cat.category}`}
-              className={cat.winning ? 'text-green-600' : 'text-red-600'}
+              className={cat.winning ? "text-green-600" : "text-red-600"}
             >
-              {cat.winning ? '✓ Win' : '✗ Loss'}
+              {cat.winning ? "✓ Win" : "✗ Loss"}
             </div>
           ))}
         </div>
@@ -257,11 +304,11 @@ describe('Display Functionality Tests', () => {
 
       // ASSERT
       // Verify color coding
-      const winCell = screen.getByTestId('diff-cell-fgPct');
-      expect(winCell).toHaveClass('text-green-600');
+      const winCell = screen.getByTestId("diff-cell-fgPct");
+      expect(winCell).toHaveClass("text-green-600");
     });
 
-    it('should display metadata (current week, scope)', () => {
+    it("should display metadata (current week, scope)", () => {
       // ARRANGE & ACT
       render(
         <div>
@@ -272,19 +319,19 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      expect(screen.getByTestId('text-scope')).toHaveTextContent('week');
-      expect(screen.getByTestId('text-week')).toHaveTextContent('Week 1');
+      expect(screen.getByTestId("text-scope")).toHaveTextContent("week");
+      expect(screen.getByTestId("text-week")).toHaveTextContent("Week 1");
     });
   });
 
-  describe('Matchup Simulator Display', () => {
+  describe("Matchup Simulator Display", () => {
     const simulatorData = [
-      { opponent: 'Team A', myTeamWins: 7, myTeamLosses: 2, myTeamTies: 0 },
-      { opponent: 'Team B', myTeamWins: 6, myTeamLosses: 3, myTeamTies: 0 },
-      { opponent: 'Team C', myTeamWins: 9, myTeamLosses: 0, myTeamTies: 0 }
+      { opponent: "Team A", myTeamWins: 7, myTeamLosses: 2, myTeamTies: 0 },
+      { opponent: "Team B", myTeamWins: 6, myTeamLosses: 3, myTeamTies: 0 },
+      { opponent: "Team C", myTeamWins: 9, myTeamLosses: 0, myTeamTies: 0 },
     ];
 
-    it('should render simulator matrix with all opponent matchups', () => {
+    it("should render simulator matrix with all opponent matchups", () => {
       // ARRANGE & ACT
       render(
         <table>
@@ -300,9 +347,15 @@ describe('Display Functionality Tests', () => {
             {simulatorData.map((row) => (
               <tr key={row.opponent} data-testid={`row-simulator-${row.opponent}`}>
                 <td data-testid={`text-opponent-${row.opponent}`}>{row.opponent}</td>
-                <td className="text-green-600" data-testid={`text-wins-${row.opponent}`}>{row.myTeamWins}</td>
-                <td className="text-red-600" data-testid={`text-losses-${row.opponent}`}>{row.myTeamLosses}</td>
-                <td className="text-gray-600" data-testid={`text-ties-${row.opponent}`}>{row.myTeamTies}</td>
+                <td className="text-green-600" data-testid={`text-wins-${row.opponent}`}>
+                  {row.myTeamWins}
+                </td>
+                <td className="text-red-600" data-testid={`text-losses-${row.opponent}`}>
+                  {row.myTeamLosses}
+                </td>
+                <td className="text-gray-600" data-testid={`text-ties-${row.opponent}`}>
+                  {row.myTeamTies}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -311,31 +364,37 @@ describe('Display Functionality Tests', () => {
 
       // ASSERT
       // Verify matrix rendered
-      expect(screen.getByTestId('row-simulator-Team A')).toBeInTheDocument();
-      expect(screen.getByTestId('text-wins-Team C')).toHaveTextContent('9');
-      expect(screen.getByTestId('text-losses-Team B')).toHaveTextContent('3');
+      expect(screen.getByTestId("row-simulator-Team A")).toBeInTheDocument();
+      expect(screen.getByTestId("text-wins-Team C")).toHaveTextContent("9");
+      expect(screen.getByTestId("text-losses-Team B")).toHaveTextContent("3");
     });
 
-    it('should color-code W/L/T results', () => {
+    it("should color-code W/L/T results", () => {
       // ARRANGE & ACT
       render(
         <div>
-          <span className="text-green-600" data-testid="color-wins">7W</span>
-          <span className="text-red-600" data-testid="color-losses">2L</span>
-          <span className="text-gray-600" data-testid="color-ties">0T</span>
+          <span className="text-green-600" data-testid="color-wins">
+            7W
+          </span>
+          <span className="text-red-600" data-testid="color-losses">
+            2L
+          </span>
+          <span className="text-gray-600" data-testid="color-ties">
+            0T
+          </span>
         </div>
       );
 
       // ASSERT
-      expect(screen.getByTestId('color-wins')).toHaveClass('text-green-600');
-      expect(screen.getByTestId('color-losses')).toHaveClass('text-red-600');
-      expect(screen.getByTestId('color-ties')).toHaveClass('text-gray-600');
+      expect(screen.getByTestId("color-wins")).toHaveClass("text-green-600");
+      expect(screen.getByTestId("color-losses")).toHaveClass("text-red-600");
+      expect(screen.getByTestId("color-ties")).toHaveClass("text-gray-600");
     });
 
-    it('should handle opponent team selection', async () => {
+    it("should handle opponent team selection", async () => {
       // ARRANGE
       const user = userEvent.setup();
-      const selectedTeam = 'Team A';
+      const selectedTeam = "Team A";
 
       // ACT
       render(
@@ -348,16 +407,16 @@ describe('Display Functionality Tests', () => {
         </select>
       );
 
-      const select = screen.getByTestId('select-simulator-team') as HTMLSelectElement;
+      const select = screen.getByTestId("select-simulator-team") as HTMLSelectElement;
       await user.selectOptions(select, selectedTeam);
-      
+
       // ASSERT
       expect(select.value).toBe(selectedTeam);
     });
   });
 
-  describe('Error & Loading States', () => {
-    it('should display loading skeleton for rankings', () => {
+  describe("Error & Loading States", () => {
+    it("should display loading skeleton for rankings", () => {
       // ARRANGE & ACT
       render(
         <div data-testid="rankings-loading">
@@ -368,12 +427,12 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      const loadingState = screen.getByTestId('rankings-loading');
-      const skeletons = loadingState.querySelectorAll('.animate-pulse');
+      const loadingState = screen.getByTestId("rankings-loading");
+      const skeletons = loadingState.querySelectorAll(".animate-pulse");
       expect(skeletons.length).toBe(3);
     });
 
-    it('should display error message when no leagues found', () => {
+    it("should display error message when no leagues found", () => {
       // ARRANGE & ACT
       render(
         <div data-testid="no-leagues-error">
@@ -384,26 +443,24 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      expect(screen.getByTestId('text-error-message')).toBeInTheDocument();
+      expect(screen.getByTestId("text-error-message")).toBeInTheDocument();
     });
 
-    it('should display empty state for matchups', () => {
+    it("should display empty state for matchups", () => {
       // ARRANGE & ACT
       render(
         <div data-testid="empty-matchup">
-          <p data-testid="text-empty-state">
-            Select a league and team to view matchup details
-          </p>
+          <p data-testid="text-empty-state">Select a league and team to view matchup details</p>
         </div>
       );
 
       // ASSERT
-      expect(screen.getByTestId('text-empty-state')).toBeInTheDocument();
+      expect(screen.getByTestId("text-empty-state")).toBeInTheDocument();
     });
   });
 
-  describe('Responsive Design', () => {
-    it('should have responsive table with horizontal scroll on mobile', () => {
+  describe("Responsive Design", () => {
+    it("should have responsive table with horizontal scroll on mobile", () => {
       // ARRANGE & ACT
       render(
         <div data-testid="rankings-table-container" className="overflow-x-auto md:overflow-visible">
@@ -422,10 +479,10 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      expect(screen.getByTestId('rankings-table-container')).toHaveClass('overflow-x-auto');
+      expect(screen.getByTestId("rankings-table-container")).toHaveClass("overflow-x-auto");
     });
 
-    it('should display mobile-friendly header', () => {
+    it("should display mobile-friendly header", () => {
       // ARRANGE & ACT
       render(
         <header>
@@ -437,12 +494,12 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      expect(screen.getByText('FB Rankings')).toBeInTheDocument();
+      expect(screen.getByText("FB Rankings")).toBeInTheDocument();
     });
   });
 
-  describe('Accessibility', () => {
-    it('should have proper table structure with headers', () => {
+  describe("Accessibility", () => {
+    it("should have proper table structure with headers", () => {
       // ARRANGE & ACT
       render(
         <table>
@@ -464,11 +521,11 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      const headers = screen.getAllByRole('columnheader');
+      const headers = screen.getAllByRole("columnheader");
       expect(headers).toHaveLength(3);
     });
 
-    it('should have data-testid on interactive elements', () => {
+    it("should have data-testid on interactive elements", () => {
       // ARRANGE & ACT
       render(
         <div>
@@ -480,8 +537,8 @@ describe('Display Functionality Tests', () => {
       );
 
       // ASSERT
-      expect(screen.getByTestId('button-logout')).toBeInTheDocument();
-      expect(screen.getByTestId('select-league')).toBeInTheDocument();
+      expect(screen.getByTestId("button-logout")).toBeInTheDocument();
+      expect(screen.getByTestId("select-league")).toBeInTheDocument();
     });
   });
 });

@@ -16,7 +16,7 @@ export async function getTeamRoster(
   userId: string,
   teamKey: string,
   tokenStorage: YahooTokenStorage,
-  createClient: YahooClientFactory,
+  createClient: YahooClientFactory
 ): Promise<Player[]> {
   const client = await createClient(userId, tokenStorage);
   const response = await client.getTeamRoster(teamKey);
@@ -34,9 +34,9 @@ export async function getTeamRoster(
 
   // Use parser to extract players (domain models)
   const domainPlayers = parsePlayersFromRoster({ roster: rosterData });
-  
+
   // Convert to DTO format (Player from schema uses 'team' instead of 'nbaTeam')
-  return domainPlayers.map(player => ({
+  return domainPlayers.map((player) => ({
     playerKey: player.playerKey,
     name: player.name,
     position: player.position,

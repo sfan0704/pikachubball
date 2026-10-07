@@ -13,9 +13,7 @@ export default function AuthPage() {
           <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
             <span className="text-2xl">🏀</span>
           </div>
-          <CardTitle className="text-2xl font-bold">
-            Yahoo Fantasy Basketball
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold">Yahoo Fantasy Basketball</CardTitle>
           <CardDescription>
             Sign in with Yahoo to access your fantasy basketball leagues.
           </CardDescription>

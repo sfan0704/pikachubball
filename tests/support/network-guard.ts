@@ -1,6 +1,6 @@
-import { setupServer } from 'msw/node';
+import { setupServer } from "msw/node";
 
-const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
 /**
  * Fails any test that reaches the real network. Loopback requests pass

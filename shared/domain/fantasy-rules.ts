@@ -40,7 +40,7 @@ export function categoryValue(totals: TeamTotals, key: CategoryKey): number | nu
  */
 export function competitionRanks(
   values: readonly (number | null)[],
-  direction: CategoryDirection,
+  direction: CategoryDirection
 ): (number | null)[] {
   const better = (a: number, b: number) => (direction === "higher" ? a > b : a < b);
   return values.map((value) => {
@@ -86,13 +86,15 @@ export function rankSum(ranks: Readonly<Record<CategoryKey, number | null>>): nu
 
 /** Whether the app can rank a league, and why not when it can't. */
 export type ScoringSupport =
-  | { readonly supported: true }
-  | { readonly supported: false; readonly reason: string };
+  { readonly supported: true } | { readonly supported: false; readonly reason: string };
 
 /** Only head-to-head category leagues with exactly the nine standard categories are supported. */
 export function scoringSupport(settings: LeagueSettings): ScoringSupport {
   if (settings.scoringType !== "head") {
-    return { supported: false, reason: `Scoring type "${settings.scoringType}" isn't head-to-head categories` };
+    return {
+      supported: false,
+      reason: `Scoring type "${settings.scoringType}" isn't head-to-head categories`,
+    };
   }
   const keys = settings.categories.map((category) => category.key);
   const unknown = settings.categories.filter((category) => category.key === null);
@@ -105,10 +107,13 @@ export function scoringSupport(settings: LeagueSettings): ScoringSupport {
     return { supported: false, reason: "The league doesn't use the standard nine categories" };
   }
   const wrongDirection = settings.categories.find(
-    (category) => category.key !== null && category.direction !== CATEGORY_DIRECTIONS[category.key],
+    (category) => category.key !== null && category.direction !== CATEGORY_DIRECTIONS[category.key]
   );
   if (wrongDirection) {
-    return { supported: false, reason: `${wrongDirection.displayName} is scored in an unexpected direction` };
+    return {
+      supported: false,
+      reason: `${wrongDirection.displayName} is scored in an unexpected direction`,
+    };
   }
   return { supported: true };
 }

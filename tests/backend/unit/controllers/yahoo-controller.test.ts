@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Request, Response } from 'express';
-import { createYahooController } from '../../../../server/controllers/yahoo-controller';
-import type { OwnerScopedStorage } from '../../../../server/storage/yahoo-token-storage';
-import { silentLogger } from '../../../support/dependencies';
-import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
-import { getUserLeagues } from '../../../../server/services/yahoo/league-service';
-import { getTeamRoster } from '../../../../server/services/yahoo/roster-service';
-import { UnauthorizedError, ValidationError } from '../../../../shared/api/errors';
-import { createAuthenticatedRequest, createMockResponse } from '../../fixtures/test-helpers';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response } from "express";
+import { createYahooController } from "../../../../server/controllers/yahoo-controller";
+import type { OwnerScopedStorage } from "../../../../server/storage/yahoo-token-storage";
+import { silentLogger } from "../../../support/dependencies";
+import { getAuthenticatedUserId } from "../../../../server/middleware/auth";
+import { getUserLeagues } from "../../../../server/services/yahoo/league-service";
+import { getTeamRoster } from "../../../../server/services/yahoo/roster-service";
+import { UnauthorizedError, ValidationError } from "../../../../shared/api/errors";
+import { createAuthenticatedRequest, createMockResponse } from "../../fixtures/test-helpers";
 
 // Mock dependencies
-vi.mock('../../../../server/middleware/auth');
-vi.mock('../../../../server/services/yahoo/league-service');
-vi.mock('../../../../server/services/yahoo/roster-service');
+vi.mock("../../../../server/middleware/auth");
+vi.mock("../../../../server/services/yahoo/league-service");
+vi.mock("../../../../server/services/yahoo/roster-service");
 
-describe('yahooController', () => {
+describe("yahooController", () => {
   const createYahooClient = vi.fn();
   const yahooController = createYahooController({ logger: silentLogger, createYahooClient });
   const storage = {
@@ -22,7 +22,7 @@ describe('yahooController', () => {
   } as unknown as OwnerScopedStorage;
   let mockReq: Request;
   let mockRes: Response;
-  const userId = 'test-user-id';
+  const userId = "test-user-id";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -32,15 +32,15 @@ describe('yahooController', () => {
     vi.mocked(getAuthenticatedUserId).mockReturnValue(userId);
   });
 
-  describe('getLeagues', () => {
-    it('should return user leagues', async () => {
+  describe("getLeagues", () => {
+    it("should return user leagues", async () => {
       // ARRANGE
       const mockLeagues = [
         {
-          leagueKey: '466.l.12345',
-          leagueName: 'Test League',
-          teamKey: '466.l.12345.t.1',
-          teamName: 'Test Team',
+          leagueKey: "466.l.12345",
+          leagueName: "Test League",
+          teamKey: "466.l.12345.t.1",
+          teamName: "Test Team",
         },
       ];
 
@@ -54,14 +54,14 @@ describe('yahooController', () => {
       expect(getAuthenticatedUserId).toHaveBeenCalledWith(mockReq);
       expect(getUserLeagues).toHaveBeenCalledWith(userId, storage, createYahooClient);
       expect(storage.replaceFantasyMemberships).toHaveBeenCalledWith([
-        { leagueKey: '466.l.12345', teamKey: '466.l.12345.t.1' },
+        { leagueKey: "466.l.12345", teamKey: "466.l.12345.t.1" },
       ]);
       expect(mockRes.json).toHaveBeenCalledWith({ leagues: mockLeagues });
     });
 
-    it('should handle errors from getUserLeagues', async () => {
+    it("should handle errors from getUserLeagues", async () => {
       // ARRANGE
-      const error = new Error('Yahoo API error');
+      const error = new Error("Yahoo API error");
       const mockNext = vi.fn();
       vi.mocked(getUserLeagues).mockRejectedValue(error);
 
@@ -86,17 +86,17 @@ describe('yahooController', () => {
     });
   });
 
-  describe('getRoster', () => {
-    it('should return team roster', async () => {
+  describe("getRoster", () => {
+    it("should return team roster", async () => {
       // ARRANGE
-      const teamKey = '466.l.12345.t.1';
+      const teamKey = "466.l.12345.t.1";
       const mockRoster = [
         {
-          name: 'LeBron James',
-          position: 'SF',
-          team: 'LAL',
-          status: 'active' as const,
-          playerKey: '466.p.123',
+          name: "LeBron James",
+          position: "SF",
+          team: "LAL",
+          status: "active" as const,
+          playerKey: "466.p.123",
         },
       ];
 
@@ -112,8 +112,8 @@ describe('yahooController', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ roster: mockRoster });
     });
 
-    it('rejects the request when owner-scoped storage is missing', async () => {
-      mockReq.params = { teamKey: '466.l.12345.t.1' };
+    it("rejects the request when owner-scoped storage is missing", async () => {
+      mockReq.params = { teamKey: "466.l.12345.t.1" };
       mockReq.ownerStorage = undefined;
       const mockNext = vi.fn();
 
@@ -123,7 +123,7 @@ describe('yahooController', () => {
       expect(getTeamRoster).not.toHaveBeenCalled();
     });
 
-    it('should throw ValidationError if teamKey is missing', async () => {
+    it("should throw ValidationError if teamKey is missing", async () => {
       // ARRANGE
       mockReq.params = {};
       const mockNext = vi.fn();
@@ -139,9 +139,9 @@ describe('yahooController', () => {
       expect(getTeamRoster).not.toHaveBeenCalled();
     });
 
-    it('should throw ValidationError if teamKey is empty', async () => {
+    it("should throw ValidationError if teamKey is empty", async () => {
       // ARRANGE
-      mockReq.params = { teamKey: '' };
+      mockReq.params = { teamKey: "" };
       const mockNext = vi.fn();
 
       // ACT
@@ -155,12 +155,12 @@ describe('yahooController', () => {
       expect(getTeamRoster).not.toHaveBeenCalled();
     });
 
-    it('should handle errors from getTeamRoster', async () => {
+    it("should handle errors from getTeamRoster", async () => {
       // ARRANGE
-      const teamKey = '466.l.12345.t.1';
-      const error = new Error('Roster fetch failed');
+      const teamKey = "466.l.12345.t.1";
+      const error = new Error("Roster fetch failed");
       const mockNext = vi.fn();
-      
+
       mockReq.params = { teamKey };
       vi.mocked(getTeamRoster).mockRejectedValue(error);
 
@@ -183,4 +183,3 @@ describe('yahooController', () => {
     });
   });
 });
-

@@ -31,7 +31,7 @@ beforeAll(() => {
   fs.mkdirSync(path.join(staticFixturePath, "assets"));
   fs.writeFileSync(
     path.join(staticFixturePath, "index.html"),
-    '<div id="root"></div><script type="module" src="/assets/app-a1b2c3.js"></script><link rel="stylesheet" href="/assets/app-d4e5f6.css">',
+    '<div id="root"></div><script type="module" src="/assets/app-a1b2c3.js"></script><link rel="stylesheet" href="/assets/app-d4e5f6.css">'
   );
   fs.writeFileSync(path.join(staticFixturePath, "assets/app-a1b2c3.js"), "export {};");
   fs.writeFileSync(path.join(staticFixturePath, "assets/app-d4e5f6.css"), ":root {}");
@@ -74,7 +74,7 @@ describe("application routing", () => {
 
     for (const response of responses) {
       expect(response.headers["cache-control"]).toBe(
-        "private, no-cache, no-store, must-revalidate, max-age=0",
+        "private, no-cache, no-store, must-revalidate, max-age=0"
       );
       expect(response.headers.pragma).toBe("no-cache");
     }
@@ -91,17 +91,15 @@ describe("application routing", () => {
     for (const response of responses) {
       expect(response.status).toBe(404);
       expect(response.body).toEqual({
-      code: "NOT_FOUND",
-      message: "API route not found",
-      requestId: expect.any(String),
-    });
+        code: "NOT_FOUND",
+        message: "API route not found",
+        requestId: expect.any(String),
+      });
     }
   });
 
   it("passes route failures through the application error handler", async () => {
-    const response = await request(createApiApp()).get(
-      "/api/auth/callback",
-    );
+    const response = await request(createApiApp()).get("/api/auth/callback");
 
     expect(response.status).toBe(400);
     expect(response.type).toBe("application/json");
@@ -130,10 +128,7 @@ describe("application routing", () => {
 
   it("serves hashed assets and does not disguise asset misses as HTML", async () => {
     const app = createProductionApp();
-    const indexHtml = fs.readFileSync(
-      path.join(staticFixturePath, "index.html"),
-      "utf8",
-    );
+    const indexHtml = fs.readFileSync(path.join(staticFixturePath, "index.html"), "utf8");
     const scriptPath = indexHtml.match(/<script[^>]+src="([^"]+)"/)?.[1];
     const stylesheetPath = indexHtml.match(/<link[^>]+href="([^"]+\.css)"/)?.[1];
 
@@ -160,7 +155,7 @@ describe("application routing", () => {
   it("handles concurrent requests without opening an application listener", async () => {
     const app = createApiApp();
     const responses = await Promise.all(
-      Array.from({ length: 14 }, () => request(app).get("/api/health")),
+      Array.from({ length: 14 }, () => request(app).get("/api/health"))
     );
 
     expect(responses.every((response) => response.status === 200)).toBe(true);

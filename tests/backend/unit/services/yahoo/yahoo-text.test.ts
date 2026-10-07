@@ -11,7 +11,7 @@ describe("decodeYahooText", () => {
 
   it("decodes hex and named entities", () => {
     expect(decodeYahooText("Tom &amp; Jerry &#x27;24 &quot;A&quot; &lt;3")).toBe(
-      "Tom & Jerry '24 \"A\" <3",
+      'Tom & Jerry \'24 "A" <3'
     );
   });
 
@@ -27,13 +27,13 @@ describe("decodeYahooText", () => {
 
   it("leaves unknown or invalid entities as text", () => {
     expect(decodeYahooText("&bogus; &#0; &#xD800; &#1114112;")).toBe(
-      "&bogus; &#0; &#xD800; &#1114112;",
+      "&bogus; &#0; &#xD800; &#1114112;"
     );
   });
 
   it("produces text, not markup", () => {
     expect(decodeYahooText("&lt;img src=x onerror=alert(1)&gt;")).toBe(
-      "<img src=x onerror=alert(1)>",
+      "<img src=x onerror=alert(1)>"
     );
   });
 });
@@ -44,7 +44,11 @@ describe("decodeYahooStrings", () => {
       fantasy_content: {
         league: [
           { league_key: "466.l.1", name: "Friends &amp; Family", num_teams: 14 },
-          { teams: { "0": { team: [[{ name: "Ball don&#39;t lie" }, { is_owned_by_current_login: 1 }]] } } },
+          {
+            teams: {
+              "0": { team: [[{ name: "Ball don&#39;t lie" }, { is_owned_by_current_login: 1 }]] },
+            },
+          },
         ],
         flag: true,
         empty: null,
@@ -55,7 +59,11 @@ describe("decodeYahooStrings", () => {
       fantasy_content: {
         league: [
           { league_key: "466.l.1", name: "Friends & Family", num_teams: 14 },
-          { teams: { "0": { team: [[{ name: "Ball don't lie" }, { is_owned_by_current_login: 1 }]] } } },
+          {
+            teams: {
+              "0": { team: [[{ name: "Ball don't lie" }, { is_owned_by_current_login: 1 }]] },
+            },
+          },
         ],
         flag: true,
         empty: null,

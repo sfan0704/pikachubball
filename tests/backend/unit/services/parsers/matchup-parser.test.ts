@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   parseMatchup,
   parseMatchupsFromScoreboard,
   extractTeamFromScoreboard,
-} from '../../../../../server/services/parsers/matchup-parser';
+} from "../../../../../server/services/parsers/matchup-parser";
 
 // Mock logger
-vi.mock('../../../../../server/utils/logger', () => ({
+vi.mock("../../../../../server/utils/logger", () => ({
   logger: {
     warn: vi.fn(),
     error: vi.fn(),
@@ -15,16 +15,16 @@ vi.mock('../../../../../server/utils/logger', () => ({
   },
 }));
 
-describe('matchup-parser', () => {
+describe("matchup-parser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('parseMatchup', () => {
-    const leagueKey = '466.l.12345';
+  describe("parseMatchup", () => {
+    const leagueKey = "466.l.12345";
     const week = 5;
 
-    it('should return null for null matchup data', () => {
+    it("should return null for null matchup data", () => {
       // ARRANGE & ACT
       const result = parseMatchup(null, leagueKey, week);
 
@@ -32,7 +32,7 @@ describe('matchup-parser', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null for undefined matchup data', () => {
+    it("should return null for undefined matchup data", () => {
       // ARRANGE & ACT
       const result = parseMatchup(undefined, leagueKey, week);
 
@@ -40,10 +40,10 @@ describe('matchup-parser', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null when teams are missing', () => {
+    it("should return null when teams are missing", () => {
       // ARRANGE
       const matchupData = [
-        { status: 'postevent' },
+        { status: "postevent" },
         {}, // No teams
       ];
 
@@ -54,13 +54,13 @@ describe('matchup-parser', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null when team 0 data is missing', () => {
+    it("should return null when team 0 data is missing", () => {
       // ARRANGE
       const matchupData = [
-        { status: 'postevent' },
+        { status: "postevent" },
         {
           teams: {
-            '1': { team: [[], {}] },
+            "1": { team: [[], {}] },
           },
         },
       ];
@@ -72,24 +72,18 @@ describe('matchup-parser', () => {
       expect(result).toBeNull();
     });
 
-    it('should parse valid matchup data correctly', () => {
+    it("should parse valid matchup data correctly", () => {
       // ARRANGE
       const matchupData = [
-        { status: 'postevent' },
+        { status: "postevent" },
         {
           teams: {
-            '0': {
-              team: [
-                [{ team_key: '466.l.12345.t.1' }],
-                {},
-              ],
+            "0": {
+              team: [[{ team_key: "466.l.12345.t.1" }], {}],
               team_points: { wins: 5, losses: 4, ties: 0 },
             },
-            '1': {
-              team: [
-                [{ team_key: '466.l.12345.t.2' }],
-                {},
-              ],
+            "1": {
+              team: [[{ team_key: "466.l.12345.t.2" }], {}],
               team_points: { wins: 4, losses: 5, ties: 0 },
             },
           },
@@ -103,28 +97,22 @@ describe('matchup-parser', () => {
       expect(result).not.toBeNull();
       expect(result?.leagueKey).toBe(leagueKey);
       expect(result?.week).toBe(week);
-      expect(result?.team1Key).toBe('466.l.12345.t.1');
-      expect(result?.team2Key).toBe('466.l.12345.t.2');
-      expect(result?.status).toBe('completed');
+      expect(result?.team1Key).toBe("466.l.12345.t.1");
+      expect(result?.team2Key).toBe("466.l.12345.t.2");
+      expect(result?.status).toBe("completed");
     });
 
-    it('should parse matchup with live status', () => {
+    it("should parse matchup with live status", () => {
       // ARRANGE
       const matchupData = [
-        { status: 'live' },
+        { status: "live" },
         {
           teams: {
-            '0': {
-              team: [
-                [{ team_key: '466.l.12345.t.1' }],
-                {},
-              ],
+            "0": {
+              team: [[{ team_key: "466.l.12345.t.1" }], {}],
             },
-            '1': {
-              team: [
-                [{ team_key: '466.l.12345.t.2' }],
-                {},
-              ],
+            "1": {
+              team: [[{ team_key: "466.l.12345.t.2" }], {}],
             },
           },
         },
@@ -134,26 +122,20 @@ describe('matchup-parser', () => {
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('live');
+      expect(result?.status).toBe("live");
     });
 
-    it('should parse matchup with upcoming status (no status provided)', () => {
+    it("should parse matchup with upcoming status (no status provided)", () => {
       // ARRANGE
       const matchupData = [
         {}, // No status
         {
           teams: {
-            '0': {
-              team: [
-                [{ team_key: '466.l.12345.t.1' }],
-                {},
-              ],
+            "0": {
+              team: [[{ team_key: "466.l.12345.t.1" }], {}],
             },
-            '1': {
-              team: [
-                [{ team_key: '466.l.12345.t.2' }],
-                {},
-              ],
+            "1": {
+              team: [[{ team_key: "466.l.12345.t.2" }], {}],
             },
           },
         },
@@ -163,27 +145,21 @@ describe('matchup-parser', () => {
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('upcoming');
+      expect(result?.status).toBe("upcoming");
     });
 
-    it('should parse scores correctly', () => {
+    it("should parse scores correctly", () => {
       // ARRANGE
       const matchupData = [
-        { status: 'postevent' },
+        { status: "postevent" },
         {
           teams: {
-            '0': {
-              team: [
-                [{ team_key: '466.l.12345.t.1' }],
-                {},
-              ],
+            "0": {
+              team: [[{ team_key: "466.l.12345.t.1" }], {}],
               team_points: { wins: 7, losses: 2, ties: 0 },
             },
-            '1': {
-              team: [
-                [{ team_key: '466.l.12345.t.2' }],
-                {},
-              ],
+            "1": {
+              team: [[{ team_key: "466.l.12345.t.2" }], {}],
               team_points: { wins: 2, losses: 7, ties: 0 },
             },
           },
@@ -198,24 +174,18 @@ describe('matchup-parser', () => {
       expect(result?.team2Score).toEqual({ wins: 2, losses: 7, ties: 0 });
     });
 
-    it('should default scores to 0 when not provided', () => {
+    it("should default scores to 0 when not provided", () => {
       // ARRANGE
       const matchupData = [
         {},
         {
           teams: {
-            '0': {
-              team: [
-                [{ team_key: '466.l.12345.t.1' }],
-                {},
-              ],
+            "0": {
+              team: [[{ team_key: "466.l.12345.t.1" }], {}],
               // No team_points
             },
-            '1': {
-              team: [
-                [{ team_key: '466.l.12345.t.2' }],
-                {},
-              ],
+            "1": {
+              team: [[{ team_key: "466.l.12345.t.2" }], {}],
             },
           },
         },
@@ -230,11 +200,11 @@ describe('matchup-parser', () => {
     });
   });
 
-  describe('parseMatchupsFromScoreboard', () => {
-    const leagueKey = '466.l.12345';
+  describe("parseMatchupsFromScoreboard", () => {
+    const leagueKey = "466.l.12345";
     const week = 5;
 
-    it('should return empty array for null data', () => {
+    it("should return empty array for null data", () => {
       // ARRANGE & ACT
       const result = parseMatchupsFromScoreboard(null, leagueKey, week);
 
@@ -242,7 +212,7 @@ describe('matchup-parser', () => {
       expect(result).toEqual([]);
     });
 
-    it('should return empty array for undefined data', () => {
+    it("should return empty array for undefined data", () => {
       // ARRANGE & ACT
       const result = parseMatchupsFromScoreboard(undefined, leagueKey, week);
 
@@ -250,7 +220,7 @@ describe('matchup-parser', () => {
       expect(result).toEqual([]);
     });
 
-    it('should return empty array when fantasy_content is missing', () => {
+    it("should return empty array when fantasy_content is missing", () => {
       // ARRANGE
       const data = {};
 
@@ -261,7 +231,7 @@ describe('matchup-parser', () => {
       expect(result).toEqual([]);
     });
 
-    it('should return empty array when league is missing', () => {
+    it("should return empty array when league is missing", () => {
       // ARRANGE
       const data = {
         fantasy_content: {},
@@ -274,7 +244,7 @@ describe('matchup-parser', () => {
       expect(result).toEqual([]);
     });
 
-    it('should return empty array when scoreboard is missing', () => {
+    it("should return empty array when scoreboard is missing", () => {
       // ARRANGE
       const data = {
         fantasy_content: {
@@ -292,7 +262,7 @@ describe('matchup-parser', () => {
       expect(result).toEqual([]);
     });
 
-    it('should parse multiple matchups from scoreboard', () => {
+    it("should parse multiple matchups from scoreboard", () => {
       // ARRANGE
       const data = {
         fantasy_content: {
@@ -303,31 +273,31 @@ describe('matchup-parser', () => {
                 {
                   matchups: {
                     count: 2,
-                    '0': {
+                    "0": {
                       matchup: [
                         {},
                         {
                           teams: {
-                            '0': {
-                              team: [[{ team_key: '466.l.12345.t.1' }], {}],
+                            "0": {
+                              team: [[{ team_key: "466.l.12345.t.1" }], {}],
                             },
-                            '1': {
-                              team: [[{ team_key: '466.l.12345.t.2' }], {}],
+                            "1": {
+                              team: [[{ team_key: "466.l.12345.t.2" }], {}],
                             },
                           },
                         },
                       ],
                     },
-                    '1': {
+                    "1": {
                       matchup: [
                         {},
                         {
                           teams: {
-                            '0': {
-                              team: [[{ team_key: '466.l.12345.t.3' }], {}],
+                            "0": {
+                              team: [[{ team_key: "466.l.12345.t.3" }], {}],
                             },
-                            '1': {
-                              team: [[{ team_key: '466.l.12345.t.4' }], {}],
+                            "1": {
+                              team: [[{ team_key: "466.l.12345.t.4" }], {}],
                             },
                           },
                         },
@@ -346,13 +316,13 @@ describe('matchup-parser', () => {
 
       // ASSERT
       expect(result).toHaveLength(2);
-      expect(result[0].team1Key).toBe('466.l.12345.t.1');
-      expect(result[0].team2Key).toBe('466.l.12345.t.2');
-      expect(result[1].team1Key).toBe('466.l.12345.t.3');
-      expect(result[1].team2Key).toBe('466.l.12345.t.4');
+      expect(result[0].team1Key).toBe("466.l.12345.t.1");
+      expect(result[0].team2Key).toBe("466.l.12345.t.2");
+      expect(result[1].team1Key).toBe("466.l.12345.t.3");
+      expect(result[1].team2Key).toBe("466.l.12345.t.4");
     });
 
-    it('should handle scoreboard in object format', () => {
+    it("should handle scoreboard in object format", () => {
       // ARRANGE
       const data = {
         fantasy_content: {
@@ -360,19 +330,19 @@ describe('matchup-parser', () => {
             {},
             {
               scoreboard: {
-                '0': {
+                "0": {
                   matchups: {
                     count: 1,
-                    '0': {
+                    "0": {
                       matchup: [
                         {},
                         {
                           teams: {
-                            '0': {
-                              team: [[{ team_key: '466.l.12345.t.1' }], {}],
+                            "0": {
+                              team: [[{ team_key: "466.l.12345.t.1" }], {}],
                             },
-                            '1': {
-                              team: [[{ team_key: '466.l.12345.t.2' }], {}],
+                            "1": {
+                              team: [[{ team_key: "466.l.12345.t.2" }], {}],
                             },
                           },
                         },
@@ -391,22 +361,22 @@ describe('matchup-parser', () => {
 
       // ASSERT
       expect(result).toHaveLength(1);
-      expect(result[0].team1Key).toBe('466.l.12345.t.1');
+      expect(result[0].team1Key).toBe("466.l.12345.t.1");
     });
   });
 
-  describe('extractTeamFromScoreboard', () => {
+  describe("extractTeamFromScoreboard", () => {
     const week = 5;
 
-    it('should return null for null data', () => {
+    it("should return null for null data", () => {
       // ARRANGE & ACT
-      const result = extractTeamFromScoreboard(null, '466.l.12345.t.1', week);
+      const result = extractTeamFromScoreboard(null, "466.l.12345.t.1", week);
 
       // ASSERT
       expect(result).toBeNull();
     });
 
-    it('should return null when team not found', () => {
+    it("should return null when team not found", () => {
       // ARRANGE
       const data = {
         fantasy_content: {
@@ -417,16 +387,16 @@ describe('matchup-parser', () => {
                 {
                   matchups: {
                     count: 1,
-                    '0': {
+                    "0": {
                       matchup: {
-                        '0': {
+                        "0": {
                           teams: {
                             count: 2,
-                            '0': {
-                              team: [[{ team_key: '466.l.12345.t.1' }], {}],
+                            "0": {
+                              team: [[{ team_key: "466.l.12345.t.1" }], {}],
                             },
-                            '1': {
-                              team: [[{ team_key: '466.l.12345.t.2' }], {}],
+                            "1": {
+                              team: [[{ team_key: "466.l.12345.t.2" }], {}],
                             },
                           },
                         },
@@ -441,15 +411,18 @@ describe('matchup-parser', () => {
       };
 
       // ACT
-      const result = extractTeamFromScoreboard(data as any, '466.l.12345.t.99', week);
+      const result = extractTeamFromScoreboard(data as any, "466.l.12345.t.99", week);
 
       // ASSERT
       expect(result).toBeNull();
     });
 
-    it('should return team data when found', () => {
+    it("should return team data when found", () => {
       // ARRANGE
-      const teamData = [[{ team_key: '466.l.12345.t.1' }, { name: 'Test Team' }], { team_points: { wins: 5 } }];
+      const teamData = [
+        [{ team_key: "466.l.12345.t.1" }, { name: "Test Team" }],
+        { team_points: { wins: 5 } },
+      ];
       const data = {
         fantasy_content: {
           league: [
@@ -459,16 +432,16 @@ describe('matchup-parser', () => {
                 {
                   matchups: {
                     count: 1,
-                    '0': {
+                    "0": {
                       matchup: {
-                        '0': {
+                        "0": {
                           teams: {
                             count: 2,
-                            '0': {
+                            "0": {
                               team: teamData,
                             },
-                            '1': {
-                              team: [[{ team_key: '466.l.12345.t.2' }], {}],
+                            "1": {
+                              team: [[{ team_key: "466.l.12345.t.2" }], {}],
                             },
                           },
                         },
@@ -483,7 +456,7 @@ describe('matchup-parser', () => {
       };
 
       // ACT
-      const result = extractTeamFromScoreboard(data as any, '466.l.12345.t.1', week);
+      const result = extractTeamFromScoreboard(data as any, "466.l.12345.t.1", week);
 
       // ASSERT
       expect(result).not.toBeNull();
@@ -491,65 +464,65 @@ describe('matchup-parser', () => {
     });
   });
 
-  describe('status parsing', () => {
-    const leagueKey = '466.l.12345';
+  describe("status parsing", () => {
+    const leagueKey = "466.l.12345";
     const week = 5;
 
     const createMatchupWithStatus = (status?: string) => [
       status ? { status } : {},
       {
         teams: {
-          '0': { team: [[{ team_key: '466.l.12345.t.1' }], {}] },
-          '1': { team: [[{ team_key: '466.l.12345.t.2' }], {}] },
+          "0": { team: [[{ team_key: "466.l.12345.t.1" }], {}] },
+          "1": { team: [[{ team_key: "466.l.12345.t.2" }], {}] },
         },
       },
     ];
 
     it('should parse "postevent" as completed', () => {
       // ARRANGE
-      const matchupData = createMatchupWithStatus('postevent');
+      const matchupData = createMatchupWithStatus("postevent");
 
       // ACT
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('completed');
+      expect(result?.status).toBe("completed");
     });
 
     it('should parse "post" as completed', () => {
       // ARRANGE
-      const matchupData = createMatchupWithStatus('post');
+      const matchupData = createMatchupWithStatus("post");
 
       // ACT
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('completed');
+      expect(result?.status).toBe("completed");
     });
 
     it('should parse "live" as live', () => {
       // ARRANGE
-      const matchupData = createMatchupWithStatus('live');
+      const matchupData = createMatchupWithStatus("live");
 
       // ACT
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('live');
+      expect(result?.status).toBe("live");
     });
 
     it('should parse "inprogress" as live', () => {
       // ARRANGE
-      const matchupData = createMatchupWithStatus('inprogress');
+      const matchupData = createMatchupWithStatus("inprogress");
 
       // ACT
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('live');
+      expect(result?.status).toBe("live");
     });
 
-    it('should parse undefined status as upcoming', () => {
+    it("should parse undefined status as upcoming", () => {
       // ARRANGE
       const matchupData = createMatchupWithStatus(undefined);
 
@@ -557,18 +530,18 @@ describe('matchup-parser', () => {
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('upcoming');
+      expect(result?.status).toBe("upcoming");
     });
 
-    it('should parse unknown status as upcoming', () => {
+    it("should parse unknown status as upcoming", () => {
       // ARRANGE
-      const matchupData = createMatchupWithStatus('unknown');
+      const matchupData = createMatchupWithStatus("unknown");
 
       // ACT
       const result = parseMatchup(matchupData as any, leagueKey, week);
 
       // ASSERT
-      expect(result?.status).toBe('upcoming');
+      expect(result?.status).toBe("upcoming");
     });
   });
 });

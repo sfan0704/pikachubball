@@ -75,19 +75,14 @@ function fakeClient(auth: Record<string, unknown>): SupabaseClient {
 describe("Supabase Yahoo auth boundary", () => {
   it("hardens every auth cookie and drops provider-supplied domains", () => {
     expect(
-      hardenCookieOptions(
-        { domain: ".example.test", sameSite: "none", path: "/callback" },
-        true,
-      ),
+      hardenCookieOptions({ domain: ".example.test", sameSite: "none", path: "/callback" }, true)
     ).toMatchObject({
       httpOnly: true,
       secure: true,
       sameSite: "lax",
       path: "/",
     });
-    expect(
-      hardenCookieOptions({ domain: ".example.test" }, true),
-    ).not.toHaveProperty("domain");
+    expect(hardenCookieOptions({ domain: ".example.test" }, true)).not.toHaveProperty("domain");
   });
 
   it("projects only the expected Yahoo issuer and provider subject", () => {
@@ -106,7 +101,7 @@ describe("Supabase Yahoo auth boundary", () => {
     expect(() => projectYahooIdentity(wrongIssuer)).toThrow(/issuer/);
 
     expect(() => projectYahooIdentity(yahooUser({ identities: [] }))).toThrow(
-      /not a Yahoo identity/,
+      /not a Yahoo identity/
     );
   });
 
@@ -116,7 +111,7 @@ describe("Supabase Yahoo auth boundary", () => {
       refreshToken: "yahoo-refresh-token",
     });
     expect(() =>
-      requireYahooProviderTokens(yahooSession({ provider_refresh_token: null })),
+      requireYahooProviderTokens(yahooSession({ provider_refresh_token: null }))
     ).toThrow(/provider refresh token/);
   });
 
@@ -124,9 +119,7 @@ describe("Supabase Yahoo auth boundary", () => {
     const invalidClaims = fakeClient({
       getClaims: vi.fn().mockResolvedValue({ data: null, error: new Error("bad") }),
     });
-    await expect(readVerifiedYahooIdentity(invalidClaims)).rejects.toThrow(
-      /claims/,
-    );
+    await expect(readVerifiedYahooIdentity(invalidClaims)).rejects.toThrow(/claims/);
 
     const crossedUser = fakeClient({
       getClaims: vi.fn().mockResolvedValue({
@@ -138,9 +131,7 @@ describe("Supabase Yahoo auth boundary", () => {
         error: null,
       }),
     });
-    await expect(readVerifiedYahooIdentity(crossedUser)).rejects.toThrow(
-      /session user/,
-    );
+    await expect(readVerifiedYahooIdentity(crossedUser)).rejects.toThrow(/session user/);
   });
 
   it("starts only the custom Yahoo provider at the exact app callback", async () => {
@@ -161,9 +152,7 @@ describe("Supabase Yahoo auth boundary", () => {
     const response = await request(app).get("/start");
 
     expect(response.status).toBe(302);
-    expect(response.headers.location).toContain(
-      "basketball-project.supabase.co/auth/v1/authorize",
-    );
+    expect(response.headers.location).toContain("basketball-project.supabase.co/auth/v1/authorize");
     expect(signInWithOAuth).toHaveBeenCalledWith({
       provider: YAHOO_PROVIDER,
       options: {

@@ -12,14 +12,21 @@ declare module "express-serve-static-core" {
 }
 
 /** Collaborators the sign-in check needs. */
-export type RequireAuthDependencies = Pick<ServerDependencies, "createSupabaseClient" | "createOwnerStorage">;
+export type RequireAuthDependencies = Pick<
+  ServerDependencies,
+  "createSupabaseClient" | "createOwnerStorage"
+>;
 
 /**
  * Builds the middleware that requires a verified Supabase session. It sets
  * the request's identity and owner-scoped storage, or passes UNAUTHORIZED on.
  */
 export function createRequireAuth(dependencies: RequireAuthDependencies) {
-  return async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  return async function requireAuth(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     if (req.authIdentity) {
       next();
       return;
@@ -37,10 +44,10 @@ export function createRequireAuth(dependencies: RequireAuthDependencies) {
 
 /**
  * Get the authenticated user's ID
- * 
+ *
  * Use this AFTER requireAuth middleware - it assumes user is authenticated.
  * Throws UnauthorizedError if user is not authenticated (defensive check).
- * 
+ *
  * @throws {UnauthorizedError} If user is not authenticated
  */
 export function getAuthenticatedUserId(req: Request): string {
@@ -52,10 +59,10 @@ export function getAuthenticatedUserId(req: Request): string {
 
 /**
  * Get the authenticated user object
- * 
+ *
  * Use this AFTER requireAuth middleware - it assumes user is authenticated.
  * Throws UnauthorizedError if user is not authenticated (defensive check).
- * 
+ *
  * @throws {UnauthorizedError} If user is not authenticated
  */
 export function getAuthenticatedUser(req: Request): { id: string; username: string } {
@@ -70,15 +77,15 @@ export function getAuthenticatedUser(req: Request): { id: string; username: stri
 
 /**
  * Get the authenticated user's ID (optional)
- * 
+ *
  * Use this for routes where authentication is optional (e.g., public routes that
  * provide enhanced features for authenticated users). Returns null if user is not authenticated.
- * 
+ *
  * Example use cases:
  * - Public API endpoints that show different data for logged-in users
  * - Routes that work for both authenticated and anonymous users
  * - Features that are optional but enhanced when authenticated
- * 
+ *
  * @param req Express request object
  * @returns User ID if authenticated, null otherwise
  */

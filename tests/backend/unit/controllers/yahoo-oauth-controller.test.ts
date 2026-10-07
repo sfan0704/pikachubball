@@ -1,21 +1,29 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
-import { createYahooOAuthController } from '../../../../server/controllers/yahoo-oauth-controller';
-import { buildTestConfig, silentLogger } from '../../../support/dependencies';
-import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
-import { revokeYahooToken } from '../../../../server/yahoo-auth';
-import { createMockResponse, createMockNext, createMockUser, createAuthenticatedRequest } from '../../fixtures/test-helpers';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Request, Response, NextFunction } from "express";
+import { createYahooOAuthController } from "../../../../server/controllers/yahoo-oauth-controller";
+import { buildTestConfig, silentLogger } from "../../../support/dependencies";
+import { getAuthenticatedUserId } from "../../../../server/middleware/auth";
+import { revokeYahooToken } from "../../../../server/yahoo-auth";
+import {
+  createMockResponse,
+  createMockNext,
+  createMockUser,
+  createAuthenticatedRequest,
+} from "../../fixtures/test-helpers";
 
 // Mock dependencies
-vi.mock('../../../../server/middleware/auth');
-vi.mock('../../../../server/yahoo-auth', () => ({
+vi.mock("../../../../server/middleware/auth");
+vi.mock("../../../../server/yahoo-auth", () => ({
   exchangeAuthorizationCode: vi.fn(),
   revokeYahooToken: vi.fn(),
 }));
 
-const yahooOAuthController = createYahooOAuthController({ config: buildTestConfig(), logger: silentLogger });
+const yahooOAuthController = createYahooOAuthController({
+  config: buildTestConfig(),
+  logger: silentLogger,
+});
 
-describe('yahooOAuthController', () => {
+describe("yahooOAuthController", () => {
   let mockReq: Request;
   let mockRes: Response;
   let mockNext: NextFunction;
@@ -35,14 +43,14 @@ describe('yahooOAuthController', () => {
     mockNext = createMockNext();
   });
 
-  describe('getStatus', () => {
-    it('should return connection status with valid token', async () => {
+  describe("getStatus", () => {
+    it("should return connection status with valid token", async () => {
       // ARRANGE
       const token = {
-        id: 'token-1',
+        id: "token-1",
         userId: mockUser.id,
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
+        accessToken: "access-token",
+        refreshToken: "refresh-token",
         expiresAt: Math.floor(Date.now() / 1000) + 3600, // Valid (1 hour from now)
       };
 
@@ -54,7 +62,7 @@ describe('yahooOAuthController', () => {
       await handler(mockReq, mockRes, mockNext);
 
       // Wait for async operations
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // ASSERT
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -63,13 +71,13 @@ describe('yahooOAuthController', () => {
       });
     });
 
-    it('should return connection status with expired token', async () => {
+    it("should return connection status with expired token", async () => {
       // ARRANGE
       const token = {
-        id: 'token-1',
+        id: "token-1",
         userId: mockUser.id,
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
+        accessToken: "access-token",
+        refreshToken: "refresh-token",
         expiresAt: Math.floor(Date.now() / 1000) - 3600, // Expired (1 hour ago)
       };
 
@@ -81,7 +89,7 @@ describe('yahooOAuthController', () => {
       await handler(mockReq, mockRes, mockNext);
 
       // Wait for async operations
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // ASSERT
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -90,7 +98,7 @@ describe('yahooOAuthController', () => {
       });
     });
 
-    it('should return connection status with no token', async () => {
+    it("should return connection status with no token", async () => {
       // ARRANGE
       vi.mocked(getAuthenticatedUserId).mockReturnValue(mockUser.id);
       getYahooToken.mockResolvedValue(undefined);
@@ -100,7 +108,7 @@ describe('yahooOAuthController', () => {
       await handler(mockReq, mockRes, mockNext);
 
       // Wait for async operations
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // ASSERT
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -109,7 +117,7 @@ describe('yahooOAuthController', () => {
       });
     });
 
-    it('should throw ValidationError if user is not authenticated', async () => {
+    it("should throw ValidationError if user is not authenticated", async () => {
       // ARRANGE
       vi.mocked(getAuthenticatedUserId).mockReturnValue(null);
 
@@ -120,15 +128,15 @@ describe('yahooOAuthController', () => {
       // ASSERT
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Authentication required');
+      expect(error.message).toBe("Authentication required");
     });
   });
 
-  describe('disconnect', () => {
+  describe("disconnect", () => {
     const storedToken = {
-      userId: 'placeholder',
-      accessToken: 'access-token',
-      refreshToken: 'refresh-token',
+      userId: "placeholder",
+      accessToken: "access-token",
+      refreshToken: "refresh-token",
       expiresAt: Math.floor(Date.now() / 1000) + 3600,
     };
 
@@ -138,26 +146,26 @@ describe('yahooOAuthController', () => {
       deleteYahooToken.mockReset().mockResolvedValue(undefined);
     });
 
-    it('revokes the refresh token at Yahoo, then deletes it locally', async () => {
+    it("revokes the refresh token at Yahoo, then deletes it locally", async () => {
       vi.mocked(revokeYahooToken).mockResolvedValue(true);
 
       (yahooOAuthController.disconnect as any)(mockReq, mockRes, mockNext);
       await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
 
       expect(revokeYahooToken).toHaveBeenCalledWith(
-        'refresh-token',
-        'test-client-id',
-        'test-client-secret',
+        "refresh-token",
+        "test-client-id",
+        "test-client-secret"
       );
       expect(deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         revokedAtYahoo: true,
-        message: 'Yahoo account disconnected and access revoked at Yahoo.',
+        message: "Yahoo account disconnected and access revoked at Yahoo.",
       });
     });
 
-    it('still deletes local tokens and says so when Yahoo does not confirm revocation', async () => {
+    it("still deletes local tokens and says so when Yahoo does not confirm revocation", async () => {
       vi.mocked(revokeYahooToken).mockResolvedValue(false);
 
       (yahooOAuthController.disconnect as any)(mockReq, mockRes, mockNext);
@@ -167,12 +175,14 @@ describe('yahooOAuthController', () => {
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         revokedAtYahoo: false,
-        message: expect.stringContaining('Yahoo did not confirm revocation'),
+        message: expect.stringContaining("Yahoo did not confirm revocation"),
       });
     });
 
-    it('still deletes local tokens when the stored token cannot be read', async () => {
-      getYahooToken.mockRejectedValue(new Error('Stored Yahoo credential could not be authenticated'));
+    it("still deletes local tokens when the stored token cannot be read", async () => {
+      getYahooToken.mockRejectedValue(
+        new Error("Stored Yahoo credential could not be authenticated")
+      );
 
       (yahooOAuthController.disconnect as any)(mockReq, mockRes, mockNext);
       await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
@@ -180,11 +190,11 @@ describe('yahooOAuthController', () => {
       expect(revokeYahooToken).not.toHaveBeenCalled();
       expect(deleteYahooToken).toHaveBeenCalledWith(mockUser.id);
       expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: true, revokedAtYahoo: false }),
+        expect.objectContaining({ success: true, revokedAtYahoo: false })
       );
     });
 
-    it('should throw ValidationError if user is not authenticated', async () => {
+    it("should throw ValidationError if user is not authenticated", async () => {
       // ARRANGE
       vi.mocked(getAuthenticatedUserId).mockReturnValue(null);
 
@@ -195,7 +205,7 @@ describe('yahooOAuthController', () => {
       // ASSERT
       expect(mockNext).toHaveBeenCalled();
       const error = mockNext.mock.calls[0][0];
-      expect(error.message).toBe('Authentication required');
+      expect(error.message).toBe("Authentication required");
     });
   });
 });

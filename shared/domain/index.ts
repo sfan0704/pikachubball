@@ -2,18 +2,12 @@
  * Domain models and pure fantasy rules. No I/O, clock or framework imports.
  */
 
-export type { League, Team, ScoringType } from './league';
-export type { Player, PlayerStatus } from './player';
-export type { Matchup, MatchupStatus, MatchupScore } from './matchup';
-export type { 
-  TeamStats, 
-  PlayerStats, 
-  CategoryStats, 
-  CategoryKey, 
-  StatScope 
-} from './stats';
+export type { League, Team, ScoringType } from "./league";
+export type { Player, PlayerStatus } from "./player";
+export type { Matchup, MatchupStatus, MatchupScore } from "./matchup";
+export type { TeamStats, PlayerStats, CategoryStats, CategoryKey, StatScope } from "./stats";
 
-export { CATEGORIES } from './stats';
+export { CATEGORIES } from "./stats";
 
 export type {
   CategoryDirection,
@@ -24,7 +18,7 @@ export type {
   MatchupPairing,
   Scope,
   TeamTable,
-} from './team-table';
+} from "./team-table";
 export {
   CATEGORY_DIRECTIONS,
   percentage,
@@ -33,5 +27,5 @@ export {
   categoryRanks,
   rankSum,
   scoringSupport,
-} from './fantasy-rules';
-export type { CategoryRanks, ScoringSupport } from './fantasy-rules';
+} from "./fantasy-rules";
+export type { CategoryRanks, ScoringSupport } from "./fantasy-rules";

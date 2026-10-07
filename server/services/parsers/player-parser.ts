@@ -3,9 +3,9 @@
  * Transform raw Yahoo API player responses into domain models
  */
 
-import type { Player, PlayerStatus } from '../../../shared/domain/index.js';
-import type { YahooApiPlayerData } from '../../types/yahoo-api.js';
-import { logger } from '../../utils/logger.js';
+import type { Player, PlayerStatus } from "../../../shared/domain/index.js";
+import type { YahooApiPlayerData } from "../../types/yahoo-api.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Parse player status from Yahoo API format
@@ -14,17 +14,17 @@ import { logger } from '../../utils/logger.js';
  */
 function parsePlayerStatus(status: string | undefined): PlayerStatus {
   if (!status) {
-    return 'active';
+    return "active";
   }
 
   const statusLower = status.toLowerCase();
-  if (statusLower === 'il' || statusLower === 'il+') {
-    return 'injured';
+  if (statusLower === "il" || statusLower === "il+") {
+    return "injured";
   }
-  if (statusLower === 'o' || statusLower === 'gtd' || statusLower === 'inj') {
-    return 'out';
+  if (statusLower === "o" || statusLower === "gtd" || statusLower === "inj") {
+    return "out";
   }
-  return 'active';
+  return "active";
 }
 
 /**
@@ -34,18 +34,18 @@ function parsePlayerStatus(status: string | undefined): PlayerStatus {
  */
 function parsePlayerName(nameObj: any): string {
   if (!nameObj) {
-    return 'Unknown Player';
+    return "Unknown Player";
   }
 
-  if (typeof nameObj === 'string') {
+  if (typeof nameObj === "string") {
     return nameObj;
   }
 
-  if (typeof nameObj === 'object') {
-    return nameObj.full || nameObj.first + ' ' + (nameObj.last || '') || 'Unknown Player';
+  if (typeof nameObj === "object") {
+    return nameObj.full || nameObj.first + " " + (nameObj.last || "") || "Unknown Player";
   }
 
-  return 'Unknown Player';
+  return "Unknown Player";
 }
 
 /**
@@ -55,7 +55,7 @@ function parsePlayerName(nameObj: any): string {
  */
 function parsePlayerPosition(positionObj: any): string {
   if (!positionObj) {
-    return 'N/A';
+    return "N/A";
   }
 
   // display_position is a string like "SF,PF"
@@ -65,10 +65,10 @@ function parsePlayerPosition(positionObj: any): string {
 
   // eligible_positions is an array of { position: string }
   if (Array.isArray(positionObj.eligible_positions) && positionObj.eligible_positions.length > 0) {
-    return positionObj.eligible_positions.map((pos: any) => pos.position).join(',');
+    return positionObj.eligible_positions.map((pos: any) => pos.position).join(",");
   }
 
-  return 'N/A';
+  return "N/A";
 }
 
 /**
@@ -78,10 +78,10 @@ function parsePlayerPosition(positionObj: any): string {
  */
 function parsePlayerNbaTeam(teamObj: any): string {
   if (!teamObj) {
-    return 'N/A';
+    return "N/A";
   }
 
-  return teamObj.editorial_team_abbr || teamObj.editorial_team_full_name || 'N/A';
+  return teamObj.editorial_team_abbr || teamObj.editorial_team_full_name || "N/A";
 }
 
 /**
@@ -91,25 +91,29 @@ function parsePlayerNbaTeam(teamObj: any): string {
  */
 export function parsePlayer(playerData: YahooApiPlayerData | null | undefined): Player | null {
   if (!playerData || !Array.isArray(playerData[0])) {
-    logger.warn('Invalid player data: missing player properties');
+    logger.warn("Invalid player data: missing player properties");
     return null;
   }
 
   const properties = playerData[0];
   if (!Array.isArray(properties) || properties.length === 0) {
-    logger.warn('Invalid player data: properties array is empty');
+    logger.warn("Invalid player data: properties array is empty");
     return null;
   }
 
   // Find properties in the array
   const nameObj = properties.find((prop: any) => prop.name);
-  const positionObj = properties.find((prop: any) => prop.display_position || prop.eligible_positions);
+  const positionObj = properties.find(
+    (prop: any) => prop.display_position || prop.eligible_positions
+  );
   const statusObj = properties.find((prop: any) => prop.status);
-  const teamObj = properties.find((prop: any) => prop.editorial_team_abbr || prop.editorial_team_full_name);
+  const teamObj = properties.find(
+    (prop: any) => prop.editorial_team_abbr || prop.editorial_team_full_name
+  );
   const playerKeyObj = properties.find((prop: any) => prop.player_key);
 
   if (!playerKeyObj?.player_key) {
-    logger.warn('Invalid player data: player_key not found');
+    logger.warn("Invalid player data: player_key not found");
     return null;
   }
 
@@ -122,7 +126,10 @@ export function parsePlayer(playerData: YahooApiPlayerData | null | undefined): 
       status: parsePlayerStatus(statusObj?.status),
     };
   } catch (error: any) {
-    logger.error('Error parsing player:', { error: error.message, playerKey: playerKeyObj.player_key });
+    logger.error("Error parsing player:", {
+      error: error.message,
+      playerKey: playerKeyObj.player_key,
+    });
     return null;
   }
 }
@@ -134,13 +141,13 @@ export function parsePlayer(playerData: YahooApiPlayerData | null | undefined): 
  */
 export function parsePlayersFromRoster(rosterData: any): Player[] {
   if (!rosterData?.roster || !Array.isArray(rosterData.roster) || rosterData.roster.length === 0) {
-    logger.warn('Invalid roster data: missing or empty roster');
+    logger.warn("Invalid roster data: missing or empty roster");
     return [];
   }
 
   const playersData = rosterData.roster[0]?.players;
   if (!playersData || !playersData.count) {
-    logger.warn('Invalid roster data: missing players or count');
+    logger.warn("Invalid roster data: missing players or count");
     return [];
   }
 
