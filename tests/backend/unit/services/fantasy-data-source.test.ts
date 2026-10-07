@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { YahooFantasyDataSource } from "../../../../server/services/fantasy-data-source";
-import type { YahooTokenStorage } from "../../../../server/storage/yahoo-token-storage";
 
-const storage = {} as YahooTokenStorage;
 const getYahooApiClient = vi.fn();
 
 describe("YahooFantasyDataSource", () => {
   let dataSource: YahooFantasyDataSource;
   let mockYahooApiClient: any;
-  const userId = "test-user-id";
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -23,7 +20,7 @@ describe("YahooFantasyDataSource", () => {
     };
 
     getYahooApiClient.mockResolvedValue(mockYahooApiClient);
-    dataSource = new YahooFantasyDataSource(userId, storage, getYahooApiClient);
+    dataSource = new YahooFantasyDataSource(getYahooApiClient);
   });
 
   describe("getLeagueStandings", () => {
@@ -37,7 +34,7 @@ describe("YahooFantasyDataSource", () => {
       const result = await dataSource.getLeagueStandings(leagueKey);
 
       // ASSERT
-      expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
+      expect(getYahooApiClient).toHaveBeenCalledOnce();
       expect(mockYahooApiClient.getLeagueStandings).toHaveBeenCalledWith(leagueKey);
       expect(result).toEqual(expectedResponse);
     });
@@ -54,7 +51,7 @@ describe("YahooFantasyDataSource", () => {
       const result = await dataSource.getLeagueSettings(leagueKey);
 
       // ASSERT
-      expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
+      expect(getYahooApiClient).toHaveBeenCalledOnce();
       expect(mockYahooApiClient.getLeagueSettings).toHaveBeenCalledWith(leagueKey);
       expect(result).toEqual(expectedResponse);
     });
@@ -72,7 +69,7 @@ describe("YahooFantasyDataSource", () => {
       const result = await dataSource.getLeagueScoreboard(leagueKey, week);
 
       // ASSERT
-      expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
+      expect(getYahooApiClient).toHaveBeenCalledOnce();
       expect(mockYahooApiClient.getLeagueScoreboard).toHaveBeenCalledWith(leagueKey, week);
       expect(result).toEqual(expectedResponse);
     });
@@ -87,7 +84,7 @@ describe("YahooFantasyDataSource", () => {
       const result = await dataSource.getLeagueScoreboard(leagueKey);
 
       // ASSERT
-      expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
+      expect(getYahooApiClient).toHaveBeenCalledOnce();
       expect(mockYahooApiClient.getLeagueScoreboard).toHaveBeenCalledWith(leagueKey, undefined);
       expect(result).toEqual(expectedResponse);
     });
@@ -104,7 +101,7 @@ describe("YahooFantasyDataSource", () => {
       const result = await dataSource.getTeamRoster(teamKey);
 
       // ASSERT
-      expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
+      expect(getYahooApiClient).toHaveBeenCalledOnce();
       expect(mockYahooApiClient.getTeamRoster).toHaveBeenCalledWith(teamKey);
       expect(result).toEqual(expectedResponse);
     });
@@ -121,7 +118,7 @@ describe("YahooFantasyDataSource", () => {
       const result = await dataSource.getPlayerStats(playerKeys);
 
       // ASSERT
-      expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
+      expect(getYahooApiClient).toHaveBeenCalledOnce();
       // Note: YahooFantasyDataSource currently only uses the first player key
       expect(mockYahooApiClient.getPlayerStats).toHaveBeenCalledWith(playerKeys[0]);
       expect(result).toEqual(expectedResponse);

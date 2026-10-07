@@ -5,25 +5,38 @@ import type { AppConfig } from "./config/config";
 import type { ServerDependencies } from "./dependencies";
 import { createErrorHandler } from "./middleware/error-handler";
 import { YahooApiClient } from "./services/yahoo/yahoo-api-client";
+import { systemClock as yahooTimers } from "./services/yahoo/yahoo-request-policy";
 import { AesGcmOwnerTokenCipher } from "./storage/owner-token-cipher";
 import { createSupabaseOwnerStorage } from "./storage/supabase-owner-storage";
+import { systemClock, type Clock } from "./utils/clock";
 import { createLogger } from "./utils/logger";
 
 /**
  * The one place that turns configuration into concrete collaborators.
  * Everything below receives what it needs through these dependencies.
  */
-export function createServerDependencies(config: AppConfig): ServerDependencies {
+export function createServerDependencies(
+  config: AppConfig,
+  clock: Clock = systemClock
+): ServerDependencies {
   const logger = createLogger({ debug: config.nodeEnv === "development" });
   const cipher = AesGcmOwnerTokenCipher.fromHex(config.encryptionKey);
 
   return {
     config,
     logger,
+    clock,
     createSupabaseClient: (req: Request, res: Response): SupabaseClient =>
       createSupabaseRequestClient(req, res, config.auth),
     createOwnerStorage: (client, ownerId) => createSupabaseOwnerStorage(client, ownerId, cipher),
-    createYahooClient: (userId, storage) => YahooApiClient.create(userId, storage, config.yahoo),
+    createYahooClient: (userId, storage, onRequest) =>
+      YahooApiClient.create(
+        userId,
+        storage,
+        config.yahoo,
+        { now: () => clock.now(), sleep: yahooTimers.sleep },
+        onRequest
+      ),
   };
 }
 

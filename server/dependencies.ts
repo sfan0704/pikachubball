@@ -2,8 +2,9 @@ import type { Request, Response } from "express";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppConfig } from "./config/config";
 import type { Logger } from "./utils/logger";
-import type { OwnerScopedStorage, YahooTokenStorage } from "./storage/yahoo-token-storage";
-import type { YahooApiClient } from "./services/yahoo/yahoo-api-client";
+import type { YahooClientCreator } from "./request-context";
+import type { OwnerScopedStorage } from "./storage/yahoo-token-storage";
+import type { Clock } from "./utils/clock";
 
 /**
  * Everything the composition root builds and hands to routes, middleware and
@@ -13,10 +14,11 @@ import type { YahooApiClient } from "./services/yahoo/yahoo-api-client";
 export interface ServerDependencies {
   readonly config: AppConfig;
   readonly logger: Logger;
+  readonly clock: Clock;
   /** A Supabase client acting as the request's user. */
   createSupabaseClient(req: Request, res: Response): SupabaseClient;
   /** Owner-scoped storage for one signed-in user. */
   createOwnerStorage(client: SupabaseClient, ownerId: string): OwnerScopedStorage;
-  /** A Yahoo API client for one user, reading tokens from their storage. */
-  createYahooClient(userId: string, storage: YahooTokenStorage): Promise<YahooApiClient>;
+  /** A Yahoo API client for one user, reading tokens from their storage; `onRequest` runs for each HTTP attempt. */
+  createYahooClient: YahooClientCreator;
 }

@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createYahooOAuthController } from "../../../../server/controllers/yahoo-oauth-controller";
 import { createErrorHandler } from "../../../../server/middleware/error-handler";
 import { buildTestConfig, silentLogger } from "../../../support/dependencies";
+import { buildRequestContext } from "../../../support/context";
+import { systemClock } from "../../../../server/utils/clock";
 import { exchangeAuthorizationCode } from "../../../../server/yahoo-auth";
 
 vi.mock("../../../../server/yahoo-auth", () => ({
@@ -17,7 +19,7 @@ const config = buildTestConfig({
     providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
   },
 });
-const yahooOAuthController = createYahooOAuthController({ config, logger: silentLogger });
+const yahooOAuthController = createYahooOAuthController({ config });
 const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });
 
 const IDENTITY = {
@@ -38,8 +40,11 @@ describe("Yahoo Fantasy OAuth handoff", () => {
   function app() {
     const application = express();
     application.use((req, _res, next) => {
-      req.authIdentity = IDENTITY;
-      req.ownerStorage = { saveYahooConnection } as any;
+      req.context = buildRequestContext({
+        user: IDENTITY,
+        storage: { saveYahooConnection } as any,
+        clock: systemClock,
+      });
       next();
     });
     application.get("/start", yahooOAuthController.beginFantasyAccess);

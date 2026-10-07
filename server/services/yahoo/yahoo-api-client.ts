@@ -21,13 +21,6 @@ import { decodeYahooStrings } from "./yahoo-text";
 const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
 
 /**
- * One refresh per user per server instance: concurrent requests await the same
- * exchange instead of spending the refresh token twice. Across instances the
- * storage compare-and-swap decides the winner (see refreshTokens).
- */
-const refreshesInFlight = new Map<string, Promise<StoredYahooToken>>();
-
-/**
  * Yahoo API Client that handles authentication and makes direct API calls
  */
 export class YahooApiClient {
@@ -46,7 +39,8 @@ export class YahooApiClient {
     clientSecret: string,
     providerRedirectUri: string | null,
     private readonly tokenStorage: YahooTokenStorage,
-    private readonly clock: YahooRequestClock
+    private readonly clock: YahooRequestClock,
+    private readonly onRequest: () => void
   ) {
     this.userId = userId;
     this.clientId = clientId;
@@ -69,7 +63,8 @@ export class YahooApiClient {
     userId: string,
     tokenStorage: YahooTokenStorage,
     app: YahooAppConfig,
-    clock: YahooRequestClock = systemClock
+    clock: YahooRequestClock = systemClock,
+    onRequest: () => void = () => {}
   ): Promise<YahooApiClient> {
     if (!app.clientId || !app.clientSecret) {
       throw new Error(
@@ -83,7 +78,8 @@ export class YahooApiClient {
       app.clientSecret,
       app.providerRedirectUri,
       tokenStorage,
-      clock
+      clock,
+      onRequest
     );
     await client.initializeTokens();
     return client;
@@ -119,14 +115,28 @@ export class YahooApiClient {
    * Refreshes the access token, sharing an in-flight refresh for this user.
    */
   private async refreshTokens(): Promise<void> {
-    let pending = refreshesInFlight.get(this.userId);
-    if (!pending) {
-      pending = this.exchangeAndStore().finally(() => {
-        refreshesInFlight.delete(this.userId);
-      });
-      refreshesInFlight.set(this.userId, pending);
+    this.adopt(await this.exchangeAndStore());
+  }
+
+  /**
+   * A token that another request or instance refreshed (and stored) after the
+   * one this client read, if it is still valid. Racing refreshes are settled
+   * by the version check in storage, not by any in-process state.
+   */
+  private async newerStoredToken(
+    expectedVersion: number | undefined
+  ): Promise<StoredYahooToken | null> {
+    const latest = await this.tokenStorage.getYahooToken(this.userId);
+    if (
+      latest &&
+      latest.version !== undefined &&
+      expectedVersion !== undefined &&
+      latest.version > expectedVersion &&
+      latest.expiresAt > this.nowSeconds()
+    ) {
+      return latest;
     }
-    this.adopt(await pending);
+    return null;
   }
 
   private async exchangeAndStore(): Promise<StoredYahooToken> {
@@ -136,12 +146,25 @@ export class YahooApiClient {
       throw new YahooReconnectRequiredError();
     }
 
-    const refreshed = await refreshAccessToken(
-      currentRefreshToken,
-      this.clientId,
-      this.clientSecret,
-      this.providerRedirectUri
-    );
+    let refreshed;
+    try {
+      refreshed = await refreshAccessToken(
+        currentRefreshToken,
+        this.clientId,
+        this.clientSecret,
+        this.providerRedirectUri
+      );
+    } catch (error) {
+      // Yahoo rejects a refresh token another request already used. If that
+      // request stored a newer token, use it instead of asking to reconnect.
+      if (error instanceof YahooReconnectRequiredError) {
+        const newer = await this.newerStoredToken(expectedVersion);
+        if (newer) {
+          return newer;
+        }
+      }
+      throw error;
+    }
     const rotation = {
       userId: this.userId,
       accessToken: refreshed.accessToken,
@@ -158,15 +181,9 @@ export class YahooApiClient {
       }
       // Another instance committed a newer token, or the user disconnected.
       // Never write over either: use the committed token or fail closed.
-      const latest = await this.tokenStorage.getYahooToken(this.userId);
-      if (
-        latest &&
-        latest.version !== undefined &&
-        expectedVersion !== undefined &&
-        latest.version > expectedVersion &&
-        latest.expiresAt > this.nowSeconds()
-      ) {
-        return latest;
+      const newer = await this.newerStoredToken(expectedVersion);
+      if (newer) {
+        return newer;
       }
       throw new YahooReconnectRequiredError();
     }
@@ -205,13 +222,15 @@ export class YahooApiClient {
 
     const url = `${endpoint}${queryParams.toString() ? "?" + queryParams.toString() : ""}`;
     const deadline = this.clock.now() + YAHOO_TOTAL_BUDGET_MS;
-    const get = (timeout: number) =>
-      this.axiosInstance.get(url, {
+    const get = (timeout: number) => {
+      this.onRequest();
+      return this.axiosInstance.get(url, {
         timeout,
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
         },
       });
+    };
 
     try {
       const response = await withYahooRetries(get, this.clock, deadline);
@@ -852,9 +871,3 @@ export class YahooApiClient {
     return this.fetchRaw(endpoint, params);
   }
 }
-
-/** Creates a Yahoo API client for one user; the composition root supplies the Yahoo app's credentials. */
-export type YahooClientFactory = (
-  userId: string,
-  tokenStorage: YahooTokenStorage
-) => Promise<YahooApiClient>;

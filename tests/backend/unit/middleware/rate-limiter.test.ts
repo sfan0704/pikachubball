@@ -3,14 +3,12 @@ import express from "express";
 import request from "supertest";
 import { createRateLimiters } from "../../../../server/middleware/rate-limiter";
 import { createErrorHandler } from "../../../../server/middleware/error-handler";
-import { requestId } from "../../../../server/middleware/request-id";
-import type { Logger } from "../../../../server/utils/logger";
-
-const silentLogger: Logger = { debug() {}, info() {}, warn() {}, error() {} };
+import { createRequestScope } from "../../../../server/middleware/request-scope";
+import { buildTestDependencies, silentLogger } from "../../../support/dependencies";
 
 function appWith(skip: boolean) {
   const app = express();
-  app.use(requestId);
+  app.use(createRequestScope(buildTestDependencies()));
   const { auth } = createRateLimiters({ skip });
   app.get("/login", auth, (_req, res) => res.status(401).json({ ok: false }));
   app.use(createErrorHandler({ logger: silentLogger, exposeErrorDetails: false }));

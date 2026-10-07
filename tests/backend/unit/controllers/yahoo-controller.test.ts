@@ -2,34 +2,30 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { Request, Response } from "express";
 import { createYahooController } from "../../../../server/controllers/yahoo-controller";
 import type { OwnerScopedStorage } from "../../../../server/storage/yahoo-token-storage";
-import { silentLogger } from "../../../support/dependencies";
-import { getAuthenticatedUserId } from "../../../../server/middleware/auth";
+import { buildRequestContext } from "../../../support/context";
 import { getUserLeagues } from "../../../../server/services/yahoo/league-service";
 import { getTeamRoster } from "../../../../server/services/yahoo/roster-service";
 import { UnauthorizedError, ValidationError } from "../../../../shared/api/errors";
 import { createAuthenticatedRequest, createMockResponse } from "../../fixtures/test-helpers";
 
 // Mock dependencies
-vi.mock("../../../../server/middleware/auth");
 vi.mock("../../../../server/services/yahoo/league-service");
 vi.mock("../../../../server/services/yahoo/roster-service");
 
 describe("yahooController", () => {
-  const createYahooClient = vi.fn();
-  const yahooController = createYahooController({ logger: silentLogger, createYahooClient });
+  const yahooClient = vi.fn();
+  const yahooController = createYahooController();
   const storage = {
     replaceFantasyMemberships: vi.fn().mockResolvedValue(undefined),
   } as unknown as OwnerScopedStorage;
   let mockReq: Request;
   let mockRes: Response;
-  const userId = "test-user-id";
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockReq = createAuthenticatedRequest() as Request;
-    mockReq.ownerStorage = storage;
+    mockReq.context = buildRequestContext({ storage, yahooClient });
     mockRes = createMockResponse() as Response;
-    vi.mocked(getAuthenticatedUserId).mockReturnValue(userId);
   });
 
   describe("getLeagues", () => {
@@ -51,8 +47,7 @@ describe("yahooController", () => {
       await vi.waitFor(() => expect(mockRes.json).toHaveBeenCalled());
 
       // ASSERT
-      expect(getAuthenticatedUserId).toHaveBeenCalledWith(mockReq);
-      expect(getUserLeagues).toHaveBeenCalledWith(userId, storage, createYahooClient);
+      expect(getUserLeagues).toHaveBeenCalledWith(yahooClient);
       expect(storage.replaceFantasyMemberships).toHaveBeenCalledWith([
         { leagueKey: "466.l.12345", teamKey: "466.l.12345.t.1" },
       ]);
@@ -107,14 +102,13 @@ describe("yahooController", () => {
       await yahooController.getRoster(mockReq, mockRes);
 
       // ASSERT
-      expect(getAuthenticatedUserId).toHaveBeenCalledWith(mockReq);
-      expect(getTeamRoster).toHaveBeenCalledWith(userId, teamKey, storage, createYahooClient);
+      expect(getTeamRoster).toHaveBeenCalledWith(teamKey, yahooClient);
       expect(mockRes.json).toHaveBeenCalledWith({ roster: mockRoster });
     });
 
-    it("rejects the request when owner-scoped storage is missing", async () => {
+    it("rejects the request when it has no auth context", async () => {
       mockReq.params = { teamKey: "466.l.12345.t.1" };
-      mockReq.ownerStorage = undefined;
+      mockReq.context = undefined;
       const mockNext = vi.fn();
 
       await (yahooController.getRoster as any)(mockReq, mockRes, mockNext);

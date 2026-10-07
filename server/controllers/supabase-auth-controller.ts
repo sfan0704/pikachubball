@@ -3,6 +3,7 @@ import type { Provider, SupabaseClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../middleware/error-handler";
 import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
 import type { HostedAuthConfig } from "../config/config";
+import { getRequestContext } from "../request-context";
 import { applyAuthNoStore, projectYahooIdentity, YAHOO_PROVIDER } from "../auth/supabase-auth";
 
 /** What the sign-in controller needs from the composition root. */
@@ -63,10 +64,7 @@ export function createSupabaseAuthController(dependencies: AuthControllerDepende
 
     getCurrentUser: asyncHandler(async (req: Request, res: Response) => {
       applyAuthNoStore(res);
-      const identity = req.authIdentity;
-      if (!identity) {
-        throw new UnauthorizedError("Not authenticated");
-      }
+      const identity = getRequestContext(req).user;
       res.json({
         user: {
           id: identity.userId,

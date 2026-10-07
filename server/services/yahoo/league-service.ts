@@ -1,7 +1,6 @@
-import type { YahooClientFactory } from "./yahoo-api-client";
+import type { YahooClientProvider } from "../../request-context";
 import { logger } from "../../utils/logger";
 import { parseTeamsFromStandings } from "../parsers/league-parser.js";
-import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
 import { AppError } from "../../../shared/api/errors";
 import { classifyLeague, type LeagueStatus } from "./league-status";
 
@@ -24,12 +23,8 @@ export interface LeagueWithTeam {
  * Get all user's leagues with their teams
  * Optimized with parallel API calls
  */
-export async function getUserLeagues(
-  userId: string,
-  tokenStorage: YahooTokenStorage,
-  createClient: YahooClientFactory
-): Promise<LeagueWithTeam[]> {
-  const client = await createClient(userId, tokenStorage);
+export async function getUserLeagues(yahooClient: YahooClientProvider): Promise<LeagueWithTeam[]> {
+  const client = await yahooClient();
 
   try {
     // Fetch NBA leagues and the user's GUID in one Yahoo request.

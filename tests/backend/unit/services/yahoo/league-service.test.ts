@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getUserLeagues } from "../../../../../server/services/yahoo/league-service";
-import type { YahooTokenStorage } from "../../../../../server/storage/yahoo-token-storage";
 import { mockStandings } from "../../../fixtures/yahoo-responses";
 
-const storage = {} as YahooTokenStorage;
 const getYahooApiClient = vi.fn();
 
 describe("league-service", () => {
   let mockYahooApiClient: any;
-  const userId = "test-user-id";
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -47,7 +44,7 @@ describe("league-service", () => {
       getYahooApiClient.mockResolvedValue(emptyClient);
 
       // ACT
-      const leagues = await getUserLeagues(userId, storage, getYahooApiClient);
+      const leagues = await getUserLeagues(getYahooApiClient);
 
       // ASSERT
       expect(leagues).toEqual([]);
@@ -86,7 +83,7 @@ describe("league-service", () => {
       mockYahooApiClient.getLeagueStandings.mockResolvedValue(standingsWithUserTeam);
 
       // ACT
-      const leagues = await getUserLeagues(userId, storage, getYahooApiClient);
+      const leagues = await getUserLeagues(getYahooApiClient);
 
       // ASSERT
       expect(Array.isArray(leagues)).toBe(true);
@@ -166,7 +163,7 @@ describe("league-service", () => {
         standingsFor(leagueKey)
       );
 
-      const leagues = await getUserLeagues(userId, storage, getYahooApiClient);
+      const leagues = await getUserLeagues(getYahooApiClient);
 
       expect(leagues.map(({ leagueKey, status }) => ({ leagueKey, status }))).toEqual([
         { leagueKey: "466.l.1", status: "finished" },
@@ -190,7 +187,7 @@ describe("league-service", () => {
       getYahooApiClient.mockResolvedValue(errorClient);
 
       // ACT & ASSERT
-      await expect(getUserLeagues(userId, storage, getYahooApiClient)).rejects.toThrow(
+      await expect(getUserLeagues(getYahooApiClient)).rejects.toThrow(
         "Yahoo Fantasy credentials expired or invalid"
       );
     });
@@ -206,7 +203,7 @@ describe("league-service", () => {
 
       // ACT & ASSERT
       // The service converts token/refresh errors to a specific message
-      await expect(getUserLeagues(userId, storage, getYahooApiClient)).rejects.toThrow();
+      await expect(getUserLeagues(getYahooApiClient)).rejects.toThrow();
       // The error should be thrown (either original or converted)
     });
 
@@ -226,7 +223,7 @@ describe("league-service", () => {
         getAllUserLeagues: vi.fn().mockRejectedValue(accessError),
       } as any);
 
-      await expect(getUserLeagues(userId, storage, getYahooApiClient)).rejects.toMatchObject({
+      await expect(getUserLeagues(getYahooApiClient)).rejects.toMatchObject({
         code: "YAHOO_UNAVAILABLE",
         message: "Yahoo has not activated Fantasy API access for this application yet.",
         details: { reason: "FANTASY_ACCESS_PENDING" },
@@ -287,7 +284,7 @@ describe("league-service", () => {
       mockYahooApiClient.getLeagueStandings.mockResolvedValue(standingsWithUserTeam);
 
       // ACT
-      await getUserLeagues(userId, storage, getYahooApiClient);
+      await getUserLeagues(getYahooApiClient);
 
       // ASSERT
       // Check that getLeagueStandings was called for each league

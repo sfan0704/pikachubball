@@ -1,11 +1,10 @@
-import type { YahooClientFactory } from "./yahoo/yahoo-api-client.js";
+import type { YahooClientProvider } from "../request-context";
 import type {
   YahooApiLeagueResponse,
   YahooApiScoreboardResponse,
   YahooApiTeamResponse,
   YahooApiPlayerResponse,
 } from "../types/yahoo-api.js";
-import type { YahooTokenStorage } from "../storage/yahoo-token-storage.js";
 
 export interface FantasyDataSource {
   getLeagueStandings(leagueKey: string): Promise<YahooApiLeagueResponse>;
@@ -16,14 +15,10 @@ export interface FantasyDataSource {
 }
 
 export class YahooFantasyDataSource implements FantasyDataSource {
-  constructor(
-    private userId: string,
-    private tokenStorage: YahooTokenStorage,
-    private createClient: YahooClientFactory
-  ) {}
+  constructor(private yahooClient: YahooClientProvider) {}
 
   private getClient() {
-    return this.createClient(this.userId, this.tokenStorage);
+    return this.yahooClient();
   }
 
   async getLeagueStandings(leagueKey: string): Promise<YahooApiLeagueResponse> {

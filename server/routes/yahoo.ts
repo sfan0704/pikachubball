@@ -1,28 +1,24 @@
 import type { Express, RequestHandler } from "express";
-import { requireOwnedFantasyResource, requireYahooAuth } from "../middleware/yahoo-auth";
+import { requireOwnedFantasyResource } from "../middleware/fantasy-resource";
 import type { createYahooController } from "../controllers/yahoo-controller";
-import type { YahooClientFactory } from "../services/yahoo/yahoo-api-client";
-import { getAuthenticatedUserId } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
-import { UnauthorizedError } from "../../shared/api/errors";
+import { getRequestContext } from "../request-context";
 
 /** What the Yahoo data routes need. */
 export interface YahooRouteDependencies {
   readonly requireAuth: RequestHandler;
   readonly controller: ReturnType<typeof createYahooController>;
-  readonly createYahooClient: YahooClientFactory;
 }
 
 /** Register Yahoo Fantasy API data routes */
 export function registerYahooRoutes(
   app: Express,
-  { requireAuth, controller, createYahooClient }: YahooRouteDependencies
+  { requireAuth, controller }: YahooRouteDependencies
 ): void {
-  app.get("/api/yahoo/leagues", requireAuth, requireYahooAuth, controller.getLeagues);
+  app.get("/api/yahoo/leagues", requireAuth, controller.getLeagues);
   app.get(
     "/api/yahoo/roster-by-team/:teamKey",
     requireAuth,
-    requireYahooAuth,
     requireOwnedFantasyResource,
     controller.getRoster
   );
@@ -32,13 +28,8 @@ export function registerYahooRoutes(
     "/api/yahoo/test-auth",
     requireAuth,
     asyncHandler(async (req, res) => {
-      const userId = getAuthenticatedUserId(req);
-      if (!req.ownerStorage) {
-        throw new UnauthorizedError();
-      }
-
       try {
-        const client = await createYahooClient(userId, req.ownerStorage);
+        const client = await getRequestContext(req).yahooClient();
         const games = await client.getUserGames();
         res.json({
           success: true,

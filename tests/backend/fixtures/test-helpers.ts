@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { buildRequestContext } from "../../support/context";
 
 export interface TestUser {
   id: string;
@@ -156,12 +157,14 @@ export function createAuthenticatedRequest(user?: TestUser): MockRequest {
     user: mockUser,
     isAuthenticated: () => true,
   });
-  request.authIdentity = {
-    userId: mockUser.id,
-    yahooGuid: mockUser.yahooGuid ?? mockUser.username,
-    displayName: mockUser.displayName,
-    email: mockUser.email,
-  };
+  request.context = buildRequestContext({
+    user: {
+      userId: mockUser.id,
+      yahooGuid: mockUser.yahooGuid ?? mockUser.username,
+      displayName: mockUser.displayName,
+      email: mockUser.email,
+    },
+  });
   return request;
 }
 

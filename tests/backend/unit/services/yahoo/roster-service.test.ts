@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getTeamRoster } from "../../../../../server/services/yahoo/roster-service";
-import type { YahooTokenStorage } from "../../../../../server/storage/yahoo-token-storage";
 import { testTeamKey } from "../../../fixtures/test-data";
 
-const storage = {} as YahooTokenStorage;
 const getYahooApiClient = vi.fn();
 
 describe("roster-service", () => {
   let mockYahooApiClient: any;
-  const userId = "test-user-id";
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -57,7 +54,7 @@ describe("roster-service", () => {
   describe("getTeamRoster", () => {
     it("should return roster for a team", async () => {
       // ACT
-      const roster = await getTeamRoster(userId, testTeamKey, storage, getYahooApiClient);
+      const roster = await getTeamRoster(testTeamKey, getYahooApiClient);
 
       // ASSERT
       expect(Array.isArray(roster)).toBe(true);
@@ -68,7 +65,7 @@ describe("roster-service", () => {
         expect(roster[0]).toHaveProperty("status");
         expect(roster[0]).toHaveProperty("playerKey");
       }
-      expect(getYahooApiClient).toHaveBeenCalledWith(userId, storage);
+      expect(getYahooApiClient).toHaveBeenCalledOnce();
       expect(mockYahooApiClient.getTeamRoster).toHaveBeenCalledWith(testTeamKey);
     });
 
@@ -83,7 +80,7 @@ describe("roster-service", () => {
       getYahooApiClient.mockResolvedValue(emptyClient);
 
       // ACT
-      const roster = await getTeamRoster(userId, testTeamKey, storage, getYahooApiClient);
+      const roster = await getTeamRoster(testTeamKey, getYahooApiClient);
 
       // ASSERT
       expect(roster).toEqual([]);
@@ -91,7 +88,7 @@ describe("roster-service", () => {
 
     it("should parse player status correctly", async () => {
       // ACT
-      const roster = await getTeamRoster(userId, testTeamKey, storage, getYahooApiClient);
+      const roster = await getTeamRoster(testTeamKey, getYahooApiClient);
 
       // ASSERT
       roster.forEach((player) => {
@@ -124,7 +121,7 @@ describe("roster-service", () => {
       getYahooApiClient.mockResolvedValue(malformedClient);
 
       // ACT
-      const roster = await getTeamRoster(userId, testTeamKey, storage, getYahooApiClient);
+      const roster = await getTeamRoster(testTeamKey, getYahooApiClient);
 
       // ASSERT
       // Should return empty array or handle gracefully
