@@ -1,73 +1,41 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import { AppError, type ErrorBody, type ErrorCode } from "../../shared/api/errors";
 import { logger } from "../utils/logger";
 import { env } from "../config/env";
 
-/**
- * Base application error class
- * All custom errors should extend this
- */
-export class AppError extends Error {
-  constructor(
-    public statusCode: number,
-    public message: string,
-    public code?: string,
-    public details?: any
-  ) {
-    super(message);
-    this.name = "AppError";
-    Error.captureStackTrace(this, this.constructor);
-  }
+const STATUS_BY_CODE: Record<ErrorCode, number> = {
+  UNAUTHORIZED: 401,
+  YAHOO_RECONNECT_REQUIRED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  VALIDATION_ERROR: 400,
+  RATE_LIMITED: 429,
+  YAHOO_RATE_LIMITED: 429,
+  YAHOO_UNAVAILABLE: 503,
+  INTERNAL_ERROR: 500,
+};
+
+/** The HTTP status for an error code; the only place codes map to HTTP. */
+export function statusForCode(code: ErrorCode): number {
+  return STATUS_BY_CODE[code];
 }
 
-/**
- * Validation error (400)
- * Used for input validation failures
- */
-export class ValidationError extends AppError {
-  constructor(message: string, details?: any) {
-    super(400, message, "VALIDATION_ERROR", details);
-  }
-}
-
-/**
- * Not found error (404)
- * Used when a resource doesn't exist
- */
-export class NotFoundError extends AppError {
-  constructor(resource: string = "Resource") {
-    super(404, `${resource} not found`, "NOT_FOUND");
-  }
-}
-
-/**
- * Unauthorized error (401)
- * Used when authentication is required
- */
-export class UnauthorizedError extends AppError {
-  constructor(message: string = "Authentication required") {
-    super(401, message, "UNAUTHORIZED");
-  }
-}
-
-/**
- * Forbidden error (403)
- * Used when user doesn't have permission
- */
-export class ForbiddenError extends AppError {
-  constructor(message: string = "Insufficient permissions") {
-    super(403, message, "FORBIDDEN");
-  }
-}
-
-/**
- * Conflict error (409)
- * Used when resource already exists
- */
-export class ConflictError extends AppError {
-  constructor(message: string = "Resource already exists") {
-    super(409, message, "CONFLICT");
-  }
+function sendError(
+  req: Request,
+  res: Response,
+  code: ErrorCode,
+  message: string,
+  details?: unknown,
+): void {
+  const body: ErrorBody = {
+    code,
+    message,
+    requestId: req.requestId ?? "unknown",
+    ...(details === undefined ? {} : { details }),
+  };
+  res.status(statusForCode(code)).json(body);
 }
 
 /**
@@ -76,46 +44,38 @@ export class ConflictError extends AppError {
  */
 export function errorHandler(
   err: Error | AppError | ZodError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void {
-  // Zod validation errors
   if (err instanceof ZodError) {
-    res.status(400).json({
-      error: "Validation error",
-      code: "VALIDATION_ERROR",
-      details: err.errors.map((e) => ({
-        path: e.path.join("."),
-        message: e.message,
-      })),
-    });
+    sendError(
+      req,
+      res,
+      "VALIDATION_ERROR",
+      "Validation error",
+      err.errors.map((e) => ({ path: e.path.join("."), message: e.message })),
+    );
     return;
   }
 
-  // Custom application errors
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      error: err.message,
-      code: err.code,
-      ...(err.details && { details: err.details }),
-    });
+    const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)?.retryAfterSeconds;
+    if (typeof retryAfter === "number") {
+      res.setHeader("Retry-After", String(retryAfter));
+    }
+    sendError(req, res, err.code, err.message, err.details);
     return;
   }
 
-  // Unexpected errors
   logger.error("Unexpected error:", err);
-  
-  const isDevelopment = env.NODE_ENV === "development";
-  
-  res.status(500).json({
-    error: "Internal server error",
-    code: "INTERNAL_ERROR",
-    ...(isDevelopment && {
-      stack: err.stack,
-      message: err.message,
-    }),
-  });
+  sendError(
+    req,
+    res,
+    "INTERNAL_ERROR",
+    "Internal server error",
+    env.NODE_ENV === "development" ? { message: err.message, stack: err.stack } : undefined,
+  );
 }
 
 /**

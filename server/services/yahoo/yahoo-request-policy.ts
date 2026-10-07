@@ -3,7 +3,7 @@
  * finite retries, and distinct errors for each provider failure class.
  */
 
-import { AppError } from "../../middleware/error-handler";
+import { AppError } from "../../../shared/api/errors";
 
 export const YAHOO_CALL_TIMEOUT_MS = 8_000;
 export const YAHOO_TOTAL_BUDGET_MS = 20_000;
@@ -13,11 +13,7 @@ const RETRY_BASE_DELAY_MS = 250;
 /** The stored Yahoo grant is unusable; the user must connect Yahoo again. */
 export class YahooReconnectRequiredError extends AppError {
   constructor() {
-    super(
-      401,
-      "Yahoo Fantasy credentials expired or were revoked. Please reconnect your Yahoo account.",
-      "YAHOO_RECONNECT_REQUIRED",
-    );
+    super("YAHOO_RECONNECT_REQUIRED", "Yahoo Fantasy credentials expired or were revoked. Please reconnect your Yahoo account.");
     this.name = "YahooReconnectRequiredError";
   }
 }
@@ -26,9 +22,8 @@ export class YahooReconnectRequiredError extends AppError {
 export class YahooRateLimitedError extends AppError {
   constructor(public readonly retryAfterSeconds: number | undefined) {
     super(
-      429,
-      "Yahoo is rate limiting requests. Please try again shortly.",
       "YAHOO_RATE_LIMITED",
+      "Yahoo is rate limiting requests. Please try again shortly.",
       retryAfterSeconds === undefined ? undefined : { retryAfterSeconds },
     );
     this.name = "YahooRateLimitedError";
@@ -38,11 +33,7 @@ export class YahooRateLimitedError extends AppError {
 /** Yahoo timed out, was unreachable, or kept failing within the budget. */
 export class YahooUnavailableError extends AppError {
   constructor() {
-    super(
-      503,
-      "Yahoo Fantasy is not responding right now. Please try again shortly.",
-      "YAHOO_UNAVAILABLE",
-    );
+    super("YAHOO_UNAVAILABLE", "Yahoo Fantasy is not responding right now. Please try again shortly.");
     this.name = "YahooUnavailableError";
   }
 }

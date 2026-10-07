@@ -4,7 +4,7 @@ import { yahooController } from '../../../../server/controllers/yahoo-controller
 import { getAuthenticatedUserId } from '../../../../server/middleware/auth';
 import { getUserLeagues } from '../../../../server/services/yahoo/league-service';
 import { getTeamRoster } from '../../../../server/services/yahoo/roster-service';
-import { ValidationError } from '../../../../server/middleware/error-handler';
+import { ValidationError } from '../../../../shared/api/errors';
 import { createAuthenticatedRequest, createMockResponse } from '../../fixtures/test-helpers';
 
 // Mock dependencies

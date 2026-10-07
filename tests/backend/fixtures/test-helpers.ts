@@ -84,6 +84,10 @@ export function createMockResponse(): MockResponse {
       res.headers = { ...res.headers, Location: url };
       return res as Response;
     }),
+    setHeader: vi.fn((name: string, value: string) => {
+      res.headers = { ...res.headers, [name]: value };
+      return res as Response;
+    }),
     cookie: vi.fn(() => res as Response),
     clearCookie: vi.fn(() => res as Response),
     on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { Provider, SupabaseClient } from "@supabase/supabase-js";
-import { asyncHandler, UnauthorizedError, ValidationError } from "../middleware/error-handler";
+import { asyncHandler } from "../middleware/error-handler";
+import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
 import {
   applyAuthNoStore,
   createSupabaseRequestClient,

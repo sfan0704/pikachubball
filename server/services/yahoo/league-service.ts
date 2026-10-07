@@ -2,7 +2,7 @@ import { getYahooApiClient } from "./yahoo-api-client";
 import { logger } from "../../utils/logger";
 import { parseTeamsFromStandings } from "../parsers/league-parser.js";
 import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
-import { AppError } from "../../middleware/error-handler";
+import { AppError } from "../../../shared/api/errors";
 import { classifyLeague, type LeagueStatus } from "./league-status";
 
 /**
@@ -246,9 +246,9 @@ export async function getUserLeagues(
       yahooDescription?.includes("not authorized to perform this action")
     ) {
       throw new AppError(
-        503,
+        "YAHOO_UNAVAILABLE",
         "Yahoo has not activated Fantasy API access for this application yet.",
-        "YAHOO_FANTASY_ACCESS_PENDING",
+        { reason: "FANTASY_ACCESS_PENDING" },
       );
     }
 

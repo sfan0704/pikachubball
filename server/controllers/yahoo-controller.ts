@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { getAuthenticatedUserId } from "../middleware/auth";
-import { asyncHandler, ValidationError } from "../middleware/error-handler";
+import { asyncHandler } from "../middleware/error-handler";
+import { ValidationError } from "../../shared/api/errors";
 import { getUserLeagues } from "../services/yahoo/league-service";
 import { getTeamRoster } from "../services/yahoo/roster-service";
 import { logger } from "../utils/logger";
