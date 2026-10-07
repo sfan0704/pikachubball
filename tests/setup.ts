@@ -1,11 +1,18 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterAll, afterEach } from 'vitest';
+import { networkGuard, startNetworkGuard } from './support/network-guard';
 
-// Cleanup after each test
+// Start before test modules load, so a test that replaces fetch with its
+// own mock still takes precedence over the guard.
+startNetworkGuard();
+
 afterEach(() => {
   cleanup();
+  networkGuard.resetHandlers();
 });
+
+afterAll(() => networkGuard.close());
 
 // Mock environment variables for tests
 // Must be set BEFORE any imports that use env validation

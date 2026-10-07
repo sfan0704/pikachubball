@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     // Default to node environment for backend tests
     environment: 'node',
+    globalSetup: ['./tests/global-setup.ts'],
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.{ts,tsx}'],
     // Needs the local Supabase stack; run through `npm run test:db`
