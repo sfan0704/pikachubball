@@ -147,20 +147,27 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     const loser = YahooApiClient.create(owner.id, owner.storage, yahooApp);
     await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledTimes(2));
 
+    // Whichever request reached Yahoo first holds winnerYahoo: let it commit.
     winnerYahoo.resolve({
       accessToken: "rotated-access",
       refreshToken: "rotated-refresh",
       expiresIn: 3600,
     });
-    await winner;
-    // Yahoo refuses the old refresh token the winner just spent.
-    loserYahoo.reject(new YahooReconnectRequiredError());
-    const loserClient = await loser;
-
-    expect(loserClient as unknown as { accessToken: string; tokenVersion: number }).toMatchObject({
-      accessToken: "rotated-access",
-      tokenVersion: readVersion + 1,
+    await vi.waitFor(async () => {
+      await expect(owner.storage.getYahooToken(owner.id)).resolves.toMatchObject({
+        version: readVersion + 1,
+      });
     });
+    // Then Yahoo refuses the old refresh token the other request still holds.
+    loserYahoo.reject(new YahooReconnectRequiredError());
+    const clients = await Promise.all([winner, loser]);
+
+    for (const client of clients) {
+      expect(client as unknown as { accessToken: string; tokenVersion: number }).toMatchObject({
+        accessToken: "rotated-access",
+        tokenVersion: readVersion + 1,
+      });
+    }
     await expect(owner.storage.getYahooToken(owner.id)).resolves.toMatchObject({
       refreshToken: "rotated-refresh",
       version: readVersion + 1,
