@@ -1,5 +1,7 @@
 import express, { type Express } from "express";
 import { AUTH_NO_STORE_HEADERS } from "./auth/supabase-auth";
+import { createBuildIdHeader } from "./middleware/build-id";
+import { createOriginCheck } from "./middleware/origin-check";
 import { createRequestScope } from "./middleware/request-scope";
 import { NotFoundError } from "../shared/api/errors";
 import { registerRoutes } from "./routes/index";
@@ -26,6 +28,7 @@ export function configureApp(app: Express, dependencies: ServerDependencies): Ex
   const { config, logger } = dependencies;
   app.disable("x-powered-by");
   app.use(createRequestScope(dependencies));
+  app.use(createBuildIdHeader(config.buildId));
 
   if (config.trustProxy) {
     app.set("trust proxy", 1);
@@ -40,6 +43,9 @@ export function configureApp(app: Express, dependencies: ServerDependencies): Ex
     })
   );
   app.use(express.urlencoded({ extended: false }));
+
+  // Requests that change state must come from the app's own origin.
+  app.use("/api", createOriginCheck(config.auth.appOrigin));
 
   // Every API response is per-user or auth-related. Without an explicit header
   // Vercel sends "public, max-age=0, must-revalidate", so make them private and

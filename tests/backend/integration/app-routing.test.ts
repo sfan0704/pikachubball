@@ -9,6 +9,7 @@ import { createAppErrorHandler } from "../../../server/composition-root";
 import { buildTestDependencies } from "../../support/dependencies";
 
 const dependencies = buildTestDependencies();
+const APP_ORIGIN = dependencies.config.auth.appOrigin;
 const errorHandler = createAppErrorHandler(dependencies);
 
 function createApiApp() {
@@ -47,7 +48,46 @@ describe("application routing", () => {
 
     expect(response.status).toBe(200);
     expect(response.type).toBe("application/json");
-    expect(response.body).toEqual({ status: "ok", service: "pikachubball" });
+    expect(response.body).toEqual({
+      status: "ok",
+      service: "pikachubball",
+      commit: "test-build",
+    });
+  });
+
+  it("sends the build id on every response", async () => {
+    const app = createApiApp();
+
+    const responses = await Promise.all([
+      request(app).get("/api/health"),
+      request(app).get("/api/does-not-exist"),
+      request(app).get("/api/auth/me"),
+    ]);
+
+    for (const response of responses) {
+      expect(response.headers["x-build-id"]).toBe("test-build");
+    }
+  });
+
+  it("refuses state-changing requests from another origin or with no origin", async () => {
+    const app = createApiApp();
+
+    const [foreign, missing, same] = await Promise.all([
+      request(app).post("/api/auth/logout").set("Origin", "https://evil.example.test"),
+      request(app).delete("/api/auth/yahoo/disconnect"),
+      request(app).post("/api/does-not-exist").set("Origin", APP_ORIGIN),
+    ]);
+
+    for (const refused of [foreign, missing]) {
+      expect(refused.status).toBe(403);
+      expect(refused.body).toEqual({
+        code: "FORBIDDEN",
+        message: "Cross-origin request refused",
+        requestId: expect.any(String),
+      });
+    }
+    // From the app's own origin the request reaches routing.
+    expect(same.status).toBe(404);
   });
 
   it("keeps unknown API routes JSON", async () => {
@@ -83,9 +123,12 @@ describe("application routing", () => {
   it("does not register excluded chat, schedule, or AI credential endpoints", async () => {
     const app = createApiApp();
     const responses = await Promise.all([
-      request(app).post("/api/chat/message").send({ message: "hello" }),
+      request(app).post("/api/chat/message").set("Origin", APP_ORIGIN).send({ message: "hello" }),
       request(app).get("/api/viz/schedule/466.l.1/466.l.1.t.1"),
-      request(app).post("/api/settings/openai").send({ apiKey: "synthetic" }),
+      request(app)
+        .post("/api/settings/openai")
+        .set("Origin", APP_ORIGIN)
+        .send({ apiKey: "synthetic" }),
     ]);
 
     for (const response of responses) {
