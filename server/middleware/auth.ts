@@ -1,11 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { UnauthorizedError } from "../../shared/api/errors";
-import {
-  createSupabaseRequestClient,
-  readVerifiedYahooIdentity,
-  type YahooSessionIdentity,
-} from "../auth/supabase-auth";
-import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
+import { readVerifiedYahooIdentity, type YahooSessionIdentity } from "../auth/supabase-auth";
+import type { ServerDependencies } from "../dependencies";
 import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
 
 declare module "express-serve-static-core" {
@@ -15,27 +11,28 @@ declare module "express-serve-static-core" {
   }
 }
 
+/** Collaborators the sign-in check needs. */
+export type RequireAuthDependencies = Pick<ServerDependencies, "createSupabaseClient" | "createOwnerStorage">;
+
 /**
- * Middleware to require authentication for protected routes
- * Returns 401 if user is not authenticated
+ * Builds the middleware that requires a verified Supabase session. It sets
+ * the request's identity and owner-scoped storage, or passes UNAUTHORIZED on.
  */
-export async function requireAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  if (req.authIdentity) {
-    next();
-    return;
-  }
-  try {
-    const client = createSupabaseRequestClient(req, res);
-    req.authIdentity = await readVerifiedYahooIdentity(client);
-    req.ownerStorage = createSupabaseOwnerStorage(client, req.authIdentity.userId);
-    next();
-  } catch {
-    next(new UnauthorizedError());
-  }
+export function createRequireAuth(dependencies: RequireAuthDependencies) {
+  return async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+    if (req.authIdentity) {
+      next();
+      return;
+    }
+    try {
+      const client = dependencies.createSupabaseClient(req, res);
+      req.authIdentity = await readVerifiedYahooIdentity(client);
+      req.ownerStorage = dependencies.createOwnerStorage(client, req.authIdentity.userId);
+      next();
+    } catch {
+      next(new UnauthorizedError());
+    }
+  };
 }
 
 /**

@@ -1,11 +1,10 @@
 import express, { type Express } from "express";
 import { AUTH_NO_STORE_HEADERS } from "./auth/supabase-auth";
-import { env } from "./config/env";
 import { requestId } from "./middleware/request-id";
-import { requestLogger } from "./middleware/request-logger";
+import { createRequestLogger } from "./middleware/request-logger";
 import { NotFoundError } from "../shared/api/errors";
 import { registerRoutes } from "./routes/index";
-import { logger } from "./utils/logger";
+import type { ServerDependencies } from "./dependencies";
 
 declare module "http" {
   interface IncomingMessage {
@@ -18,17 +17,18 @@ declare module "http" {
  * asset server. This keeps route initialization reusable in local Node and
  * request-driven serverless runtimes.
  */
-export function createApp(): Express {
+export function createApp(dependencies: ServerDependencies): Express {
   const app = express();
-  return configureApp(app);
+  return configureApp(app, dependencies);
 }
 
 /** Configure an Express instance with the complete application API. */
-export function configureApp(app: Express): Express {
+export function configureApp(app: Express, dependencies: ServerDependencies): Express {
+  const { config, logger } = dependencies;
   app.disable("x-powered-by");
   app.use(requestId);
 
-  if (env.NODE_ENV === "production" || env.TRUST_PROXY) {
+  if (config.trustProxy) {
     app.set("trust proxy", 1);
     logger.info("Trust proxy enabled (running behind reverse proxy)");
   }
@@ -41,7 +41,7 @@ export function configureApp(app: Express): Express {
     }),
   );
   app.use(express.urlencoded({ extended: false }));
-  app.use(requestLogger);
+  app.use(createRequestLogger(logger));
 
   // Every API response is per-user or auth-related. Without an explicit header
   // Vercel sends "public, max-age=0, must-revalidate", so make them private and
@@ -51,7 +51,7 @@ export function configureApp(app: Express): Express {
     next();
   });
 
-  registerRoutes(app);
+  registerRoutes(app, dependencies);
 
   app.use("/api", (_req, _res, next) => {
     next(new NotFoundError("API route"));

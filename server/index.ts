@@ -1,16 +1,18 @@
 // Load and validate environment variables first
-import { config } from "dotenv";
+import { config as loadDotenv } from "dotenv";
 import { resolve } from "path";
-config({ path: resolve(process.cwd(), ".env.local") });
+loadDotenv({ path: resolve(process.cwd(), ".env.local") });
 
-import { env } from "./config/env";
 import { createApp } from "./app";
+import { createAppErrorHandler, createServerDependencies } from "./composition-root";
+import { loadConfig } from "./config/config";
 import { createDevServer } from "./config/dev-server";
 import { setupVite, serveStatic } from "./config/vite";
-import { logger } from "./utils/logger";
-import { errorHandler } from "./middleware/error-handler";
 
-const app = createApp();
+const config = loadConfig();
+const dependencies = createServerDependencies(config);
+const { logger } = dependencies;
+const app = createApp(dependencies);
 const server = createDevServer(app);
 
 (async () => {
@@ -21,9 +23,9 @@ const server = createDevServer(app);
   }
 
   // Error middleware follows API and client routes.
-  app.use(errorHandler);
+  app.use(createAppErrorHandler(dependencies));
 
-  const port = env.PORT;
+  const port = config.port;
   server.listen(port, "0.0.0.0", () => {
     logger.info(`serving on port ${port}${process.env.DEV_HTTPS_CERT ? " (https)" : ""}`);
   });

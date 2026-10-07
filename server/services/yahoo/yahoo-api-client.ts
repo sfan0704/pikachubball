@@ -4,7 +4,7 @@
  */
 
 import axios, { AxiosInstance } from "axios";
-import { env } from "../../config/env";
+import type { YahooAppConfig } from "../../config/config";
 import { logger } from "../../utils/logger";
 import { refreshAccessToken } from "../../yahoo-auth";
 import type {
@@ -37,6 +37,7 @@ export class YahooApiClient {
   private userId: string;
   private clientId: string;
   private clientSecret: string;
+  private readonly providerRedirectUri: string | null;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private tokenVersion: number | undefined;
@@ -46,12 +47,14 @@ export class YahooApiClient {
     userId: string,
     clientId: string,
     clientSecret: string,
+    providerRedirectUri: string | null,
     private readonly tokenStorage: YahooTokenStorage,
     private readonly clock: YahooRequestClock,
   ) {
     this.userId = userId;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    this.providerRedirectUri = providerRedirectUri;
     
     this.axiosInstance = axios.create({
       baseURL: YAHOO_API_BASE,
@@ -62,26 +65,27 @@ export class YahooApiClient {
   }
 
   /**
-   * Create a YahooApiClient instance for a user
-   * Uses app-level credentials from environment variables
+   * Create a YahooApiClient for a user from the Yahoo app's credentials,
+   * which the composition root provides.
    */
   static async create(
     userId: string,
-    tokenStorage?: YahooTokenStorage,
+    tokenStorage: YahooTokenStorage,
+    app: YahooAppConfig,
     clock: YahooRequestClock = systemClock,
   ): Promise<YahooApiClient> {
-    // Use app-level credentials from environment variables
-    const clientId = env.YAHOO_CLIENT_ID;
-    const clientSecret = env.YAHOO_CLIENT_SECRET;
-
-    if (!clientId || !clientSecret) {
+    if (!app.clientId || !app.clientSecret) {
       throw new Error("Yahoo OAuth credentials are not configured. Please set YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET environment variables.");
     }
-    if (!tokenStorage) {
-      throw new Error("Owner-scoped Yahoo token storage is required");
-    }
 
-    const client = new YahooApiClient(userId, clientId, clientSecret, tokenStorage, clock);
+    const client = new YahooApiClient(
+      userId,
+      app.clientId,
+      app.clientSecret,
+      app.providerRedirectUri,
+      tokenStorage,
+      clock,
+    );
     await client.initializeTokens();
     return client;
   }
@@ -137,6 +141,7 @@ export class YahooApiClient {
       currentRefreshToken,
       this.clientId,
       this.clientSecret,
+      this.providerRedirectUri,
     );
     const rotation = {
       userId: this.userId,
@@ -826,13 +831,8 @@ export class YahooApiClient {
   }
 }
 
-/**
- * Get a YahooApiClient instance for a user
- * This is the main entry point for Yahoo API access
- */
-export async function getYahooApiClient(
+/** Creates a Yahoo API client for one user; the composition root supplies the Yahoo app's credentials. */
+export type YahooClientFactory = (
   userId: string,
-  tokenStorage?: YahooTokenStorage,
-): Promise<YahooApiClient> {
-  return YahooApiClient.create(userId, tokenStorage);
-}
+  tokenStorage: YahooTokenStorage,
+) => Promise<YahooApiClient>;

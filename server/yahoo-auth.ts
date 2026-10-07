@@ -1,5 +1,4 @@
 import axios from "axios";
-import { env } from "./config/env";
 import {
   YAHOO_CALL_TIMEOUT_MS,
   providerStatus,
@@ -85,8 +84,9 @@ export async function refreshAccessToken(
   refreshToken: string,
   clientId: string,
   clientSecret: string,
+  redirectUri: string | null,
 ): Promise<YahooRefreshedTokens> {
-  if (!clientId || !clientSecret || !env.YAHOO_PROVIDER_REDIRECT_URI) {
+  if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Yahoo refresh configuration is incomplete");
   }
 
@@ -103,7 +103,7 @@ export async function refreshAccessToken(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       data: new URLSearchParams({
-        redirect_uri: env.YAHOO_PROVIDER_REDIRECT_URI,
+        redirect_uri: redirectUri,
         grant_type: "refresh_token",
         refresh_token: refreshToken,
       }).toString(),

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
-import { readHostedAuthConfig } from "../../../../server/auth/supabase-auth";
+import { loadConfig } from "../../../../server/config/config";
 
 // .env.example is the committed dev-tier template (README "Local setup").
 // It must name every variable the server reads and must never carry a real
@@ -70,13 +70,14 @@ describe(".env.example dev-tier template", () => {
   });
 
   it("is accepted by the hosted auth configuration once filled in", () => {
-    const config = readHostedAuthConfig({
+    const config = loadConfig({
       ...example,
+      ENCRYPTION_KEY: "0123456789abcdef".repeat(4),
       SUPABASE_PUBLISHABLE_KEY: "sb_publishable_synthetic-test-key",
     });
 
-    expect(config.appOrigin).toBe("https://localhost:5001");
-    expect(config.supabaseUrl).toBe("https://ocqdxmfpezxpgutoicyh.supabase.co");
-    expect(config.secureCookies).toBe(false);
+    expect(config.auth.appOrigin).toBe("https://localhost:5001");
+    expect(config.auth.supabaseUrl).toBe("https://ocqdxmfpezxpgutoicyh.supabase.co");
+    expect(config.auth.secureCookies).toBe(false);
   });
 });

@@ -108,30 +108,14 @@ async function extractTeamStats(
   _currentWeek?: number,
   _endWeek?: number
 ): Promise<TeamStats[]> {
-  const { logger } = await import("../../utils/logger");
-  
   if (week !== undefined) {
     // For weekly stats, get from scoreboard
     const scoreboard = await dataSource.getLeagueScoreboard(leagueKey, week);
-    logger.debug("Scoreboard response structure:", {
-      leagueKey,
-      week,
-      hasFantasyContent: !!scoreboard?.fantasy_content,
-      leagueArrayLength: scoreboard?.fantasy_content?.league?.length,
-    });
-    
     // Use parser to extract team stats - this handles all Yahoo API format variations
     return parseTeamStatsFromScoreboard(scoreboard, week);
   } else {
     // For season stats, get from standings
     const standings = await dataSource.getLeagueStandings(leagueKey);
-    logger.debug("Standings response structure:", {
-      leagueKey,
-      hasFantasyContent: !!standings?.fantasy_content,
-      leagueArrayLength: standings?.fantasy_content?.league?.length,
-      hasStandings: !!standings?.fantasy_content?.league?.[1]?.standings,
-    });
-    
     // Use parser to extract team stats - this handles all Yahoo API format variations
     // Parser can accept raw Yahoo API response directly
     return parseTeamStatsFromStandings(standings, 'season');

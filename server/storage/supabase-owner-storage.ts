@@ -7,7 +7,6 @@ import type {
   YahooTokenInput,
 } from "./yahoo-token-storage";
 import type { OwnerTokenCipher } from "./owner-token-cipher";
-import { AesGcmOwnerTokenCipher } from "./owner-token-cipher";
 
 interface ConnectionRow {
   owner_id: string;
@@ -171,18 +170,11 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
   }
 }
 
+/** Owner-scoped storage for one signed-in user, using the cipher the composition root built. */
 export function createSupabaseOwnerStorage(
   client: SupabaseClient,
   ownerId: string,
-  environment: NodeJS.ProcessEnv = process.env,
+  cipher: OwnerTokenCipher,
 ): SupabaseOwnerStorage {
-  const encryptionKey = environment.ENCRYPTION_KEY;
-  if (!encryptionKey) {
-    throw new Error("ENCRYPTION_KEY is required for owner-scoped storage");
-  }
-  return new SupabaseOwnerStorage(
-    client,
-    ownerId,
-    AesGcmOwnerTokenCipher.fromHex(encryptionKey),
-  );
+  return new SupabaseOwnerStorage(client, ownerId, cipher);
 }

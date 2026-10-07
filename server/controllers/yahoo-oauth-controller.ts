@@ -1,30 +1,15 @@
 import type { Request, Response } from "express";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { parse, serialize } from "cookie";
-import { env } from "../config/env";
+import type { AppConfig } from "../config/config";
 import { getAuthenticatedUserId } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
-import { applyAuthNoStore, readHostedAuthConfig } from "../auth/supabase-auth";
-import { logger } from "../utils/logger";
+import { applyAuthNoStore } from "../auth/supabase-auth";
+import type { Logger } from "../utils/logger";
 import { exchangeAuthorizationCode, revokeYahooToken } from "../yahoo-auth";
 
 const FANTASY_OAUTH_STATE_COOKIE = "pikachubball-yahoo-state";
-
-function fantasyOAuthConfig() {
-  const clientId = env.YAHOO_CLIENT_ID?.trim();
-  const clientSecret = env.YAHOO_CLIENT_SECRET?.trim();
-  const redirectUri = env.YAHOO_PROVIDER_REDIRECT_URI?.trim();
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error("Yahoo Fantasy OAuth configuration is incomplete");
-  }
-  const redirect = new URL(redirectUri);
-  const appOrigin = readHostedAuthConfig().appOrigin;
-  if (redirect.protocol !== "https:" || redirect.origin !== appOrigin) {
-    throw new Error("Yahoo Fantasy callback must use the application origin");
-  }
-  return { clientId, clientSecret, redirectUri };
-}
 
 function stateMatches(expected: string | undefined, received: unknown): boolean {
   if (!expected || typeof received !== "string") return false;
@@ -33,22 +18,39 @@ function stateMatches(expected: string | undefined, received: unknown): boolean 
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-function stateCookie(value: string, maxAge: number): string {
-  return serialize(FANTASY_OAUTH_STATE_COOKIE, value, {
-    httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge,
-  });
-}
-
 /**
  * Yahoo OAuth controller
  * Handles Yahoo OAuth status and disconnection
  * Note: Main login flow is handled by yahoo-social-controller.ts
  */
-export const yahooOAuthController = {
+export interface YahooOAuthControllerDependencies {
+  readonly config: AppConfig;
+  readonly logger: Logger;
+}
+
+export function createYahooOAuthController({ config: appConfig, logger }: YahooOAuthControllerDependencies) {
+  const fantasyOAuthConfig = () => {
+    const { clientId, clientSecret, providerRedirectUri: redirectUri } = appConfig.yahoo;
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error("Yahoo Fantasy OAuth configuration is incomplete");
+    }
+    const redirect = new URL(redirectUri);
+    if (redirect.protocol !== "https:" || redirect.origin !== appConfig.auth.appOrigin) {
+      throw new Error("Yahoo Fantasy callback must use the application origin");
+    }
+    return { clientId, clientSecret, redirectUri };
+  };
+
+  const stateCookie = (value: string, maxAge: number): string =>
+    serialize(FANTASY_OAUTH_STATE_COOKIE, value, {
+      httpOnly: true,
+      secure: appConfig.nodeEnv === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge,
+    });
+
+  return {
   beginFantasyAccess: asyncHandler(async (_req: Request, res: Response) => {
     applyAuthNoStore(res);
     const config = fantasyOAuthConfig();
@@ -144,8 +146,8 @@ export const yahooOAuthController = {
       if (token) {
         revokedAtYahoo = await revokeYahooToken(
           token.refreshToken,
-          env.YAHOO_CLIENT_ID?.trim() ?? "",
-          env.YAHOO_CLIENT_SECRET?.trim() ?? "",
+          appConfig.yahoo.clientId ?? "",
+          appConfig.yahoo.clientSecret ?? "",
         );
       }
     } catch (error) {
@@ -163,4 +165,5 @@ export const yahooOAuthController = {
         : "Yahoo tokens were deleted from Pikachu Basketball, but Yahoo did not confirm revocation. To be sure, remove the app from your Yahoo account's connected apps.",
     });
   }),
-};
+  };
+}

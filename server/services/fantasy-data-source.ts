@@ -1,4 +1,4 @@
-import { getYahooApiClient } from './yahoo/yahoo-api-client.js';
+import type { YahooClientFactory } from './yahoo/yahoo-api-client.js';
 import type {
   YahooApiLeagueResponse,
   YahooApiScoreboardResponse,
@@ -18,31 +18,17 @@ export interface FantasyDataSource {
 export class YahooFantasyDataSource implements FantasyDataSource {
   constructor(
     private userId: string,
-    private tokenStorage?: YahooTokenStorage,
+    private tokenStorage: YahooTokenStorage,
+    private createClient: YahooClientFactory,
   ) {}
 
   private getClient() {
-    return this.tokenStorage
-      ? getYahooApiClient(this.userId, this.tokenStorage)
-      : getYahooApiClient(this.userId);
+    return this.createClient(this.userId, this.tokenStorage);
   }
 
   async getLeagueStandings(leagueKey: string): Promise<YahooApiLeagueResponse> {
-    const { logger } = await import("../utils/logger");
     const client = await this.getClient();
-    
-    const response = await client.getLeagueStandings(leagueKey);
-    
-    logger.debug("Yahoo API standings response:", {
-      leagueKey,
-      hasFantasyContent: !!response?.fantasy_content,
-      leagueArrayLength: response?.fantasy_content?.league?.length,
-      hasStandings: !!response?.fantasy_content?.league?.[1]?.standings,
-      hasTeams: !!response?.fantasy_content?.league?.[1]?.standings?.[0]?.teams,
-      teamsCount: response?.fantasy_content?.league?.[1]?.standings?.[0]?.teams?.count,
-    });
-    
-    return response;
+    return await client.getLeagueStandings(leagueKey);
   }
 
   async getLeagueSettings(leagueKey: string): Promise<YahooApiLeagueResponse> {

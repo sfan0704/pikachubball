@@ -1,4 +1,4 @@
-import { getYahooApiClient } from "./yahoo-api-client";
+import type { YahooClientFactory } from "./yahoo-api-client";
 import { parsePlayersFromRoster } from "../parsers/player-parser.js";
 import type { Player } from "../../../shared/schema.js";
 import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
@@ -15,11 +15,10 @@ import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
 export async function getTeamRoster(
   userId: string,
   teamKey: string,
-  tokenStorage?: YahooTokenStorage,
+  tokenStorage: YahooTokenStorage,
+  createClient: YahooClientFactory,
 ): Promise<Player[]> {
-  const client = tokenStorage
-    ? await getYahooApiClient(userId, tokenStorage)
-    : await getYahooApiClient(userId);
+  const client = await createClient(userId, tokenStorage);
   const response = await client.getTeamRoster(teamKey);
 
   // Parse the raw Yahoo API response

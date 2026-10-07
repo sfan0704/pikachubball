@@ -1,14 +1,24 @@
 import express from "express";
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { env } from "../../../../server/config/env";
-import { yahooOAuthController } from "../../../../server/controllers/yahoo-oauth-controller";
-import { errorHandler } from "../../../../server/middleware/error-handler";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createYahooOAuthController } from "../../../../server/controllers/yahoo-oauth-controller";
+import { createErrorHandler } from "../../../../server/middleware/error-handler";
+import { buildTestConfig, silentLogger } from "../../../support/dependencies";
 import { exchangeAuthorizationCode } from "../../../../server/yahoo-auth";
 
 vi.mock("../../../../server/yahoo-auth", () => ({
   exchangeAuthorizationCode: vi.fn(),
 }));
+
+const config = buildTestConfig({
+  yahoo: {
+    clientId: "fantasy-client-id",
+    clientSecret: "fantasy-client-secret",
+    providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+  },
+});
+const yahooOAuthController = createYahooOAuthController({ config, logger: silentLogger });
+const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });
 
 const IDENTITY = {
   userId: "23f99d06-30ff-4767-8c41-21510b7fd5d0",
@@ -22,22 +32,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NODE_ENV = "test";
-    process.env.APP_ORIGIN = "https://basketball.example.test";
-    process.env.SUPABASE_URL = "https://basketball-project.supabase.co";
-    process.env.SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test";
-    (env as any).NODE_ENV = "test";
-    (env as any).YAHOO_CLIENT_ID = "fantasy-client-id";
-    (env as any).YAHOO_CLIENT_SECRET = "fantasy-client-secret";
-    (env as any).YAHOO_PROVIDER_REDIRECT_URI =
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback";
     saveYahooConnection.mockResolvedValue({});
-  });
-
-  afterEach(() => {
-    delete process.env.APP_ORIGIN;
-    delete process.env.SUPABASE_URL;
-    delete process.env.SUPABASE_PUBLISHABLE_KEY;
   });
 
   function app() {

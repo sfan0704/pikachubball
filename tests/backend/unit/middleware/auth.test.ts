@@ -4,15 +4,18 @@ import {
   getAuthenticatedUser,
   getAuthenticatedUserId,
   getOptionalUserId,
-  requireAuth,
+  createRequireAuth,
 } from "../../../../server/middleware/auth";
 import { UnauthorizedError } from "../../../../shared/api/errors";
+import { anonymousSupabaseClient, buildTestDependencies } from "../../../support/dependencies";
 import {
   createAuthenticatedRequest,
   createMockNext,
   createMockRequest,
   createMockResponse,
 } from "../../fixtures/test-helpers";
+
+const requireAuth = createRequireAuth(buildTestDependencies());
 
 describe("Supabase auth middleware", () => {
   let req: Request;
@@ -35,7 +38,47 @@ describe("Supabase auth middleware", () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
+  it("builds owner-scoped storage for a verified session", async () => {
+    const storage = { marker: "owner-storage" };
+    const createOwnerStorage = vi.fn().mockReturnValue(storage);
+    const verifiedClient = {
+      auth: {
+        getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
+        getUser: async () => ({
+          data: {
+            user: {
+              id: "user-1",
+              identities: [
+                {
+                  provider: "custom:yahoo",
+                  identity_data: { iss: "https://api.login.yahoo.com", sub: "yahoo-guid-1" },
+                },
+              ],
+              user_metadata: {},
+              app_metadata: {},
+            },
+          },
+          error: null,
+        }),
+      },
+    };
+    const middleware = createRequireAuth(
+      buildTestDependencies({
+        createSupabaseClient: () => verifiedClient as never,
+        createOwnerStorage,
+      }),
+    );
+
+    await middleware(req, res, next);
+
+    expect(createOwnerStorage).toHaveBeenCalledWith(verifiedClient, "user-1");
+    expect(req.ownerStorage).toBe(storage);
+    expect(req.authIdentity?.userId).toBe("user-1");
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it("fails closed when no Supabase session can be verified", async () => {
+    expect(anonymousSupabaseClient).toBeDefined();
     await requireAuth(req, res, next);
 
     expect(res.status).not.toHaveBeenCalled();
