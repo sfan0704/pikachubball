@@ -1,0 +1,33 @@
+name: Smoke check
+
+# Runs against the dev deployment (main) and production, once Vercel reports them
+# successful, and fails (so notifies the owner through GitHub) when one is not
+# healthy. Pull request previews are not checked: they have no Supabase or Yahoo
+# credentials by design.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke check
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment_url != '' &&
+      (github.event.deployment.environment == 'Production' || github.event.deployment.ref == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Check the deployment
+        env:
+          SMOKE_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: node scripts/smoke-check.mjs "${{ github.event.deployment_status.environment_url }}" "${{ github.event.deployment.sha }}"
