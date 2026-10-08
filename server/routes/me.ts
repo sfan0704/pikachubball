@@ -12,6 +12,8 @@ export function registerMeRoutes(
   app: Express,
   { requireAuth, controller }: MeRouteDependencies
 ): void {
+  app.get("/api/me", requireAuth, controller.getMe);
+  app.put("/api/me/preferences", requireAuth, controller.savePreferences);
   app.delete("/api/me/yahoo", requireAuth, controller.disconnectYahoo);
   app.delete("/api/me", requireAuth, controller.deleteAccount);
 }

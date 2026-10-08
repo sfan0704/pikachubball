@@ -286,3 +286,53 @@ describe("tampering and concurrent refresh", () => {
     ).rejects.toThrow(/stale result rejected/);
   });
 });
+
+describe("preferences and stored leagues through the Data API", () => {
+  it("saves, updates and reads only the owner's preferences", async () => {
+    await expect(ownerA.storage.getPreferences()).resolves.toEqual({
+      selectedLeagueKey: null,
+      selectedTeamKey: null,
+      display: {},
+    });
+
+    await ownerA.storage.savePreferences({
+      selectedLeagueKey: leagueA.leagueKey,
+      selectedTeamKey: leagueA.teamKey,
+      display: { dense: true },
+    });
+    await ownerA.storage.savePreferences({
+      selectedLeagueKey: leagueA.leagueKey,
+      selectedTeamKey: null,
+      display: {},
+    });
+
+    await expect(ownerA.storage.getPreferences()).resolves.toEqual({
+      selectedLeagueKey: leagueA.leagueKey,
+      selectedTeamKey: null,
+      display: {},
+    });
+    await expect(ownerB.storage.getPreferences()).resolves.toMatchObject({
+      selectedLeagueKey: null,
+    });
+  });
+
+  it("replaces and lists the owner's leagues, newest season first, and answers ownership", async () => {
+    await ownerA.storage.replaceUserLeagues([
+      { ...leagueA, name: "Old", season: 2024, isFinished: true },
+      {
+        leagueKey: "466.l.303",
+        teamKey: "466.l.303.t.1",
+        name: "New",
+        season: 2025,
+        isFinished: false,
+      },
+    ]);
+
+    const leagues = await ownerA.storage.listUserLeagues();
+    expect(leagues.map((league) => league.name)).toEqual(["New", "Old"]);
+    expect(leagues[1]).toMatchObject({ isFinished: true, season: 2024 });
+    await expect(ownerA.storage.ownsLeague(leagueA.leagueKey)).resolves.toBe(true);
+    await expect(ownerB.storage.ownsLeague(leagueA.leagueKey)).resolves.toBe(false);
+    await expect(ownerB.storage.listUserLeagues()).resolves.toEqual([]);
+  });
+});

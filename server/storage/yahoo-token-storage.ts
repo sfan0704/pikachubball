@@ -1,3 +1,6 @@
+import type { Preferences } from "../../shared/api/account";
+import type { UserLeague, UserLeagueInput } from "../../shared/api/leagues";
+
 export interface YahooTokenInput {
   userId: string;
   accessToken: string;
@@ -37,6 +40,13 @@ export interface OwnerScopedStorage extends YahooTokenStorage {
   disconnectYahoo(): Promise<void>;
   /** Deletes the signed-in user's account and everything stored for it. */
   deleteAccount(): Promise<void>;
+  /** The user's saved choices; empty choices when none were ever saved. */
+  getPreferences(): Promise<Preferences>;
+  savePreferences(preferences: Preferences): Promise<void>;
+  /** The user's stored leagues, newest season first. */
+  listUserLeagues(): Promise<UserLeague[]>;
+  /** Replaces all of the user's stored leagues in one transaction. */
+  replaceUserLeagues(leagues: readonly UserLeagueInput[]): Promise<void>;
   /** Whether the league is in the user's stored leagues (`user_leagues`). */
   ownsLeague(leagueKey: string): Promise<boolean>;
 }

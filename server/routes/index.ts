@@ -19,7 +19,11 @@ import { registerVizRoutes } from "./viz";
 export function registerRoutes(app: Express, dependencies: ServerDependencies): void {
   const { config, createSupabaseClient } = dependencies;
   const requireAuth = createRequireAuth(dependencies);
-  const { auth: authLimiter, data: dataLimiter } = createRateLimiters({
+  const {
+    auth: authLimiter,
+    data: dataLimiter,
+    leagueRefresh: leagueRefreshLimiter,
+  } = createRateLimiters({
     skip: config.nodeEnv === "development",
   });
 
@@ -51,6 +55,7 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   registerLeagueRoutes(app, {
     requireAuth,
     dataLimiter,
+    leagueRefreshLimiter,
     controller: createLeagueController(dependencies),
   });
   registerVizRoutes(app, {
