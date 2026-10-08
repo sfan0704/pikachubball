@@ -21,7 +21,12 @@ export function HeadToHeadTable({ myTeamName, summary }: HeadToHeadTableProps) {
         {scoreText(summary.score)}
       </p>
       <p className="text-center text-xs text-muted-foreground">wins-losses-ties</p>
-      <div className="overflow-x-auto">
+      <div
+        role="region"
+        aria-label="Category comparison"
+        tabIndex={0}
+        className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         <table className="w-full text-sm">
           <caption className="sr-only">
             {myTeamName} against {summary.opponent.teamName}, category by category

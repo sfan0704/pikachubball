@@ -1,6 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["api/index.ts", "vitest.database.config.ts", "tests/**/*.test.{ts,tsx}"],
+  "entry": [
+    "api/index.ts",
+    "vitest.database.config.ts",
+    "tests/**/*.test.{ts,tsx}",
+    "tests/browser/**/*.spec.ts"
+  ],
   "project": [
     "client/src/**/*.{ts,tsx}",
     "server/**/*.ts",

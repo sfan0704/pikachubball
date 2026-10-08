@@ -21,7 +21,7 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
     data: dataLimiter,
     leagueRefresh: leagueRefreshLimiter,
   } = createRateLimiters({
-    skip: config.nodeEnv === "development",
+    skip: config.nodeEnv === "development" || config.localStack,
   });
 
   app.get("/api/health", (_req, res) => {
@@ -37,7 +37,7 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   });
   registerYahooOAuthRoutes(app, {
     requireAuth,
-    skipRateLimit: config.nodeEnv === "development",
+    skipRateLimit: config.nodeEnv === "development" || config.localStack,
     controller: createYahooOAuthController({ config }),
   });
   registerDevRoutes(app, dependencies);

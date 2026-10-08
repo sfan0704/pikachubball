@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 # Local development: the app against a throwaway Supabase stack and the Yahoo
-# stand-in. No hosted credentials, no network access to Yahoo. Refuses to run
-# in production and refuses anything but loopback addresses.
+# stand-in. No hosted credentials, no network access to Yahoo. Refuses to run in
+# production and refuses anything but loopback addresses. With --built it serves
+# the production build (npm run build) instead of the development server, which
+# is how the browser tests run it.
 set -euo pipefail
+
+BUILT=false
+[ "${1:-}" = "--built" ] && BUILT=true
 
 cd "$(dirname "$0")/.."
 
@@ -37,7 +42,9 @@ esac
 
 STANDIN_PORT="${STANDIN_PORT:-5090}"
 PORT="${PORT:-5000}"
-export NODE_ENV=development LOCAL_STACK=true PORT
+# The built server serves the compiled client when NODE_ENV is not "development".
+if $BUILT; then export NODE_ENV=test; else export NODE_ENV=development; fi
+export LOCAL_STACK=true PORT
 export APP_ORIGIN="http://localhost:$PORT"
 export SUPABASE_URL SUPABASE_PUBLISHABLE_KEY SUPABASE_DB_URL
 export ENCRYPTION_KEY="${ENCRYPTION_KEY:-$(printf '1f%.0s' $(seq 1 32))}"
@@ -55,4 +62,8 @@ trap 'kill $STANDIN_PID 2>/dev/null || true' EXIT
 npx tsx scripts/seed-local.ts
 echo
 echo "Sign in as a seeded manager: http://localhost:$PORT/api/dev/login?user=a  (or user=b)"
-npx tsx --watch server/index.ts
+if $BUILT; then
+  node dist/index.mjs
+else
+  npx tsx --watch server/index.ts
+fi

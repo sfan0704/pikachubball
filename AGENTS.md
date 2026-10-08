@@ -21,6 +21,7 @@ npm run check      # TypeScript
 npm test           # unit and route tests (npm run test:coverage also enforces the coverage thresholds CI uses)
 npm run build      # production build
 npm run test:db    # database and access-rule tests (needs Docker)
+npm run test:browser # browser tests of the main flows with accessibility checks (needs Docker and a build)
 ```
 
 Run `lint`, `format:check`, `knip`, `check` and `test` before opening a pull request, and `test:db` when you change anything in `supabase/`. Don't call a change done until they pass.

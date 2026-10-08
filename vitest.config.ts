@@ -16,10 +16,7 @@ export default defineConfig({
     // Needs the local Supabase stack; run through `npm run test:db`
     exclude: ["**/node_modules/**", "tests/database/**"],
     // Use happy-dom only for frontend tests
-    environmentMatchGlobs: [
-      ["tests/frontend/**", "happy-dom"],
-      ["tests/e2e/**", "happy-dom"],
-    ],
+    environmentMatchGlobs: [["tests/frontend/**", "happy-dom"]],
     // Set environment variables before any imports
     env: {
       NODE_ENV: "test",

@@ -162,7 +162,7 @@ export function RankingsView({ table, myTeamKey }: { table: TeamTable; myTeamKey
       <RankingsHeading totals={mode === "totals"} onChange={changeMode} />
       <CardContent className="p-0 md:p-6">
         <div className="overflow-x-auto">
-          <Table className="text-xs md:text-sm">
+          <Table label="Rankings table" className="text-xs md:text-sm">
             <caption className="sr-only">Teams ranked by category rank sum</caption>
             <TableHeader>
               <TableRow>
