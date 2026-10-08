@@ -143,6 +143,20 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
     return Array.isArray(data) && data.length === 1;
   }
 
+  async disconnectYahoo(): Promise<void> {
+    const { error } = await this.client.rpc("disconnect_yahoo");
+    if (error) {
+      throw storageFailure("disconnect", error);
+    }
+  }
+
+  async deleteAccount(): Promise<void> {
+    const { error } = await this.client.rpc("delete_my_account");
+    if (error) {
+      throw storageFailure("account deletion", error);
+    }
+  }
+
   async ownsLeague(leagueKey: string): Promise<boolean> {
     const { data, error } = await this.client
       .from("user_leagues")

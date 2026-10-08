@@ -25,4 +25,6 @@ export interface ServerDependencies {
   createYahooClient: YahooClientCreator;
   /** A fantasy data source that reads through the request's one Yahoo client. */
   createFantasyDataSource(yahooClient: YahooClientProvider): FantasyDataSource;
+  /** Revokes a Yahoo refresh token at Yahoo; true when Yahoo confirmed it, and never throws. */
+  revokeYahooGrant(refreshToken: string): Promise<boolean>;
 }
