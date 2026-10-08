@@ -1,10 +1,10 @@
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createApp } from "../../../server/app";
-import { createAppErrorHandler } from "../../../server/composition-root";
-import type { YahooClientCreator } from "../../../server/request-context";
-import type { YahooApiClient } from "../../../server/services/yahoo/yahoo-api-client";
+import { createApp } from "../../../server/http/app";
+import { createAppErrorHandler } from "../../../server/http/composition-root";
+import type { YahooClientCreator } from "../../../server/http/request-context";
+import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { buildTestDependencies } from "../../support/dependencies";
 import { recordingLogger } from "../../support/logger";
@@ -164,7 +164,7 @@ describe("the request context, end to end", () => {
   it("answers a user without a Yahoo connection with YAHOO_RECONNECT_REQUIRED", async () => {
     // The client creator reports the missing connection like the real client does.
     const { YahooReconnectRequiredError } =
-      await import("../../../server/services/yahoo/yahoo-request-policy");
+      await import("../../../server/fantasy/yahoo/yahoo-request-policy");
     const dependencies = buildTestDependencies({
       createSupabaseClient: () => verifiedClient,
       createOwnerStorage: () =>

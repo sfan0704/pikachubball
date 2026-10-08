@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Request, Response } from "express";
-import { createAppErrorHandler, createServerDependencies } from "../../../server/composition-root";
+import {
+  createAppErrorHandler,
+  createServerDependencies,
+} from "../../../server/http/composition-root";
 import { SupabaseOwnerStorage } from "../../../server/storage/supabase-owner-storage";
 import { buildTestConfig, buildTestDependencies } from "../../support/dependencies";
 

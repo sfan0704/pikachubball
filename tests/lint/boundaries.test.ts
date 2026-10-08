@@ -52,7 +52,7 @@ describe("import boundaries", () => {
     expect(
       await errorsFor(
         "shared/api/errors.ts",
-        "import { env } from '../../server/app';\nexport const a = env;\n"
+        "import { env } from '../../server/http/app';\nexport const a = env;\n"
       )
     ).toEqual(["no-restricted-imports"]);
   });
@@ -61,7 +61,7 @@ describe("import boundaries", () => {
     expect(
       await errorsFor(
         "client/src/lib/utils.ts",
-        "import { createApp } from '../../../server/app';\nexport const a = createApp;\n"
+        "import { createApp } from '../../../server/http/app';\nexport const a = createApp;\n"
       )
     ).toEqual(["no-restricted-imports"]);
     expect(
@@ -84,7 +84,7 @@ describe("import boundaries", () => {
   it("keeps the server from importing client code", async () => {
     expect(
       await errorsFor(
-        "server/app.ts",
+        "server/http/app.ts",
         "import { cn } from '../client/src/lib/utils';\nexport const a = cn;\n"
       )
     ).toEqual(["no-restricted-imports"]);
@@ -121,13 +121,14 @@ describe("promises and size limits where the target layout applies", () => {
     ).toContain("complexity");
   });
 
-  it("only warns for the same code elsewhere", async () => {
+  it("only warns for the same code elsewhere, and in the legacy league discovery", async () => {
     const longBody = Array.from({ length: 62 }, (_, i) => `  noop(${i});`).join("\n");
-    expect(
-      await errorsFor(
-        "server/app.ts",
-        `declare function noop(n: number): void;\nexport function big() {\n${longBody}\n}\n`
-      )
-    ).toEqual([]);
+    const code = `declare function noop(n: number): void;\nexport function big() {\n${longBody}\n}\n`;
+
+    expect(await errorsFor("server/storage/yahoo-token-storage.ts", code)).toEqual([]);
+    expect(await errorsFor("server/fantasy/legacy/league-service.ts", code)).toEqual([]);
+    expect(await errorsFor("server/fantasy/yahoo/yahoo-auth.ts", code)).toContain(
+      "max-lines-per-function"
+    );
   });
 });

@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { YahooApiClient } from "../../../../../server/services/yahoo/yahoo-api-client";
+import { YahooApiClient } from "../../../../../server/fantasy/yahoo/yahoo-api-client";
 import type { YahooTokenStorage } from "../../../../../server/storage/yahoo-token-storage";
 import type { YahooAppConfig } from "../../../../../server/config/config";
-import { refreshAccessToken } from "../../../../../server/yahoo-auth";
+import { refreshAccessToken } from "../../../../../server/fantasy/yahoo/yahoo-auth";
 import { jsonResponse, timeoutError } from "../../../../support/fetch";
-import { YahooTokenManager } from "../../../../../server/services/yahoo/yahoo-token-manager";
+import { YahooTokenManager } from "../../../../../server/fantasy/yahoo/yahoo-token-manager";
 import {
   systemClock,
   YahooReconnectRequiredError,
   YahooUnavailableError,
-} from "../../../../../server/services/yahoo/yahoo-request-policy";
+} from "../../../../../server/fantasy/yahoo/yahoo-request-policy";
 
 // Mock dependencies
-vi.mock("../../../../../server/yahoo-auth");
+vi.mock("../../../../../server/fantasy/yahoo/yahoo-auth");
 
 const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
 
@@ -689,62 +689,6 @@ describe("YahooApiClient", () => {
         expect.any(Object)
       );
       expect(result).toEqual(standingsData);
-    });
-
-    it("should get league settings", async () => {
-      // ARRANGE
-      const leagueKey = "466.l.12345";
-      const settingsData = { settings: "data" };
-      network.get.mockResolvedValue({ data: settingsData });
-
-      // ACT
-      const result = await client.getLeagueSettings(leagueKey);
-
-      // ASSERT
-      expect(network.get).toHaveBeenCalledWith(
-        expect.stringContaining(`/league/${leagueKey}/settings`),
-        expect.any(Object)
-      );
-      expect(result).toEqual(settingsData);
-    });
-
-    it("should get league scoreboard without week", async () => {
-      // ARRANGE
-      const leagueKey = "466.l.12345";
-      const scoreboardData = { scoreboard: "data" };
-      network.get.mockResolvedValue({ data: scoreboardData });
-
-      // ACT
-      const result = await client.getLeagueScoreboard(leagueKey);
-
-      // ASSERT
-      expect(network.get).toHaveBeenCalledWith(
-        expect.stringContaining(`/league/${leagueKey}/scoreboard`),
-        expect.any(Object)
-      );
-      expect(result).toEqual(scoreboardData);
-    });
-
-    it("should get league scoreboard with week", async () => {
-      // ARRANGE
-      const leagueKey = "466.l.12345";
-      const week = 5;
-      const scoreboardData = { scoreboard: "data" };
-      network.get.mockResolvedValue({ data: scoreboardData });
-
-      // ACT
-      const result = await client.getLeagueScoreboard(leagueKey, week);
-
-      // ASSERT
-      expect(network.get).toHaveBeenCalledWith(
-        expect.stringContaining(`/league/${leagueKey}/scoreboard`),
-        expect.any(Object)
-      );
-      expect(network.get).toHaveBeenCalledWith(
-        expect.stringContaining(`week=${week}`),
-        expect.any(Object)
-      );
-      expect(result).toEqual(scoreboardData);
     });
   });
 

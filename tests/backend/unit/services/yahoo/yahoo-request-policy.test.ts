@@ -8,7 +8,7 @@ import {
   YahooRateLimitedError,
   YahooUnavailableError,
   type YahooRequestClock,
-} from "../../../../../server/services/yahoo/yahoo-request-policy";
+} from "../../../../../server/fantasy/yahoo/yahoo-request-policy";
 
 function fakeClock(start = 1_800_000_000_000) {
   let now = start;

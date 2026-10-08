@@ -3,8 +3,8 @@ import { config as loadDotenv } from "dotenv";
 import { resolve } from "path";
 loadDotenv({ path: resolve(process.cwd(), ".env.local") });
 
-import { createApp } from "./app";
-import { createAppErrorHandler, createServerDependencies } from "./composition-root";
+import { createApp } from "./http/app";
+import { createAppErrorHandler, createServerDependencies } from "./http/composition-root";
 import { loadConfig } from "./config/config";
 import { createDevServer } from "./config/dev-server";
 import { setupVite, serveStatic } from "./config/vite";

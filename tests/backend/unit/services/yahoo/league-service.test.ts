@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { getUserLeagues } from "../../../../../server/services/yahoo/league-service";
+import { getUserLeagues } from "../../../../../server/fantasy/legacy/league-service";
 import { mockStandings } from "../../../fixtures/yahoo-responses";
 
 const getYahooApiClient = vi.fn();

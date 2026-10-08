@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   YahooReconnectRequiredError,
   YahooUnavailableError,
-} from "../../../server/services/yahoo/yahoo-request-policy";
+} from "../../../server/fantasy/yahoo/yahoo-request-policy";
 import {
   exchangeAuthorizationCode,
   refreshAccessToken,
   revokeYahooToken,
-} from "../../../server/yahoo-auth";
+} from "../../../server/fantasy/yahoo/yahoo-auth";
 import { fakeFetch, jsonResponse, requestOf, timeoutError } from "../../support/fetch";
 
 const REDIRECT_URI = "https://basketball.example.test/api/auth/yahoo/fantasy/callback";

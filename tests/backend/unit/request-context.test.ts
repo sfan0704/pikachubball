@@ -4,8 +4,8 @@ import {
   createRequestContext,
   getRequestContext,
   type YahooClientCreator,
-} from "../../../server/request-context";
-import type { YahooApiClient } from "../../../server/services/yahoo/yahoo-api-client";
+} from "../../../server/http/request-context";
+import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { UnauthorizedError } from "../../../shared/api/errors";
 import { fixedClock } from "../../support/clock";

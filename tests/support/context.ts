@@ -1,4 +1,4 @@
-import type { RequestContext, RequestScope } from "../../server/request-context";
+import type { RequestContext, RequestScope } from "../../server/http/request-context";
 import type { OwnerScopedStorage } from "../../server/storage/yahoo-token-storage";
 import { fixedClock } from "./clock";
 import { silentLogger } from "./dependencies";

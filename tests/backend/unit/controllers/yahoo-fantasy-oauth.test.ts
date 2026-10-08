@@ -1,14 +1,15 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createYahooOAuthController } from "../../../../server/controllers/yahoo-oauth-controller";
-import { createErrorHandler } from "../../../../server/middleware/error-handler";
+import { registerYahooOAuthRoutes } from "../../../../server/http/routes/yahoo-oauth";
+import { createYahooOAuthController } from "../../../../server/http/controllers/yahoo-oauth-controller";
+import { createErrorHandler } from "../../../../server/http/middleware/error-handler";
 import { buildTestConfig, silentLogger } from "../../../support/dependencies";
 import { buildRequestContext } from "../../../support/context";
 import { systemClock } from "../../../../server/utils/clock";
-import { exchangeAuthorizationCode } from "../../../../server/yahoo-auth";
+import { exchangeAuthorizationCode } from "../../../../server/fantasy/yahoo/yahoo-auth";
 
-vi.mock("../../../../server/yahoo-auth", () => ({
+vi.mock("../../../../server/fantasy/yahoo/yahoo-auth", () => ({
   exchangeAuthorizationCode: vi.fn(),
 }));
 
@@ -47,14 +48,17 @@ describe("Yahoo Fantasy OAuth handoff", () => {
       });
       next();
     });
-    application.get("/start", yahooOAuthController.beginFantasyAccess);
-    application.get("/callback", yahooOAuthController.completeFantasyAccess);
+    registerYahooOAuthRoutes(application, {
+      requireAuth: (_req, _res, next) => next(),
+      skipRateLimit: true,
+      controller: yahooOAuthController,
+    });
     application.use(errorHandler);
     return application;
   }
 
   it("binds the authorization request to a short-lived HTTP-only state cookie", async () => {
-    const response = await request(app()).get("/start");
+    const response = await request(app()).get("/connect/start");
 
     expect(response.status).toBe(302);
     const location = new URL(response.headers.location);
@@ -73,7 +77,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
   });
 
   it("stores an approved Fantasy token only for the matching Yahoo account", async () => {
-    const start = await request(app()).get("/start");
+    const start = await request(app()).get("/connect/start");
     const location = new URL(start.headers.location);
     const state = location.searchParams.get("state")!;
     const cookie = start.headers["set-cookie"][0].split(";")[0];
@@ -85,7 +89,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     });
 
     const response = await request(app())
-      .get(`/callback?code=one-time-code&state=${encodeURIComponent(state)}`)
+      .get(`/api/auth/yahoo/fantasy/callback?code=one-time-code&state=${encodeURIComponent(state)}`)
       .set("Cookie", cookie);
 
     expect(response.status).toBe(303);
@@ -107,7 +111,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
   });
 
   it("stores a legacy Fantasy token when Yahoo omits the optional guid", async () => {
-    const start = await request(app()).get("/start");
+    const start = await request(app()).get("/connect/start");
     const location = new URL(start.headers.location);
     const state = location.searchParams.get("state")!;
     const cookie = start.headers["set-cookie"][0].split(";")[0];
@@ -118,7 +122,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     });
 
     const response = await request(app())
-      .get(`/callback?code=one-time-code&state=${encodeURIComponent(state)}`)
+      .get(`/api/auth/yahoo/fantasy/callback?code=one-time-code&state=${encodeURIComponent(state)}`)
       .set("Cookie", cookie);
 
     expect(response.status).toBe(303);
@@ -133,11 +137,35 @@ describe("Yahoo Fantasy OAuth handoff", () => {
 
   it("rejects state replay before exchanging a Yahoo code", async () => {
     const response = await request(app())
-      .get("/callback?code=one-time-code&state=attacker-state")
+      .get("/api/auth/yahoo/fantasy/callback?code=one-time-code&state=attacker-state")
       .set("Cookie", "pikachubball-yahoo-state=expected-state");
 
     expect(response.status).toBe(400);
     expect(exchangeAuthorizationCode).not.toHaveBeenCalled();
     expect(saveYahooConnection).not.toHaveBeenCalled();
+  });
+});
+
+describe("Fantasy connection rate limit", () => {
+  it("answers the eleventh start in a minute with RATE_LIMITED", async () => {
+    const application = express();
+    application.use((req, _res, next) => {
+      req.context = buildRequestContext({ user: IDENTITY, clock: systemClock });
+      next();
+    });
+    registerYahooOAuthRoutes(application, {
+      requireAuth: (_req, _res, next) => next(),
+      skipRateLimit: false,
+      controller: yahooOAuthController,
+    });
+    application.use(errorHandler);
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await request(application).get("/connect/start").expect(302);
+    }
+    const limited = await request(application).get("/connect/start");
+
+    expect(limited.status).toBe(429);
+    expect(limited.body).toMatchObject({ code: "RATE_LIMITED" });
   });
 });

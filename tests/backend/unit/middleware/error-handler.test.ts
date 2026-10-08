@@ -5,7 +5,7 @@ import {
   createErrorHandler,
   asyncHandler,
   statusForCode,
-} from "../../../../server/middleware/error-handler";
+} from "../../../../server/http/middleware/error-handler";
 import {
   AppError,
   ConflictError,

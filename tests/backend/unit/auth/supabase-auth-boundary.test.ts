@@ -10,9 +10,9 @@ import {
   requireYahooProviderTokens,
   YAHOO_ISSUER,
   YAHOO_PROVIDER,
-} from "../../../../server/auth/supabase-auth";
-import { createSupabaseAuthController } from "../../../../server/controllers/supabase-auth-controller";
-import { createErrorHandler } from "../../../../server/middleware/error-handler";
+} from "../../../../server/http/auth/supabase-auth";
+import { createSupabaseAuthController } from "../../../../server/http/controllers/supabase-auth-controller";
+import { createErrorHandler } from "../../../../server/http/middleware/error-handler";
 import { buildTestConfig, silentLogger } from "../../../support/dependencies";
 
 const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });

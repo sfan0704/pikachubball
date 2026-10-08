@@ -2,12 +2,12 @@
 // and RLS. Yahoo is replaced by a controllable stub; storage is the real
 // SupabaseOwnerStorage on the disposable stack. Run through `npm run test:db`.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { YahooTokenManager } from "../../server/services/yahoo/yahoo-token-manager";
+import { YahooTokenManager } from "../../server/fantasy/yahoo/yahoo-token-manager";
 import {
   systemClock,
   YahooReconnectRequiredError,
-} from "../../server/services/yahoo/yahoo-request-policy";
-import { refreshAccessToken } from "../../server/yahoo-auth";
+} from "../../server/fantasy/yahoo/yahoo-request-policy";
+import { refreshAccessToken } from "../../server/fantasy/yahoo/yahoo-auth";
 import { connect, database, signUpOwner, type Owner } from "./local-stack";
 
 const yahooApp = {
@@ -15,7 +15,7 @@ const yahooApp = {
   clientSecret: "synthetic-secret",
   providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
 };
-vi.mock("../../server/yahoo-auth", () => ({ refreshAccessToken: vi.fn() }));
+vi.mock("../../server/fantasy/yahoo/yahoo-auth", () => ({ refreshAccessToken: vi.fn() }));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NextFunction, Request, Response } from "express";
-import { createRequireAuth } from "../../../../server/middleware/auth";
+import { createRequireAuth } from "../../../../server/http/middleware/auth";
 import { UnauthorizedError } from "../../../../shared/api/errors";
 import { buildTestDependencies } from "../../../support/dependencies";
 import { buildRequestScope } from "../../../support/context";

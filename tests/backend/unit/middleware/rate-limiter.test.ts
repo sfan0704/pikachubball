@@ -5,9 +5,9 @@ import {
   createRateLimiters,
   DATA_REQUESTS_PER_MINUTE,
   LEAGUE_REFRESHES_PER_MINUTE,
-} from "../../../../server/middleware/rate-limiter";
-import { createErrorHandler } from "../../../../server/middleware/error-handler";
-import { createRequestScope } from "../../../../server/middleware/request-scope";
+} from "../../../../server/http/middleware/rate-limiter";
+import { createErrorHandler } from "../../../../server/http/middleware/error-handler";
+import { createRequestScope } from "../../../../server/http/middleware/request-scope";
 import { buildRequestContext } from "../../../support/context";
 import { buildTestDependencies, silentLogger } from "../../../support/dependencies";
 

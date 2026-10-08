@@ -5,7 +5,7 @@ import {
   CONTENT_SECURITY_POLICY,
   SECURITY_HEADERS,
   createSecurityHeaders,
-} from "../../../../server/middleware/security-headers";
+} from "../../../../server/http/middleware/security-headers";
 
 function run(development: boolean) {
   const headers = new Map<string, string>();

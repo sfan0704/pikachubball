@@ -1,10 +1,10 @@
 import { ForbiddenError } from "../../shared/api/errors";
 import type { RosterResponse, UserLeague } from "../../shared/api/leagues";
-import type { YahooClientProvider } from "../request-context";
+import type { YahooClientProvider } from "../http/request-context";
 import type { Clock } from "../utils/clock";
 import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
-import { getUserLeagues } from "./yahoo/league-service";
-import { getTeamRoster } from "./yahoo/roster-service";
+import { getUserLeagues } from "../fantasy/legacy/league-service";
+import { getTeamRoster } from "../fantasy/yahoo/roster-service";
 
 type LeagueStorage = Pick<OwnerScopedStorage, "listUserLeagues" | "replaceUserLeagues">;
 

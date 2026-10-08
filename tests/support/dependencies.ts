@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppConfig } from "../../server/config/config";
-import type { ServerDependencies } from "../../server/dependencies";
+import type { ServerDependencies } from "../../server/http/dependencies";
 import type { Logger } from "../../server/utils/logger";
 import { fixedClock } from "./clock";
 
