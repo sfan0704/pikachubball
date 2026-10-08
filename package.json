@@ -23,6 +23,7 @@
     "test:coverage": "vitest --run --coverage",
     "standin": "tsx scripts/yahoo-standin.ts",
     "check:bundle": "node scripts/check-bundle-size.mjs",
+    "load": "bash scripts/load-test.sh",
     "test:browser": "playwright test",
     "test:db": "bash scripts/test-database.sh",
     "format": "prettier --write .",

@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { SEED_USERS } from "../../dev/seed-users";
+import { seedUser } from "../../dev/seed-users";
 import type { ServerDependencies } from "../dependencies";
 import { asyncHandler } from "../middleware/error-handler";
 import { NotFoundError, UnauthorizedError } from "../../../shared/api/errors";
@@ -19,7 +19,7 @@ export function registerDevRoutes(
   app.get(
     "/api/dev/login",
     asyncHandler(async (req: Request, res: Response) => {
-      const user = SEED_USERS.find((candidate) => candidate.key === req.query.user);
+      const user = seedUser(req.query.user);
       if (!user) {
         throw new NotFoundError("Seeded user");
       }

@@ -3,7 +3,7 @@
 // loopback addresses. Run through `npm run dev`, which supplies the environment.
 import { createClient } from "@supabase/supabase-js";
 import pg from "pg";
-import { SEED_LEAGUE_KEY, SEED_USERS } from "../server/dev/seed-users";
+import { SEED_LEAGUE_KEY, seedUsers } from "../server/dev/seed-users";
 import { AesGcmOwnerTokenCipher } from "../server/storage/owner-token-cipher";
 import { SupabaseOwnerStorage } from "../server/storage/supabase-owner-storage";
 
@@ -24,7 +24,7 @@ async function main(): Promise<void> {
   await database.connect();
   const cipher = AesGcmOwnerTokenCipher.fromHex(encryptionKey);
 
-  for (const manager of SEED_USERS) {
+  for (const manager of seedUsers(Number(process.env.SEED_COUNT ?? 2))) {
     const client = createClient(supabaseUrl, publishableKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
