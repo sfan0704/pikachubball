@@ -35,6 +35,7 @@ export default [
         clearInterval: "readonly",
         AbortSignal: "readonly",
         AbortController: "readonly",
+        performance: "readonly",
         RequestInit: "readonly",
         // Browser globals
         window: "readonly",

@@ -42,6 +42,8 @@ npm ci
 
 The stand-in can fail the way Yahoo does. Tell it with `curl -X POST http://127.0.0.1:5090/__scenario -d '{"scenario":"rate-limit","times":2}'`; scenarios are `ok`, `rate-limit`, `unavailable`, `unauthorized` (an expired token) and `timeout`, and `times` limits how many requests are affected. Local mode (`LOCAL_STACK=true`) refuses production, a hosted Supabase project and a hosted Yahoo address, and `YAHOO_API_BASE_URL` / `YAHOO_OAUTH_BASE_URL` cannot be set outside it.
 
+Before a release, `npm run build && npm run load` simulates 14 managers using the app at once against the stand-in and reports league-view timings against the 2-second target and the Yahoo calls each step made (1 for a new scope, 0 for repeat views and comparisons).
+
 ### Against the dev tier
 
 To run the app against the dev tier (`npm run dev:hosted`), create `.env.local` from the template and fill in the dev values:
