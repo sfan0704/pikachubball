@@ -25,7 +25,7 @@ The app has three separated tiers. No tier holds another tier's credentials, and
 | Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
 | Prod | Vercel production alias | `Pikachu Basketball` | sign-in: `PikachuBball - Local`; Fantasy access: `PikachuBball` (consolidating on `PikachuBball`, CAR-57) | Vercel Production environment only | league members |
 
-Yahoo is used twice on every sign-in: Supabase's `custom:yahoo` provider signs the user in, then the app runs its own Fantasy access OAuth (`/connect/start` → `/api/auth/yahoo/fantasy/callback`) with the server's `YAHOO_CLIENT_ID`. A tier's Yahoo app therefore registers both its Supabase callback and the app's Fantasy callback. Yahoo only accepts `https://` redirect URIs, which is why local dev runs over HTTPS. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
+Yahoo is used twice on every sign-in: Supabase's `custom:yahoo` provider signs the user in, then the app runs its own Fantasy access OAuth (`/connect/start` → `/api/auth/yahoo/fantasy/callback`) with the server's `YAHOO_CLIENT_ID`. A tier's Yahoo app therefore registers both its Supabase callback and the app's Fantasy callback. Yahoo only accepts `https://` redirect URIs, which is why local dev runs over HTTPS. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/reference/infrastructure-inventory.md#environment-tiers).
 
 ## Local setup
 
@@ -75,9 +75,10 @@ The migration in `supabase/migrations` creates only the minimum hosted records: 
 
 For configuration and verification, see:
 
-- [Yahoo authentication](docs/SUPABASE_YAHOO_AUTH.md)
-- [Owner-scoped storage](docs/SUPABASE_STORAGE.md)
-- [Infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md)
+- [Runbooks](docs/runbooks/README.md): sign-in setup, secret exposure, key rotation, restore and rollback, season rollover
+- [Yahoo authentication](docs/reference/authentication.md)
+- [Owner-scoped storage](docs/reference/storage.md)
+- [Infrastructure inventory](docs/reference/infrastructure-inventory.md)
 
 ## Architecture and contributing
 
