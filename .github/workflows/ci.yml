@@ -48,6 +48,9 @@ jobs:
           NODE_ENV: production
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
+      - name: Initial JavaScript size
+        run: npm run check:bundle
+
   database:
     name: Database migrations & RLS
     runs-on: ubuntu-latest

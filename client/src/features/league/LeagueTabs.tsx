@@ -1,13 +1,11 @@
+import { lazy, Suspense, type ReactNode } from "react";
 import type { UserLeague } from "@shared/api/leagues";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccountControls } from "@/features/account/AccountControls";
 import { useAccountActions } from "@/features/account/useAccountActions";
 import { useLeagueScope } from "@/api/hooks";
-import { ComparisonView } from "./ComparisonView";
-import { HeatmapView } from "./HeatmapView";
-import { MatchupView } from "./MatchupView";
 import { RankingsView } from "./RankingsView";
-import { RosterPanel } from "./RosterView";
 import type { Selection } from "./selection";
 import { TableBoundary } from "./TableBoundary";
 import { useNow } from "./useNow";
@@ -20,6 +18,28 @@ interface LeagueViewProps {
   league: UserLeague;
   onSelect: (change: Partial<Selection>) => void;
   onPickLeague: () => void;
+}
+
+// The views other than the first load when their tab is first opened.
+const HeatmapView = lazy(() => import("./HeatmapView").then((m) => ({ default: m.HeatmapView })));
+const MatchupView = lazy(() => import("./MatchupView").then((m) => ({ default: m.MatchupView })));
+const ComparisonView = lazy(() =>
+  import("./ComparisonView").then((m) => ({ default: m.ComparisonView }))
+);
+const RosterPanel = lazy(() => import("./RosterView").then((m) => ({ default: m.RosterPanel })));
+
+function Loading({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div role="status" aria-label="Loading">
+          <Skeleton className="h-64 w-full" />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
 }
 
 const TABS = ["rankings", "heatmap", "matchup", "compare", "roster", "account"] as const;
@@ -55,27 +75,35 @@ function ViewTabs({ selection, query, teamName, onPickLeague }: ViewTabsProps) {
         ))}
       </TabsContent>
       <TabsContent value="heatmap">
-        {tableTab((table) => (
-          <HeatmapView table={table} myTeamKey={myTeamKey} />
-        ))}
+        <Loading>
+          {tableTab((table) => (
+            <HeatmapView table={table} myTeamKey={myTeamKey} />
+          ))}
+        </Loading>
       </TabsContent>
       <TabsContent value="matchup">
-        {tableTab((table) => (
-          <MatchupView table={table} myTeamKey={myTeamKey} />
-        ))}
+        <Loading>
+          {tableTab((table) => (
+            <MatchupView table={table} myTeamKey={myTeamKey} />
+          ))}
+        </Loading>
       </TabsContent>
       <TabsContent value="compare">
-        {tableTab((table) => (
-          <ComparisonView table={table} myTeamKey={myTeamKey} />
-        ))}
+        <Loading>
+          {tableTab((table) => (
+            <ComparisonView table={table} myTeamKey={myTeamKey} />
+          ))}
+        </Loading>
       </TabsContent>
       <TabsContent value="roster">
-        <RosterPanel
-          leagueKey={selection.leagueKey}
-          teamKey={myTeamKey}
-          teamName={teamName ?? "Team"}
-          onPickLeague={onPickLeague}
-        />
+        <Loading>
+          <RosterPanel
+            leagueKey={selection.leagueKey}
+            teamKey={myTeamKey}
+            teamName={teamName ?? "Team"}
+            onPickLeague={onPickLeague}
+          />
+        </Loading>
       </TabsContent>
       <TabsContent value="account">
         <AccountControls actions={actions} />

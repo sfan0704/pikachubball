@@ -119,7 +119,7 @@ function RankingsHeading({
             standings.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex min-h-11 items-center gap-2 shrink-0">
           <Switch id="rankings-mode" checked={totals} onCheckedChange={onChange} />
           <Label htmlFor="rankings-mode" className="text-sm cursor-pointer">
             {totals ? "Totals" : "Ranks"}
