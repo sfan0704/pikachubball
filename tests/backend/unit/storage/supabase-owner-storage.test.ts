@@ -135,3 +135,61 @@ describe("league membership", () => {
     await expect(failing.ownsLeague("466.l.2")).rejects.toThrow(/league read/);
   });
 });
+
+describe("preferences and stored leagues", () => {
+  it("maps a stored preferences row and defaults to no choices when there is none", async () => {
+    const row = (data: unknown) =>
+      ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({ maybeSingle: async () => ({ data, error: null }) }),
+          }),
+        }),
+      }) as unknown as SupabaseClient;
+
+    const saved = new SupabaseOwnerStorage(
+      row({ selected_league_key: "466.l.1", selected_team_key: "466.l.1.t.2", display: { a: 1 } }),
+      OWNER_A,
+      cipher
+    );
+    await expect(saved.getPreferences()).resolves.toEqual({
+      selectedLeagueKey: "466.l.1",
+      selectedTeamKey: "466.l.1.t.2",
+      display: { a: 1 },
+    });
+
+    const none = new SupabaseOwnerStorage(row(null), OWNER_A, cipher);
+    await expect(none.getPreferences()).resolves.toEqual({
+      selectedLeagueKey: null,
+      selectedTeamKey: null,
+      display: {},
+    });
+  });
+
+  it("saves preferences for the owner and replaces leagues through the RPC", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const client = { from: () => ({ upsert }), rpc } as unknown as SupabaseClient;
+    const storage = new SupabaseOwnerStorage(client, OWNER_A, cipher);
+
+    await storage.savePreferences({ selectedLeagueKey: null, selectedTeamKey: null, display: {} });
+    await storage.replaceUserLeagues([
+      { leagueKey: "466.l.1", teamKey: "466.l.1.t.1", name: "L", season: null, isFinished: true },
+    ]);
+
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ owner_id: OWNER_A }), {
+      onConflict: "owner_id",
+    });
+    expect(rpc).toHaveBeenCalledWith("replace_user_leagues", {
+      p_leagues: [
+        {
+          league_key: "466.l.1",
+          team_key: "466.l.1.t.1",
+          season: null,
+          name: "L",
+          is_finished: true,
+        },
+      ],
+    });
+  });
+});

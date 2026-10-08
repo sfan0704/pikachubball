@@ -1,3 +1,5 @@
+import type { Preferences } from "../../shared/api/account";
+import type { UserLeague, UserLeagueInput } from "../../shared/api/leagues";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   FantasyMembership,
@@ -141,6 +143,72 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
       throw storageFailure("membership read", error);
     }
     return Array.isArray(data) && data.length === 1;
+  }
+
+  async getPreferences(): Promise<Preferences> {
+    const { data, error } = await this.client
+      .from("user_preferences")
+      .select("selected_league_key,selected_team_key,display")
+      .eq("owner_id", this.ownerId)
+      .maybeSingle();
+    if (error) {
+      throw storageFailure("preferences read", error);
+    }
+    return {
+      selectedLeagueKey: data?.selected_league_key ?? null,
+      selectedTeamKey: data?.selected_team_key ?? null,
+      display: data?.display ?? {},
+    };
+  }
+
+  async savePreferences(preferences: Preferences): Promise<void> {
+    const { error } = await this.client.from("user_preferences").upsert(
+      {
+        owner_id: this.ownerId,
+        selected_league_key: preferences.selectedLeagueKey,
+        selected_team_key: preferences.selectedTeamKey,
+        display: preferences.display,
+      },
+      { onConflict: "owner_id" }
+    );
+    if (error) {
+      throw storageFailure("preferences save", error);
+    }
+  }
+
+  async listUserLeagues(): Promise<UserLeague[]> {
+    const { data, error } = await this.client
+      .from("user_leagues")
+      .select("league_key,team_key,name,season,is_finished,synced_at")
+      .eq("owner_id", this.ownerId)
+      .order("season", { ascending: false, nullsFirst: false })
+      .order("name");
+    if (error) {
+      throw storageFailure("league list", error);
+    }
+    return (data ?? []).map((row) => ({
+      leagueKey: row.league_key,
+      teamKey: row.team_key,
+      name: row.name,
+      season: row.season,
+      isFinished: row.is_finished,
+      syncedAt: row.synced_at,
+    }));
+  }
+
+  async replaceUserLeagues(leagues: readonly UserLeagueInput[]): Promise<void> {
+    const { error } = await this.client.rpc("replace_user_leagues", {
+      p_leagues: leagues.map((league) => ({
+        league_key: league.leagueKey,
+        team_key: league.teamKey,
+        season: league.season,
+        name: league.name,
+        is_finished: league.isFinished,
+      })),
+    });
+    if (error) {
+      throw storageFailure("league replacement", error);
+    }
   }
 
   async disconnectYahoo(): Promise<void> {

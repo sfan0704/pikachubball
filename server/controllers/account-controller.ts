@@ -1,8 +1,10 @@
 import type { Request, Response } from "express";
+import { meResponseSchema, preferencesSchema } from "../../shared/api/account";
 import { asyncHandler } from "../middleware/error-handler";
 import type { ServerDependencies } from "../dependencies";
 import { getRequestContext } from "../request-context";
 import { deleteAccount, disconnectYahoo } from "../services/account-service";
+import { getMe, savePreferences } from "../services/me-service";
 
 /** Thin HTTP adapter for disconnecting Yahoo and deleting the account. */
 export function createAccountController({
@@ -15,6 +17,17 @@ export function createAccountController({
   };
 
   return {
+    /** `GET /api/me` */
+    getMe: asyncHandler(async (req: Request, res: Response) => {
+      res.json(meResponseSchema.parse(await getMe(getRequestContext(req))));
+    }),
+
+    /** `PUT /api/me/preferences` */
+    savePreferences: asyncHandler(async (req: Request, res: Response) => {
+      const preferences = preferencesSchema.parse(req.body);
+      res.json(await savePreferences(getRequestContext(req), preferences));
+    }),
+
     /** `DELETE /api/me/yahoo` */
     disconnectYahoo: asyncHandler(async (req: Request, res: Response) => {
       const { dependencies, userId } = operationFor(req);
