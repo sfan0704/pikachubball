@@ -5,8 +5,14 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # Minor and patch updates arrive together; a major update is its own pull
+      # request so one breaking release can't hold up the rest.
       npm-dependencies:
-        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # typescript-eslint doesn't support TypeScript 6 yet (npm ci fails on the peer range).
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
