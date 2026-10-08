@@ -1,7 +1,15 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MeResponse } from "@shared/api/account";
 import type { LeagueScope } from "@shared/api/league-scope";
-import { getLeagueScope, getLeagues, getMe, getRoster, savePreferences } from "./endpoints";
+import {
+  deleteAccount,
+  disconnectYahoo,
+  getLeagueScope,
+  getLeagues,
+  getMe,
+  getRoster,
+  savePreferences,
+} from "./endpoints";
 import { queryKeys } from "./query-keys";
 
 /** The signed-in user, their Yahoo connection and saved choices. */
@@ -49,5 +57,35 @@ export function useSavePreferences() {
         me ? { ...me, preferences } : me
       );
     },
+  });
+}
+
+/** Disconnects Yahoo, then drops everything cached from it so no screen keeps showing old leagues. */
+export function useDisconnectYahoo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: disconnectYahoo,
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: queryKeys.leagues });
+      return queryClient.invalidateQueries({ queryKey: queryKeys.me });
+    },
+  });
+}
+
+/** Deletes the account and clears the whole cache. */
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => queryClient.clear(),
+  });
+}
+
+/** Replaces the stored league list with Yahoo's current one and shows the result at once. */
+export function useRefreshLeagues() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => getLeagues(true),
+    onSuccess: (leagues) => queryClient.setQueryData(queryKeys.leagues, leagues),
   });
 }

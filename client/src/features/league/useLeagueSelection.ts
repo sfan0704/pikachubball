@@ -75,8 +75,14 @@ export function useLeagueSelection() {
 
   const status = loadStatus(me, leagues, selection);
 
+  const retry = useCallback(() => {
+    void me.refetch();
+    void leagues.refetch();
+  }, [me, leagues]);
+
   return {
     status,
+    retry,
     error: me.error ?? leagues.error,
     selection,
     leagues: leagueList ?? [],
