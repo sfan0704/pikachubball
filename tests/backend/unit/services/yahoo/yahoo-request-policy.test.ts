@@ -72,7 +72,9 @@ describe("withYahooRetries", () => {
     const tooLong = vi.fn().mockRejectedValue(status(429, { "retry-after": "30" }));
     const missing = vi.fn().mockRejectedValue(status(429));
 
-    const longError = await withYahooRetries(tooLong, clock).catch((error) => error);
+    const longError = (await withYahooRetries(tooLong, clock).catch(
+      (error) => error
+    )) as YahooRateLimitedError;
     const missingError = await withYahooRetries(missing, clock).catch((error) => error);
 
     expect(longError).toBeInstanceOf(YahooRateLimitedError);

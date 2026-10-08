@@ -45,12 +45,19 @@ describe("createServerDependencies", () => {
 
   it("refuses to create a Yahoo client when the Yahoo app is not configured", async () => {
     const dependencies = createServerDependencies(
-      buildTestConfig({ yahoo: { clientId: null, clientSecret: null, providerRedirectUri: null } })
+      buildTestConfig({
+        yahoo: {
+          ...buildTestConfig().yahoo,
+          clientId: null,
+          clientSecret: null,
+          providerRedirectUri: null,
+        },
+      })
     );
 
-    await expect(dependencies.createYahooClient("user-1", {} as never)).rejects.toThrow(
-      /credentials are not configured/
-    );
+    await expect(
+      dependencies.createYahooClient("user-1", {} as never, () => undefined)
+    ).rejects.toThrow(/credentials are not configured/);
   });
 });
 
@@ -60,7 +67,7 @@ describe("createAppErrorHandler", () => {
     const handler = createAppErrorHandler(dependencies);
     const json = vi.fn();
     const res = { status: vi.fn().mockReturnThis(), json } as unknown as Response;
-    handler(new Error("boom"), { requestId: "r1" } as Request, res, vi.fn());
+    handler(new Error("boom"), { requestId: "r1" } as unknown as Request, res, vi.fn());
     return json.mock.calls[0][0];
   }
 

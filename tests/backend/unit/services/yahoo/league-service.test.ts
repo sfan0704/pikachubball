@@ -1,8 +1,17 @@
+import { defined } from "../../../../support/defined";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getUserLeagues } from "../../../../../server/fantasy/legacy/league-service";
 import { mockStandings } from "../../../fixtures/yahoo-responses";
 
 const getYahooApiClient = vi.fn();
+
+/** The first standings entry of the recorded response, which the tests rebuild with their own teams. */
+function standingsOf(response: typeof mockStandings): { teams: Record<string, unknown> } {
+  const section = response.fantasy_content.league[1] as {
+    standings?: { teams: Record<string, unknown> }[];
+  };
+  return defined(section.standings?.[0]);
+}
 
 describe("league-service", () => {
   let mockYahooApiClient: Record<string, ReturnType<typeof vi.fn>>;
@@ -63,9 +72,9 @@ describe("league-service", () => {
               ...mockStandings.fantasy_content.league[1],
               standings: [
                 {
-                  ...mockStandings.fantasy_content.league[1].standings[0],
+                  ...standingsOf(mockStandings),
                   teams: {
-                    ...mockStandings.fantasy_content.league[1].standings[0].teams,
+                    ...standingsOf(mockStandings).teams,
                     "0": {
                       team: [
                         { team_key: "466.l.12345.t.1" },
@@ -106,7 +115,7 @@ describe("league-service", () => {
               ...mockStandings.fantasy_content.league[1],
               standings: [
                 {
-                  ...mockStandings.fantasy_content.league[1].standings[0],
+                  ...standingsOf(mockStandings),
                   teams: {
                     count: 1,
                     "0": {
@@ -264,9 +273,9 @@ describe("league-service", () => {
               ...mockStandings.fantasy_content.league[1],
               standings: [
                 {
-                  ...mockStandings.fantasy_content.league[1].standings[0],
+                  ...standingsOf(mockStandings),
                   teams: {
-                    ...mockStandings.fantasy_content.league[1].standings[0].teams,
+                    ...standingsOf(mockStandings).teams,
                     "0": {
                       team: [
                         { team_key: "466.l.12345.t.1" },

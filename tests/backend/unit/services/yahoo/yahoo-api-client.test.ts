@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from "vitest";
 import { YahooApiClient } from "../../../../../server/fantasy/yahoo/yahoo-api-client";
 import type { YahooTokenStorage } from "../../../../../server/storage/yahoo-token-storage";
 import type { YahooAppConfig } from "../../../../../server/config/config";
@@ -17,7 +17,9 @@ vi.mock("../../../../../server/fantasy/yahoo/yahoo-auth");
 const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
 
 interface NetworkDouble {
-  get: ReturnType<typeof vi.fn>;
+  get: Mock<
+    (path: string, init: { headers: { Authorization: string } }) => Promise<{ data?: unknown }>
+  >;
 }
 
 /**
@@ -88,7 +90,6 @@ describe("YahooApiClient", () => {
     it("should create client using the Yahoo app credentials", async () => {
       // ARRANGE
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -130,7 +131,6 @@ describe("YahooApiClient", () => {
       const newExpiresIn = 3600;
 
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -142,7 +142,6 @@ describe("YahooApiClient", () => {
         expiresIn: newExpiresIn,
       });
       vi.mocked(storage.saveYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
@@ -172,7 +171,6 @@ describe("YahooApiClient", () => {
       const expiredExpiresAt = Math.floor(Date.now() / 1000) - 3600;
 
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -193,7 +191,6 @@ describe("YahooApiClient", () => {
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -294,7 +291,6 @@ describe("YahooApiClient", () => {
         expiresIn: newExpiresIn,
       });
       vi.mocked(storage.saveYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
@@ -357,13 +353,13 @@ describe("YahooApiClient", () => {
       expiresAt: now() - 60,
       version: 4,
     });
-    let network: { get: ReturnType<typeof vi.fn> };
+    let network: NetworkDouble;
 
     beforeEach(() => {
       vi.mocked(storage.getYahooToken).mockReset();
       vi.mocked(storage.saveYahooToken).mockReset();
       vi.mocked(refreshAccessToken).mockReset();
-      network = { get: vi.fn() };
+      network = { get: vi.fn() } as unknown as NetworkDouble;
       routeFetchTo(network);
     });
 
@@ -552,7 +548,6 @@ describe("YahooApiClient", () => {
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -668,7 +663,6 @@ describe("YahooApiClient", () => {
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken,
         refreshToken,
@@ -707,7 +701,6 @@ describe("YahooApiClient", () => {
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
-        id: "token-1",
         userId,
         accessToken,
         refreshToken,

@@ -15,6 +15,6 @@
     "client/src/**/*.css"
   ],
   "include": ["dependencies", "devDependencies", "unlisted", "binaries", "unresolved", "files"],
-  "ignoreDependencies": ["supabase"],
+  "ignoreDependencies": [],
   "ignoreBinaries": ["openssl"]
 }

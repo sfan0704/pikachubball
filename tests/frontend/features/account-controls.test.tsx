@@ -123,7 +123,11 @@ describe("delete account", () => {
 
   it("disables the buttons while a removal is running", async () => {
     let finish: (value: { revokedAtYahoo: boolean }) => void = () => undefined;
-    setup({ deleteAccount: vi.fn(() => new Promise((resolve) => (finish = resolve))) });
+    setup({
+      deleteAccount: vi.fn(
+        () => new Promise<{ revokedAtYahoo: boolean }>((resolve) => (finish = resolve))
+      ),
+    });
     await userEvent.click(screen.getByRole("button", { name: "Delete account" }));
 
     await userEvent.click(screen.getByRole("button", { name: "Delete my account" }));
