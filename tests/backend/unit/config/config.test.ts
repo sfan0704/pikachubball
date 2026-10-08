@@ -87,6 +87,8 @@ describe("loadConfig", () => {
       clientId: "client-id",
       clientSecret: "client-secret",
       providerRedirectUri: "https://project.supabase.co/auth/v1/callback",
+      apiBaseUrl: "https://fantasysports.yahooapis.com/fantasy/v2",
+      oauthBaseUrl: "https://api.login.yahoo.com",
     });
   });
 
@@ -95,6 +97,8 @@ describe("loadConfig", () => {
       clientId: null,
       clientSecret: null,
       providerRedirectUri: null,
+      apiBaseUrl: "https://fantasysports.yahooapis.com/fantasy/v2",
+      oauthBaseUrl: "https://api.login.yahoo.com",
     });
   });
 
@@ -102,6 +106,54 @@ describe("loadConfig", () => {
     expect(() =>
       loadConfig(minimalEnvironment({ YAHOO_PROVIDER_REDIRECT_URI: "not-a-url" }))
     ).toThrow(/YAHOO_PROVIDER_REDIRECT_URI/);
+  });
+
+  describe("local stack", () => {
+    const local = (overrides: NodeJS.ProcessEnv = {}) =>
+      minimalEnvironment({
+        LOCAL_STACK: "true",
+        SUPABASE_URL: "http://127.0.0.1:54321",
+        YAHOO_API_BASE_URL: "http://127.0.0.1:5090/fantasy/v2",
+        YAHOO_OAUTH_BASE_URL: "http://127.0.0.1:5090",
+        ...overrides,
+      });
+
+    it("is off by default and points Yahoo at the stand-in only when on", () => {
+      expect(loadConfig(minimalEnvironment()).localStack).toBe(false);
+
+      const config = loadConfig(local());
+
+      expect(config.localStack).toBe(true);
+      expect(config.yahoo.apiBaseUrl).toBe("http://127.0.0.1:5090/fantasy/v2");
+      expect(config.yahoo.oauthBaseUrl).toBe("http://127.0.0.1:5090");
+    });
+
+    it("refuses production, a hosted Supabase project and a hosted Yahoo address", () => {
+      expect(() => loadConfig(local({ NODE_ENV: "production" }))).toThrow(/production/);
+      expect(() => loadConfig(local({ SUPABASE_URL: "https://project.supabase.co" }))).toThrow(
+        /SUPABASE_URL must be a local/
+      );
+      expect(() =>
+        loadConfig(local({ YAHOO_API_BASE_URL: "https://fantasysports.yahooapis.com/fantasy/v2" }))
+      ).toThrow(/YAHOO_API_BASE_URL must be a local/);
+      expect(() => loadConfig(local({ YAHOO_OAUTH_BASE_URL: undefined }))).toThrow(
+        /YAHOO_OAUTH_BASE_URL must be a local/
+      );
+    });
+
+    it("lets nothing change the Yahoo addresses outside it", () => {
+      expect(() =>
+        loadConfig(minimalEnvironment({ YAHOO_API_BASE_URL: "http://127.0.0.1:5090" }))
+      ).toThrow(/only be set with LOCAL_STACK=true/);
+      expect(() =>
+        loadConfig(
+          minimalEnvironment({
+            NODE_ENV: "production",
+            YAHOO_OAUTH_BASE_URL: "https://evil.example",
+          })
+        )
+      ).toThrow(/only be set with LOCAL_STACK=true/);
+    });
   });
 
   describe("origins", () => {

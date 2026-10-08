@@ -137,6 +137,11 @@ export default [
     languageOptions: {
       globals: { console: "readonly", process: "readonly" },
     },
+    rules: { "no-console": "off" },
+  },
+  {
+    files: ["scripts/**/*.ts"],
+    rules: { "no-console": "off" },
   },
   // Layer boundaries: which module may import which (docs/target-state.md, Layout and dependency rules).
   {

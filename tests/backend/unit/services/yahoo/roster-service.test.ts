@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getTeamRoster } from "../../../../../server/fantasy/yahoo/roster-service";
 import { testTeamKey } from "../../../fixtures/test-data";
@@ -127,5 +128,31 @@ describe("roster-service", () => {
       // Should return empty array or handle gracefully
       expect(Array.isArray(roster)).toBe(true);
     });
+  });
+});
+
+describe("roster-service with a recorded Yahoo response", () => {
+  it("reads the roster as Yahoo writes it, an object keyed by position", async () => {
+    const recorded = JSON.parse(
+      readFileSync("tests/backend/fixtures/yahoo/team-roster.json", "utf8")
+    );
+
+    const roster = await getTeamRoster(
+      "466.l.100000.t.3",
+      async () =>
+        ({
+          getTeamRoster: async () => recorded,
+        }) as never
+    );
+
+    expect(roster).toHaveLength(15);
+    expect(roster[0]).toEqual({
+      playerKey: "466.p.5842",
+      name: "Derrick White",
+      position: expect.any(String),
+      team: "BOS",
+      status: expect.stringMatching(/^(active|injured|out)$/),
+    });
+    expect(roster.every((player) => player.playerKey.startsWith("466.p."))).toBe(true);
   });
 });

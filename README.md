@@ -21,7 +21,7 @@ The app has three separated tiers. No tier holds another tier's credentials, and
 
 | Tier | Runs at | Supabase | Yahoo app | Credentials live in | Used for |
 | --- | --- | --- | --- | --- | --- |
-| Local | laptop and CI | disposable local stack (`npm run test:db`) | none today; `PikachuBball - Local` after it is freed (CAR-57, CAR-74) | nothing hosted | migrations and RLS tests |
+| Local | laptop and CI | disposable local stack (`npm run dev`, `npm run test:db`) | none: a stand-in replays recorded responses | nothing hosted | everyday development, migrations and RLS tests |
 | Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
 | Prod | Vercel production alias | `Pikachu Basketball` | sign-in: `PikachuBball - Local`; Fantasy access: `PikachuBball` (consolidating on `PikachuBball`, CAR-57) | Vercel Production environment only | league members |
 
@@ -36,7 +36,15 @@ nvm use
 npm ci
 ```
 
-To run the app against the dev tier, create `.env.local` from the template and fill in the dev values:
+### Everyday development
+
+`npm run dev` runs the whole app on your laptop with no hosted credentials and no network access to Yahoo. It needs Docker. It starts a throwaway Supabase stack, applies the migrations, starts the Yahoo stand-in (recorded, scrubbed responses played through the app's real transport) and seeds two synthetic managers in the recorded league, then starts the app on `http://localhost:5000` (set `PORT` to change it). Sign in as a manager with `http://localhost:5000/api/dev/login?user=a` (or `user=b`).
+
+The stand-in can fail the way Yahoo does. Tell it with `curl -X POST http://127.0.0.1:5090/__scenario -d '{"scenario":"rate-limit","times":2}'`; scenarios are `ok`, `rate-limit`, `unavailable`, `unauthorized` (an expired token) and `timeout`, and `times` limits how many requests are affected. Local mode (`LOCAL_STACK=true`) refuses production, a hosted Supabase project and a hosted Yahoo address, and `YAHOO_API_BASE_URL` / `YAHOO_OAUTH_BASE_URL` cannot be set outside it.
+
+### Against the dev tier
+
+To run the app against the dev tier (`npm run dev:hosted`), create `.env.local` from the template and fill in the dev values:
 
 ```text
 cp .env.example .env.local
@@ -53,7 +61,7 @@ mkcert -install
 mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
 ```
 
-Start the app with `npm run dev` and open `https://localhost:5001`. When `DEV_HTTPS_CERT` and `DEV_HTTPS_KEY` are set, the dev server serves HTTPS; it refuses those variables in production. It uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
+Start the app with `npm run dev:hosted` and open `https://localhost:5001`. When `DEV_HTTPS_CERT` and `DEV_HTTPS_KEY` are set, the dev server serves HTTPS; it refuses those variables in production. It uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
 
 ## Checks
 

@@ -56,8 +56,13 @@ function parsePlayerPosition(fragment: Fragment | undefined): string {
   return "N/A";
 }
 
-function parsePlayerNbaTeam(fragment: Fragment | undefined): string {
-  return text(fragment?.editorial_team_abbr) ?? text(fragment?.editorial_team_full_name) ?? "N/A";
+/** The NBA team's abbreviation, else its full name. */
+function parsePlayerNbaTeam(properties: readonly Fragment[]): string {
+  return (
+    text(findFragment(properties, "editorial_team_abbr")?.editorial_team_abbr) ??
+    text(findFragment(properties, "editorial_team_full_name")?.editorial_team_full_name) ??
+    "N/A"
+  );
 }
 
 /** The property fragments of a raw player, or null when the data isn't shaped like a player. */
@@ -95,24 +100,31 @@ export function parsePlayer(playerData: unknown): Player | null {
     position: parsePlayerPosition(
       findFragment(properties, "display_position", "eligible_positions")
     ),
-    nbaTeam: parsePlayerNbaTeam(
-      findFragment(properties, "editorial_team_abbr", "editorial_team_full_name")
-    ),
+    nbaTeam: parsePlayerNbaTeam(properties),
     status: parsePlayerStatus(findFragment(properties, "status")?.status),
   };
 }
 
-/** The players of a Yahoo roster response (`{ roster: [{ players: { count, "0": { player } } }] }`). */
+/** A property of an object or an item of a list, whichever Yahoo sent. */
+function child(value: unknown, key: string | number): unknown {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string | number, unknown>)[key]
+    : undefined;
+}
+
+/**
+ * The players of a Yahoo roster response. Yahoo writes the roster as an object
+ * keyed "0" (`{ roster: { "0": { players: { count, "0": { player } } } } }`);
+ * a list with the same first item reads the same.
+ */
 export function parsePlayersFromRoster(rosterData: unknown): Player[] {
-  const roster = isFragment(rosterData) ? rosterData.roster : undefined;
-  const players = Array.isArray(roster) && isFragment(roster[0]) ? roster[0].players : undefined;
-  const count = isFragment(players) ? Number(players.count) : 0;
-  if (!isFragment(players) || !count) {
+  const players = child(child(child(rosterData, "roster"), 0), "players");
+  const count = Number(child(players, "count"));
+  if (!count) {
     logger.warn("Invalid roster data: missing players or count");
     return [];
   }
-  return Array.from({ length: count }, (_, index) => players[String(index)])
-    .map((entry) => (isFragment(entry) ? entry.player : undefined))
+  return Array.from({ length: count }, (_, index) => child(child(players, String(index)), "player"))
     .filter(Boolean)
     .map((playerData) => parsePlayer(playerData))
     .filter((player): player is Player => player !== null);

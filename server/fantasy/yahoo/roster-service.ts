@@ -27,7 +27,7 @@ export async function getTeamRoster(
   // The roster sits at fantasy_content.team[1].roster
   const rosterData = child(child(child(response, "fantasy_content"), "team"), 1);
   const roster = child(rosterData, "roster");
-  if (!Array.isArray(roster) || roster.length === 0) {
+  if (typeof roster !== "object" || roster === null) {
     return [];
   }
 

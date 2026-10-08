@@ -8,7 +8,7 @@ import { YahooApiClient } from "../fantasy/yahoo/yahoo-api-client";
 import { systemClock as yahooTimers } from "../fantasy/yahoo/yahoo-request-policy";
 import { YahooFantasyDataSource } from "../fantasy/fantasy-data-source";
 import { YahooLeagueResources } from "../fantasy/league-resources";
-import { revokeYahooToken } from "../fantasy/yahoo/yahoo-auth";
+import { refreshAccessToken, revokeYahooToken } from "../fantasy/yahoo/yahoo-auth";
 import { AesGcmOwnerTokenCipher } from "../storage/owner-token-cipher";
 import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
 import { systemClock, type Clock } from "../utils/clock";
@@ -37,7 +37,13 @@ export function createServerDependencies(
       createSupabaseRequestClient(req, res, config.auth),
     createOwnerStorage: (client, ownerId) => createSupabaseOwnerStorage(client, ownerId, cipher),
     revokeYahooGrant: (refreshToken) =>
-      revokeYahooToken(refreshToken, config.yahoo.clientId ?? "", config.yahoo.clientSecret ?? ""),
+      revokeYahooToken(
+        refreshToken,
+        config.yahoo.clientId ?? "",
+        config.yahoo.clientSecret ?? "",
+        fetch,
+        config.yahoo.oauthBaseUrl
+      ),
     createFantasyDataSource: (yahooClient) =>
       new YahooFantasyDataSource(new YahooLeagueResources(yahooClient), clock),
     createYahooClient: (userId, storage, onRequest) =>
@@ -46,7 +52,18 @@ export function createServerDependencies(
         storage,
         config.yahoo,
         { now: () => clock.now(), sleep: yahooTimers.sleep },
-        onRequest
+        onRequest,
+        {
+          refresher: (refreshToken, clientId, clientSecret, redirectUri) =>
+            refreshAccessToken(
+              refreshToken,
+              clientId,
+              clientSecret,
+              redirectUri,
+              fetch,
+              config.yahoo.oauthBaseUrl
+            ),
+        }
       ),
   };
 }

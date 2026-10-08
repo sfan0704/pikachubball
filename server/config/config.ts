@@ -14,7 +14,14 @@ export interface YahooAppConfig {
   readonly clientSecret: string | null;
   /** Sent as redirect_uri when refreshing tokens. */
   readonly providerRedirectUri: string | null;
+  /** Yahoo Fantasy API base; the real one unless the local stand-in is in use. */
+  readonly apiBaseUrl: string;
+  /** Yahoo OAuth base (token, revoke, authorize); the real one unless the local stand-in is in use. */
+  readonly oauthBaseUrl: string;
 }
+
+export const YAHOO_API_BASE_URL = "https://fantasysports.yahooapis.com/fantasy/v2";
+export const YAHOO_OAUTH_BASE_URL = "https://api.login.yahoo.com";
 
 /** All server configuration, parsed once at startup. */
 export interface AppConfig {
@@ -31,6 +38,11 @@ export interface AppConfig {
   /** The previous key (version - 1), set only while a key rotation is under way. */
   readonly encryptionKeyPrevious: string | null;
   readonly yahoo: YahooAppConfig;
+  /**
+   * Local development against the throwaway Supabase stack and the Yahoo
+   * stand-in. Never true in production, and only with loopback addresses.
+   */
+  readonly localStack: boolean;
 }
 
 const hexKey = z
@@ -56,6 +68,12 @@ const environmentSchema = z.object({
   ENCRYPTION_KEY: hexKey,
   ENCRYPTION_KEY_VERSION: z.coerce.number().int().min(1).max(32767).default(1),
   ENCRYPTION_KEY_PREVIOUS: hexKey.optional(),
+  LOCAL_STACK: z
+    .string()
+    .optional()
+    .transform((value) => value === "true"),
+  YAHOO_API_BASE_URL: optionalTrimmed,
+  YAHOO_OAUTH_BASE_URL: optionalTrimmed,
   YAHOO_CLIENT_ID: optionalTrimmed,
   YAHOO_CLIENT_SECRET: optionalTrimmed,
   YAHOO_PROVIDER_REDIRECT_URI: z
@@ -86,8 +104,42 @@ function parseOrigin(value: string, name: string, allowLoopback: boolean): strin
   return url.origin;
 }
 
+const LOOPBACK = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
+
+/**
+ * Local mode swaps in the stand-in for Yahoo and a throwaway Supabase stack. It
+ * must never reach production, never point at a hosted project, and the Yahoo
+ * addresses can't be changed at all outside it.
+ */
+function checkLocalStack(values: z.infer<typeof environmentSchema>, production: boolean): void {
+  const overrides = {
+    YAHOO_API_BASE_URL: values.YAHOO_API_BASE_URL,
+    YAHOO_OAUTH_BASE_URL: values.YAHOO_OAUTH_BASE_URL,
+  };
+  if (!values.LOCAL_STACK) {
+    for (const [name, value] of Object.entries(overrides)) {
+      if (value) {
+        throw new Error(`Invalid configuration: ${name} can only be set with LOCAL_STACK=true`);
+      }
+    }
+    return;
+  }
+  if (production) {
+    throw new Error("Invalid configuration: LOCAL_STACK cannot be used in production");
+  }
+  const addresses = { SUPABASE_URL: values.SUPABASE_URL, ...overrides };
+  for (const [name, value] of Object.entries(addresses)) {
+    if (!value || !LOOPBACK.test(value)) {
+      throw new Error(
+        `Invalid configuration: with LOCAL_STACK=true, ${name} must be a local http://localhost or http://127.0.0.1 address`
+      );
+    }
+  }
+}
+
 /** Rules that span several variables, which the per-variable schema can't express. */
 function checkKeys(values: z.infer<typeof environmentSchema>, production: boolean): void {
+  checkLocalStack(values, production);
   if (values.ENCRYPTION_KEY_PREVIOUS && values.ENCRYPTION_KEY_VERSION < 2) {
     throw new Error(
       "Invalid configuration: ENCRYPTION_KEY_PREVIOUS needs ENCRYPTION_KEY_VERSION of 2 or more"
@@ -140,6 +192,9 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
       clientId: values.YAHOO_CLIENT_ID,
       clientSecret: values.YAHOO_CLIENT_SECRET,
       providerRedirectUri: values.YAHOO_PROVIDER_REDIRECT_URI,
+      apiBaseUrl: values.YAHOO_API_BASE_URL ?? YAHOO_API_BASE_URL,
+      oauthBaseUrl: values.YAHOO_OAUTH_BASE_URL ?? YAHOO_OAUTH_BASE_URL,
     },
+    localStack: values.LOCAL_STACK,
   };
 }
