@@ -60,6 +60,7 @@ export function buildTestDependencies(
     createOwnerStorage: () => {
       throw new Error("createOwnerStorage was not provided by this test");
     },
+    revokeYahooGrant: async () => false,
     createFantasyDataSource: () => {
       throw new Error("createFantasyDataSource was not provided by this test");
     },

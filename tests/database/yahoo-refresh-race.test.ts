@@ -63,7 +63,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
       (error) => error
     );
     await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledOnce());
-    await owner.storage.deleteYahooToken(owner.id);
+    await owner.storage.disconnectYahoo();
     yahoo.resolve({ accessToken: "late-access", refreshToken: "late-refresh", expiresIn: 3600 });
 
     expect(await pending).toBeInstanceOf(YahooReconnectRequiredError);
