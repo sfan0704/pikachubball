@@ -142,6 +142,19 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
     }
     return Array.isArray(data) && data.length === 1;
   }
+
+  async ownsLeague(leagueKey: string): Promise<boolean> {
+    const { data, error } = await this.client
+      .from("user_leagues")
+      .select("league_key")
+      .eq("owner_id", this.ownerId)
+      .eq("league_key", leagueKey)
+      .limit(1);
+    if (error) {
+      throw storageFailure("league read", error);
+    }
+    return Array.isArray(data) && data.length === 1;
+  }
 }
 
 /** Owner-scoped storage for one signed-in user, using the cipher the composition root built. */

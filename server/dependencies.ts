@@ -5,6 +5,8 @@ import type { Logger } from "./utils/logger";
 import type { YahooClientCreator } from "./request-context";
 import type { OwnerScopedStorage } from "./storage/yahoo-token-storage";
 import type { Clock } from "./utils/clock";
+import type { FantasyDataSource } from "./fantasy/fantasy-data-source";
+import type { YahooClientProvider } from "./request-context";
 
 /**
  * Everything the composition root builds and hands to routes, middleware and
@@ -21,4 +23,6 @@ export interface ServerDependencies {
   createOwnerStorage(client: SupabaseClient, ownerId: string): OwnerScopedStorage;
   /** A Yahoo API client for one user, reading tokens from their storage; `onRequest` runs for each HTTP attempt. */
   createYahooClient: YahooClientCreator;
+  /** A fantasy data source that reads through the request's one Yahoo client. */
+  createFantasyDataSource(yahooClient: YahooClientProvider): FantasyDataSource;
 }

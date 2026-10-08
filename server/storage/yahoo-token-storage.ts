@@ -33,4 +33,6 @@ export interface OwnerScopedStorage extends YahooTokenStorage {
   saveYahooConnection(connection: YahooConnectionInput): Promise<StoredYahooToken>;
   replaceFantasyMemberships(memberships: FantasyMembership[]): Promise<void>;
   ownsFantasyResource(leagueKey: string, teamKey?: string): Promise<boolean>;
+  /** Whether the league is in the user's stored leagues (`user_leagues`). */
+  ownsLeague(leagueKey: string): Promise<boolean>;
 }

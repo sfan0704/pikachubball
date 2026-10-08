@@ -4,11 +4,13 @@ import { createRateLimiters } from "../middleware/rate-limiter";
 import { createSupabaseAuthController } from "../controllers/supabase-auth-controller";
 import { createYahooController } from "../controllers/yahoo-controller";
 import { createYahooOAuthController } from "../controllers/yahoo-oauth-controller";
+import { createLeagueController } from "../controllers/league-controller";
 import { createVizController } from "../controllers/viz-controller";
 import type { ServerDependencies } from "../dependencies";
 import { registerAuthRoutes } from "./auth";
 import { registerYahooOAuthRoutes } from "./yahoo-oauth";
 import { registerYahooRoutes } from "./yahoo";
+import { registerLeagueRoutes } from "./leagues";
 import { registerVizRoutes } from "./viz";
 
 /** Register all application routes, building each controller from the dependencies. */
@@ -39,6 +41,11 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
     requireAuth,
     dataLimiter,
     controller: createYahooController(),
+  });
+  registerLeagueRoutes(app, {
+    requireAuth,
+    dataLimiter,
+    controller: createLeagueController(dependencies),
   });
   registerVizRoutes(app, {
     requireAuth,
