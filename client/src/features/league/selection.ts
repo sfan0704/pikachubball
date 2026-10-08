@@ -80,3 +80,24 @@ export function resolveSelection(
   const preferredTeam = saved ? preferences.selectedTeamKey : null;
   return { leagueKey: league.leagueKey, teamKey: teamIn(league, preferredTeam), scope: "current" };
 }
+
+/**
+ * The selection after the user changes part of it. Choosing another league
+ * moves to the user's own team there; otherwise the team stays unless changed.
+ */
+export function applyChange(
+  current: Selection,
+  change: Partial<Selection>,
+  leagues: readonly UserLeague[]
+): Selection {
+  const leagueKey = change.leagueKey ?? current.leagueKey;
+  const league = leagues.find((item) => item.leagueKey === leagueKey);
+  const leagueChanged = leagueKey !== current.leagueKey;
+  return {
+    leagueKey,
+    teamKey: leagueChanged
+      ? (league?.teamKey ?? current.teamKey)
+      : (change.teamKey ?? current.teamKey),
+    scope: change.scope ?? current.scope,
+  };
+}
