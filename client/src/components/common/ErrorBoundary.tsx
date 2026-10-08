@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { ApiError } from "@/api/errors";
 
 interface Props {
   children: ReactNode;
@@ -63,6 +64,11 @@ export class ErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {this.state.error instanceof ApiError && this.state.error.requestId && (
+                <p className="text-xs text-muted-foreground">
+                  Reference: <span className="font-mono">{this.state.error.requestId}</span>
+                </p>
+              )}
               {process.env.NODE_ENV === "development" && this.state.error && (
                 <div className="rounded-md bg-muted p-3">
                   <p className="text-xs font-mono text-destructive break-all">

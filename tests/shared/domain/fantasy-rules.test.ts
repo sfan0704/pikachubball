@@ -6,6 +6,7 @@ import {
   percentage,
   rankSum,
   scoringSupport,
+  tableCompleteness,
 } from "../../../shared/domain";
 import { buildLeagueSettings, buildTeamTable, buildTeamTotals } from "../../support/builders";
 
@@ -146,5 +147,35 @@ describe("scoringSupport", () => {
       supported: false,
       reason: "TO is scored in an unexpected direction",
     });
+  });
+});
+
+describe("tableCompleteness", () => {
+  const ZERO = {
+    fgMakes: 0,
+    fgAttempts: 0,
+    ftMakes: 0,
+    ftAttempts: 0,
+    tpm: 0,
+    pts: 0,
+    reb: 0,
+    ast: 0,
+    stl: 0,
+    blk: 0,
+    to: 0,
+  };
+
+  it("is empty when no team has recorded anything, whether zero or unknown", () => {
+    expect(tableCompleteness(buildTeamTable([ZERO, ZERO]))).toBe("empty");
+    expect(tableCompleteness(buildTeamTable([ZERO, { ...ZERO, pts: null }]))).toBe("empty");
+    expect(tableCompleteness(buildTeamTable([]))).toBe("empty");
+  });
+
+  it("is partial when stats exist but some value is unknown", () => {
+    expect(tableCompleteness(buildTeamTable([{}, { pts: null }]))).toBe("partial");
+  });
+
+  it("is complete when every value is known, and a zero is a real value", () => {
+    expect(tableCompleteness(buildTeamTable([{}, { blk: 0 }]))).toBe("complete");
   });
 });

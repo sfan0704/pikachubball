@@ -27,8 +27,9 @@ export {
   categoryRanks,
   rankSum,
   scoringSupport,
+  tableCompleteness,
 } from "./fantasy-rules";
-export type { CategoryRanks, ScoringSupport } from "./fantasy-rules";
+export type { CategoryRanks, ScoringSupport, TableCompleteness } from "./fantasy-rules";
 export { rankings, heatmap, headToHead, compareWithAll, opponentOf, officialResult } from "./views";
 export type {
   RankedTeam,
