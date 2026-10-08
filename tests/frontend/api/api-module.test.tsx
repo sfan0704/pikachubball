@@ -39,6 +39,7 @@ const LEAGUES = {
   ],
 };
 const ROSTER = {
+  fetchedAt: "2026-01-15T12:00:00.000Z",
   roster: [{ playerKey: "466.p.1", name: "P", position: "PG", team: "LAL", status: "active" }],
 };
 
