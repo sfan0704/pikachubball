@@ -61,7 +61,7 @@ describe("application routing", () => {
     const responses = await Promise.all([
       request(app).get("/api/health"),
       request(app).get("/api/does-not-exist"),
-      request(app).get("/api/auth/me"),
+      request(app).get("/api/me"),
     ]);
 
     for (const response of responses) {
@@ -74,7 +74,7 @@ describe("application routing", () => {
 
     const [foreign, missing, same] = await Promise.all([
       request(app).post("/api/auth/logout").set("Origin", "https://evil.example.test"),
-      request(app).delete("/api/auth/yahoo/disconnect"),
+      request(app).delete("/api/me/yahoo"),
       request(app).post("/api/does-not-exist").set("Origin", APP_ORIGIN),
     ]);
 
@@ -107,8 +107,8 @@ describe("application routing", () => {
     const app = createApiApp();
     const responses = await Promise.all([
       request(app).get("/api/health"),
-      request(app).get("/api/auth/yahoo/status"),
-      request(app).get("/api/yahoo/leagues"),
+      request(app).get("/api/me"),
+      request(app).get("/api/leagues"),
       request(app).get("/api/does-not-exist"),
     ]);
 
@@ -117,6 +117,29 @@ describe("application routing", () => {
         "private, no-cache, no-store, must-revalidate, max-age=0"
       );
       expect(response.headers.pragma).toBe("no-cache");
+    }
+  });
+
+  it("no longer serves the routes the typed API replaced", async () => {
+    const app = createApiApp();
+    const removed = [
+      "/api/auth/me",
+      "/api/auth/yahoo/status",
+      "/api/yahoo/leagues",
+      "/api/yahoo/league-rankings/466.l.1",
+      "/api/yahoo/roster-by-team/466.l.1.t.1",
+      "/api/viz/heatmap/466.l.1",
+      "/api/viz/matchup/466.l.1/466.l.1.t.1",
+    ];
+
+    const responses = await Promise.all(removed.map((path) => request(app).get(path)));
+    const disconnect = await request(app)
+      .delete("/api/auth/yahoo/disconnect")
+      .set("Origin", APP_ORIGIN);
+
+    for (const response of [...responses, disconnect]) {
+      expect(response.status).toBe(404);
+      expect(response.body).toMatchObject({ code: "NOT_FOUND" });
     }
   });
 

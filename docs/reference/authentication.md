@@ -20,7 +20,7 @@ Before enabling users, verify all of the following in the production browser:
 
 1. A signed-out visit shows only **Continue with Yahoo**.
 2. Sign-in leaves the application for Supabase and Yahoo, then returns to `/api/auth/callback` and redirects to `/`.
-3. `GET /api/auth/me` returns the Supabase UUID and Yahoo profile projection without any provider token.
+3. `GET /api/me` returns the Supabase UUID, Yahoo connection state and saved choices without any provider token.
 4. A protected basketball endpoint accepts the authenticated request.
 5. Signing out clears the local Supabase session and the next protected request returns `401`.
 6. Reusing a completed callback code returns `401` and does not create a second token record.

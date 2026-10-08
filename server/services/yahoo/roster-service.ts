@@ -1,6 +1,6 @@
 import type { YahooClientProvider } from "../../request-context";
 import { parsePlayersFromRoster } from "../parsers/player-parser.js";
-import type { Player } from "../../../shared/schema.js";
+import type { RosterResponse } from "../../../shared/api/leagues";
 
 /**
  * Roster Service
@@ -14,7 +14,7 @@ import type { Player } from "../../../shared/schema.js";
 export async function getTeamRoster(
   teamKey: string,
   yahooClient: YahooClientProvider
-): Promise<Player[]> {
+): Promise<RosterResponse["roster"]> {
   const client = await yahooClient();
   const response = await client.getTeamRoster(teamKey);
 

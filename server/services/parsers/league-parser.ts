@@ -3,66 +3,16 @@
  * Transform raw Yahoo API responses into domain models
  */
 
-import type { League, Team } from "../../../shared/domain/index.js";
-import type {
-  YahooApiLeagueResponse,
-  YahooApiTeamData,
-  YahooApiLeagueProperties,
-} from "../../types/yahoo-api.js";
+import type { YahooApiTeamData } from "../../types/yahoo-api.js";
 import { logger } from "../../utils/logger.js";
 
-/**
- * Parse League from Yahoo API response
- * @param data Raw Yahoo API league response
- * @returns League domain model or null if invalid
- */
-export function parseLeague(data: YahooApiLeagueResponse | null | undefined): League | null {
-  if (!data?.fantasy_content?.league) {
-    logger.warn("Invalid league data: missing fantasy_content.league");
-    return null;
-  }
-
-  const leagueArray = data.fantasy_content.league;
-  if (!Array.isArray(leagueArray) || leagueArray.length < 1) {
-    logger.warn("Invalid league data: league array is empty or invalid");
-    return null;
-  }
-
-  const properties = leagueArray[0];
-
-  // Handle both structures:
-  // - Array of property objects (some endpoints)
-  // - Direct object with properties (settings/standings endpoints)
-  let leagueProps: YahooApiLeagueProperties | undefined;
-
-  if (Array.isArray(properties)) {
-    // Find properties in the array (Yahoo API uses array of objects)
-    leagueProps = properties.find((prop: any) => prop.league_key) as
-      YahooApiLeagueProperties | undefined;
-  } else if (properties && typeof properties === "object" && "league_key" in properties) {
-    // Direct object access (settings/standings endpoints)
-    leagueProps = properties as YahooApiLeagueProperties;
-  }
-
-  if (!leagueProps) {
-    logger.warn("Invalid league data: league_key not found in properties");
-    return null;
-  }
-
-  try {
-    return {
-      leagueKey: leagueProps.league_key || "",
-      name: leagueProps.name || "Unknown League",
-      season: parseInt(leagueProps.season || "0", 10) || 0,
-      currentWeek: parseInt(leagueProps.current_week || "1", 10) || 1,
-      endWeek: parseInt(leagueProps.end_week || "22", 10) || 22,
-      scoringType: (leagueProps.scoring_type === "head" ? "head" : "roto") as "head" | "roto",
-      numTeams: parseInt(leagueProps.num_teams || "0", 10) || 0,
-    };
-  } catch (error: any) {
-    logger.error("Error parsing league:", { error: error.message, leagueProps });
-    return null;
-  }
+/** A team as read from Yahoo's standings. */
+export interface Team {
+  teamKey: string;
+  teamName: string;
+  leagueKey: string;
+  managerName?: string;
+  managerGuid?: string;
 }
 
 /**

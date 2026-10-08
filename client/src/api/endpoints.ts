@@ -5,6 +5,7 @@ import { leaguesResponseSchema, rosterResponseSchema } from "@shared/api/leagues
 import { teamTableSchema } from "@shared/api/team-table";
 import { apiRequest } from "./http";
 
+const signOutSchema = z.object({ success: z.literal(true) });
 const removalSchema = z.object({ revokedAtYahoo: z.boolean() });
 
 /** `GET /api/me` */
@@ -36,3 +37,7 @@ export const disconnectYahoo = () =>
 
 /** `DELETE /api/me` */
 export const deleteAccount = () => apiRequest("/api/me", removalSchema, { method: "DELETE" });
+
+/** `POST /api/auth/logout` */
+export const signOut = () =>
+  apiRequest("/api/auth/logout", signOutSchema, { method: "POST", body: {} });
