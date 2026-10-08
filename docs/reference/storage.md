@@ -11,7 +11,7 @@ The repository stores:
 - one `yahoo_connections` row per authenticated owner;
 - the stable Yahoo provider subject and minimal display metadata;
 - an AES-256-GCM ciphertext for each Yahoo access and refresh token;
-- an encryption key version and monotonically increasing token version; and
+- an encryption key version (see [key rotation](../runbooks/encryption-key-rotation.md)) and a monotonically increasing token version; and
 - current `fantasy_memberships` pairs used to reject forged league and team keys before a Yahoo request.
 
 Token ciphertext is bound to the owner UUID, token purpose, and key version as authenticated data. Copying it to another owner, swapping access and refresh values, changing the ciphertext, or using another key fails authentication. The database never receives plaintext provider tokens.
@@ -20,7 +20,7 @@ Token ciphertext is bound to the owner UUID, token purpose, and key version as a
 
 ## Versioned migration
 
-Apply [`202609120001_owner_scoped_connections.sql`](../supabase/migrations/202609120001_owner_scoped_connections.sql) to an empty dedicated Supabase project. The migration creates the two retained tables, foreign keys to `auth.users`, forced RLS, explicit authenticated policies, and security-invoker RPCs. It does not alter or drop any legacy table, so importing or retaining the old schema is non-destructive.
+Apply [`202609120001_owner_scoped_connections.sql`](../../supabase/migrations/202609120001_owner_scoped_connections.sql) to an empty dedicated Supabase project. The migration creates the two retained tables, foreign keys to `auth.users`, forced RLS, explicit authenticated policies, and security-invoker RPCs. It does not alter or drop any legacy table, so importing or retaining the old schema is non-destructive.
 
 Run the RLS matrix against a disposable local Supabase instance (requires a running Docker engine):
 
@@ -41,4 +41,4 @@ The matrix creates synthetic owners A and B, checks owner reads and writes, reje
 5. Roster, rankings, matchup, and visualization routes verify the exact pair before requesting data from Yahoo.
 6. Token refresh writes only when its expected version is still current.
 
-The repository unit tests use synthetic credentials and inspect only ciphertext shape and sanitized call parameters. Live Supabase verification remains part of CAR-60's deployment checkpoint.
+The repository unit tests use synthetic credentials and inspect only ciphertext shape and sanitized call parameters. Live Supabase verification is part of the sign-in check in [Yahoo sign-in provider setup](../runbooks/yahoo-sign-in-provider.md).
