@@ -1,14 +1,16 @@
 // Fails when the JavaScript a first visit downloads (the scripts and preloaded
 // chunks index.html names) is over the budget in the target state, gzipped.
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const BUDGET_BYTES = 200 * 1024;
 const root = process.argv[2] ?? "dist/public";
 
 const html = readFileSync(join(root, "index.html"), "utf8");
-const scripts = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.js)"/g)].map((match) => match[1]);
+const scripts = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.js)"/g)].map(
+  (match) => match[1]
+);
 if (scripts.length === 0) {
   console.error(`No scripts found in ${join(root, "index.html")}`);
   process.exit(1);

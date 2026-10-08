@@ -131,6 +131,13 @@ export default [
       },
     },
   },
+  // Node scripts.
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: { console: "readonly", process: "readonly" },
+    },
+  },
   // Layer boundaries: which module may import which (docs/target-state.md, Layout and dependency rules).
   {
     files: ["shared/domain/**/*.ts"],
