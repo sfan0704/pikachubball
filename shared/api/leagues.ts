@@ -40,6 +40,8 @@ export const rosterParamsSchema = z
 
 /** The body of the roster endpoint. */
 export const rosterResponseSchema = z.object({
+  /** When the roster was read from Yahoo (ISO 8601, UTC); it applies to that moment. */
+  fetchedAt: z.string().datetime(),
   roster: z.array(
     z.object({
       playerKey: z.string(),
