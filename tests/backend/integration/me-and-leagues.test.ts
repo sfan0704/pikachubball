@@ -1,16 +1,16 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createApp } from "../../../server/app";
-import { createAppErrorHandler } from "../../../server/composition-root";
-import type { YahooApiClient } from "../../../server/services/yahoo/yahoo-api-client";
-import { getUserLeagues } from "../../../server/services/yahoo/league-service";
-import { getTeamRoster } from "../../../server/services/yahoo/roster-service";
+import { createApp } from "../../../server/http/app";
+import { createAppErrorHandler } from "../../../server/http/composition-root";
+import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
+import { getUserLeagues } from "../../../server/fantasy/legacy/league-service";
+import { getTeamRoster } from "../../../server/fantasy/yahoo/roster-service";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { buildTestDependencies } from "../../support/dependencies";
 
-vi.mock("../../../server/services/yahoo/league-service");
-vi.mock("../../../server/services/yahoo/roster-service");
+vi.mock("../../../server/fantasy/legacy/league-service");
+vi.mock("../../../server/fantasy/yahoo/roster-service");
 
 const APP_ORIGIN = "https://basketball.example.test";
 

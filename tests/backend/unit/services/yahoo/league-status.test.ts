@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyLeague, yahooFlag } from "../../../../../server/services/yahoo/league-status";
+import { classifyLeague, yahooFlag } from "../../../../../server/fantasy/legacy/league-status";
 
 describe("yahooFlag", () => {
   it("normalizes every flag form Yahoo sends", () => {

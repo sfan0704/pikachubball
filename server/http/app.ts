@@ -4,7 +4,7 @@ import { createBuildIdHeader } from "./middleware/build-id";
 import { createOriginCheck } from "./middleware/origin-check";
 import { createRequestScope } from "./middleware/request-scope";
 import { createSecurityHeaders } from "./middleware/security-headers";
-import { NotFoundError } from "../shared/api/errors";
+import { NotFoundError } from "../../shared/api/errors";
 import { registerRoutes } from "./routes/index";
 import type { ServerDependencies } from "./dependencies";
 

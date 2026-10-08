@@ -1,6 +1,6 @@
 import type { YahooAppConfig } from "../../config/config";
 import { logger } from "../../utils/logger";
-import { refreshAccessToken } from "../../yahoo-auth";
+import { refreshAccessToken } from "./yahoo-auth";
 import type { StoredYahooToken, YahooTokenStorage } from "../../storage/yahoo-token-storage";
 import { YahooReconnectRequiredError, type YahooRequestClock } from "./yahoo-request-policy";
 

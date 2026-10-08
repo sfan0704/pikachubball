@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { getTeamRoster } from "../../../../../server/services/yahoo/roster-service";
+import { getTeamRoster } from "../../../../../server/fantasy/yahoo/roster-service";
 import { testTeamKey } from "../../../fixtures/test-data";
 
 const getYahooApiClient = vi.fn();

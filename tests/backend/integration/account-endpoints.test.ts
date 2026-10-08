@@ -1,8 +1,8 @@
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createApp } from "../../../server/app";
-import { createAppErrorHandler } from "../../../server/composition-root";
+import { createApp } from "../../../server/http/app";
+import { createAppErrorHandler } from "../../../server/http/composition-root";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { buildTestDependencies } from "../../support/dependencies";
 

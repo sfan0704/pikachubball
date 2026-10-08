@@ -238,4 +238,14 @@ export default [
       "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
     },
   },
+  // The legacy league discovery predates these rules and is deleted when discovery moves behind
+  // FantasyDataSource.listLeagues; until then its size and complexity are warnings.
+  {
+    files: ["server/fantasy/legacy/**/*.ts"],
+    rules: {
+      "max-lines-per-function": ["warn", { max: 60, skipBlankLines: true, skipComments: true }],
+      complexity: ["warn", 10],
+      "max-lines": ["warn", { max: 400, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ];

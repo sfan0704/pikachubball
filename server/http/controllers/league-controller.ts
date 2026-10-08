@@ -4,14 +4,14 @@ import {
   leaguesResponseSchema,
   rosterParamsSchema,
   rosterResponseSchema,
-} from "../../shared/api/leagues";
-import { leagueScopeParamsSchema } from "../../shared/api/league-scope";
-import { teamTableSchema } from "../../shared/api/team-table";
+} from "../../../shared/api/leagues";
+import { leagueScopeParamsSchema } from "../../../shared/api/league-scope";
+import { teamTableSchema } from "../../../shared/api/team-table";
 import { asyncHandler } from "../middleware/error-handler";
 import type { ServerDependencies } from "../dependencies";
 import { getRequestContext } from "../request-context";
-import { getLeagueScope } from "../services/league-scope-service";
-import { getLeagueTeamRoster, listLeagues } from "../services/leagues-service";
+import { getLeagueScope } from "../../services/league-scope-service";
+import { getLeagueTeamRoster, listLeagues } from "../../services/leagues-service";
 
 /** Thin HTTP adapter for the league endpoints. */
 export function createLeagueController({

@@ -99,12 +99,53 @@ function isTransient(error: unknown): boolean {
   return (failure.response.status ?? 0) >= 500;
 }
 
+/** The wait before retrying a 429, or the error to give up with when Retry-After doesn't fit. */
+function rateLimitWait(
+  error: unknown,
+  lastAttempt: boolean,
+  clock: YahooRequestClock,
+  deadline: number
+): number {
+  const retryAfter = parseRetryAfter(
+    asFailure(error).response?.headers?.["retry-after"],
+    clock.now()
+  );
+  const waitMs = (retryAfter ?? 0) * 1000;
+  if (lastAttempt || retryAfter === undefined || clock.now() + waitMs >= deadline) {
+    throw new YahooRateLimitedError(retryAfter);
+  }
+  return waitMs;
+}
+
+/**
+ * How long to wait before the next attempt after `error`, or the error to give
+ * up with: 5xx, timeouts and network errors back off; a 429 waits for
+ * Retry-After when it fits; every other outcome is thrown as it is.
+ */
+function waitBeforeRetry(
+  error: unknown,
+  attempt: number,
+  clock: YahooRequestClock,
+  deadline: number
+): number {
+  const lastAttempt = attempt >= YAHOO_MAX_ATTEMPTS;
+  if (providerStatus(error) === 429) {
+    return rateLimitWait(error, lastAttempt, clock, deadline);
+  }
+  if (!isTransient(error)) {
+    throw error;
+  }
+  const waitMs = RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+  if (lastAttempt || clock.now() + waitMs >= deadline) {
+    throw new YahooUnavailableError();
+  }
+  return waitMs;
+}
+
 /**
  * Runs `call` with finite retries before `deadline` (by default the total
- * budget from now; callers making several calls share one deadline). 5xx,
- * timeouts and network errors retry with backoff; 429 waits for Retry-After
- * when it fits. Every other outcome (success, 401, 403, other 4xx) returns or
- * throws as is.
+ * budget from now; callers making several calls share one deadline). Every
+ * other outcome (success, 401, 403, other 4xx) returns or throws as is.
  */
 export async function withYahooRetries<T>(
   call: (timeoutMs: number) => Promise<T>,
@@ -116,35 +157,10 @@ export async function withYahooRetries<T>(
     if (remaining <= 0) {
       throw new YahooUnavailableError();
     }
-
     try {
       return await call(Math.min(YAHOO_CALL_TIMEOUT_MS, remaining));
     } catch (error) {
-      const lastAttempt = attempt >= YAHOO_MAX_ATTEMPTS;
-
-      if (providerStatus(error) === 429) {
-        const retryAfter = parseRetryAfter(
-          asFailure(error).response?.headers?.["retry-after"],
-          clock.now()
-        );
-        const waitMs = (retryAfter ?? 0) * 1000;
-        if (lastAttempt || retryAfter === undefined || clock.now() + waitMs >= deadline) {
-          throw new YahooRateLimitedError(retryAfter);
-        }
-        await clock.sleep(waitMs);
-        continue;
-      }
-
-      if (isTransient(error)) {
-        const waitMs = RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
-        if (lastAttempt || clock.now() + waitMs >= deadline) {
-          throw new YahooUnavailableError();
-        }
-        await clock.sleep(waitMs);
-        continue;
-      }
-
-      throw error;
+      await clock.sleep(waitBeforeRetry(error, attempt, clock, deadline));
     }
   }
 }

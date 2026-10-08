@@ -1,11 +1,11 @@
 import type { Request, Response } from "express";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AppConfig } from "./config/config";
-import type { Logger } from "./utils/logger";
+import type { AppConfig } from "../config/config";
+import type { Logger } from "../utils/logger";
 import type { YahooClientCreator } from "./request-context";
-import type { OwnerScopedStorage } from "./storage/yahoo-token-storage";
-import type { Clock } from "./utils/clock";
-import type { FantasyDataSource } from "./fantasy/fantasy-data-source";
+import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
+import type { Clock } from "../utils/clock";
+import type { FantasyDataSource } from "../fantasy/fantasy-data-source";
 import type { YahooClientProvider } from "./request-context";
 
 /**

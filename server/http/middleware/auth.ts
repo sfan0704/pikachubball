@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { UnauthorizedError } from "../../shared/api/errors";
+import { UnauthorizedError } from "../../../shared/api/errors";
 import { readVerifiedYahooIdentity } from "../auth/supabase-auth";
 import type { ServerDependencies } from "../dependencies";
 import { createRequestContext } from "../request-context";

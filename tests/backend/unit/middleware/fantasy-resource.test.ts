@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import {
   leagueKeyFromTeamKey,
   requireOwnedFantasyResource,
-} from "../../../../server/middleware/fantasy-resource";
+} from "../../../../server/http/middleware/fantasy-resource";
 import { ForbiddenError, UnauthorizedError, ValidationError } from "../../../../shared/api/errors";
 import { createMockNext, createMockRequest, createMockResponse } from "../../fixtures/test-helpers";
 import { buildRequestContext } from "../../../support/context";

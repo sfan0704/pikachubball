@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { ForbiddenError } from "../../shared/api/errors";
+import { ForbiddenError } from "../../../shared/api/errors";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 

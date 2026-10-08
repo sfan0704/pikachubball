@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
-import { AppError, type ErrorBody, type ErrorCode } from "../../shared/api/errors";
-import type { Logger } from "../utils/logger";
+import { AppError, type ErrorBody, type ErrorCode } from "../../../shared/api/errors";
+import type { Logger } from "../../utils/logger";
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   UNAUTHORIZED: 401,

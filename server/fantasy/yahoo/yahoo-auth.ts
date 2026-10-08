@@ -1,11 +1,12 @@
-import { ProviderHttpError, requestJson, type FetchFunction } from "./services/yahoo/provider-http";
+import { ProviderHttpError, requestJson, type FetchFunction } from "./provider-http";
+import { z } from "zod";
 import {
   YAHOO_CALL_TIMEOUT_MS,
   providerStatus,
   YahooReconnectRequiredError,
   YahooUnavailableError,
-} from "./services/yahoo/yahoo-request-policy";
-import { logger } from "./utils/logger";
+} from "./yahoo-request-policy";
+import { logger } from "../../utils/logger";
 
 const TOKEN_URL = "https://api.login.yahoo.com/oauth2/get_token";
 
@@ -40,6 +41,24 @@ export interface YahooAuthorizationTokens {
   yahooGuid?: string;
 }
 
+const authorizationResponseSchema = z.object({
+  access_token: z.string(),
+  refresh_token: z.string(),
+  expires_in: z.coerce.number().finite(),
+  xoauth_yahoo_guid: z.string().optional(),
+});
+
+/** What goes in the log when the code exchange fails: Yahoo's error words, never tokens. */
+function exchangeFailureFields(error: unknown) {
+  const fromYahoo = error instanceof ProviderHttpError ? error.data : undefined;
+  return {
+    error: error instanceof Error ? error.message : "Unknown error",
+    status: providerStatus(error),
+    yahooError: fromYahoo?.error,
+    yahooErrorDescription: fromYahoo?.error_description,
+  };
+}
+
 export async function exchangeAuthorizationCode(
   code: string,
   clientId: string,
@@ -48,7 +67,7 @@ export async function exchangeAuthorizationCode(
   fetchFunction: FetchFunction = fetch
 ): Promise<YahooAuthorizationTokens> {
   try {
-    const data = (await postForm(
+    const data = await postForm(
       TOKEN_URL,
       clientId,
       clientSecret,
@@ -60,31 +79,19 @@ export async function exchangeAuthorizationCode(
         code,
       },
       fetchFunction
-    )) as Record<string, unknown>;
-
-    const accessToken = data?.access_token;
-    const refreshToken = data?.refresh_token;
-    const expiresIn = Number(data?.expires_in);
-    const responseYahooGuid = data?.xoauth_yahoo_guid;
-    if (
-      typeof accessToken !== "string" ||
-      typeof refreshToken !== "string" ||
-      !Number.isFinite(expiresIn)
-    ) {
+    );
+    const parsed = authorizationResponseSchema.safeParse(data);
+    if (!parsed.success) {
       throw new Error("Yahoo token response was incomplete");
     }
-
-    const yahooGuid = typeof responseYahooGuid === "string" ? responseYahooGuid : undefined;
-
-    return { accessToken, refreshToken, expiresIn, yahooGuid };
+    return {
+      accessToken: parsed.data.access_token,
+      refreshToken: parsed.data.refresh_token,
+      expiresIn: parsed.data.expires_in,
+      yahooGuid: parsed.data.xoauth_yahoo_guid,
+    };
   } catch (error) {
-    logger.error("Yahoo authorization code exchange failed", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      status: providerStatus(error),
-      yahooError: error instanceof ProviderHttpError ? error.data?.error : undefined,
-      yahooErrorDescription:
-        error instanceof ProviderHttpError ? error.data?.error_description : undefined,
-    });
+    logger.error("Yahoo authorization code exchange failed", exchangeFailureFields(error));
     throw new Error("Failed to exchange Yahoo authorization code");
   }
 }
@@ -94,6 +101,37 @@ export interface YahooRefreshedTokens {
   /** Present only when Yahoo rotated the refresh token. */
   refreshToken?: string;
   expiresIn: number;
+}
+
+const refreshResponseSchema = z.object({
+  access_token: z.string().min(1),
+  refresh_token: z.string().optional(),
+  expires_in: z.coerce.number().finite(),
+});
+
+/** Asks Yahoo for new tokens; a rejected grant means reconnecting, anything else is an outage. */
+async function requestRefresh(
+  refreshToken: string,
+  clientId: string,
+  clientSecret: string,
+  redirectUri: string,
+  fetchFunction: FetchFunction
+): Promise<unknown> {
+  try {
+    return await postForm(
+      TOKEN_URL,
+      clientId,
+      clientSecret,
+      { redirect_uri: redirectUri, grant_type: "refresh_token", refresh_token: refreshToken },
+      fetchFunction
+    );
+  } catch (error) {
+    const status = providerStatus(error);
+    logger.error("Yahoo token refresh failed", { status });
+    throw status === 400 || status === 401
+      ? new YahooReconnectRequiredError()
+      : new YahooUnavailableError();
+  }
 }
 
 /**
@@ -110,40 +148,23 @@ export async function refreshAccessToken(
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Yahoo refresh configuration is incomplete");
   }
-
-  let data: Record<string, unknown> | undefined;
-  try {
-    data = (await postForm(
-      TOKEN_URL,
-      clientId,
-      clientSecret,
-      { redirect_uri: redirectUri, grant_type: "refresh_token", refresh_token: refreshToken },
-      fetchFunction
-    )) as Record<string, unknown>;
-  } catch (error) {
-    const status = providerStatus(error);
-    logger.error("Yahoo token refresh failed", { status });
-    if (status === 400 || status === 401) {
-      throw new YahooReconnectRequiredError();
-    }
-    throw new YahooUnavailableError();
-  }
-
-  const accessToken = data?.access_token;
-  const rotatedRefreshToken = data?.refresh_token;
-  const expiresIn = Number(data?.expires_in);
-  if (typeof accessToken !== "string" || !accessToken || !Number.isFinite(expiresIn)) {
+  const data = await requestRefresh(
+    refreshToken,
+    clientId,
+    clientSecret,
+    redirectUri,
+    fetchFunction
+  );
+  const parsed = refreshResponseSchema.safeParse(data);
+  if (!parsed.success) {
     logger.error("Yahoo token refresh response was incomplete");
     throw new YahooUnavailableError();
   }
-
   return {
-    accessToken,
-    refreshToken:
-      typeof rotatedRefreshToken === "string" && rotatedRefreshToken
-        ? rotatedRefreshToken
-        : undefined,
-    expiresIn,
+    accessToken: parsed.data.access_token,
+    // Yahoo omits the refresh token when it did not rotate it.
+    refreshToken: parsed.data.refresh_token || undefined,
+    expiresIn: parsed.data.expires_in,
   };
 }
 

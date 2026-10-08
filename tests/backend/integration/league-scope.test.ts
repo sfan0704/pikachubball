@@ -3,15 +3,15 @@ import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { teamTableSchema } from "../../../shared/api/team-table";
-import { createApp } from "../../../server/app";
-import { createAppErrorHandler } from "../../../server/composition-root";
+import { createApp } from "../../../server/http/app";
+import { createAppErrorHandler } from "../../../server/http/composition-root";
 import { YahooFantasyDataSource } from "../../../server/fantasy/fantasy-data-source";
 import type { LeagueResources } from "../../../server/fantasy/league-resources";
 import {
   YahooRateLimitedError,
   YahooReconnectRequiredError,
   YahooUnavailableError,
-} from "../../../server/services/yahoo/yahoo-request-policy";
+} from "../../../server/fantasy/yahoo/yahoo-request-policy";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { buildTestDependencies } from "../../support/dependencies";
 

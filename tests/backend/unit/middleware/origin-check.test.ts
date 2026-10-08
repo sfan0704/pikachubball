@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { NextFunction, Request, Response } from "express";
-import { createOriginCheck } from "../../../../server/middleware/origin-check";
+import { createOriginCheck } from "../../../../server/http/middleware/origin-check";
 import { ForbiddenError } from "../../../../shared/api/errors";
 
 const APP_ORIGIN = "https://basketball.example.test";

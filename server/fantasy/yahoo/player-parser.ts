@@ -4,7 +4,7 @@
  */
 
 import type { Player, PlayerStatus } from "../../../shared/domain/index.js";
-import type { YahooApiPlayerData } from "../../types/yahoo-api.js";
+import type { YahooApiPlayerData } from "./yahoo-api-types.js";
 import { logger } from "../../utils/logger.js";
 
 /**
@@ -140,28 +140,17 @@ export function parsePlayer(playerData: YahooApiPlayerData | null | undefined): 
  * @returns Array of Player domain models
  */
 export function parsePlayersFromRoster(rosterData: any): Player[] {
-  if (!rosterData?.roster || !Array.isArray(rosterData.roster) || rosterData.roster.length === 0) {
-    logger.warn("Invalid roster data: missing or empty roster");
-    return [];
-  }
-
-  const playersData = rosterData.roster[0]?.players;
-  if (!playersData || !playersData.count) {
+  const playersData = rosterData?.roster?.[0]?.players;
+  if (!Array.isArray(rosterData?.roster) || !playersData?.count) {
     logger.warn("Invalid roster data: missing players or count");
     return [];
   }
 
-  const parsedPlayers: Player[] = [];
-
-  for (let i = 0; i < playersData.count; i++) {
-    const playerData = playersData[i.toString()]?.player;
-    if (playerData) {
-      const player = parsePlayer(playerData);
-      if (player) {
-        parsedPlayers.push(player);
-      }
-    }
-  }
-
-  return parsedPlayers;
+  return Array.from(
+    { length: Number(playersData.count) },
+    (_, index) => playersData[String(index)]?.player
+  )
+    .filter(Boolean)
+    .map((playerData) => parsePlayer(playerData))
+    .filter((player): player is Player => player !== null);
 }

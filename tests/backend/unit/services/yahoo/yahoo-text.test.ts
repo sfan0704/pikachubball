@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   decodeYahooStrings,
   decodeYahooText,
-} from "../../../../../server/services/yahoo/yahoo-text";
+} from "../../../../../server/fantasy/yahoo/yahoo-text";
 
 describe("decodeYahooText", () => {
   it("decodes the numeric apostrophe Yahoo sends in team names", () => {

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   parseTeam,
   parseTeamsFromStandings,
-} from "../../../../../server/services/parsers/league-parser";
+} from "../../../../../server/fantasy/legacy/league-parser";
 import { logger } from "../../../../../server/utils/logger";
 
 // Mock logger

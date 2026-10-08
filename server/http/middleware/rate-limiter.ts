@@ -1,6 +1,6 @@
 import rateLimit from "express-rate-limit";
 import type { NextFunction, Request, Response } from "express";
-import { AppError } from "../../shared/api/errors";
+import { AppError } from "../../../shared/api/errors";
 import { getRequestContext } from "../request-context";
 
 /** Per-user requests a minute that protect the shared Yahoo rate limit. */

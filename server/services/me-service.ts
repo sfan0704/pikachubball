@@ -1,5 +1,5 @@
 import type { MeResponse, Preferences } from "../../shared/api/account";
-import type { RequestContext } from "../request-context";
+import type { RequestContext } from "../http/request-context";
 
 /** The signed-in user, whether Yahoo is connected, and their saved choices. */
 export async function getMe({ user, storage }: RequestContext): Promise<MeResponse> {

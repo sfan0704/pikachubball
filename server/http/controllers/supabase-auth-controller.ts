@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import type { Provider, SupabaseClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../middleware/error-handler";
-import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
-import type { HostedAuthConfig } from "../config/config";
+import { UnauthorizedError, ValidationError } from "../../../shared/api/errors";
+import type { HostedAuthConfig } from "../../config/config";
 import { applyAuthNoStore, projectYahooIdentity, YAHOO_PROVIDER } from "../auth/supabase-auth";
 
 /** What the sign-in controller needs from the composition root. */

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import type { RequestScope } from "../request-context";
-import type { Clock } from "../utils/clock";
-import type { Logger } from "../utils/logger";
+import type { Clock } from "../../utils/clock";
+import type { Logger } from "../../utils/logger";
 
 /** What the request scope needs from the composition root. */
 export interface RequestScopeDependencies {

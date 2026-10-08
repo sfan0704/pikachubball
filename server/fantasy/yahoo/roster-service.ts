@@ -1,5 +1,5 @@
-import type { YahooClientProvider } from "../../request-context";
-import { parsePlayersFromRoster } from "../parsers/player-parser.js";
+import type { YahooClientProvider } from "../../http/request-context";
+import { parsePlayersFromRoster } from "./player-parser.js";
 import type { RosterResponse } from "../../../shared/api/leagues";
 
 /**

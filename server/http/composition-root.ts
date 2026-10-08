@@ -1,18 +1,18 @@
 import type { Request, Response } from "express";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseRequestClient } from "./auth/supabase-auth";
-import type { AppConfig } from "./config/config";
+import type { AppConfig } from "../config/config";
 import type { ServerDependencies } from "./dependencies";
 import { createErrorHandler } from "./middleware/error-handler";
-import { YahooApiClient } from "./services/yahoo/yahoo-api-client";
-import { systemClock as yahooTimers } from "./services/yahoo/yahoo-request-policy";
-import { YahooFantasyDataSource } from "./fantasy/fantasy-data-source";
-import { YahooLeagueResources } from "./fantasy/league-resources";
-import { revokeYahooToken } from "./yahoo-auth";
-import { AesGcmOwnerTokenCipher } from "./storage/owner-token-cipher";
-import { createSupabaseOwnerStorage } from "./storage/supabase-owner-storage";
-import { systemClock, type Clock } from "./utils/clock";
-import { createLogger } from "./utils/logger";
+import { YahooApiClient } from "../fantasy/yahoo/yahoo-api-client";
+import { systemClock as yahooTimers } from "../fantasy/yahoo/yahoo-request-policy";
+import { YahooFantasyDataSource } from "../fantasy/fantasy-data-source";
+import { YahooLeagueResources } from "../fantasy/league-resources";
+import { revokeYahooToken } from "../fantasy/yahoo/yahoo-auth";
+import { AesGcmOwnerTokenCipher } from "../storage/owner-token-cipher";
+import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
+import { systemClock, type Clock } from "../utils/clock";
+import { createLogger } from "../utils/logger";
 
 /**
  * The one place that turns configuration into concrete collaborators.

@@ -1,6 +1,6 @@
 import express from "express";
-import { configureApp } from "../server/app";
-import { createAppErrorHandler, createServerDependencies } from "../server/composition-root";
+import { configureApp } from "../server/http/app";
+import { createAppErrorHandler, createServerDependencies } from "../server/http/composition-root";
 import { loadConfig } from "../server/config/config";
 
 const dependencies = createServerDependencies(loadConfig());

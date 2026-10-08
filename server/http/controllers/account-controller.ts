@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
-import { meResponseSchema, preferencesSchema } from "../../shared/api/account";
+import { meResponseSchema, preferencesSchema } from "../../../shared/api/account";
 import { asyncHandler } from "../middleware/error-handler";
 import type { ServerDependencies } from "../dependencies";
 import { getRequestContext } from "../request-context";
-import { deleteAccount, disconnectYahoo } from "../services/account-service";
-import { getMe, savePreferences } from "../services/me-service";
+import { deleteAccount, disconnectYahoo } from "../../services/account-service";
+import { getMe, savePreferences } from "../../services/me-service";
 
 /** Thin HTTP adapter for disconnecting Yahoo and deleting the account. */
 export function createAccountController({

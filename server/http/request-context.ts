@@ -1,10 +1,10 @@
 import type { Request } from "express";
-import { UnauthorizedError } from "../shared/api/errors";
+import { UnauthorizedError } from "../../shared/api/errors";
 import type { YahooSessionIdentity } from "./auth/supabase-auth";
-import type { YahooApiClient } from "./services/yahoo/yahoo-api-client";
-import type { OwnerScopedStorage } from "./storage/yahoo-token-storage";
-import type { Clock } from "./utils/clock";
-import type { Logger } from "./utils/logger";
+import type { YahooApiClient } from "../fantasy/yahoo/yahoo-api-client";
+import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
+import type { Clock } from "../utils/clock";
+import type { Logger } from "../utils/logger";
 
 /** What every request has, signed in or not. */
 export interface RequestScope {

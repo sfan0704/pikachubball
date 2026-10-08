@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { parse, serialize } from "cookie";
 import type { Request, Response } from "express";
-import type { HostedAuthConfig } from "../config/config";
+import type { HostedAuthConfig } from "../../config/config";
 
 export const AUTH_COOKIE_NAME = "pikachubball-auth";
 export const YAHOO_PROVIDER = "custom:yahoo";

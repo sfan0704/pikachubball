@@ -1,6 +1,6 @@
-import type { YahooClientProvider } from "../../request-context";
+import type { YahooClientProvider } from "../../http/request-context";
 import { logger } from "../../utils/logger";
-import { parseTeamsFromStandings } from "../parsers/league-parser.js";
+import { parseTeamsFromStandings } from "./league-parser.js";
 import { AppError } from "../../../shared/api/errors";
 import { classifyLeague, type LeagueStatus } from "./league-status";
 

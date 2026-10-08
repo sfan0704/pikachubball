@@ -1,14 +1,14 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createYahooOAuthController } from "../../../../server/controllers/yahoo-oauth-controller";
-import { createErrorHandler } from "../../../../server/middleware/error-handler";
+import { createYahooOAuthController } from "../../../../server/http/controllers/yahoo-oauth-controller";
+import { createErrorHandler } from "../../../../server/http/middleware/error-handler";
 import { buildTestConfig, silentLogger } from "../../../support/dependencies";
 import { buildRequestContext } from "../../../support/context";
 import { systemClock } from "../../../../server/utils/clock";
-import { exchangeAuthorizationCode } from "../../../../server/yahoo-auth";
+import { exchangeAuthorizationCode } from "../../../../server/fantasy/yahoo/yahoo-auth";
 
-vi.mock("../../../../server/yahoo-auth", () => ({
+vi.mock("../../../../server/fantasy/yahoo/yahoo-auth", () => ({
   exchangeAuthorizationCode: vi.fn(),
 }));
 

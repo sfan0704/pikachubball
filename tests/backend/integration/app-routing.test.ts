@@ -3,9 +3,9 @@ import os from "os";
 import path from "path";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createApp } from "../../../server/app";
+import { createApp } from "../../../server/http/app";
 import { serveStatic } from "../../../server/config/vite";
-import { createAppErrorHandler } from "../../../server/composition-root";
+import { createAppErrorHandler } from "../../../server/http/composition-root";
 import { buildTestDependencies } from "../../support/dependencies";
 
 const dependencies = buildTestDependencies();
