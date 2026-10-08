@@ -69,6 +69,15 @@ describe("import boundaries", () => {
     ).toEqual([]);
   });
 
+  it("allows fetch only in the client API module", async () => {
+    const call = "export const load = () => fetch('/api/me');\n";
+    expect(await errorsFor("client/src/lib/utils.ts", call)).toEqual(["no-restricted-globals"]);
+    expect(await errorsFor("client/src/lib/utils.ts", "export const f = window.fetch;\n")).toEqual([
+      "no-restricted-properties",
+    ]);
+    expect(await errorsFor("client/src/api/http.ts", call)).toEqual([]);
+  });
+
   it("keeps the server from importing client code", async () => {
     expect(
       await errorsFor(

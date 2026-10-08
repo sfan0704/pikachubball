@@ -1,4 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
+import { legacyRequest } from "@/api/http";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Select,
@@ -50,13 +51,10 @@ export default function MatchupSimulator({
       if (week) params.append("week", week.toString());
       return {
         queryKey: [`/api/viz/matchup/${leagueKey}/${selectedTeam}`, opponent.teamKey, week],
-        queryFn: async () => {
-          const response = await fetch(
+        queryFn: () =>
+          legacyRequest<MatchupComparisonResponse>(
             `/api/viz/matchup/${leagueKey}/${selectedTeam}?${params.toString()}`
-          );
-          if (!response.ok) throw new Error("Failed to fetch matchup");
-          return response.json() as Promise<MatchupComparisonResponse>;
-        },
+          ),
         retry: false,
       };
     }),

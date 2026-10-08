@@ -34,6 +34,7 @@ export default [
         setInterval: "readonly",
         clearInterval: "readonly",
         AbortSignal: "readonly",
+        AbortController: "readonly",
         RequestInit: "readonly",
         // Browser globals
         window: "readonly",
@@ -188,6 +189,26 @@ export default [
             { regex: "(^|/)client(/|$)", message: "The server never imports client code." },
           ],
         },
+      ],
+    },
+  },
+
+  {
+    files: ["client/src/**/*.{ts,tsx}"],
+    ignores: ["client/src/api/**", "**/*.test.*"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "fetch",
+          message:
+            "Only the API module (client/src/api) calls fetch. Add an endpoint there and use its hook.",
+        },
+      ],
+      "no-restricted-properties": [
+        "error",
+        { object: "window", property: "fetch", message: "Only the API module calls fetch." },
+        { object: "globalThis", property: "fetch", message: "Only the API module calls fetch." },
       ],
     },
   },
