@@ -24,10 +24,9 @@ function fakeClock(start = 1_800_000_000_000) {
 }
 
 const status = (code: number, headers: Record<string, string> = {}) => ({
-  isAxiosError: true,
   response: { status: code, headers },
 });
-const timeout = { isAxiosError: true, code: "ECONNABORTED" };
+const timeout = { isNetworkError: true, code: "ETIMEDOUT" };
 
 describe("withYahooRetries", () => {
   it("returns the first success without waiting", async () => {

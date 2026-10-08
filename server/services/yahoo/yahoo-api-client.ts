@@ -1,59 +1,18 @@
 /**
  * Direct Yahoo Fantasy API Client
- * Makes HTTP calls directly to Yahoo Fantasy API without using the yahoo-fantasy library
+ * Endpoint methods over the token manager and transport.
  */
 
-import axios, { AxiosInstance } from "axios";
 import type { YahooAppConfig } from "../../config/config";
+import type { YahooTokenStorage } from "../../storage/yahoo-token-storage";
+import { systemClock, type YahooRequestClock } from "./yahoo-request-policy";
+import { YahooTokenManager, type TokenRefresher } from "./yahoo-token-manager";
+import { YahooTransport } from "./yahoo-transport";
+import type { FetchFunction } from "./provider-http";
 import { logger } from "../../utils/logger";
-import { refreshAccessToken } from "../../yahoo-auth";
-import type { StoredYahooToken, YahooTokenStorage } from "../../storage/yahoo-token-storage";
-import {
-  providerStatus,
-  systemClock,
-  withYahooRetries,
-  YAHOO_TOTAL_BUDGET_MS,
-  YahooReconnectRequiredError,
-  type YahooRequestClock,
-} from "./yahoo-request-policy";
-import { decodeYahooStrings } from "./yahoo-text";
 
-const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
-
-/**
- * Yahoo API Client that handles authentication and makes direct API calls
- */
 export class YahooApiClient {
-  private userId: string;
-  private clientId: string;
-  private clientSecret: string;
-  private readonly providerRedirectUri: string | null;
-  private accessToken: string | null = null;
-  private refreshToken: string | null = null;
-  private tokenVersion: number | undefined;
-  private axiosInstance: AxiosInstance;
-
-  private constructor(
-    userId: string,
-    clientId: string,
-    clientSecret: string,
-    providerRedirectUri: string | null,
-    private readonly tokenStorage: YahooTokenStorage,
-    private readonly clock: YahooRequestClock,
-    private readonly onRequest: () => void
-  ) {
-    this.userId = userId;
-    this.clientId = clientId;
-    this.clientSecret = clientSecret;
-    this.providerRedirectUri = providerRedirectUri;
-
-    this.axiosInstance = axios.create({
-      baseURL: YAHOO_API_BASE,
-      headers: {
-        Accept: "application/json",
-      },
-    });
-  }
+  private constructor(private readonly transport: YahooTransport) {}
 
   /**
    * Create a YahooApiClient for a user from the Yahoo app's credentials,
@@ -64,205 +23,24 @@ export class YahooApiClient {
     tokenStorage: YahooTokenStorage,
     app: YahooAppConfig,
     clock: YahooRequestClock = systemClock,
-    onRequest: () => void = () => {}
+    onRequest: () => void = () => {},
+    network: { fetchFunction?: FetchFunction; refresher?: TokenRefresher } = {}
   ): Promise<YahooApiClient> {
-    if (!app.clientId || !app.clientSecret) {
-      throw new Error(
-        "Yahoo OAuth credentials are not configured. Please set YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET environment variables."
-      );
-    }
-
-    const client = new YahooApiClient(
+    const tokens = await YahooTokenManager.load(
       userId,
-      app.clientId,
-      app.clientSecret,
-      app.providerRedirectUri,
       tokenStorage,
+      app,
       clock,
-      onRequest
+      network.refresher
     );
-    await client.initializeTokens();
-    return client;
+    return new YahooApiClient(new YahooTransport(tokens, clock, onRequest, network.fetchFunction));
   }
 
-  private nowSeconds(): number {
-    return Math.floor(this.clock.now() / 1000);
-  }
-
-  private adopt(token: StoredYahooToken): void {
-    this.accessToken = token.accessToken;
-    this.refreshToken = token.refreshToken;
-    this.tokenVersion = token.version;
-  }
-
-  /**
-   * Initialize tokens from storage and refresh if expired
-   */
-  private async initializeTokens(): Promise<void> {
-    const tokenData = await this.tokenStorage.getYahooToken(this.userId);
-    if (!tokenData) {
-      throw new YahooReconnectRequiredError();
-    }
-
-    this.adopt(tokenData);
-    if (tokenData.expiresAt <= this.nowSeconds()) {
-      logger.info("Yahoo access token expired, refreshing", { userId: this.userId });
-      await this.refreshTokens();
-    }
-  }
-
-  /**
-   * Refreshes the access token, sharing an in-flight refresh for this user.
-   */
-  private async refreshTokens(): Promise<void> {
-    this.adopt(await this.exchangeAndStore());
-  }
-
-  /**
-   * A token that another request or instance refreshed (and stored) after the
-   * one this client read, if it is still valid. Racing refreshes are settled
-   * by the version check in storage, not by any in-process state.
-   */
-  private async newerStoredToken(
-    expectedVersion: number | undefined
-  ): Promise<StoredYahooToken | null> {
-    const latest = await this.tokenStorage.getYahooToken(this.userId);
-    if (
-      latest &&
-      latest.version !== undefined &&
-      expectedVersion !== undefined &&
-      latest.version > expectedVersion &&
-      latest.expiresAt > this.nowSeconds()
-    ) {
-      return latest;
-    }
-    return null;
-  }
-
-  private async exchangeAndStore(): Promise<StoredYahooToken> {
-    const currentRefreshToken = this.refreshToken;
-    const expectedVersion = this.tokenVersion;
-    if (!currentRefreshToken) {
-      throw new YahooReconnectRequiredError();
-    }
-
-    let refreshed;
-    try {
-      refreshed = await refreshAccessToken(
-        currentRefreshToken,
-        this.clientId,
-        this.clientSecret,
-        this.providerRedirectUri
-      );
-    } catch (error) {
-      // Yahoo rejects a refresh token another request already used. If that
-      // request stored a newer token, use it instead of asking to reconnect.
-      if (error instanceof YahooReconnectRequiredError) {
-        const newer = await this.newerStoredToken(expectedVersion);
-        if (newer) {
-          return newer;
-        }
-      }
-      throw error;
-    }
-    const rotation = {
-      userId: this.userId,
-      accessToken: refreshed.accessToken,
-      // Yahoo may omit the refresh token; the current one stays valid then.
-      refreshToken: refreshed.refreshToken ?? currentRefreshToken,
-      expiresAt: this.nowSeconds() + refreshed.expiresIn,
-    };
-
-    try {
-      return await this.tokenStorage.saveYahooToken(rotation, { expectedVersion });
-    } catch (error) {
-      if (!(error instanceof Error) || !/stale result rejected/.test(error.message)) {
-        throw error;
-      }
-      // Another instance committed a newer token, or the user disconnected.
-      // Never write over either: use the committed token or fail closed.
-      const newer = await this.newerStoredToken(expectedVersion);
-      if (newer) {
-        return newer;
-      }
-      throw new YahooReconnectRequiredError();
-    }
-  }
-
-  /**
-   * Make an authenticated API request to Yahoo Fantasy API and decode the
-   * HTML entities Yahoo puts in text fields (team and league names).
-   */
-  private async apiRequest<T = any>(
+  private apiRequest<T = any>(
     endpoint: string,
     params?: Record<string, string | number>
   ): Promise<T> {
-    return decodeYahooStrings(await this.fetchRaw<T>(endpoint, params));
-  }
-
-  /**
-   * Make an authenticated API request to Yahoo Fantasy API within the request
-   * budget. A 401 triggers one refresh and one retry of the request.
-   */
-  private async fetchRaw<T = any>(
-    endpoint: string,
-    params?: Record<string, string | number>
-  ): Promise<T> {
-    if (!this.accessToken) {
-      await this.initializeTokens();
-    }
-
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        queryParams.append(key, String(value));
-      });
-    }
-    queryParams.append("format", "json");
-
-    const url = `${endpoint}${queryParams.toString() ? "?" + queryParams.toString() : ""}`;
-    const deadline = this.clock.now() + YAHOO_TOTAL_BUDGET_MS;
-    const get = (timeout: number) => {
-      this.onRequest();
-      return this.axiosInstance.get(url, {
-        timeout,
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-        },
-      });
-    };
-
-    try {
-      const response = await withYahooRetries(get, this.clock, deadline);
-      return response.data;
-    } catch (error) {
-      if (providerStatus(error) !== 401) {
-        this.logFailure(endpoint, error);
-        throw error;
-      }
-    }
-
-    logger.debug("Got 401, attempting token refresh", { userId: this.userId, endpoint });
-    await this.refreshTokens();
-    try {
-      const response = await withYahooRetries(get, this.clock, deadline);
-      return response.data;
-    } catch (error) {
-      if (providerStatus(error) === 401) {
-        throw new YahooReconnectRequiredError();
-      }
-      this.logFailure(endpoint, error);
-      throw error;
-    }
-  }
-
-  private logFailure(endpoint: string, error: unknown): void {
-    logger.error("Yahoo API request failed:", {
-      userId: this.userId,
-      endpoint,
-      status: providerStatus(error),
-      code: error instanceof Error ? ((error as { code?: string }).code ?? error.name) : undefined,
-    });
+    return this.transport.get<T>(endpoint, params);
   }
 
   /**
@@ -868,6 +646,6 @@ export class YahooApiClient {
     endpoint: string,
     params?: Record<string, string | number>
   ): Promise<any> {
-    return this.fetchRaw(endpoint, params);
+    return this.transport.getRaw(endpoint, params);
   }
 }
