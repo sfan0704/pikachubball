@@ -1,4 +1,4 @@
-import axios from "axios";
+import { ProviderHttpError, requestJson, type FetchFunction } from "./services/yahoo/provider-http";
 import {
   YAHOO_CALL_TIMEOUT_MS,
   providerStatus,
@@ -6,6 +6,32 @@ import {
   YahooUnavailableError,
 } from "./services/yahoo/yahoo-request-policy";
 import { logger } from "./utils/logger";
+
+const TOKEN_URL = "https://api.login.yahoo.com/oauth2/get_token";
+
+/** Posts a form to a Yahoo OAuth endpoint with the app's credentials as Basic auth. */
+function postForm(
+  url: string,
+  clientId: string,
+  clientSecret: string,
+  form: Record<string, string>,
+  fetchFunction: FetchFunction
+): Promise<unknown> {
+  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  return requestJson(
+    url,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(form).toString(),
+    },
+    YAHOO_CALL_TIMEOUT_MS,
+    fetchFunction
+  );
+}
 
 export interface YahooAuthorizationTokens {
   accessToken: string;
@@ -18,32 +44,28 @@ export async function exchangeAuthorizationCode(
   code: string,
   clientId: string,
   clientSecret: string,
-  redirectUri: string
+  redirectUri: string,
+  fetchFunction: FetchFunction = fetch
 ): Promise<YahooAuthorizationTokens> {
-  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
   try {
-    const response = await axios({
-      url: "https://api.login.yahoo.com/oauth2/get_token",
-      method: "post",
-      timeout: YAHOO_CALL_TIMEOUT_MS,
-      headers: {
-        Authorization: `Basic ${authHeader}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      data: new URLSearchParams({
+    const data = (await postForm(
+      TOKEN_URL,
+      clientId,
+      clientSecret,
+      {
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
         grant_type: "authorization_code",
         code,
-      }).toString(),
-    });
+      },
+      fetchFunction
+    )) as Record<string, unknown>;
 
-    const accessToken = response.data?.access_token;
-    const refreshToken = response.data?.refresh_token;
-    const expiresIn = Number(response.data?.expires_in);
-    const responseYahooGuid = response.data?.xoauth_yahoo_guid;
+    const accessToken = data?.access_token;
+    const refreshToken = data?.refresh_token;
+    const expiresIn = Number(data?.expires_in);
+    const responseYahooGuid = data?.xoauth_yahoo_guid;
     if (
       typeof accessToken !== "string" ||
       typeof refreshToken !== "string" ||
@@ -58,11 +80,10 @@ export async function exchangeAuthorizationCode(
   } catch (error) {
     logger.error("Yahoo authorization code exchange failed", {
       error: error instanceof Error ? error.message : "Unknown error",
-      status: axios.isAxiosError(error) ? error.response?.status : undefined,
-      yahooError: axios.isAxiosError(error) ? error.response?.data?.error : undefined,
-      yahooErrorDescription: axios.isAxiosError(error)
-        ? error.response?.data?.error_description
-        : undefined,
+      status: providerStatus(error),
+      yahooError: error instanceof ProviderHttpError ? error.data?.error : undefined,
+      yahooErrorDescription:
+        error instanceof ProviderHttpError ? error.data?.error_description : undefined,
     });
     throw new Error("Failed to exchange Yahoo authorization code");
   }
@@ -83,31 +104,22 @@ export async function refreshAccessToken(
   refreshToken: string,
   clientId: string,
   clientSecret: string,
-  redirectUri: string | null
+  redirectUri: string | null,
+  fetchFunction: FetchFunction = fetch
 ): Promise<YahooRefreshedTokens> {
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Yahoo refresh configuration is incomplete");
   }
 
-  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
   let data: Record<string, unknown> | undefined;
   try {
-    const response = await axios({
-      url: "https://api.login.yahoo.com/oauth2/get_token",
-      method: "post",
-      timeout: YAHOO_CALL_TIMEOUT_MS,
-      headers: {
-        Authorization: `Basic ${authHeader}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      data: new URLSearchParams({
-        redirect_uri: redirectUri,
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-      }).toString(),
-    });
-    data = response.data;
+    data = (await postForm(
+      TOKEN_URL,
+      clientId,
+      clientSecret,
+      { redirect_uri: redirectUri, grant_type: "refresh_token", refresh_token: refreshToken },
+      fetchFunction
+    )) as Record<string, unknown>;
   } catch (error) {
     const status = providerStatus(error);
     logger.error("Yahoo token refresh failed", { status });
@@ -143,27 +155,21 @@ export async function refreshAccessToken(
 export async function revokeYahooToken(
   token: string,
   clientId: string,
-  clientSecret: string
+  clientSecret: string,
+  fetchFunction: FetchFunction = fetch
 ): Promise<boolean> {
   if (!token || !clientId || !clientSecret) {
     return false;
   }
-  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
   try {
-    await axios({
-      url: "https://api.login.yahoo.com/oauth2/revoke",
-      method: "post",
-      timeout: YAHOO_CALL_TIMEOUT_MS,
-      headers: {
-        Authorization: `Basic ${authHeader}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      data: new URLSearchParams({
-        token,
-        token_type_hint: "refresh_token",
-      }).toString(),
-    });
+    await postForm(
+      "https://api.login.yahoo.com/oauth2/revoke",
+      clientId,
+      clientSecret,
+      { token, token_type_hint: "refresh_token" },
+      fetchFunction
+    );
     return true;
   } catch (error) {
     logger.warn("Yahoo token revocation failed", { status: providerStatus(error) });

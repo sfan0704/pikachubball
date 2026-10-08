@@ -33,6 +33,8 @@ export default [
         clearTimeout: "readonly",
         setInterval: "readonly",
         clearInterval: "readonly",
+        AbortSignal: "readonly",
+        RequestInit: "readonly",
         // Browser globals
         window: "readonly",
         document: "readonly",

@@ -68,7 +68,7 @@ export function parseRetryAfter(value: unknown, now: number): number | undefined
 
 interface ProviderFailure {
   code?: string;
-  isAxiosError?: boolean;
+  isNetworkError?: boolean;
   response?: { status?: number; headers?: Record<string, unknown> };
 }
 
@@ -94,7 +94,7 @@ function isTransient(error: unknown): boolean {
   const failure = asFailure(error);
   if (!failure.response) {
     // Timeout or network failure before Yahoo answered.
-    return failure.isAxiosError === true || NETWORK_ERROR_CODES.has(failure.code ?? "");
+    return failure.isNetworkError === true || NETWORK_ERROR_CODES.has(failure.code ?? "");
   }
   return (failure.response.status ?? 0) >= 500;
 }

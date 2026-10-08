@@ -1,17 +1,53 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { YahooApiClient } from "../../../../../server/services/yahoo/yahoo-api-client";
 import type { YahooTokenStorage } from "../../../../../server/storage/yahoo-token-storage";
 import type { YahooAppConfig } from "../../../../../server/config/config";
 import { refreshAccessToken } from "../../../../../server/yahoo-auth";
-import axios from "axios";
+import { jsonResponse, timeoutError } from "../../../../support/fetch";
+import { YahooTokenManager } from "../../../../../server/services/yahoo/yahoo-token-manager";
 import {
+  systemClock,
   YahooReconnectRequiredError,
   YahooUnavailableError,
 } from "../../../../../server/services/yahoo/yahoo-request-policy";
 
 // Mock dependencies
 vi.mock("../../../../../server/yahoo-auth");
-vi.mock("axios");
+
+const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
+
+interface NetworkDouble {
+  get: ReturnType<typeof vi.fn>;
+}
+
+/**
+ * Routes the global fetch to `network.get(path, { headers })`: a resolved
+ * `{ data }` becomes a 200 JSON response, a rejection with `response.status`
+ * becomes that HTTP status, and a rejection with a code becomes a timeout.
+ */
+function routeFetchTo(network: NetworkDouble): void {
+  vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+    const { Authorization } = init.headers as Record<string, string>;
+    try {
+      const result = await network.get(url.replace(YAHOO_API_BASE, ""), {
+        headers: { Authorization },
+      });
+      return jsonResponse(result?.data);
+    } catch (error) {
+      const failure = error as {
+        response?: { status: number; headers?: Record<string, string> };
+        code?: string;
+      };
+      if (failure.response) {
+        return jsonResponse({}, failure.response.status, failure.response.headers);
+      }
+      if (failure.code) {
+        throw timeoutError();
+      }
+      throw error;
+    }
+  });
+}
 
 describe("YahooApiClient", () => {
   const storage = {
@@ -35,6 +71,10 @@ describe("YahooApiClient", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   describe("create", () => {
     it("should create client using the Yahoo app credentials", async () => {
       // ARRANGE
@@ -45,9 +85,9 @@ describe("YahooApiClient", () => {
         refreshToken,
         expiresAt,
       });
-      vi.mocked(axios.create).mockReturnValue({
+      routeFetchTo({
         get: vi.fn(),
-      } as any);
+      });
 
       // ACT
       const client = await YahooApiClient.create(userId, storage, yahooApp);
@@ -99,9 +139,9 @@ describe("YahooApiClient", () => {
         refreshToken: newRefreshToken,
         expiresAt: Math.floor(Date.now() / 1000) + newExpiresIn,
       });
-      vi.mocked(axios.create).mockReturnValue({
+      routeFetchTo({
         get: vi.fn(),
-      } as any);
+      });
 
       // ACT
       const client = await YahooApiClient.create(userId, storage, yahooApp);
@@ -140,7 +180,7 @@ describe("YahooApiClient", () => {
 
   describe("apiRequest", () => {
     let client: YahooApiClient;
-    let mockAxiosInstance: any;
+    let network: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -151,10 +191,10 @@ describe("YahooApiClient", () => {
         expiresAt,
       });
 
-      mockAxiosInstance = {
+      network = {
         get: vi.fn(),
       };
-      vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
+      routeFetchTo(network);
 
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
@@ -166,9 +206,7 @@ describe("YahooApiClient", () => {
         isAxiosError: true,
         response: { status: 503, headers: {} },
       });
-      mockAxiosInstance.get
-        .mockRejectedValueOnce(unavailable)
-        .mockResolvedValueOnce({ data: { ok: true } });
+      network.get.mockRejectedValueOnce(unavailable).mockResolvedValueOnce({ data: { ok: true } });
 
       await (counted as any).apiRequest("/one", undefined);
 
@@ -179,15 +217,14 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const endpoint = "/test/endpoint";
       const responseData = { data: "test" };
-      mockAxiosInstance.get.mockResolvedValue({ data: responseData });
+      network.get.mockResolvedValue({ data: responseData });
 
       // ACT
       // Access private method via type assertion for testing
       const result = await (client as any).apiRequest(endpoint);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(`${endpoint}?format=json`, {
-        timeout: 8_000,
+      expect(network.get).toHaveBeenCalledWith(`${endpoint}?format=json`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -196,7 +233,7 @@ describe("YahooApiClient", () => {
     });
 
     it("decodes HTML entities in Yahoo text before returning", async () => {
-      mockAxiosInstance.get.mockResolvedValue({
+      network.get.mockResolvedValue({
         data: { team: { name: "Ball don&#39;t lie", team_key: "466.l.1.t.4" } },
       });
 
@@ -207,7 +244,7 @@ describe("YahooApiClient", () => {
 
     it("returns the raw Yahoo response unchanged from getRawApiResponse", async () => {
       const raw = { team: { name: "Ball don&#39;t lie" } };
-      mockAxiosInstance.get.mockResolvedValue({ data: raw });
+      network.get.mockResolvedValue({ data: raw });
 
       const result = await client.getRawApiResponse("/team/466.l.1.t.4");
 
@@ -219,17 +256,17 @@ describe("YahooApiClient", () => {
       const endpoint = "/test/endpoint";
       const params = { key: "value", num: 123 };
       const responseData = { data: "test" };
-      mockAxiosInstance.get.mockResolvedValue({ data: responseData });
+      network.get.mockResolvedValue({ data: responseData });
 
       // ACT
       const result = await (client as any).apiRequest(endpoint, params);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining("key=value"),
         expect.any(Object)
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining("num=123"),
         expect.any(Object)
       );
@@ -247,7 +284,7 @@ describe("YahooApiClient", () => {
       const error401 = {
         response: { status: 401 },
       };
-      mockAxiosInstance.get
+      network.get
         .mockRejectedValueOnce(error401)
         .mockResolvedValueOnce({ data: { success: true } });
 
@@ -275,7 +312,7 @@ describe("YahooApiClient", () => {
         clientSecret,
         yahooApp.providerRedirectUri
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+      expect(network.get).toHaveBeenCalledTimes(2);
       expect(result).toEqual({ success: true });
     });
 
@@ -285,7 +322,7 @@ describe("YahooApiClient", () => {
       const error401 = {
         response: { status: 401 },
       };
-      mockAxiosInstance.get.mockRejectedValueOnce(error401);
+      network.get.mockRejectedValueOnce(error401);
 
       vi.mocked(refreshAccessToken).mockRejectedValue(new YahooReconnectRequiredError());
 
@@ -301,11 +338,13 @@ describe("YahooApiClient", () => {
       const error404 = {
         response: { status: 404, statusText: "Not Found", data: { error: "Missing" } },
       };
-      mockAxiosInstance.get.mockRejectedValueOnce(error404);
+      network.get.mockRejectedValueOnce(error404);
 
       // ACT & ASSERT
-      await expect((client as any).apiRequest(endpoint)).rejects.toEqual(error404);
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+      await expect((client as any).apiRequest(endpoint)).rejects.toMatchObject({
+        response: { status: 404 },
+      });
+      expect(network.get).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -318,14 +357,14 @@ describe("YahooApiClient", () => {
       expiresAt: now() - 60,
       version: 4,
     });
-    let mockAxiosInstance: { get: ReturnType<typeof vi.fn> };
+    let network: { get: ReturnType<typeof vi.fn> };
 
     beforeEach(() => {
       vi.mocked(storage.getYahooToken).mockReset();
       vi.mocked(storage.saveYahooToken).mockReset();
       vi.mocked(refreshAccessToken).mockReset();
-      mockAxiosInstance = { get: vi.fn() };
-      vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
+      network = { get: vi.fn() };
+      routeFetchTo(network);
     });
 
     it("keeps the current refresh token when Yahoo omits a replacement", async () => {
@@ -360,7 +399,7 @@ describe("YahooApiClient", () => {
         ...token,
         version: (options?.expectedVersion ?? 0) + 1,
       }));
-      mockAxiosInstance.get
+      network.get
         .mockRejectedValueOnce({ response: { status: 401 } })
         .mockResolvedValueOnce({ data: "first" })
         .mockRejectedValueOnce({ response: { status: 401 } })
@@ -393,10 +432,9 @@ describe("YahooApiClient", () => {
         .mockResolvedValueOnce(refreshedElsewhere);
       vi.mocked(refreshAccessToken).mockRejectedValue(new YahooReconnectRequiredError());
 
-      const client = await YahooApiClient.create(userId, storage, yahooApp);
+      const tokens = await YahooTokenManager.load(userId, storage, yahooApp, systemClock);
 
-      expect((client as any).accessToken).toBe("refreshed-elsewhere");
-      expect((client as any).tokenVersion).toBe(6);
+      expect(tokens.accessToken).toBe("refreshed-elsewhere");
       expect(storage.saveYahooToken).not.toHaveBeenCalled();
     });
 
@@ -444,11 +482,10 @@ describe("YahooApiClient", () => {
         new Error("Yahoo token changed during refresh; stale result rejected")
       );
 
-      const client = await YahooApiClient.create(userId, storage, yahooApp);
+      const tokens = await YahooTokenManager.load(userId, storage, yahooApp, systemClock);
 
       expect(storage.saveYahooToken).toHaveBeenCalledTimes(1);
-      expect((client as any).accessToken).toBe("winner-access");
-      expect((client as any).tokenVersion).toBe(5);
+      expect(tokens.accessToken).toBe("winner-access");
     });
 
     it("fails closed when the user disconnected during the refresh", async () => {
@@ -479,14 +516,14 @@ describe("YahooApiClient", () => {
         ...token,
         version: 5,
       }));
-      mockAxiosInstance.get.mockRejectedValue({ response: { status: 401 } });
+      network.get.mockRejectedValue({ response: { status: 401 } });
       const client = await YahooApiClient.create(userId, storage, yahooApp);
 
       await expect((client as any).apiRequest("/endpoint")).rejects.toBeInstanceOf(
         YahooReconnectRequiredError
       );
       expect(refreshAccessToken).toHaveBeenCalledTimes(1);
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(2);
+      expect(network.get).toHaveBeenCalledTimes(2);
     });
 
     it("gives up on repeated 5xx within the request budget", async () => {
@@ -498,20 +535,20 @@ describe("YahooApiClient", () => {
         },
       };
       vi.mocked(storage.getYahooToken).mockResolvedValue({ ...expired(), expiresAt: now() + 3600 });
-      mockAxiosInstance.get.mockRejectedValue({ isAxiosError: true, response: { status: 503 } });
+      network.get.mockRejectedValue({ isAxiosError: true, response: { status: 503 } });
       const client = await YahooApiClient.create(userId, storage, yahooApp, clock);
 
       await expect((client as any).apiRequest("/endpoint")).rejects.toBeInstanceOf(
         YahooUnavailableError
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3);
+      expect(network.get).toHaveBeenCalledTimes(3);
       expect(refreshAccessToken).not.toHaveBeenCalled();
     });
   });
 
   describe("getUserGames", () => {
     let client: YahooApiClient;
-    let mockAxiosInstance: any;
+    let network: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -522,10 +559,10 @@ describe("YahooApiClient", () => {
         expiresAt,
       });
 
-      mockAxiosInstance = {
+      network = {
         get: vi.fn(),
       };
-      vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
+      routeFetchTo(network);
 
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
@@ -555,7 +592,7 @@ describe("YahooApiClient", () => {
           ],
         },
       };
-      mockAxiosInstance.get.mockResolvedValue({ data: apiResponse });
+      network.get.mockResolvedValue({ data: apiResponse });
 
       // ACT
       const result = await client.getUserGames();
@@ -587,7 +624,7 @@ describe("YahooApiClient", () => {
           ],
         },
       };
-      mockAxiosInstance.get.mockResolvedValue({ data: apiResponse });
+      network.get.mockResolvedValue({ data: apiResponse });
 
       // ACT
       const result = await client.getUserGames();
@@ -622,7 +659,7 @@ describe("YahooApiClient", () => {
           ],
         },
       };
-      mockAxiosInstance.get.mockResolvedValue({ data: apiResponse });
+      network.get.mockResolvedValue({ data: apiResponse });
 
       // ACT
       const result = await client.getUserGames();
@@ -644,7 +681,7 @@ describe("YahooApiClient", () => {
           users: [],
         },
       };
-      mockAxiosInstance.get.mockResolvedValue({ data: apiResponse });
+      network.get.mockResolvedValue({ data: apiResponse });
 
       // ACT
       const result = await client.getUserGames();
@@ -656,7 +693,7 @@ describe("YahooApiClient", () => {
 
   describe("getUserGameLeagues", () => {
     let client: YahooApiClient;
-    let mockAxiosInstance: any;
+    let network: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -667,10 +704,10 @@ describe("YahooApiClient", () => {
         expiresAt,
       });
 
-      mockAxiosInstance = {
+      network = {
         get: vi.fn(),
       };
-      vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
+      routeFetchTo(network);
 
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
@@ -679,7 +716,7 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const gameCode = "nba";
 
-      mockAxiosInstance.get.mockResolvedValueOnce({
+      network.get.mockResolvedValueOnce({
         data: {
           fantasy_content: {
             users: [
@@ -728,10 +765,10 @@ describe("YahooApiClient", () => {
         league_key: "466.l.12345",
         name: "Test League",
       });
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledTimes(1);
+      expect(network.get).toHaveBeenCalledWith(
         "/users;use_login=1/games;game_codes=nba/leagues?format=json",
-        { timeout: 8_000, headers: { Authorization: `Bearer ${accessToken}` } }
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
     });
 
@@ -739,7 +776,7 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const gameCode = "invalid";
 
-      mockAxiosInstance.get.mockResolvedValueOnce({
+      network.get.mockResolvedValueOnce({
         data: {
           fantasy_content: {
             users: [
@@ -763,16 +800,16 @@ describe("YahooApiClient", () => {
         guid: "test-guid",
         games: [{ leagues: [] }],
       });
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         "/users;use_login=1/games;game_codes=invalid/leagues?format=json",
-        { timeout: 8_000, headers: { Authorization: `Bearer ${accessToken}` } }
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
     });
   });
 
   describe("League resource methods", () => {
     let client: YahooApiClient;
-    let mockAxiosInstance: any;
+    let network: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -783,10 +820,10 @@ describe("YahooApiClient", () => {
         expiresAt,
       });
 
-      mockAxiosInstance = {
+      network = {
         get: vi.fn(),
       };
-      vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
+      routeFetchTo(network);
 
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
@@ -795,13 +832,13 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const leagueKey = "466.l.12345";
       const standingsData = { standings: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: standingsData });
+      network.get.mockResolvedValue({ data: standingsData });
 
       // ACT
       const result = await client.getLeagueStandings(leagueKey);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/league/${leagueKey}/standings`),
         expect.any(Object)
       );
@@ -812,13 +849,13 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const leagueKey = "466.l.12345";
       const settingsData = { settings: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: settingsData });
+      network.get.mockResolvedValue({ data: settingsData });
 
       // ACT
       const result = await client.getLeagueSettings(leagueKey);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/league/${leagueKey}/settings`),
         expect.any(Object)
       );
@@ -829,13 +866,13 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const leagueKey = "466.l.12345";
       const scoreboardData = { scoreboard: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: scoreboardData });
+      network.get.mockResolvedValue({ data: scoreboardData });
 
       // ACT
       const result = await client.getLeagueScoreboard(leagueKey);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/league/${leagueKey}/scoreboard`),
         expect.any(Object)
       );
@@ -847,17 +884,17 @@ describe("YahooApiClient", () => {
       const leagueKey = "466.l.12345";
       const week = 5;
       const scoreboardData = { scoreboard: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: scoreboardData });
+      network.get.mockResolvedValue({ data: scoreboardData });
 
       // ACT
       const result = await client.getLeagueScoreboard(leagueKey, week);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/league/${leagueKey}/scoreboard`),
         expect.any(Object)
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`week=${week}`),
         expect.any(Object)
       );
@@ -867,7 +904,7 @@ describe("YahooApiClient", () => {
 
   describe("Team resource methods", () => {
     let client: YahooApiClient;
-    let mockAxiosInstance: any;
+    let network: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -878,10 +915,10 @@ describe("YahooApiClient", () => {
         expiresAt,
       });
 
-      mockAxiosInstance = {
+      network = {
         get: vi.fn(),
       };
-      vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
+      routeFetchTo(network);
 
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
@@ -890,13 +927,13 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const teamKey = "466.l.12345.t.1";
       const rosterData = { roster: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: rosterData });
+      network.get.mockResolvedValue({ data: rosterData });
 
       // ACT
       const result = await client.getTeamRoster(teamKey);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/team/${teamKey}/roster`),
         expect.any(Object)
       );
@@ -908,17 +945,17 @@ describe("YahooApiClient", () => {
       const teamKey = "466.l.12345.t.1";
       const week = 5;
       const rosterData = { roster: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: rosterData });
+      network.get.mockResolvedValue({ data: rosterData });
 
       // ACT
       const result = await client.getTeamRoster(teamKey, week);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/team/${teamKey}/roster`),
         expect.any(Object)
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`week=${week}`),
         expect.any(Object)
       );
@@ -928,7 +965,7 @@ describe("YahooApiClient", () => {
 
   describe("Player resource methods", () => {
     let client: YahooApiClient;
-    let mockAxiosInstance: any;
+    let network: any;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -939,10 +976,10 @@ describe("YahooApiClient", () => {
         expiresAt,
       });
 
-      mockAxiosInstance = {
+      network = {
         get: vi.fn(),
       };
-      vi.mocked(axios.create).mockReturnValue(mockAxiosInstance as any);
+      routeFetchTo(network);
 
       client = await YahooApiClient.create(userId, storage, yahooApp);
     });
@@ -951,13 +988,13 @@ describe("YahooApiClient", () => {
       // ARRANGE
       const playerKey = "466.p.12345";
       const statsData = { stats: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: statsData });
+      network.get.mockResolvedValue({ data: statsData });
 
       // ACT
       const result = await client.getPlayerStats(playerKey);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/player/${playerKey}/stats`),
         expect.any(Object)
       );
@@ -969,17 +1006,17 @@ describe("YahooApiClient", () => {
       const playerKey = "466.p.12345";
       const week = 5;
       const statsData = { stats: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: statsData });
+      network.get.mockResolvedValue({ data: statsData });
 
       // ACT
       const result = await client.getPlayerStats(playerKey, week);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/player/${playerKey}/stats`),
         expect.any(Object)
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`type=week;week=${week}`),
         expect.any(Object)
       );
@@ -991,17 +1028,17 @@ describe("YahooApiClient", () => {
       const playerKey = "466.p.12345";
       const week = "lastweek";
       const statsData = { stats: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: statsData });
+      network.get.mockResolvedValue({ data: statsData });
 
       // ACT
       const result = await client.getPlayerStats(playerKey, week);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/player/${playerKey}/stats`),
         expect.any(Object)
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`type=lastweek`),
         expect.any(Object)
       );
@@ -1013,17 +1050,17 @@ describe("YahooApiClient", () => {
       const playerKey = "466.p.12345";
       const week = "lastmonth";
       const statsData = { stats: "data" };
-      mockAxiosInstance.get.mockResolvedValue({ data: statsData });
+      network.get.mockResolvedValue({ data: statsData });
 
       // ACT
       const result = await client.getPlayerStats(playerKey, week);
 
       // ASSERT
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`/player/${playerKey}/stats`),
         expect.any(Object)
       );
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+      expect(network.get).toHaveBeenCalledWith(
         expect.stringContaining(`type=lastmonth`),
         expect.any(Object)
       );
