@@ -4,6 +4,8 @@ import type { createYahooOAuthController } from "../controllers/yahoo-oauth-cont
 /** What the Yahoo OAuth routes need. */
 export interface YahooOAuthRouteDependencies {
   readonly requireAuth: RequestHandler;
+  /** Per-user request limit; runs after requireAuth. */
+  readonly dataLimiter: RequestHandler;
   readonly controller: ReturnType<typeof createYahooOAuthController>;
 }
 
@@ -13,8 +15,13 @@ export interface YahooOAuthRouteDependencies {
  */
 export function registerYahooOAuthRoutes(
   app: Express,
-  { requireAuth, controller }: YahooOAuthRouteDependencies
+  { requireAuth, dataLimiter, controller }: YahooOAuthRouteDependencies
 ): void {
-  app.get("/connect/start", requireAuth, controller.beginFantasyAccess);
-  app.get("/api/auth/yahoo/fantasy/callback", requireAuth, controller.completeFantasyAccess);
+  app.get("/connect/start", requireAuth, dataLimiter, controller.beginFantasyAccess);
+  app.get(
+    "/api/auth/yahoo/fantasy/callback",
+    requireAuth,
+    dataLimiter,
+    controller.completeFantasyAccess
+  );
 }
