@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { Request, Response, NextFunction } from "express";
 import { createVizController } from "../../../../server/controllers/viz-controller";
-import { YahooFantasyDataSource } from "../../../../server/services/fantasy-data-source";
+import { LegacyYahooFantasyDataSource } from "../../../../server/services/fantasy-data-source";
 import { getLeagueRankings, getLeagueHeatmap } from "../../../../server/services/viz/league-viz";
 import { getMatchupComparison } from "../../../../server/services/viz/matchup-viz";
 import { ValidationError } from "../../../../shared/api/errors";
@@ -48,7 +48,7 @@ describe("vizController", () => {
 
       // ASSERT
       expect(getLeagueRankings).toHaveBeenCalledWith(
-        expect.any(YahooFantasyDataSource),
+        expect.any(LegacyYahooFantasyDataSource),
         leagueKey,
         week
       );
@@ -89,7 +89,7 @@ describe("vizController", () => {
 
       // ASSERT
       expect(getLeagueRankings).toHaveBeenCalledWith(
-        expect.any(YahooFantasyDataSource),
+        expect.any(LegacyYahooFantasyDataSource),
         leagueKey,
         undefined
       );
@@ -116,7 +116,7 @@ describe("vizController", () => {
 
       // ASSERT
       expect(getLeagueHeatmap).toHaveBeenCalledWith(
-        expect.any(YahooFantasyDataSource),
+        expect.any(LegacyYahooFantasyDataSource),
         leagueKey,
         week
       );
@@ -164,7 +164,7 @@ describe("vizController", () => {
 
       // ASSERT
       expect(getMatchupComparison).toHaveBeenCalledWith(
-        expect.any(YahooFantasyDataSource),
+        expect.any(LegacyYahooFantasyDataSource),
         leagueKey,
         teamKey,
         week,

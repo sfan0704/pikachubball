@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { YahooFantasyDataSource } from "../../../../server/services/fantasy-data-source";
+import { LegacyYahooFantasyDataSource } from "../../../../server/services/fantasy-data-source";
 
 const getYahooApiClient = vi.fn();
 
-describe("YahooFantasyDataSource", () => {
-  let dataSource: YahooFantasyDataSource;
+describe("LegacyYahooFantasyDataSource", () => {
+  let dataSource: LegacyYahooFantasyDataSource;
   let mockYahooApiClient: any;
 
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe("YahooFantasyDataSource", () => {
     };
 
     getYahooApiClient.mockResolvedValue(mockYahooApiClient);
-    dataSource = new YahooFantasyDataSource(getYahooApiClient);
+    dataSource = new LegacyYahooFantasyDataSource(getYahooApiClient);
   });
 
   describe("getLeagueStandings", () => {

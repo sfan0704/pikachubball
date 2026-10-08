@@ -5,14 +5,14 @@ import type {
   YahooApiTeamResponse,
 } from "../types/yahoo-api.js";
 
-export interface FantasyDataSource {
+export interface LegacyFantasyDataSource {
   getLeagueStandings(leagueKey: string): Promise<YahooApiLeagueResponse>;
   getLeagueSettings(leagueKey: string): Promise<YahooApiLeagueResponse>;
   getLeagueScoreboard(leagueKey: string, week?: number): Promise<YahooApiScoreboardResponse>;
   getTeamRoster(teamKey: string): Promise<YahooApiTeamResponse>;
 }
 
-export class YahooFantasyDataSource implements FantasyDataSource {
+export class LegacyYahooFantasyDataSource implements LegacyFantasyDataSource {
   constructor(private yahooClient: YahooClientProvider) {}
 
   private getClient() {

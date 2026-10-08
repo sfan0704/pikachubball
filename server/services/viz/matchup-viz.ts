@@ -1,4 +1,4 @@
-import type { FantasyDataSource } from "../fantasy-data-source.js";
+import type { LegacyFantasyDataSource } from "../fantasy-data-source.js";
 import type { MatchupComparisonResponse, CategoryComparison } from "../../../shared/schema.js";
 import { CATEGORIES } from "./league-viz.js";
 import type { YahooApiTeamData } from "../../types/yahoo-api.js";
@@ -10,7 +10,7 @@ import { parseTeamStats } from "../parsers/stats-parser.js";
 import { comparableValue, compareCategory } from "../parsers/rankings-compute.js";
 
 export async function getMatchupComparison(
-  dataSource: FantasyDataSource,
+  dataSource: LegacyFantasyDataSource,
   leagueKey: string,
   teamKey: string,
   week?: number,

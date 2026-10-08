@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { YahooFantasyDataSource } from "../services/fantasy-data-source";
+import { LegacyYahooFantasyDataSource } from "../services/fantasy-data-source";
 import { getLeagueRankings, getLeagueHeatmap } from "../services/viz/league-viz";
 import { getMatchupComparison } from "../services/viz/matchup-viz";
 import { getRequestContext } from "../request-context";
@@ -14,7 +14,7 @@ import { ValidationError } from "../../shared/api/errors";
 export function createVizController() {
   /** A data source whose Yahoo client is the request's one client. */
   const dataSourceFor = (req: Request) =>
-    new YahooFantasyDataSource(getRequestContext(req).yahooClient);
+    new LegacyYahooFantasyDataSource(getRequestContext(req).yahooClient);
 
   return {
     /**
