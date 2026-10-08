@@ -58,26 +58,6 @@ export class MockFantasyDataSource implements FantasyDataSource {
       },
     };
   }
-
-  async getPlayerStats(playerKeys: string[]): Promise<any> {
-    return {
-      fantasy_content: {
-        players: playerKeys.map((key, index) => ({
-          player: [
-            [{ player_key: key }, { name: { full: `Player ${index + 1}` } }],
-            {
-              player_stats: {
-                stats: [
-                  { stat: { stat_id: "5", value: "0.475" } },
-                  { stat: { stat_id: "12", value: "25" } },
-                ],
-              },
-            },
-          ],
-        })),
-      },
-    };
-  }
 }
 
 /**
@@ -96,6 +76,5 @@ export function createMalformedFantasyDataSource(): FantasyDataSource {
     getLeagueSettings: async () => ({ fantasy_content: { league: [] } }),
     getLeagueScoreboard: async () => ({ fantasy_content: { league: [] } }),
     getTeamRoster: async () => ({ fantasy_content: null }),
-    getPlayerStats: async () => ({ fantasy_content: null }),
   };
 }

@@ -16,7 +16,6 @@ describe("YahooFantasyDataSource", () => {
       getLeagueSettings: vi.fn().mockResolvedValue({ fantasy_content: { league: [] } }),
       getLeagueScoreboard: vi.fn().mockResolvedValue({ fantasy_content: { league: [] } }),
       getTeamRoster: vi.fn().mockResolvedValue({ fantasy_content: { team: [] } }),
-      getPlayerStats: vi.fn().mockResolvedValue({ fantasy_content: { players: [] } }),
     };
 
     getYahooApiClient.mockResolvedValue(mockYahooApiClient);
@@ -103,24 +102,6 @@ describe("YahooFantasyDataSource", () => {
       // ASSERT
       expect(getYahooApiClient).toHaveBeenCalledOnce();
       expect(mockYahooApiClient.getTeamRoster).toHaveBeenCalledWith(teamKey);
-      expect(result).toEqual(expectedResponse);
-    });
-  });
-
-  describe("getPlayerStats", () => {
-    it("should call yahooApiClient.getPlayerStats with first player key", async () => {
-      // ARRANGE
-      const playerKeys = ["466.p.123", "466.p.456"];
-      const expectedResponse = { fantasy_content: { players: [] } };
-      mockYahooApiClient.getPlayerStats.mockResolvedValue(expectedResponse);
-
-      // ACT
-      const result = await dataSource.getPlayerStats(playerKeys);
-
-      // ASSERT
-      expect(getYahooApiClient).toHaveBeenCalledOnce();
-      // Note: YahooFantasyDataSource currently only uses the first player key
-      expect(mockYahooApiClient.getPlayerStats).toHaveBeenCalledWith(playerKeys[0]);
       expect(result).toEqual(expectedResponse);
     });
   });

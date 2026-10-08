@@ -120,9 +120,10 @@ describe("application routing", () => {
     }
   });
 
-  it("does not register excluded chat, schedule, or AI credential endpoints", async () => {
+  it("does not register excluded chat, schedule, AI credential or debug endpoints", async () => {
     const app = createApiApp();
     const responses = await Promise.all([
+      request(app).get("/api/yahoo/test-auth"),
       request(app).post("/api/chat/message").set("Origin", APP_ORIGIN).send({ message: "hello" }),
       request(app).get("/api/viz/schedule/466.l.1/466.l.1.t.1"),
       request(app)

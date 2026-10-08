@@ -1,8 +1,6 @@
 import type { Express, RequestHandler } from "express";
 import { requireOwnedFantasyResource } from "../middleware/fantasy-resource";
 import type { createYahooController } from "../controllers/yahoo-controller";
-import { asyncHandler } from "../middleware/error-handler";
-import { getRequestContext } from "../request-context";
 
 /** What the Yahoo data routes need. */
 export interface YahooRouteDependencies {
@@ -24,27 +22,5 @@ export function registerYahooRoutes(
     dataLimiter,
     requireOwnedFantasyResource,
     controller.getRoster
-  );
-
-  // Test endpoint to verify Yahoo API authentication (removed by CAR-84)
-  app.get(
-    "/api/yahoo/test-auth",
-    requireAuth,
-    dataLimiter,
-    asyncHandler(async (req, res) => {
-      try {
-        const client = await getRequestContext(req).yahooClient();
-        const games = await client.getUserGames();
-        res.json({
-          success: true,
-          data: games,
-        });
-      } catch (error: any) {
-        res.json({
-          success: false,
-          error: error.message || "Unknown error",
-        });
-      }
-    })
   );
 }
