@@ -3,7 +3,6 @@ import type {
   YahooApiLeagueResponse,
   YahooApiScoreboardResponse,
   YahooApiTeamResponse,
-  YahooApiPlayerResponse,
 } from "../types/yahoo-api.js";
 
 export interface FantasyDataSource {
@@ -11,7 +10,6 @@ export interface FantasyDataSource {
   getLeagueSettings(leagueKey: string): Promise<YahooApiLeagueResponse>;
   getLeagueScoreboard(leagueKey: string, week?: number): Promise<YahooApiScoreboardResponse>;
   getTeamRoster(teamKey: string): Promise<YahooApiTeamResponse>;
-  getPlayerStats(playerKeys: string[]): Promise<YahooApiPlayerResponse | null>;
 }
 
 export class YahooFantasyDataSource implements FantasyDataSource {
@@ -39,16 +37,5 @@ export class YahooFantasyDataSource implements FantasyDataSource {
   async getTeamRoster(teamKey: string): Promise<YahooApiTeamResponse> {
     const client = await this.getClient();
     return await client.getTeamRoster(teamKey);
-  }
-
-  async getPlayerStats(playerKeys: string[]): Promise<YahooApiPlayerResponse | null> {
-    const client = await this.getClient();
-    // For now, return the first player's stats as a placeholder
-    if (playerKeys.length === 0) {
-      return null;
-    }
-    // Note: This is a simplified implementation
-    // You may want to enhance this based on your needs
-    return await client.getPlayerStats(playerKeys[0]);
   }
 }
