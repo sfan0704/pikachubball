@@ -102,7 +102,7 @@ describe("Supabase auth middleware", () => {
 
     await requireAuth(req, res, next);
 
-    const error = vi.mocked(next).mock.calls[0][0] as Error;
+    const error = vi.mocked(next).mock.calls[0][0] as unknown as Error;
     expect(error).not.toBeInstanceOf(UnauthorizedError);
     expect(error.message).toMatch(/request scope middleware/);
   });

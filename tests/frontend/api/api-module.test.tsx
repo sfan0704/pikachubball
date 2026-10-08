@@ -197,8 +197,9 @@ describe("hooks", () => {
 
   it("key each kind of data by its path so a prefix covers what hangs under it", () => {
     expect(queryKeys.leagueScope("466.l.1", 3)).toEqual(["leagues", "466.l.1", "scope", "3"]);
-    expect(queryKeys.roster("466.l.1", "466.l.1.t.2").slice(0, 2)).toEqual(
-      queryKeys.leagues.concat("466.l.1")
-    );
+    expect(queryKeys.roster("466.l.1", "466.l.1.t.2").slice(0, 2)).toEqual([
+      ...queryKeys.leagues,
+      "466.l.1",
+    ]);
   });
 });

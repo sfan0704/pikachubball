@@ -40,7 +40,7 @@ describe("league-parser", () => {
       const leagueKey = "466.l.12345";
 
       // ACT
-      const result = parseTeam(teamData, leagueKey);
+      const result = parseTeam(teamData as never, leagueKey);
 
       // ASSERT
       expect(result).toEqual({
@@ -65,7 +65,7 @@ describe("league-parser", () => {
       const leagueKey = "466.l.12345";
 
       // ACT
-      const result = parseTeam(teamData, leagueKey);
+      const result = parseTeam(teamData as never, leagueKey);
 
       // ASSERT
       expect(result).toEqual({
@@ -115,7 +115,7 @@ describe("league-parser", () => {
       const teamData = [[]];
 
       // ACT
-      const result = parseTeam(teamData, "466.l.12345");
+      const result = parseTeam(teamData as never, "466.l.12345");
 
       // ASSERT
       expect(result).toBeNull();
@@ -136,7 +136,7 @@ describe("league-parser", () => {
       ];
 
       // ACT
-      const result = parseTeam(teamData, "466.l.12345");
+      const result = parseTeam(teamData as never, "466.l.12345");
 
       // ASSERT
       expect(result).toBeNull();
@@ -157,7 +157,7 @@ describe("league-parser", () => {
       ];
 
       // ACT
-      const result = parseTeam(teamData, "466.l.12345");
+      const result = parseTeam(teamData as never, "466.l.12345");
 
       // ASSERT
       expect(result?.teamName).toBe("Unknown Team");
@@ -176,7 +176,7 @@ describe("league-parser", () => {
       ];
 
       // ACT
-      const result = parseTeam(teamData, "466.l.12345");
+      const result = parseTeam(teamData as never, "466.l.12345");
 
       // ASSERT
       expect(result).toEqual({
@@ -208,7 +208,7 @@ describe("league-parser", () => {
       ];
 
       // ACT
-      const result = parseTeam(teamData, "466.l.12345");
+      const result = parseTeam(teamData as never, "466.l.12345");
 
       // ASSERT
       expect(result?.managerName).toBe("John Doe");
@@ -244,7 +244,7 @@ describe("league-parser", () => {
       });
 
       // ACT
-      const result = parseTeam(teamData, "466.l.12345");
+      const result = parseTeam(teamData as never, "466.l.12345");
 
       // ASSERT - Should return null due to missing team_key
       expect(result).toBeNull();

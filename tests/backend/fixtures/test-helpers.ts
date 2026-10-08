@@ -1,16 +1,21 @@
 import type { Request, Response, NextFunction } from "express";
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 import { buildRequestContext } from "../../support/context";
 
 /** A request with only what the middleware tests read; cast to Request where Express wants one. */
-export interface MockRequest extends Partial<Request> {
+export type MockRequest = Partial<Omit<Request, "body" | "params" | "query">> & {
   body?: unknown;
   params?: Record<string, string>;
   query?: Record<string, unknown>;
-}
+};
 
 /** A response that records what was sent; its handlers are spies. */
-export interface MockResponse extends Partial<Response> {
+export type MockResponse = Partial<
+  Omit<
+    Response,
+    "statusCode" | "headers" | "json" | "status" | "send" | "redirect" | "cookie" | "clearCookie"
+  >
+> & {
   statusCode?: number;
   body?: unknown;
   headers?: Record<string, string>;
@@ -20,7 +25,7 @@ export interface MockResponse extends Partial<Response> {
   redirect?: ReturnType<typeof vi.fn>;
   cookie?: ReturnType<typeof vi.fn>;
   clearCookie?: ReturnType<typeof vi.fn>;
-}
+};
 
 /**
  * Create a mock Express request object
@@ -87,8 +92,8 @@ export function createMockResponse(): MockResponse {
 /**
  * Create a mock NextFunction
  */
-export function createMockNext(): ReturnType<typeof vi.fn<NextFunction>> {
-  return vi.fn<NextFunction>();
+export function createMockNext(): NextFunction & Mock<NextFunction> {
+  return vi.fn<NextFunction>() as unknown as NextFunction & Mock<NextFunction>;
 }
 
 /**
