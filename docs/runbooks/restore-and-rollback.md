@@ -17,7 +17,7 @@ Supabase Free has no backups, and the app is designed so none are needed:
 | Preferences | The user chooses their league again. |
 | Whole database or project | Create a project, apply `supabase/migrations` in order (`supabase db push`), recreate the `yahoo` provider ([runbook](yahoo-sign-in-provider.md)), update `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`, redeploy. Every user signs in again. |
 
-The migrations are the source of truth for the schema. Nothing else in the database needs to be preserved.
+The migrations are the source of truth for the schema. Nothing else in the database needs to be preserved. A weekly dump of the production schema is kept as a CI artifact (see [release and scheduled jobs](release.md)) for comparing against.
 
 ## A paused project
 
