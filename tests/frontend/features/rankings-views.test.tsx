@@ -16,6 +16,7 @@ import { RankingsView } from "../../../client/src/features/league/RankingsView";
 import { buildRankingsRows } from "../../../client/src/features/league/rankings-model";
 import { buildTeamTable } from "../../support/builders";
 import { jsonResponse } from "../../support/fetch";
+import { defined } from "../../support/defined";
 
 function fixture(name: string): unknown {
   return JSON.parse(readFileSync(`tests/backend/fixtures/yahoo/${name}.json`, "utf8"));
@@ -37,7 +38,7 @@ describe("RankingsView", () => {
     const expected = rankings(SEASON).map((team) => team.teamKey);
     const shown = screen
       .getAllByTestId(/^row-ranking-/)
-      .map((row) => row.getAttribute("data-testid")!.replace("row-ranking-", ""));
+      .map((row) => defined(row.getAttribute("data-testid")).replace("row-ranking-", ""));
     expect(shown).toEqual(expected);
     expect(shown).toHaveLength(14);
   });

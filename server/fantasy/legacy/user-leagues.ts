@@ -5,8 +5,11 @@
  */
 import { logger } from "../../utils/logger";
 
+/** Yahoo's response as the legacy discovery reads it, without a checked shape. */
+export type LegacyResponse = any;
+
 /** Makes an authenticated GET of a Yahoo path. */
-export type Requester = (endpoint: string) => Promise<any>;
+export type Requester = (endpoint: string) => Promise<LegacyResponse>;
 
 export async function readAllUserLeagues(request: Requester): Promise<any> {
   const response = await request("/users;use_login=1/games/leagues");

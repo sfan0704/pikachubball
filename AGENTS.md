@@ -18,7 +18,7 @@ npm run lint       # ESLint, including the import-boundary and size rules
 npm run format     # Prettier (format:check only checks)
 npm run knip       # unused or unlisted packages and dead files
 npm run check      # TypeScript
-npm test           # unit and route tests
+npm test           # unit and route tests (npm run test:coverage also enforces the coverage thresholds CI uses)
 npm run build      # production build
 npm run test:db    # database and access-rule tests (needs Docker)
 ```

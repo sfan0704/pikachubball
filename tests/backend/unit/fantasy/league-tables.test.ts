@@ -3,16 +3,19 @@ import { describe, expect, it } from "vitest";
 import { teamTableSchema } from "../../../../shared/api/team-table";
 import { categoryRanks, scoringSupport } from "../../../../shared/domain";
 import { parseSeasonTable, parseWeekTable } from "../../../../server/fantasy/league-tables";
+import { defined } from "../../../support/defined";
 import { YahooResponseError } from "../../../../server/fantasy/yahoo-shapes";
+
+type Fixture = ReturnType<typeof fixture>;
 
 const FETCHED_AT = "2025-12-11T18:00:00.000Z";
 
-function fixture(name: string): any {
+function fixture(name: string) {
   return JSON.parse(readFileSync(`tests/backend/fixtures/yahoo/${name}.json`, "utf8"));
 }
 
 /** The team fragments of the first team in a recorded season response. */
-function firstSeasonTeam(response: any): any[] {
+function firstSeasonTeam(response: Fixture) {
   return response.fantasy_content.league[2].standings[0].teams["0"].team;
 }
 
@@ -115,15 +118,18 @@ describe("week table from the scoreboard response", () => {
 describe("what Yahoo leaves out", () => {
   it("treats an absent or malformed stat as unknown, never as zero", () => {
     const response = fixture("league-season");
-    const stats = firstSeasonTeam(response).find((part: any) => part.team_stats).team_stats.stats;
-    stats.find((entry: any) => entry.stat.stat_id === "12").stat.value = "-";
-    stats.find((entry: any) => entry.stat.stat_id === "9004003").stat.value = "n/a";
-    const index = stats.findIndex((entry: any) => entry.stat.stat_id === "17");
+    const stats = firstSeasonTeam(response).find((part: Fixture) => part.team_stats).team_stats
+      .stats;
+    stats.find((entry: Fixture) => entry.stat.stat_id === "12").stat.value = "-";
+    stats.find((entry: Fixture) => entry.stat.stat_id === "9004003").stat.value = "n/a";
+    const index = stats.findIndex((entry: Fixture) => entry.stat.stat_id === "17");
     stats.splice(index, 1);
 
-    const team = parseSeasonTable(response, FETCHED_AT).teams.find(
-      (row) => row.teamKey === "466.l.100000.t.11"
-    )!;
+    const team = defined(
+      parseSeasonTable(response, FETCHED_AT).teams.find(
+        (row) => row.teamKey === "466.l.100000.t.11"
+      )
+    );
 
     expect(team.totals).toMatchObject({
       pts: null,
@@ -137,8 +143,9 @@ describe("what Yahoo leaves out", () => {
   it("reads a finished league and a hidden manager", () => {
     const response = fixture("league-season");
     response.fantasy_content.league[0].is_finished = 1;
-    firstSeasonTeam(response)[0].find((part: any) => part.managers).managers[0].manager.nickname =
-      "--hidden--";
+    firstSeasonTeam(response)[0].find(
+      (part: Fixture) => part.managers
+    ).managers[0].manager.nickname = "--hidden--";
 
     const table = parseSeasonTable(response, FETCHED_AT);
 
@@ -149,7 +156,7 @@ describe("what Yahoo leaves out", () => {
   it("flags a category that is not one of the standard nine", () => {
     const response = fixture("league-season");
     const stats = response.fantasy_content.league[1].settings[0].stat_categories.stats;
-    stats.find((entry: any) => entry.stat.stat_id === 18).stat.stat_id = 99;
+    stats.find((entry: Fixture) => entry.stat.stat_id === 18).stat.stat_id = 99;
 
     const table = parseSeasonTable(response, FETCHED_AT);
 
@@ -158,7 +165,7 @@ describe("what Yahoo leaves out", () => {
 });
 
 describe("malformed responses fail instead of guessing", () => {
-  const broken: [string, (response: any) => void][] = [
+  const broken: [string, (response: Fixture) => void][] = [
     ["no league", (response) => delete response.fantasy_content.league],
     ["no current week", (response) => delete response.fantasy_content.league[0].current_week],
     ["no end week", (response) => delete response.fantasy_content.league[0].end_week],

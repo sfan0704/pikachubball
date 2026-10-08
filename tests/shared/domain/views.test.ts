@@ -9,6 +9,7 @@ import {
   type TeamTable,
 } from "../../../shared/domain";
 import { buildTeamTable } from "../../support/builders";
+import { defined } from "../../support/defined";
 
 function deepFreeze<T>(value: T): T {
   if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
@@ -166,7 +167,8 @@ describe("headToHead", () => {
     });
     expect(result?.categories.find((c) => c.category === "blk")?.result).toBe("unavailable");
     expect(result?.score).toMatchObject({ unavailable: 2, complete: false });
-    expect(result?.score.wins + result!.score.losses + result!.score.ties).toBe(7);
+    const score = defined(result).score;
+    expect(score.wins + score.losses + score.ties).toBe(7);
   });
 
   it("returns null when either team isn't in the table", () => {

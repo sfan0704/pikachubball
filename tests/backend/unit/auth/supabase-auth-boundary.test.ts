@@ -14,6 +14,7 @@ import {
 import { createSupabaseAuthController } from "../../../../server/http/controllers/supabase-auth-controller";
 import { createErrorHandler } from "../../../../server/http/middleware/error-handler";
 import { buildTestConfig, silentLogger } from "../../../support/dependencies";
+import { defined } from "../../../support/defined";
 
 const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });
 const auth = buildTestConfig().auth;
@@ -94,8 +95,8 @@ describe("Supabase Yahoo auth boundary", () => {
     });
 
     const wrongIssuer = yahooUser();
-    wrongIssuer.identities![0].identity_data = {
-      ...wrongIssuer.identities![0].identity_data,
+    defined(wrongIssuer.identities)[0].identity_data = {
+      ...defined(wrongIssuer.identities)[0].identity_data,
       iss: "https://attacker.example",
     };
     expect(() => projectYahooIdentity(wrongIssuer)).toThrow(/issuer/);

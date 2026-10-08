@@ -5,7 +5,7 @@ import { mockStandings } from "../../../fixtures/yahoo-responses";
 const getYahooApiClient = vi.fn();
 
 describe("league-service", () => {
-  let mockYahooApiClient: any;
+  let mockYahooApiClient: Record<string, ReturnType<typeof vi.fn>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -221,7 +221,7 @@ describe("league-service", () => {
       getYahooApiClient.mockResolvedValue({
         getUserGameLeagues: vi.fn().mockRejectedValue(accessError),
         getAllUserLeagues: vi.fn().mockRejectedValue(accessError),
-      } as any);
+      });
 
       await expect(getUserLeagues(getYahooApiClient)).rejects.toMatchObject({
         code: "YAHOO_UNAVAILABLE",

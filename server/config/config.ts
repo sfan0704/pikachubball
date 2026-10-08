@@ -65,6 +65,10 @@ const environmentSchema = z.object({
     .transform((value) => value ?? null),
 });
 
+function isLoopbackHttp(url: URL): boolean {
+  return url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+}
+
 /** An origin with no credentials, path, query or fragment; HTTPS except loopback outside production. */
 function parseOrigin(value: string, name: string, allowLoopback: boolean): string {
   let url: URL;
@@ -73,17 +77,26 @@ function parseOrigin(value: string, name: string, allowLoopback: boolean): strin
   } catch {
     throw new Error(`${name} must be an absolute URL`);
   }
-  const loopback =
-    allowLoopback &&
-    url.protocol === "http:" &&
-    (url.hostname === "localhost" || url.hostname === "127.0.0.1");
-  if (url.protocol !== "https:" && !loopback) {
+  if (url.protocol !== "https:" && !(allowLoopback && isLoopbackHttp(url))) {
     throw new Error(`${name} must use HTTPS`);
   }
   if (url.username || url.password || url.search || url.hash || url.pathname !== "/") {
     throw new Error(`${name} must be an origin without credentials or a path`);
   }
   return url.origin;
+}
+
+/** Rules that span several variables, which the per-variable schema can't express. */
+function checkKeys(values: z.infer<typeof environmentSchema>, production: boolean): void {
+  if (values.ENCRYPTION_KEY_PREVIOUS && values.ENCRYPTION_KEY_VERSION < 2) {
+    throw new Error(
+      "Invalid configuration: ENCRYPTION_KEY_PREVIOUS needs ENCRYPTION_KEY_VERSION of 2 or more"
+    );
+  }
+  const key = values.SUPABASE_PUBLISHABLE_KEY;
+  if (production && !key.startsWith("sb_publishable_") && !key.startsWith("eyJ")) {
+    throw new Error("Invalid configuration: SUPABASE_PUBLISHABLE_KEY has an unsupported format");
+  }
 }
 
 /**
@@ -98,21 +111,8 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
   }
   const values = parsed.data;
   const production = values.NODE_ENV === "production";
-
-  if (values.ENCRYPTION_KEY_PREVIOUS && values.ENCRYPTION_KEY_VERSION < 2) {
-    throw new Error(
-      "Invalid configuration: ENCRYPTION_KEY_PREVIOUS needs ENCRYPTION_KEY_VERSION of 2 or more"
-    );
-  }
-
+  checkKeys(values, production);
   const publishableKey = values.SUPABASE_PUBLISHABLE_KEY;
-  if (
-    production &&
-    !publishableKey.startsWith("sb_publishable_") &&
-    !publishableKey.startsWith("eyJ")
-  ) {
-    throw new Error("Invalid configuration: SUPABASE_PUBLISHABLE_KEY has an unsupported format");
-  }
 
   return {
     nodeEnv: values.NODE_ENV,

@@ -5,9 +5,11 @@ import { registerYahooOAuthRoutes } from "../../../../server/http/routes/yahoo-o
 import { createYahooOAuthController } from "../../../../server/http/controllers/yahoo-oauth-controller";
 import { createErrorHandler } from "../../../../server/http/middleware/error-handler";
 import { buildTestConfig, silentLogger } from "../../../support/dependencies";
+import type { OwnerScopedStorage } from "../../../../server/storage/yahoo-token-storage";
 import { buildRequestContext } from "../../../support/context";
 import { systemClock } from "../../../../server/utils/clock";
 import { exchangeAuthorizationCode } from "../../../../server/fantasy/yahoo/yahoo-auth";
+import { defined } from "../../../support/defined";
 
 vi.mock("../../../../server/fantasy/yahoo/yahoo-auth", () => ({
   exchangeAuthorizationCode: vi.fn(),
@@ -43,7 +45,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     application.use((req, _res, next) => {
       req.context = buildRequestContext({
         user: IDENTITY,
-        storage: { saveYahooConnection } as any,
+        storage: { saveYahooConnection } as unknown as OwnerScopedStorage,
         clock: systemClock,
       });
       next();
@@ -79,7 +81,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
   it("stores an approved Fantasy token only for the matching Yahoo account", async () => {
     const start = await request(app()).get("/connect/start");
     const location = new URL(start.headers.location);
-    const state = location.searchParams.get("state")!;
+    const state = defined(location.searchParams.get("state"));
     const cookie = start.headers["set-cookie"][0].split(";")[0];
     vi.mocked(exchangeAuthorizationCode).mockResolvedValue({
       accessToken: "approved-access-token",
@@ -113,7 +115,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
   it("stores a legacy Fantasy token when Yahoo omits the optional guid", async () => {
     const start = await request(app()).get("/connect/start");
     const location = new URL(start.headers.location);
-    const state = location.searchParams.get("state")!;
+    const state = defined(location.searchParams.get("state"));
     const cookie = start.headers["set-cookie"][0].split(";")[0];
     vi.mocked(exchangeAuthorizationCode).mockResolvedValue({
       accessToken: "legacy-access-token",

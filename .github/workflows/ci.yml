@@ -36,8 +36,8 @@ jobs:
       - name: Type check
         run: npm run check
 
-      - name: Run tests
-        run: npm run test
+      - name: Run tests with coverage thresholds
+        run: npm run test:coverage
         env:
           NODE_ENV: test
           ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

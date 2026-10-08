@@ -15,6 +15,7 @@ import {
   scoreText,
 } from "../../../client/src/features/league/matchup-model";
 import { buildTeamTable } from "../../support/builders";
+import { defined } from "../../support/defined";
 
 function fixture(name: string): unknown {
   return JSON.parse(readFileSync(`tests/backend/fixtures/yahoo/${name}.json`, "utf8"));
@@ -28,8 +29,8 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("MatchupView", () => {
   it("shows Yahoo's opponent for the week with a tally equal to the domain head-to-head", () => {
-    const opponent = opponentOf(WEEK_1, MINE)!;
-    const expected = headToHead(WEEK_1, MINE, opponent)!;
+    const opponent = defined(opponentOf(WEEK_1, MINE));
+    const expected = defined(headToHead(WEEK_1, MINE, opponent));
     render(<MatchupView table={WEEK_1} myTeamKey={MINE} />);
 
     expect(screen.getByTestId("matchup-score")).toHaveTextContent(

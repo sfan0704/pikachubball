@@ -101,7 +101,10 @@ describe("league-parser", () => {
       const teamData = [{ not: "an array" }];
 
       // ACT
-      const result = parseTeam(teamData as any, "466.l.12345");
+      const result = parseTeam(
+        teamData as unknown as Parameters<typeof parseTeam>[0],
+        "466.l.12345"
+      );
 
       // ASSERT
       expect(result).toBeNull();
@@ -227,7 +230,10 @@ describe("league-parser", () => {
       // Mock find to return undefined for team_key, then throw error in try block
       const originalFind = Array.prototype.find;
       let callCount = 0;
-      Array.prototype.find = vi.fn(function (this: any[], predicate: any) {
+      Array.prototype.find = vi.fn(function (
+        this: unknown[],
+        predicate: Parameters<typeof originalFind>[0]
+      ) {
         callCount++;
         if (callCount === 1) {
           // First find (team_key) - return undefined

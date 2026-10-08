@@ -5,7 +5,7 @@ import { testTeamKey } from "../../../fixtures/test-data";
 const getYahooApiClient = vi.fn();
 
 describe("roster-service", () => {
-  let mockYahooApiClient: any;
+  let mockYahooApiClient: Record<string, ReturnType<typeof vi.fn>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();

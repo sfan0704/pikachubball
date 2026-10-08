@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AesGcmOwnerTokenCipher } from "../../../../server/storage/owner-token-cipher";
 import { SupabaseOwnerStorage } from "../../../../server/storage/supabase-owner-storage";
+import { defined } from "../../../support/defined";
 
 const OWNER = "23f99d06-30ff-4767-8c41-21510b7fd5d0";
 const KEY_1 = "11".repeat(32);
@@ -32,13 +33,13 @@ function fakeDatabase() {
           token_version: (existing?.token_version ?? 0) + 1,
           encryption_key_version: args.p_encryption_key_version as number,
         });
-        return { data: rows.get(OWNER)!.token_version, error: null };
+        return { data: defined(rows.get(OWNER)).token_version, error: null };
       }
       rows.set(OWNER, {
-        ...existing!,
+        ...defined(existing),
         access_token_ciphertext: args.p_access_token_ciphertext as string,
         refresh_token_ciphertext: args.p_refresh_token_ciphertext as string,
-        token_version: existing!.token_version + 1,
+        token_version: defined(existing).token_version + 1,
         encryption_key_version: args.p_encryption_key_version as number,
       });
       return { data: true, error: null };
@@ -74,7 +75,7 @@ describe("encryption key rotation", () => {
       refreshToken: "refresh-1",
       expiresAt: 1_800_000_000,
     });
-    expect(rows.get(OWNER)!.encryption_key_version).toBe(1);
+    expect(defined(rows.get(OWNER)).encryption_key_version).toBe(1);
 
     // During rotation: key 2 is current, key 1 is previous.
     const during = storageWith(
@@ -96,10 +97,10 @@ describe("encryption key rotation", () => {
         refreshToken: "refresh-2",
         expiresAt: 1_800_003_600,
       },
-      { expectedVersion: stored!.version }
+      { expectedVersion: defined(stored).version }
     );
-    expect(rows.get(OWNER)!.encryption_key_version).toBe(2);
-    expect(rows.get(OWNER)!.access_token_ciphertext).toMatch(/^v2\./);
+    expect(defined(rows.get(OWNER)).encryption_key_version).toBe(2);
+    expect(defined(rows.get(OWNER)).access_token_ciphertext).toMatch(/^v2\./);
 
     // After every row is migrated, the old key can be removed.
     const after = storageWith(

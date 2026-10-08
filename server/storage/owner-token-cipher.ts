@@ -32,6 +32,7 @@ export interface TokenKeyring {
  */
 export class AesGcmOwnerTokenCipher implements OwnerTokenCipher {
   private readonly keys = new Map<number, Buffer>();
+  private readonly currentKey: Buffer;
 
   constructor(
     key: Buffer,
@@ -47,6 +48,7 @@ export class AesGcmOwnerTokenCipher implements OwnerTokenCipher {
     if (previousKey && keyVersion < 2) {
       throw new Error("ENCRYPTION_KEY_PREVIOUS needs ENCRYPTION_KEY_VERSION of 2 or more");
     }
+    this.currentKey = key;
     this.keys.set(keyVersion, key);
     if (previousKey) {
       this.keys.set(keyVersion - 1, previousKey);
@@ -67,7 +69,7 @@ export class AesGcmOwnerTokenCipher implements OwnerTokenCipher {
 
   encrypt(ownerId: string, purpose: "access" | "refresh", value: string): string {
     const iv = randomBytes(12);
-    const cipher = createCipheriv(ALGORITHM, this.keys.get(this.keyVersion)!, iv);
+    const cipher = createCipheriv(ALGORITHM, this.currentKey, iv);
     cipher.setAAD(associatedData(ownerId, purpose, this.keyVersion));
     const ciphertext = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
     const tag = cipher.getAuthTag();

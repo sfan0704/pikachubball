@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { defined } from "./defined";
 
 /** A JSON response as the built-in fetch returns it. */
 export function jsonResponse(
@@ -26,7 +27,7 @@ export function timeoutError(): Error {
 
 /** The URL, method, headers and form body of a call a fake fetch received. */
 export function requestOf(fetchFunction: ReturnType<typeof fakeFetch>, index = 0) {
-  const [url, init] = fetchFunction.mock.calls[index]!;
+  const [url, init] = defined(fetchFunction.mock.calls[index]);
   return {
     url: String(url),
     method: init?.method,
