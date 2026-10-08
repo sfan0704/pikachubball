@@ -1,0 +1,26 @@
+name: Smoke check
+
+# Runs against every deployment Vercel reports as successful and fails (and so
+# notifies the owner through GitHub) when the deployment is not healthy.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke check
+    if: github.event.deployment_status.state == 'success' && github.event.deployment_status.environment_url != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Check the deployment
+        run: node scripts/smoke-check.mjs "${{ github.event.deployment_status.environment_url }}" "${{ github.event.deployment.sha }}"
