@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MeResponse } from "@shared/api/account";
 import type { LeagueScope } from "@shared/api/league-scope";
 import { getLeagueScope, getLeagues, getMe, getRoster, savePreferences } from "./endpoints";
@@ -21,8 +21,10 @@ export function useLeagues() {
 export function useLeagueScope(leagueKey: string | null, scope: LeagueScope | null) {
   return useQuery({
     queryKey: queryKeys.leagueScope(leagueKey ?? "", scope ?? "season"),
-    queryFn: ({ signal }) => getLeagueScope(leagueKey!, scope!, signal),
-    enabled: leagueKey !== null && scope !== null,
+    queryFn:
+      leagueKey !== null && scope !== null
+        ? ({ signal }) => getLeagueScope(leagueKey, scope, signal)
+        : skipToken,
   });
 }
 
@@ -30,8 +32,10 @@ export function useLeagueScope(leagueKey: string | null, scope: LeagueScope | nu
 export function useRoster(leagueKey: string | null, teamKey: string | null) {
   return useQuery({
     queryKey: queryKeys.roster(leagueKey ?? "", teamKey ?? ""),
-    queryFn: ({ signal }) => getRoster(leagueKey!, teamKey!, signal),
-    enabled: leagueKey !== null && teamKey !== null,
+    queryFn:
+      leagueKey !== null && teamKey !== null
+        ? ({ signal }) => getRoster(leagueKey, teamKey, signal)
+        : skipToken,
   });
 }
 

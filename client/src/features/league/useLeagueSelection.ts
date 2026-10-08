@@ -2,7 +2,27 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import type { LeagueScope } from "@shared/api/league-scope";
 import { useLeagues, useMe, useSavePreferences } from "@/api/hooks";
-import { parseSelectionPath, resolveSelection, selectionPath, type Selection } from "./selection";
+import {
+  applyChange,
+  parseSelectionPath,
+  resolveSelection,
+  selectionPath,
+  type Selection,
+} from "./selection";
+
+function loadStatus(
+  me: { isError: boolean; isPending: boolean },
+  leagues: { isError: boolean; isPending: boolean },
+  selection: Selection | null
+): "error" | "loading" | "ready" | "no-leagues" {
+  if (me.isError || leagues.isError) {
+    return "error";
+  }
+  if (me.isPending || leagues.isPending) {
+    return "loading";
+  }
+  return selection ? "ready" : "no-leagues";
+}
 
 /**
  * The selected league, team and scope, held in the URL. A new visit is sent to
@@ -38,16 +58,7 @@ export function useLeagueSelection() {
       if (!selection || !leagueList || !preferences) {
         return;
       }
-      const leagueChanged =
-        change.leagueKey !== undefined && change.leagueKey !== selection.leagueKey;
-      const league = leagueList.find((item) => item.leagueKey === change.leagueKey);
-      const next: Selection = {
-        leagueKey: change.leagueKey ?? selection.leagueKey,
-        teamKey: leagueChanged
-          ? (league?.teamKey ?? selection.teamKey)
-          : (change.teamKey ?? selection.teamKey),
-        scope: change.scope ?? selection.scope,
-      };
+      const next = applyChange(selection, change, leagueList);
       navigate(selectionPath(next));
       if (next.leagueKey !== selection.leagueKey || next.teamKey !== selection.teamKey) {
         savePreferences.mutate({
@@ -62,14 +73,7 @@ export function useLeagueSelection() {
 
   const setScope = useCallback((scope: LeagueScope) => select({ scope }), [select]);
 
-  const status =
-    me.isError || leagues.isError
-      ? "error"
-      : me.isPending || leagues.isPending
-        ? "loading"
-        : selection
-          ? "ready"
-          : "no-leagues";
+  const status = loadStatus(me, leagues, selection);
 
   return {
     status,
