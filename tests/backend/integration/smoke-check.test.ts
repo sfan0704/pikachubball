@@ -30,13 +30,13 @@ function healthyApp(): Express {
   return app;
 }
 
-async function smoke(url: string, commit?: string) {
+async function smoke(url: string, commit?: string, env: Record<string, string> = {}) {
   try {
-    const { stdout } = await run("node", [
-      "scripts/smoke-check.mjs",
-      url,
-      ...(commit ? [commit] : []),
-    ]);
+    const { stdout } = await run(
+      "node",
+      ["scripts/smoke-check.mjs", url, ...(commit ? [commit] : [])],
+      { env: { ...process.env, ...env } }
+    );
     return { code: 0, output: stdout };
   } catch (error) {
     const failure = error as { code: number; stdout: string; stderr: string };
@@ -83,6 +83,26 @@ describe("scripts/smoke-check.mjs", () => {
     expect(result.output).toContain("FAIL  protected routes refuse an anonymous request");
     expect(result.output).toContain("FAIL  deep links load the app");
     expect(result.output).toContain("FAIL  security headers are present");
+  });
+
+  it("says so when the deployment is behind Vercel protection, and passes with the bypass secret", async () => {
+    const protectedApp = express();
+    protectedApp.use((req, res, next) => {
+      if (req.headers["x-vercel-protection-bypass"] === "secret") {
+        return next();
+      }
+      res.redirect(302, "https://vercel.com/sso-api?url=x");
+    });
+    protectedApp.use(healthyApp());
+    const url = await serve(protectedApp);
+
+    const blocked = await smoke(url);
+    const allowed = await smoke(url, undefined, { SMOKE_BYPASS_SECRET: "secret" });
+
+    expect(blocked.code).toBe(1);
+    expect(blocked.output).toContain("VERCEL_AUTOMATION_BYPASS_SECRET");
+    expect(allowed.output).not.toContain("FAIL");
+    expect(allowed.code).toBe(0);
   });
 
   it("needs a URL", async () => {

@@ -14,7 +14,25 @@ const SECURITY_HEADERS = [
   "x-frame-options",
 ];
 
-const get = (path) => fetch(new URL(path, baseUrl), { redirect: "manual" });
+// A deployment behind Vercel's protection answers with a login redirect; its
+// automation bypass secret, when the repository has one, lets this check through.
+const bypass = process.env.SMOKE_BYPASS_SECRET;
+const get = async (path) => {
+  const response = await fetch(new URL(path, baseUrl), {
+    redirect: "manual",
+    headers: bypass ? { "x-vercel-protection-bypass": bypass } : {},
+  });
+  const location = response.headers.get("location") ?? "";
+  // The app's own 401 is JSON; Vercel's protection page is HTML.
+  const htmlRefusal =
+    response.status === 401 && (response.headers.get("content-type") ?? "").includes("text/html");
+  if (htmlRefusal || /vercel\.com\/(sso|login)/.test(location)) {
+    throw new Error(
+      "the deployment is behind Vercel protection; set the VERCEL_AUTOMATION_BYPASS_SECRET repository secret"
+    );
+  }
+  return response;
+};
 
 const checks = [
   [
