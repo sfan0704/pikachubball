@@ -97,7 +97,7 @@ describe("development server (CommonJS runtime)", () => {
   });
 
   it("keeps API routes on the Express handler", async () => {
-    const response = await fetch(`${baseUrl}/api/auth/me`);
+    const response = await fetch(`${baseUrl}/api/me`);
 
     expect(response.status).toBe(401);
     expect(output).not.toMatch(/ERR_INVALID_ARG_TYPE/);

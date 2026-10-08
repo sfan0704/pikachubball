@@ -1,12 +1,12 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "./queryClient";
+import { createContext, useContext } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { signOut } from "@/api/endpoints";
+import { useMe } from "@/api/hooks";
 
 interface User {
   id: string;
-  username: string;
-  displayName?: string | null;
-  email?: string | null;
+  displayName: string | null;
+  email: string | null;
 }
 
 interface AuthContextType {
@@ -17,40 +17,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Who is signed in, from `GET /api/me`; a 401 means nobody. Signing out starts the page afresh. */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-
-  const { data, isLoading } = useQuery<{ user: User }>({
-    queryKey: ["/api/auth/me"],
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
-
-  useEffect(() => {
-    if (data?.user) {
-      setUser(data.user);
-    } else {
-      setUser(null);
-    }
-  }, [data]);
-
+  const me = useMe();
   const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("/api/auth/logout", "POST", {});
-    },
-    onSuccess: () => {
-      setUser(null);
-      queryClient.clear();
-    },
+    mutationFn: signOut,
+    onSuccess: () => window.location.assign("/auth"),
   });
 
-  const logout = async () => {
-    await logoutMutation.mutateAsync();
+  const value: AuthContextType = {
+    user: me.data?.user ?? null,
+    isLoading: me.isPending,
+    logout: async () => {
+      await logoutMutation.mutateAsync();
+    },
   };
-
-  return (
-    <AuthContext.Provider value={{ user, isLoading, logout }}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

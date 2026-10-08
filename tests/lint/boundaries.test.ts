@@ -14,17 +14,20 @@ async function errorsFor(filePath: string, code: string): Promise<string[]> {
 describe("import boundaries", () => {
   it("lets shared/domain import only from itself", async () => {
     expect(
-      await errorsFor("shared/domain/league.ts", "import { z } from 'zod';\nexport const a = z;\n")
+      await errorsFor(
+        "shared/domain/team-table.ts",
+        "import { z } from 'zod';\nexport const a = z;\n"
+      )
     ).toEqual(["no-restricted-imports"]);
     expect(
       await errorsFor(
-        "shared/domain/league.ts",
+        "shared/domain/team-table.ts",
         "import fs from 'node:fs';\nexport const a = fs;\n"
       )
     ).toEqual(["no-restricted-imports"]);
     expect(
       await errorsFor(
-        "shared/domain/league.ts",
+        "shared/domain/team-table.ts",
         "import { CATEGORIES } from './stats';\nexport const a = CATEGORIES;\n"
       )
     ).toEqual([]);
@@ -102,7 +105,7 @@ describe("promises and size limits where the target layout applies", () => {
     const longBody = Array.from({ length: 62 }, (_, i) => `  noop(${i});`).join("\n");
     expect(
       await errorsFor(
-        "shared/domain/league.ts",
+        "shared/domain/team-table.ts",
         `declare function noop(n: number): void;\nexport function big() {\n${longBody}\n}\n`
       )
     ).toContain("max-lines-per-function");
@@ -112,7 +115,7 @@ describe("promises and size limits where the target layout applies", () => {
     );
     expect(
       await errorsFor(
-        "shared/domain/league.ts",
+        "shared/domain/team-table.ts",
         `export function branchy(n: number) {\n${branches}\n  return -1;\n}\n`
       )
     ).toContain("complexity");

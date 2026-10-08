@@ -2,164 +2,85 @@
  * @vitest-environment happy-dom
  */
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, renderHook, act } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "../../../client/src/lib/auth";
+import { jsonResponse } from "../../support/fetch";
 
-// Mock apiRequest
-const mockApiRequest = vi.fn();
-vi.mock("../../../client/src/lib/queryClient", () => ({
-  queryClient: {
-    invalidateQueries: vi.fn(),
-    clear: vi.fn(),
-  },
-  apiRequest: (...args: any[]) => mockApiRequest(...args),
-}));
+const ME = {
+  user: { id: "u1", displayName: "Tester", email: "t@example.test" },
+  yahoo: { connected: true },
+  preferences: { selectedLeagueKey: null, selectedTeamKey: null, display: {} },
+};
 
-// Mock fetch globally
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
-describe("auth", () => {
-  let queryClient: QueryClient;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-          refetchOnWindowFocus: false,
-          refetchOnMount: false,
-        },
-      },
-    });
-  });
-
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
+function wrapper({ children }: { children: React.ReactNode }) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return (
+    <QueryClientProvider client={client}>
       <AuthProvider>{children}</AuthProvider>
     </QueryClientProvider>
   );
+}
 
-  describe("useAuth", () => {
-    it("should throw error when used outside AuthProvider", () => {
-      // ARRANGE
-      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+afterEach(() => vi.unstubAllGlobals());
 
-      // ACT & ASSERT
-      expect(() => {
-        renderHook(() => useAuth(), {
-          wrapper: ({ children }) => (
-            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-          ),
-        });
-      }).toThrow("useAuth must be used within an AuthProvider");
+describe("useAuth", () => {
+  it("throws outside the provider", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-      consoleError.mockRestore();
-    });
+    expect(() => renderHook(() => useAuth())).toThrow(
+      "useAuth must be used within an AuthProvider"
+    );
 
-    it("should return context when used within AuthProvider", () => {
-      // ARRANGE & ACT
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ASSERT
-      expect(result.current).toBeDefined();
-      expect(result.current.user).toBeNull();
-      expect(result.current.isLoading).toBeDefined();
-      expect(result.current.logout).toBeInstanceOf(Function);
-    });
-
-    it("should return isLoading true initially", () => {
-      // ARRANGE - Make query hang to test loading state
-      mockFetch.mockImplementation(() => new Promise(() => {}));
-
-      // ACT
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ASSERT
-      expect(result.current.isLoading).toBe(true);
-    });
+    spy.mockRestore();
   });
 
-  describe("AuthProvider", () => {
-    it("should render children", () => {
-      // ARRANGE & ACT
-      render(
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <div data-testid="child">Child content</div>
-          </AuthProvider>
-        </QueryClientProvider>
-      );
+  it("is loading until /api/me answers, then has the signed-in user", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse(ME))
+    );
 
-      // ASSERT
-      expect(screen.getByTestId("child")).toBeInTheDocument();
-    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
 
-    it("should set user when query returns user data", async () => {
-      // ARRANGE
-      queryClient.setQueryData(["/api/auth/me"], { user: { id: "1", username: "testuser" } });
-
-      // ACT
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ASSERT
-      await waitFor(() => {
-        expect(result.current.user).toEqual({ id: "1", username: "testuser" });
-      });
-    });
-
-    it("should set user to null when query returns no user", async () => {
-      // ARRANGE
-      queryClient.setQueryData(["/api/auth/me"], { user: null });
-
-      // ACT
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // ASSERT
-      await waitFor(() => {
-        expect(result.current.user).toBeNull();
-      });
-    });
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.user).toEqual(ME.user);
   });
 
-  describe("logout", () => {
-    it("should call apiRequest for logout", async () => {
-      // ARRANGE
-      mockApiRequest.mockResolvedValue(undefined);
-      const { result } = renderHook(() => useAuth(), { wrapper });
+  it("has no user when the session has ended", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({ code: "UNAUTHORIZED", message: "x", requestId: "r" }, 401))
+    );
 
-      // ACT
-      await act(async () => {
-        await result.current.logout();
-      });
+    const { result } = renderHook(() => useAuth(), { wrapper });
 
-      // ASSERT
-      expect(mockApiRequest).toHaveBeenCalledWith("/api/auth/logout", "POST", {});
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.user).toBeNull();
+  });
+});
+
+describe("logout", () => {
+  it("signs out through the API and then starts afresh at the sign-in page", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      jsonResponse(url === "/api/auth/logout" ? { success: true } : ME)
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.logout();
     });
 
-    it("should clear user after logout", async () => {
-      // ARRANGE
-      queryClient.setQueryData(["/api/auth/me"], { user: { id: "1", username: "testuser" } });
-      mockApiRequest.mockResolvedValue(undefined);
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      // Wait for initial user to be set
-      await waitFor(() => {
-        expect(result.current.user).toEqual({ id: "1", username: "testuser" });
-      });
-
-      // ACT
-      await act(async () => {
-        await result.current.logout();
-      });
-
-      // ASSERT
-      await waitFor(() => {
-        expect(result.current.user).toBeNull();
-      });
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/auth/logout",
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(assign).toHaveBeenCalledWith("/auth");
   });
 });

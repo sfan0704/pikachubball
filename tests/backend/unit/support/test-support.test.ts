@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import http from "node:http";
 import { fixedClock } from "../../../support/clock";
-import { buildLeagueTeamStats, buildTeamStats } from "../../../support/builders";
 
 describe("network guard", () => {
   it("fails a fetch to the real network", async () => {
@@ -35,19 +34,5 @@ describe("fixedClock", () => {
 
   it("rejects an invalid start time", () => {
     expect(() => fixedClock("not a time")).toThrow("invalid ISO time");
-  });
-});
-
-describe("team stats builders", () => {
-  it("keeps makes and attempts consistent with the percentages", () => {
-    const team = buildTeamStats({ stats: { fgPct: 0.5 } as never });
-    expect(team.stats.fgPct).toBe(0.5);
-    expect(team.fgMakes).toBe(250);
-    expect(team.fgAttempts).toBe(500);
-  });
-
-  it("builds a league with distinct team keys", () => {
-    const teams = buildLeagueTeamStats(3);
-    expect(new Set(teams.map((team) => team.teamKey)).size).toBe(3);
   });
 });

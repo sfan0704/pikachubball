@@ -2,11 +2,11 @@ import type { Request, Response } from "express";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { parse, serialize } from "cookie";
 import type { AppConfig } from "../config/config";
-import { getRequestContext } from "../request-context";
 import { asyncHandler } from "../middleware/error-handler";
+import { getRequestContext } from "../request-context";
 import { UnauthorizedError, ValidationError } from "../../shared/api/errors";
 import { applyAuthNoStore } from "../auth/supabase-auth";
-import { exchangeAuthorizationCode, revokeYahooToken } from "../yahoo-auth";
+import { exchangeAuthorizationCode } from "../yahoo-auth";
 
 const FANTASY_OAUTH_STATE_COOKIE = "pikachubball-yahoo-state";
 
@@ -101,52 +101,6 @@ export function createYahooOAuthController({
       });
       res.append("Set-Cookie", stateCookie("", 0));
       res.redirect(303, "/?yahoo_connected=true");
-    }),
-
-    /**
-     * Get Yahoo OAuth connection status
-     */
-    getStatus: asyncHandler(async (req: Request, res: Response) => {
-      const { user, storage, clock } = getRequestContext(req);
-      const token = await storage.getYahooToken(user.userId);
-
-      res.json({
-        connected: !!token,
-        hasValidToken: token ? token.expiresAt > Math.floor(clock.now() / 1000) : false,
-      });
-    }),
-
-    /**
-     * Disconnect Yahoo account
-     */
-    disconnect: asyncHandler(async (req: Request, res: Response) => {
-      const { user, storage, logger } = getRequestContext(req);
-      const userId = user.userId;
-      // Revoke at Yahoo first while the refresh token is still readable, then
-      // delete locally no matter what Yahoo answered, and report both outcomes.
-      let revokedAtYahoo = false;
-      try {
-        const token = await storage.getYahooToken(userId);
-        if (token) {
-          revokedAtYahoo = await revokeYahooToken(
-            token.refreshToken,
-            appConfig.yahoo.clientId ?? "",
-            appConfig.yahoo.clientSecret ?? ""
-          );
-        }
-      } catch (error) {
-        logger.warn("Could not read Yahoo tokens for revocation", {
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-      await storage.deleteYahooToken(userId);
-      res.json({
-        success: true,
-        revokedAtYahoo,
-        message: revokedAtYahoo
-          ? "Yahoo account disconnected and access revoked at Yahoo."
-          : "Yahoo tokens were deleted from Pikachu Basketball, but Yahoo did not confirm revocation. To be sure, remove the app from your Yahoo account's connected apps.",
-      });
     }),
   };
 }

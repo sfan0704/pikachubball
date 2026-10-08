@@ -2,10 +2,8 @@
  * Domain models and pure fantasy rules. No I/O, clock or framework imports.
  */
 
-export type { League, Team, ScoringType } from "./league";
 export type { Player, PlayerStatus } from "./player";
-export type { Matchup, MatchupStatus, MatchupScore } from "./matchup";
-export type { TeamStats, PlayerStats, CategoryStats, CategoryKey, StatScope } from "./stats";
+export type { CategoryKey } from "./stats";
 
 export { CATEGORIES } from "./stats";
 

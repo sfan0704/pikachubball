@@ -3,7 +3,7 @@ import { errorBodySchema } from "@shared/api/errors";
 import { ApiError } from "./errors";
 
 interface RequestOptions {
-  method?: "GET" | "PUT" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   /** Aborts the request, for example when the user navigates away. */
   signal?: AbortSignal;
@@ -74,35 +74,4 @@ export async function apiRequest<S extends z.ZodTypeAny>(
     );
   }
   return parsed.data;
-}
-
-/**
- * Requests to the routes the older screens still use, whose responses have no
- * shared schema. Removed when those screens move to the typed API.
- */
-export async function legacyRequest<T>(url: string, method = "GET", data?: unknown): Promise<T> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-  return (await res.json()) as T;
-}
-
-/** A GET to a legacy route that resolves to null on 401 when asked to. */
-export async function legacyGet<T>(url: string, nullOn401 = false): Promise<T | null> {
-  const res = await fetch(url, { credentials: "include" });
-  if (nullOn401 && res.status === 401) {
-    return null;
-  }
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-  return (await res.json()) as T;
 }

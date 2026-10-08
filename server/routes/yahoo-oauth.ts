@@ -8,9 +8,8 @@ export interface YahooOAuthRouteDependencies {
 }
 
 /**
- * Register Yahoo OAuth utility routes
- * Note: Main Yahoo login flow is handled by /api/auth/yahoo routes in auth.ts
- * These routes provide status checking and token management
+ * Register the Fantasy access routes. The sign-in itself is in auth.ts; these
+ * connect the Fantasy API after it.
  */
 export function registerYahooOAuthRoutes(
   app: Express,
@@ -18,7 +17,4 @@ export function registerYahooOAuthRoutes(
 ): void {
   app.get("/connect/start", requireAuth, controller.beginFantasyAccess);
   app.get("/api/auth/yahoo/fantasy/callback", requireAuth, controller.completeFantasyAccess);
-  // OAuth status and token management
-  app.get("/api/auth/yahoo/status", requireAuth, controller.getStatus);
-  app.delete("/api/auth/yahoo/disconnect", requireAuth, controller.disconnect);
 }
