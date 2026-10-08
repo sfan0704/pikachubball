@@ -14,7 +14,10 @@ async function errorsFor(filePath: string, code: string): Promise<string[]> {
 describe("import boundaries", () => {
   it("lets shared/domain import only from itself", async () => {
     expect(
-      await errorsFor("shared/domain/team-table.ts", "import { z } from 'zod';\nexport const a = z;\n")
+      await errorsFor(
+        "shared/domain/team-table.ts",
+        "import { z } from 'zod';\nexport const a = z;\n"
+      )
     ).toEqual(["no-restricted-imports"]);
     expect(
       await errorsFor(
