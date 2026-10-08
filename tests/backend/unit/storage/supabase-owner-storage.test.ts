@@ -90,3 +90,48 @@ describe("Supabase owner storage", () => {
     );
   });
 });
+
+describe("league membership", () => {
+  function leagueClient(rows: unknown[] | null, error: unknown = null) {
+    const calls: [string, string, string][] = [];
+    const query = {
+      select: () => query,
+      eq: (column: string, value: string) => {
+        calls.push(["eq", column, value]);
+        return query;
+      },
+      limit: async () => ({ data: rows, error }),
+    };
+    const client = {
+      from: (table: string) => {
+        calls.push(["from", table, ""]);
+        return query;
+      },
+    } as unknown as SupabaseClient;
+    return { client, calls };
+  }
+
+  it("reads the owner's stored leagues for the exact league key", async () => {
+    const { client, calls } = leagueClient([{ league_key: "466.l.1" }]);
+    const storage = new SupabaseOwnerStorage(client, OWNER_A, cipher);
+
+    await expect(storage.ownsLeague("466.l.1")).resolves.toBe(true);
+    expect(calls).toEqual([
+      ["from", "user_leagues", ""],
+      ["eq", "owner_id", OWNER_A],
+      ["eq", "league_key", "466.l.1"],
+    ]);
+  });
+
+  it("says no when the league is not stored, and fails loudly when the read fails", async () => {
+    const none = new SupabaseOwnerStorage(leagueClient([]).client, OWNER_A, cipher);
+    await expect(none.ownsLeague("466.l.2")).resolves.toBe(false);
+
+    const failing = new SupabaseOwnerStorage(
+      leagueClient(null, { message: "boom" }).client,
+      OWNER_A,
+      cipher
+    );
+    await expect(failing.ownsLeague("466.l.2")).rejects.toThrow(/league read/);
+  });
+});

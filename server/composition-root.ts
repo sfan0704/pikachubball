@@ -6,6 +6,8 @@ import type { ServerDependencies } from "./dependencies";
 import { createErrorHandler } from "./middleware/error-handler";
 import { YahooApiClient } from "./services/yahoo/yahoo-api-client";
 import { systemClock as yahooTimers } from "./services/yahoo/yahoo-request-policy";
+import { YahooFantasyDataSource } from "./fantasy/fantasy-data-source";
+import { YahooLeagueResources } from "./fantasy/league-resources";
 import { AesGcmOwnerTokenCipher } from "./storage/owner-token-cipher";
 import { createSupabaseOwnerStorage } from "./storage/supabase-owner-storage";
 import { systemClock, type Clock } from "./utils/clock";
@@ -33,6 +35,8 @@ export function createServerDependencies(
     createSupabaseClient: (req: Request, res: Response): SupabaseClient =>
       createSupabaseRequestClient(req, res, config.auth),
     createOwnerStorage: (client, ownerId) => createSupabaseOwnerStorage(client, ownerId, cipher),
+    createFantasyDataSource: (yahooClient) =>
+      new YahooFantasyDataSource(new YahooLeagueResources(yahooClient), clock),
     createYahooClient: (userId, storage, onRequest) =>
       YahooApiClient.create(
         userId,
