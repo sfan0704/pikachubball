@@ -36,7 +36,7 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   });
   registerYahooOAuthRoutes(app, {
     requireAuth,
-    dataLimiter,
+    skipRateLimit: config.nodeEnv === "development",
     controller: createYahooOAuthController({ config }),
   });
   registerMeRoutes(app, {

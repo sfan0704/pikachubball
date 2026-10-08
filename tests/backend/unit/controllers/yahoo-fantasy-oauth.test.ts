@@ -50,7 +50,7 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     });
     registerYahooOAuthRoutes(application, {
       requireAuth: (_req, _res, next) => next(),
-      dataLimiter: (_req, _res, next) => next(),
+      skipRateLimit: true,
       controller: yahooOAuthController,
     });
     application.use(errorHandler);
@@ -143,5 +143,29 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     expect(response.status).toBe(400);
     expect(exchangeAuthorizationCode).not.toHaveBeenCalled();
     expect(saveYahooConnection).not.toHaveBeenCalled();
+  });
+});
+
+describe("Fantasy connection rate limit", () => {
+  it("answers the eleventh start in a minute with RATE_LIMITED", async () => {
+    const application = express();
+    application.use((req, _res, next) => {
+      req.context = buildRequestContext({ user: IDENTITY, clock: systemClock });
+      next();
+    });
+    registerYahooOAuthRoutes(application, {
+      requireAuth: (_req, _res, next) => next(),
+      skipRateLimit: false,
+      controller: yahooOAuthController,
+    });
+    application.use(errorHandler);
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await request(application).get("/connect/start").expect(302);
+    }
+    const limited = await request(application).get("/connect/start");
+
+    expect(limited.status).toBe(429);
+    expect(limited.body).toMatchObject({ code: "RATE_LIMITED" });
   });
 });
