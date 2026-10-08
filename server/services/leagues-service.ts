@@ -1,6 +1,7 @@
 import { ForbiddenError } from "../../shared/api/errors";
 import type { RosterResponse, UserLeague } from "../../shared/api/leagues";
 import type { YahooClientProvider } from "../request-context";
+import type { Clock } from "../utils/clock";
 import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
 import { getUserLeagues } from "./yahoo/league-service";
 import { getTeamRoster } from "./yahoo/roster-service";
@@ -33,10 +34,12 @@ export async function getLeagueTeamRoster(
   storage: Pick<OwnerScopedStorage, "ownsLeague">,
   yahooClient: YahooClientProvider,
   leagueKey: string,
-  teamKey: string
+  teamKey: string,
+  clock: Clock
 ): Promise<RosterResponse> {
   if (!(await storage.ownsLeague(leagueKey))) {
     throw new ForbiddenError("League not available to this account");
   }
-  return { roster: await getTeamRoster(teamKey, yahooClient) };
+  const roster = await getTeamRoster(teamKey, yahooClient);
+  return { fetchedAt: new Date(clock.now()).toISOString(), roster };
 }

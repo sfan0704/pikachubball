@@ -34,7 +34,13 @@ export function createLeagueController({
     getRoster: asyncHandler(async (req: Request, res: Response) => {
       const { key, team } = rosterParamsSchema.parse(req.params);
       const context = getRequestContext(req);
-      const roster = await getLeagueTeamRoster(context.storage, context.yahooClient, key, team);
+      const roster = await getLeagueTeamRoster(
+        context.storage,
+        context.yahooClient,
+        key,
+        team,
+        context.clock
+      );
       res.json(rosterResponseSchema.parse(roster));
     }),
 

@@ -218,6 +218,7 @@ describe("GET /api/leagues/:key/teams/:team/roster", () => {
 
     expect(response.status).toBe(200);
     expect(getTeamRoster).toHaveBeenCalledWith("466.l.1.t.3", expect.any(Function));
+    expect(response.body.fetchedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(response.body.roster).toHaveLength(1);
     expect(response.body.roster[0]).toMatchObject({ playerKey: "466.p.1", name: "Test Player" });
   });
