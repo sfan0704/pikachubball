@@ -26,3 +26,7 @@ supabase/.temp
 
 # Local HTTPS certificates (mkcert)
 .certs/
+
+# Playwright
+test-results/
+playwright-report/

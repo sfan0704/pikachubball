@@ -30,9 +30,7 @@ function HeatmapRowView({ row }: { row: HeatmapRowModel }) {
           style={{ backgroundColor: `hsl(var(--primary) / ${(cell.intensity * 0.6).toFixed(2)})` }}
         >
           {cell.text}
-          {cell.rank !== null && (
-            <span className="block text-xs text-muted-foreground">({cell.rank})</span>
-          )}
+          {cell.rank !== null && <span className="block text-xs">({cell.rank})</span>}
         </TableCell>
       ))}
     </TableRow>
@@ -53,7 +51,7 @@ export function HeatmapView({ table, myTeamKey }: { table: TeamTable; myTeamKey:
       </CardHeader>
       <CardContent className="p-0 md:p-6">
         <div className="overflow-x-auto">
-          <Table className="text-xs md:text-sm">
+          <Table label="Heatmap table" className="text-xs md:text-sm">
             <caption className="sr-only">Category totals and ranks by team</caption>
             <TableHeader>
               <TableRow>

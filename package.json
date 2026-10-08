@@ -23,6 +23,7 @@
     "test:coverage": "vitest --run --coverage",
     "standin": "tsx scripts/yahoo-standin.ts",
     "check:bundle": "node scripts/check-bundle-size.mjs",
+    "test:browser": "playwright test",
     "test:db": "bash scripts/test-database.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -65,7 +66,9 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.39.2",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/typography": "^0.5.15",
     "@types/express": "4.17.21",
     "@types/node": "24.13.4",
