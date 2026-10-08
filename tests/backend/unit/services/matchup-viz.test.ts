@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getMatchupComparison } from "../../../../server/services/viz/matchup-viz";
 import {
-  createMockFantasyDataSource,
-  createMalformedFantasyDataSource,
+  createMockLegacyFantasyDataSource,
+  createMalformedLegacyFantasyDataSource,
 } from "../../fixtures/mock-fantasy-data-source";
-import type { FantasyDataSource } from "../../../../server/services/fantasy-data-source";
+import type { LegacyFantasyDataSource } from "../../../../server/services/fantasy-data-source";
 import { testLeagueKey, testTeamKey } from "../../fixtures/test-data";
 import { mockScoreboard } from "../../fixtures/yahoo-responses";
 
@@ -32,10 +32,10 @@ function scoreboardWith(values: Record<string, Record<string, string>>) {
 }
 
 describe("matchup-viz", () => {
-  let dataSource: FantasyDataSource;
+  let dataSource: LegacyFantasyDataSource;
 
   beforeEach(async () => {
-    dataSource = createMockFantasyDataSource();
+    dataSource = createMockLegacyFantasyDataSource();
   });
 
   describe("getMatchupComparison", () => {
@@ -215,8 +215,8 @@ describe("matchup-viz", () => {
   describe("ties and exact percentages", () => {
     const opponentKey = "466.l.12345.t.2";
 
-    function sourceWith(values: Record<string, Record<string, string>>): FantasyDataSource {
-      const source = createMockFantasyDataSource();
+    function sourceWith(values: Record<string, Record<string, string>>): LegacyFantasyDataSource {
+      const source = createMockLegacyFantasyDataSource();
       source.getLeagueScoreboard = async () => scoreboardWith(values);
       return source;
     }
@@ -272,7 +272,7 @@ describe("matchup-viz", () => {
   describe("error handling", () => {
     it("should return empty matchup data for malformed scoreboard", async () => {
       // ARRANGE
-      const malformedDataSource = createMalformedFantasyDataSource();
+      const malformedDataSource = createMalformedLegacyFantasyDataSource();
 
       // ACT & ASSERT
       // Code should throw or return error for malformed data

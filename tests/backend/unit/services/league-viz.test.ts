@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getLeagueRankings, getLeagueHeatmap } from "../../../../server/services/viz/league-viz";
 import {
-  createMockFantasyDataSource,
-  createMalformedFantasyDataSource,
+  createMockLegacyFantasyDataSource,
+  createMalformedLegacyFantasyDataSource,
 } from "../../fixtures/mock-fantasy-data-source";
-import type { FantasyDataSource } from "../../../../server/services/fantasy-data-source";
+import type { LegacyFantasyDataSource } from "../../../../server/services/fantasy-data-source";
 import { testLeagueKey } from "../../fixtures/test-data";
 
 describe("league-viz", () => {
-  let dataSource: FantasyDataSource;
+  let dataSource: LegacyFantasyDataSource;
 
   beforeEach(async () => {
-    dataSource = createMockFantasyDataSource();
+    dataSource = createMockLegacyFantasyDataSource();
   });
 
   describe("getLeagueRankings", () => {
@@ -188,7 +188,7 @@ describe("league-viz", () => {
   describe("error handling", () => {
     it("should return empty rankings for malformed standings data", async () => {
       // ARRANGE
-      const malformedDataSource = createMalformedFantasyDataSource();
+      const malformedDataSource = createMalformedLegacyFantasyDataSource();
 
       // ACT
       // Code should handle malformed data gracefully

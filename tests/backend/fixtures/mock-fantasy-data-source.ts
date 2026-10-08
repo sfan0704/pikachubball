@@ -1,11 +1,11 @@
-import type { FantasyDataSource } from "../../../server/services/fantasy-data-source.js";
+import type { LegacyFantasyDataSource } from "../../../server/services/fantasy-data-source.js";
 import { mockLeagueSettings, mockStandings, mockScoreboard } from "./yahoo-responses";
 
 /**
- * Mock implementation of FantasyDataSource for testing
+ * Mock implementation of LegacyFantasyDataSource for testing
  * Returns fixture data instead of making real API calls
  */
-export class MockFantasyDataSource implements FantasyDataSource {
+export class MockLegacyFantasyDataSource implements LegacyFantasyDataSource {
   async getLeagueStandings(_leagueKey: string): Promise<any> {
     return mockStandings;
   }
@@ -63,14 +63,14 @@ export class MockFantasyDataSource implements FantasyDataSource {
 /**
  * Create a mock data source for testing
  */
-export function createMockFantasyDataSource(): MockFantasyDataSource {
-  return new MockFantasyDataSource();
+export function createMockLegacyFantasyDataSource(): MockLegacyFantasyDataSource {
+  return new MockLegacyFantasyDataSource();
 }
 
 /**
  * Create a mock with malformed data for error testing
  */
-export function createMalformedFantasyDataSource(): FantasyDataSource {
+export function createMalformedLegacyFantasyDataSource(): LegacyFantasyDataSource {
   return {
     getLeagueStandings: async () => ({ fantasy_content: null }),
     getLeagueSettings: async () => ({ fantasy_content: { league: [] } }),

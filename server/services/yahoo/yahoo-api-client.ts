@@ -36,6 +36,11 @@ export class YahooApiClient {
     return new YahooApiClient(new YahooTransport(tokens, clock, onRequest, network.fetchFunction));
   }
 
+  /** An authenticated GET of any Yahoo Fantasy path, with Yahoo's text decoded. */
+  get(endpoint: string): Promise<unknown> {
+    return this.transport.get(endpoint);
+  }
+
   private apiRequest<T = any>(
     endpoint: string,
     params?: Record<string, string | number>

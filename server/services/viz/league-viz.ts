@@ -1,4 +1,4 @@
-import type { FantasyDataSource } from "../fantasy-data-source.js";
+import type { LegacyFantasyDataSource } from "../fantasy-data-source.js";
 import type {
   RankingsResponse,
   LeagueHeatmapResponse,
@@ -15,7 +15,7 @@ import { computeCategoryRanks, computeRankings } from "../parsers/rankings-compu
 export { CATEGORIES, type CategoryKey };
 
 export async function getLeagueRankings(
-  dataSource: FantasyDataSource,
+  dataSource: LegacyFantasyDataSource,
   leagueKey: string,
   week?: number
 ): Promise<RankingsResponse> {
@@ -63,7 +63,7 @@ export async function getLeagueRankings(
 }
 
 export async function getLeagueHeatmap(
-  dataSource: FantasyDataSource,
+  dataSource: LegacyFantasyDataSource,
   leagueKey: string,
   week?: number
 ): Promise<LeagueHeatmapResponse> {
@@ -109,7 +109,7 @@ export async function getLeagueHeatmap(
 }
 
 async function extractTeamStats(
-  dataSource: FantasyDataSource,
+  dataSource: LegacyFantasyDataSource,
   leagueKey: string,
   week?: number,
   _currentWeek?: number,
