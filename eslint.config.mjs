@@ -104,10 +104,10 @@ export default [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/no-non-null-assertion": "error",
 
       // React rules
       "react/react-in-jsx-scope": "off", // Not needed with React 17+
@@ -213,24 +213,13 @@ export default [
     },
   },
 
-  // Size, complexity and promise rules. Errors where the target layout is already in place;
-  // warnings elsewhere until the clean-up milestone makes them errors repo-wide.
+  // Size, complexity and promise rules, for all source code.
   {
     files: ["client/src/**/*.{ts,tsx}", "server/**/*.ts", "shared/**/*.ts"],
     ignores: ["**/*.test.*"],
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
-    rules: {
-      "@typescript-eslint/no-floating-promises": "warn",
-      "max-lines-per-function": ["warn", { max: 60, skipBlankLines: true, skipComments: true }],
-      complexity: ["warn", 10],
-      "max-lines": ["warn", { max: 400, skipBlankLines: true, skipComments: true }],
-    },
-  },
-  {
-    files: ["shared/**/*.ts", "server/fantasy/**/*.ts", "server/http/**/*.ts"],
-    ignores: ["**/*.test.*"],
     rules: {
       "@typescript-eslint/no-floating-promises": "error",
       "max-lines-per-function": ["error", { max: 60, skipBlankLines: true, skipComments: true }],
@@ -239,10 +228,11 @@ export default [
     },
   },
   // The legacy league discovery predates these rules and is deleted when discovery moves behind
-  // FantasyDataSource.listLeagues; until then its size and complexity are warnings.
+  // FantasyDataSource.listLeagues; until then its size, complexity and untyped Yahoo data are warnings.
   {
     files: ["server/fantasy/legacy/**/*.ts"],
     rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
       "max-lines-per-function": ["warn", { max: 60, skipBlankLines: true, skipComments: true }],
       complexity: ["warn", 10],
       "max-lines": ["warn", { max: 400, skipBlankLines: true, skipComments: true }],

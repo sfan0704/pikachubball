@@ -7,6 +7,12 @@ import type { RosterResponse } from "../../../shared/api/leagues";
  * Business logic for roster-related operations using direct Yahoo API calls
  */
 
+function child(value: unknown, key: string | number): unknown {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string | number, unknown>)[key]
+    : undefined;
+}
+
 /**
  * Get roster for a specific team
  * Returns DTO format (Player from schema) for frontend compatibility
@@ -18,19 +24,15 @@ export async function getTeamRoster(
   const client = await yahooClient();
   const response = await client.getTeamRoster(teamKey);
 
-  // Parse the raw Yahoo API response
-  const teamData = response?.fantasy_content?.team;
-  if (!teamData || !Array.isArray(teamData) || teamData.length < 2) {
-    return [];
-  }
-
-  const rosterData = teamData[1]?.roster;
-  if (!rosterData || !Array.isArray(rosterData) || rosterData.length === 0) {
+  // The roster sits at fantasy_content.team[1].roster
+  const rosterData = child(child(child(response, "fantasy_content"), "team"), 1);
+  const roster = child(rosterData, "roster");
+  if (!Array.isArray(roster) || roster.length === 0) {
     return [];
   }
 
   // Use parser to extract players (domain models)
-  const domainPlayers = parsePlayersFromRoster({ roster: rosterData });
+  const domainPlayers = parsePlayersFromRoster({ roster });
 
   // Convert to DTO format (Player from schema uses 'team' instead of 'nbaTeam')
   return domainPlayers.map((player) => ({

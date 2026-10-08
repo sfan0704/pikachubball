@@ -9,7 +9,11 @@ import { systemClock, type YahooRequestClock } from "./yahoo-request-policy";
 import { YahooTokenManager, type TokenRefresher } from "./yahoo-token-manager";
 import { YahooTransport } from "./yahoo-transport";
 import type { FetchFunction } from "./provider-http";
-import { readAllUserLeagues, readUserGameLeagues } from "../legacy/user-leagues";
+import {
+  readAllUserLeagues,
+  readUserGameLeagues,
+  type LegacyResponse,
+} from "../legacy/user-leagues";
 
 export class YahooApiClient {
   private constructor(private readonly transport: YahooTransport) {}
@@ -41,7 +45,7 @@ export class YahooApiClient {
     return this.transport.get(endpoint);
   }
 
-  private apiRequest<T = any>(
+  private apiRequest<T = unknown>(
     endpoint: string,
     params?: Record<string, string | number>
   ): Promise<T> {
@@ -49,26 +53,26 @@ export class YahooApiClient {
   }
 
   /** The user's leagues across all games (legacy discovery). */
-  getAllUserLeagues(): Promise<any> {
-    return readAllUserLeagues((endpoint) => this.apiRequest(endpoint));
+  getAllUserLeagues(): Promise<LegacyResponse> {
+    return readAllUserLeagues((endpoint) => this.apiRequest<LegacyResponse>(endpoint));
   }
 
   /** The user's leagues in one game, such as "nba" (legacy discovery). */
-  getUserGameLeagues(gameCode: string): Promise<any> {
-    return readUserGameLeagues((endpoint) => this.apiRequest(endpoint), gameCode);
+  getUserGameLeagues(gameCode: string): Promise<LegacyResponse> {
+    return readUserGameLeagues((endpoint) => this.apiRequest<LegacyResponse>(endpoint), gameCode);
   }
 
   /**
    * League resource methods
    */
-  async getLeagueStandings(leagueKey: string): Promise<any> {
+  async getLeagueStandings(leagueKey: string): Promise<LegacyResponse> {
     return this.apiRequest(`/league/${leagueKey}/standings`);
   }
 
   /**
    * Team resource methods
    */
-  async getTeamRoster(teamKey: string, week?: number): Promise<any> {
+  async getTeamRoster(teamKey: string, week?: number): Promise<unknown> {
     const endpoint = week ? `/team/${teamKey}/roster;week=${week}` : `/team/${teamKey}/roster`;
     return this.apiRequest(endpoint);
   }

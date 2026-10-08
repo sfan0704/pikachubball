@@ -49,6 +49,13 @@ function routeFetchTo(network: NetworkDouble): void {
   });
 }
 
+/** The client's private request method, which the transport tests call directly. */
+function privateApi(client: YahooApiClient) {
+  return client as unknown as {
+    apiRequest(endpoint: string, params?: Record<string, string | number>): Promise<unknown>;
+  };
+}
+
 describe("YahooApiClient", () => {
   const storage = {
     getYahooToken: vi.fn(),
@@ -180,7 +187,7 @@ describe("YahooApiClient", () => {
 
   describe("apiRequest", () => {
     let client: YahooApiClient;
-    let network: any;
+    let network: NetworkDouble;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -208,7 +215,7 @@ describe("YahooApiClient", () => {
       });
       network.get.mockRejectedValueOnce(unavailable).mockResolvedValueOnce({ data: { ok: true } });
 
-      await (counted as any).apiRequest("/one", undefined);
+      await privateApi(counted).apiRequest("/one", undefined);
 
       expect(onRequest).toHaveBeenCalledTimes(2);
     });
@@ -221,7 +228,7 @@ describe("YahooApiClient", () => {
 
       // ACT
       // Access private method via type assertion for testing
-      const result = await (client as any).apiRequest(endpoint);
+      const result = await privateApi(client).apiRequest(endpoint);
 
       // ASSERT
       expect(network.get).toHaveBeenCalledWith(`${endpoint}?format=json`, {
@@ -237,7 +244,7 @@ describe("YahooApiClient", () => {
         data: { team: { name: "Ball don&#39;t lie", team_key: "466.l.1.t.4" } },
       });
 
-      const result = await (client as any).apiRequest("/team/466.l.1.t.4");
+      const result = await privateApi(client).apiRequest("/team/466.l.1.t.4");
 
       expect(result).toEqual({ team: { name: "Ball don't lie", team_key: "466.l.1.t.4" } });
     });
@@ -250,7 +257,7 @@ describe("YahooApiClient", () => {
       network.get.mockResolvedValue({ data: responseData });
 
       // ACT
-      const result = await (client as any).apiRequest(endpoint, params);
+      const result = await privateApi(client).apiRequest(endpoint, params);
 
       // ASSERT
       expect(network.get).toHaveBeenCalledWith(
@@ -293,7 +300,7 @@ describe("YahooApiClient", () => {
       });
 
       // ACT
-      const result = await (client as any).apiRequest(endpoint);
+      const result = await privateApi(client).apiRequest(endpoint);
 
       // ASSERT
       // Uses env credentials
@@ -318,7 +325,7 @@ describe("YahooApiClient", () => {
       vi.mocked(refreshAccessToken).mockRejectedValue(new YahooReconnectRequiredError());
 
       // ACT & ASSERT
-      await expect((client as any).apiRequest(endpoint)).rejects.toBeInstanceOf(
+      await expect(privateApi(client).apiRequest(endpoint)).rejects.toBeInstanceOf(
         YahooReconnectRequiredError
       );
     });
@@ -332,7 +339,7 @@ describe("YahooApiClient", () => {
       network.get.mockRejectedValueOnce(error404);
 
       // ACT & ASSERT
-      await expect((client as any).apiRequest(endpoint)).rejects.toMatchObject({
+      await expect(privateApi(client).apiRequest(endpoint)).rejects.toMatchObject({
         response: { status: 404 },
       });
       expect(network.get).toHaveBeenCalledTimes(1);
@@ -397,8 +404,8 @@ describe("YahooApiClient", () => {
         .mockResolvedValueOnce({ data: "second" });
       const client = await YahooApiClient.create(userId, storage, yahooApp);
 
-      await (client as any).apiRequest("/one");
-      await (client as any).apiRequest("/two");
+      await privateApi(client).apiRequest("/one");
+      await privateApi(client).apiRequest("/two");
 
       expect(vi.mocked(refreshAccessToken).mock.calls.map(([token]) => token)).toEqual([
         refreshToken,
@@ -510,7 +517,7 @@ describe("YahooApiClient", () => {
       network.get.mockRejectedValue({ response: { status: 401 } });
       const client = await YahooApiClient.create(userId, storage, yahooApp);
 
-      await expect((client as any).apiRequest("/endpoint")).rejects.toBeInstanceOf(
+      await expect(privateApi(client).apiRequest("/endpoint")).rejects.toBeInstanceOf(
         YahooReconnectRequiredError
       );
       expect(refreshAccessToken).toHaveBeenCalledTimes(1);
@@ -529,7 +536,7 @@ describe("YahooApiClient", () => {
       network.get.mockRejectedValue({ isAxiosError: true, response: { status: 503 } });
       const client = await YahooApiClient.create(userId, storage, yahooApp, clock);
 
-      await expect((client as any).apiRequest("/endpoint")).rejects.toBeInstanceOf(
+      await expect(privateApi(client).apiRequest("/endpoint")).rejects.toBeInstanceOf(
         YahooUnavailableError
       );
       expect(network.get).toHaveBeenCalledTimes(3);
@@ -539,7 +546,7 @@ describe("YahooApiClient", () => {
 
   describe("getUserGameLeagues", () => {
     let client: YahooApiClient;
-    let network: any;
+    let network: NetworkDouble;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -655,7 +662,7 @@ describe("YahooApiClient", () => {
 
   describe("League resource methods", () => {
     let client: YahooApiClient;
-    let network: any;
+    let network: NetworkDouble;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({
@@ -694,7 +701,7 @@ describe("YahooApiClient", () => {
 
   describe("Team resource methods", () => {
     let client: YahooApiClient;
-    let network: any;
+    let network: NetworkDouble;
 
     beforeEach(async () => {
       vi.mocked(storage.getYahooToken).mockResolvedValue({

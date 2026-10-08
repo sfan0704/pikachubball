@@ -121,14 +121,29 @@ describe("promises and size limits where the target layout applies", () => {
     ).toContain("complexity");
   });
 
-  it("only warns for the same code elsewhere, and in the legacy league discovery", async () => {
+  it("fails the same code in every source folder, and only warns in the legacy league discovery", async () => {
     const longBody = Array.from({ length: 62 }, (_, i) => `  noop(${i});`).join("\n");
     const code = `declare function noop(n: number): void;\nexport function big() {\n${longBody}\n}\n`;
 
-    expect(await errorsFor("server/storage/yahoo-token-storage.ts", code)).toEqual([]);
+    for (const path of [
+      "server/storage/yahoo-token-storage.ts",
+      "server/fantasy/yahoo/yahoo-auth.ts",
+      "client/src/lib/utils.ts",
+    ]) {
+      expect(await errorsFor(path, code)).toContain("max-lines-per-function");
+    }
     expect(await errorsFor("server/fantasy/legacy/league-service.ts", code)).toEqual([]);
-    expect(await errorsFor("server/fantasy/yahoo/yahoo-auth.ts", code)).toContain(
-      "max-lines-per-function"
-    );
+  });
+
+  it("rejects any and non-null assertions", async () => {
+    expect(
+      await errorsFor("server/storage/yahoo-token-storage.ts", "export const a: any = 1;\n")
+    ).toContain("@typescript-eslint/no-explicit-any");
+    expect(
+      await errorsFor(
+        "client/src/lib/utils.ts",
+        "export const b = (x: string | null) => x!.length;\n"
+      )
+    ).toContain("@typescript-eslint/no-non-null-assertion");
   });
 });

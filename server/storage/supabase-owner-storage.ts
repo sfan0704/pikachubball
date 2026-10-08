@@ -72,11 +72,12 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
     options: { expectedVersion?: number } = {}
   ): Promise<StoredYahooToken> {
     this.assertOwner(token.userId);
-    if (!Number.isInteger(options.expectedVersion)) {
+    const expectedVersion = options.expectedVersion;
+    if (typeof expectedVersion !== "number" || !Number.isInteger(expectedVersion)) {
       throw new Error("Token rotation requires the version that was read");
     }
     const { data, error } = await this.client.rpc("rotate_yahoo_tokens", {
-      p_expected_version: options.expectedVersion,
+      p_expected_version: expectedVersion,
       p_access_token_ciphertext: this.cipher.encrypt(this.ownerId, "access", token.accessToken),
       p_refresh_token_ciphertext: this.cipher.encrypt(this.ownerId, "refresh", token.refreshToken),
       p_token_expires_at: token.expiresAt,
@@ -88,7 +89,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
     if (data !== true) {
       throw new Error("Yahoo token changed during refresh; stale result rejected");
     }
-    return { ...token, version: options.expectedVersion! + 1 };
+    return { ...token, version: expectedVersion + 1 };
   }
 
   async getYahooToken(userId: string): Promise<StoredYahooToken | undefined> {

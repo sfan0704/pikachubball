@@ -15,7 +15,7 @@ const { logger } = dependencies;
 const app = createApp(dependencies);
 const server = createDevServer(app);
 
-(async () => {
+async function main(): Promise<void> {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
@@ -29,4 +29,11 @@ const server = createDevServer(app);
   server.listen(port, "0.0.0.0", () => {
     logger.info(`serving on port ${port}${process.env.DEV_HTTPS_CERT ? " (https)" : ""}`);
   });
-})();
+}
+
+main().catch((error: unknown) => {
+  logger.error("The server failed to start", {
+    error: error instanceof Error ? error.message : "Unknown error",
+  });
+  process.exit(1);
+});

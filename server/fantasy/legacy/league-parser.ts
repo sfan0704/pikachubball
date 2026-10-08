@@ -3,7 +3,7 @@
  * Transform raw Yahoo API responses into domain models
  */
 
-import type { YahooApiTeamData } from "../yahoo/yahoo-api-types.js";
+import type { YahooApiTeamData } from "./yahoo-team-types.js";
 import { logger } from "../../utils/logger.js";
 
 /** A team as read from Yahoo's standings. */
