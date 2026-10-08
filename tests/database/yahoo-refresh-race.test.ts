@@ -2,8 +2,11 @@
 // and RLS. Yahoo is replaced by a controllable stub; storage is the real
 // SupabaseOwnerStorage on the disposable stack. Run through `npm run test:db`.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { YahooApiClient } from "../../server/services/yahoo/yahoo-api-client";
-import { YahooReconnectRequiredError } from "../../server/services/yahoo/yahoo-request-policy";
+import { YahooTokenManager } from "../../server/services/yahoo/yahoo-token-manager";
+import {
+  systemClock,
+  YahooReconnectRequiredError,
+} from "../../server/services/yahoo/yahoo-request-policy";
 import { refreshAccessToken } from "../../server/yahoo-auth";
 import { connect, database, signUpOwner, type Owner } from "./local-stack";
 
@@ -56,7 +59,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     const yahoo = deferred<{ accessToken: string; refreshToken: string; expiresIn: number }>();
     vi.mocked(refreshAccessToken).mockReturnValue(yahoo.promise);
 
-    const pending = YahooApiClient.create(owner.id, owner.storage, yahooApp).catch(
+    const pending = YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock).catch(
       (error) => error
     );
     await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledOnce());
@@ -65,9 +68,9 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
 
     expect(await pending).toBeInstanceOf(YahooReconnectRequiredError);
     await expect(owner.storage.getYahooToken(owner.id)).resolves.toBeUndefined();
-    await expect(YahooApiClient.create(owner.id, owner.storage, yahooApp)).rejects.toBeInstanceOf(
-      YahooReconnectRequiredError
-    );
+    await expect(
+      YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock)
+    ).rejects.toBeInstanceOf(YahooReconnectRequiredError);
   });
 
   it("keeps the newer token when another instance committed first", async () => {
@@ -77,7 +80,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     const yahoo = deferred<{ accessToken: string; expiresIn: number }>();
     vi.mocked(refreshAccessToken).mockReturnValue(yahoo.promise);
 
-    const pending = YahooApiClient.create(owner.id, owner.storage, yahooApp);
+    const pending = YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock);
     await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledOnce());
     // Another server instance finishes its own refresh first.
     await owner.storage.saveYahooToken(
@@ -98,9 +101,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
       refreshToken: "other-instance-refresh",
       version: readVersion + 1,
     });
-    expect((client as unknown as { accessToken: string }).accessToken).toBe(
-      "other-instance-access"
-    );
+    expect(client.accessToken).toBe("other-instance-access");
   });
 
   it("commits only one of two concurrent refreshes; the other adopts it, and the omitted refresh token is kept", async () => {
@@ -111,8 +112,8 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     vi.mocked(refreshAccessToken).mockReturnValue(yahoo.promise);
 
     const requests = [
-      YahooApiClient.create(owner.id, owner.storage, yahooApp),
-      YahooApiClient.create(owner.id, owner.storage, yahooApp),
+      YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock),
+      YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock),
     ];
     await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledTimes(2));
     yahoo.resolve({ accessToken: "shared-access", expiresIn: 3600 });
@@ -120,9 +121,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
 
     // Both asked Yahoo, but storage accepted a single write at readVersion + 1.
     for (const client of clients) {
-      expect(client as unknown as { tokenVersion: number }).toMatchObject({
-        tokenVersion: readVersion + 1,
-      });
+      expect(client.accessToken).toBe("shared-access");
     }
     await expect(owner.storage.getYahooToken(owner.id)).resolves.toMatchObject({
       accessToken: "shared-access",
@@ -143,8 +142,8 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
       .mockReturnValueOnce(loserYahoo.promise);
 
     // Both requests read the same expired token and ask Yahoo to refresh it.
-    const winner = YahooApiClient.create(owner.id, owner.storage, yahooApp);
-    const loser = YahooApiClient.create(owner.id, owner.storage, yahooApp);
+    const winner = YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock);
+    const loser = YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock);
     await vi.waitFor(() => expect(refreshAccessToken).toHaveBeenCalledTimes(2));
 
     // Whichever request reached Yahoo first holds winnerYahoo: let it commit.
@@ -163,10 +162,7 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     const clients = await Promise.all([winner, loser]);
 
     for (const client of clients) {
-      expect(client as unknown as { accessToken: string; tokenVersion: number }).toMatchObject({
-        accessToken: "rotated-access",
-        tokenVersion: readVersion + 1,
-      });
+      expect(client.accessToken).toBe("rotated-access");
     }
     await expect(owner.storage.getYahooToken(owner.id)).resolves.toMatchObject({
       refreshToken: "rotated-refresh",
@@ -180,8 +176,8 @@ describe("Yahoo token refresh against owner-scoped storage", () => {
     await expireAccessToken(owner);
     vi.mocked(refreshAccessToken).mockRejectedValue(new YahooReconnectRequiredError());
 
-    await expect(YahooApiClient.create(owner.id, owner.storage, yahooApp)).rejects.toBeInstanceOf(
-      YahooReconnectRequiredError
-    );
+    await expect(
+      YahooTokenManager.load(owner.id, owner.storage, yahooApp, systemClock)
+    ).rejects.toBeInstanceOf(YahooReconnectRequiredError);
   });
 });
