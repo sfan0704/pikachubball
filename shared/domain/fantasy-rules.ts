@@ -117,3 +117,19 @@ export function scoringSupport(settings: LeagueSettings): ScoringSupport {
   }
   return { supported: true };
 }
+
+/** How much of a table Yahoo has stats for. */
+export type TableCompleteness = "empty" | "partial" | "complete";
+
+/**
+ * "empty" when no team has any recorded stat (a preseason league: every total
+ * is zero or unknown), "partial" when some value is unknown, else "complete".
+ * Unknown stays unknown: it is never counted as a zero.
+ */
+export function tableCompleteness(table: TeamTable): TableCompleteness {
+  const values = table.teams.flatMap((team) => Object.values(team.totals));
+  if (values.every((value) => value === null || value === 0)) {
+    return "empty";
+  }
+  return values.some((value) => value === null) ? "partial" : "complete";
+}
