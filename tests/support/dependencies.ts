@@ -35,7 +35,10 @@ export function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       clientId: "test-client-id",
       clientSecret: "test-client-secret",
       providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      apiBaseUrl: "https://fantasysports.yahooapis.com/fantasy/v2",
+      oauthBaseUrl: "https://api.login.yahoo.com",
     },
+    localStack: false,
     ...overrides,
   };
 }

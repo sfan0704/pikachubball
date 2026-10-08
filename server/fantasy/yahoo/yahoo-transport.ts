@@ -10,8 +10,6 @@ import {
 } from "./yahoo-request-policy";
 import { decodeYahooStrings } from "./yahoo-text";
 
-const YAHOO_API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2";
-
 /**
  * Authenticated GET requests to the Yahoo Fantasy API under the request
  * policy (per-attempt timeout, total budget, bounded retries). A 401 refreshes
@@ -22,6 +20,7 @@ export class YahooTransport {
     private readonly tokens: YahooTokenManager,
     private readonly clock: YahooRequestClock,
     private readonly onRequest: () => void,
+    private readonly baseUrl: string,
     private readonly fetchFunction: FetchFunction = fetch
   ) {}
 
@@ -37,7 +36,7 @@ export class YahooTransport {
       query.append(key, String(value));
     }
     query.append("format", "json");
-    const url = `${YAHOO_API_BASE}${endpoint}?${query.toString()}`;
+    const url = `${this.baseUrl}${endpoint}?${query.toString()}`;
     const deadline = this.clock.now() + YAHOO_TOTAL_BUDGET_MS;
 
     try {

@@ -48,8 +48,13 @@ function stateCookie(appConfig: AppConfig, value: string, maxAge: number): strin
   });
 }
 
-function authorizationUrl(clientId: string, redirectUri: string, state: string): string {
-  const url = new URL("https://api.login.yahoo.com/oauth2/request_auth");
+function authorizationUrl(
+  oauthBaseUrl: string,
+  clientId: string,
+  redirectUri: string,
+  state: string
+): string {
+  const url = new URL(`${oauthBaseUrl}/oauth2/request_auth`);
   url.search = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -82,7 +87,10 @@ export function createYahooOAuthController({
       const config = fantasyOAuthConfig(appConfig);
       const state = randomBytes(32).toString("base64url");
       res.append("Set-Cookie", stateCookie(appConfig, state, 600));
-      res.redirect(302, authorizationUrl(config.clientId, config.redirectUri, state));
+      res.redirect(
+        302,
+        authorizationUrl(appConfig.yahoo.oauthBaseUrl, config.clientId, config.redirectUri, state)
+      );
     }),
 
     completeFantasyAccess: asyncHandler(async (req: Request, res: Response) => {
@@ -95,7 +103,9 @@ export function createYahooOAuthController({
         code,
         config.clientId,
         config.clientSecret,
-        config.redirectUri
+        config.redirectUri,
+        fetch,
+        appConfig.yahoo.oauthBaseUrl
       );
       if (tokens.yahooGuid && tokens.yahooGuid !== identity.yahooGuid) {
         throw new UnauthorizedError("Yahoo Fantasy account does not match the signed-in account");

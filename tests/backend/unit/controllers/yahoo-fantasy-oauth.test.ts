@@ -17,6 +17,7 @@ vi.mock("../../../../server/fantasy/yahoo/yahoo-auth", () => ({
 
 const config = buildTestConfig({
   yahoo: {
+    ...buildTestConfig().yahoo,
     clientId: "fantasy-client-id",
     clientSecret: "fantasy-client-secret",
     providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
@@ -100,7 +101,9 @@ describe("Yahoo Fantasy OAuth handoff", () => {
       "one-time-code",
       "fantasy-client-id",
       "fantasy-client-secret",
-      "https://basketball.example.test/api/auth/yahoo/fantasy/callback"
+      "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+      fetch,
+      "https://api.login.yahoo.com"
     );
     expect(saveYahooConnection).toHaveBeenCalledWith(
       expect.objectContaining({

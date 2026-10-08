@@ -9,7 +9,8 @@
   "type": "commonjs",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development node -r dotenv/config node_modules/.bin/tsx --watch server/index.ts dotenv_config_path=.env.local",
+    "dev": "bash scripts/dev-local.sh",
+    "dev:hosted": "NODE_ENV=development node -r dotenv/config node_modules/.bin/tsx --watch server/index.ts dotenv_config_path=.env.local",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --out-extension:.js=.mjs",
@@ -20,6 +21,7 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
+    "standin": "tsx scripts/yahoo-standin.ts",
     "check:bundle": "node scripts/check-bundle-size.mjs",
     "test:db": "bash scripts/test-database.sh",
     "format": "prettier --write .",

@@ -69,6 +69,8 @@ describe("YahooApiClient", () => {
     clientId,
     clientSecret,
     providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
+    apiBaseUrl: YAHOO_API_BASE,
+    oauthBaseUrl: "https://api.login.yahoo.com",
   };
   const accessToken = "test-access-token";
   const refreshToken = "test-refresh-token";

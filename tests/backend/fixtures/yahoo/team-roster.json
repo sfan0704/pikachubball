@@ -1,0 +1,1826 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/team/466.l.100000.t.3/roster",
+    "team": [
+      [
+        {
+          "team_key": "466.l.100000.t.3"
+        },
+        {
+          "team_id": "3"
+        },
+        {
+          "name": "Team 3"
+        },
+        [],
+        {},
+        {},
+        {
+          "previous_season_team_rank": 13
+        },
+        [],
+        {
+          "waiver_priority": 12
+        },
+        {
+          "faab_balance": "57"
+        },
+        {
+          "number_of_moves": 34
+        },
+        {
+          "number_of_trades": "1"
+        },
+        {
+          "roster_adds": {
+            "coverage_type": "week",
+            "coverage_value": 8,
+            "value": "4"
+          }
+        },
+        [],
+        {
+          "league_scoring_type": "head"
+        },
+        [],
+        [],
+        {
+          "has_draft_grade": 0
+        },
+        {
+          "auction_budget_total": "200"
+        },
+        {
+          "auction_budget_spent": 200
+        },
+        [],
+        [],
+        [],
+        {
+          "managers": [
+            {
+              "manager": {
+                "manager_id": "3",
+                "nickname": "Manager 3"
+              }
+            }
+          ]
+        }
+      ],
+      {
+        "roster": {
+          "0": {
+            "players": {
+              "0": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.5842"
+                    },
+                    {
+                      "player_id": "5842"
+                    },
+                    {
+                      "name": {
+                        "full": "Derrick White",
+                        "first": "Derrick",
+                        "last": "White",
+                        "ascii_first": "Derrick",
+                        "ascii_last": "White"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.5842"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.2"
+                    },
+                    {
+                      "editorial_team_full_name": "Boston Celtics"
+                    },
+                    {
+                      "editorial_team_abbr": "BOS"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/boston/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "9"
+                    },
+                    {
+                      "display_position": "PG,SG"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "PG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765210074
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "PG"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "1": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6556"
+                    },
+                    {
+                      "player_id": "6556"
+                    },
+                    {
+                      "name": {
+                        "full": "Moses Moody",
+                        "first": "Moses",
+                        "last": "Moody",
+                        "ascii_first": "Moses",
+                        "ascii_last": "Moody"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.6556"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.9"
+                    },
+                    {
+                      "editorial_team_full_name": "Golden State Warriors"
+                    },
+                    {
+                      "editorial_team_abbr": "GSW"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/golden-state/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "4"
+                    },
+                    {
+                      "display_position": "SG,SF"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "SG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765066683
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "SG"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "2": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6721"
+                    },
+                    {
+                      "player_id": "6721"
+                    },
+                    {
+                      "name": {
+                        "full": "Andrew Nembhard",
+                        "first": "Andrew",
+                        "last": "Nembhard",
+                        "ascii_first": "Andrew",
+                        "ascii_last": "Nembhard"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.6721"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.11"
+                    },
+                    {
+                      "editorial_team_full_name": "Indiana Pacers"
+                    },
+                    {
+                      "editorial_team_abbr": "IND"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/indiana/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "2"
+                    },
+                    {
+                      "display_position": "PG,SG"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "PG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765248549
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "G"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "3": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6559"
+                    },
+                    {
+                      "player_id": "6559"
+                    },
+                    {
+                      "name": {
+                        "full": "Trey Murphy III",
+                        "first": "Trey",
+                        "last": "Murphy III",
+                        "ascii_first": "Trey",
+                        "ascii_last": "Murphy III"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.6559"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.3"
+                    },
+                    {
+                      "editorial_team_full_name": "New Orleans Pelicans"
+                    },
+                    {
+                      "editorial_team_abbr": "NOP"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/new-orleans/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "25"
+                    },
+                    {
+                      "display_position": "SG,SF,PF"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "SG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765256313
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "SF"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "4": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.10292"
+                    },
+                    {
+                      "player_id": "10292"
+                    },
+                    {
+                      "name": {
+                        "full": "Ryan Dunn",
+                        "first": "Ryan",
+                        "last": "Dunn",
+                        "ascii_first": "Ryan",
+                        "ascii_last": "Dunn"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.10292"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.21"
+                    },
+                    {
+                      "editorial_team_full_name": "Phoenix Suns"
+                    },
+                    {
+                      "editorial_team_abbr": "PHX"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/phoenix/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "0"
+                    },
+                    {
+                      "display_position": "SF,PF"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "SF"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765296612
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "PF"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "5": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.10274"
+                    },
+                    {
+                      "player_id": "10274"
+                    },
+                    {
+                      "name": {
+                        "full": "Kel'el Ware",
+                        "first": "Kel'el",
+                        "last": "Ware",
+                        "ascii_first": "Kel'el",
+                        "ascii_last": "Ware"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.10274"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.14"
+                    },
+                    {
+                      "editorial_team_full_name": "Miami Heat"
+                    },
+                    {
+                      "editorial_team_abbr": "MIA"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/miami/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "7"
+                    },
+                    {
+                      "display_position": "PF,C"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "PF"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "C"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "SF"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765320137
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "F"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "6": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6581"
+                    },
+                    {
+                      "player_id": "6581"
+                    },
+                    {
+                      "name": {
+                        "full": "Neemias Queta",
+                        "first": "Neemias",
+                        "last": "Queta",
+                        "ascii_first": "Neemias",
+                        "ascii_last": "Queta"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.6581"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.2"
+                    },
+                    {
+                      "editorial_team_full_name": "Boston Celtics"
+                    },
+                    {
+                      "editorial_team_abbr": "BOS"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/boston/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "88"
+                    },
+                    {
+                      "display_position": "PF,C"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "PF"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "C"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "SF"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765162029
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "C"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "7": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.5471"
+                    },
+                    {
+                      "player_id": "5471"
+                    },
+                    {
+                      "name": {
+                        "full": "Myles Turner",
+                        "first": "Myles",
+                        "last": "Turner",
+                        "ascii_first": "Myles",
+                        "ascii_last": "Turner"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.5471"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.15"
+                    },
+                    {
+                      "editorial_team_full_name": "Milwaukee Bucks"
+                    },
+                    {
+                      "editorial_team_abbr": "MIL"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/milwaukee/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "3"
+                    },
+                    {
+                      "display_position": "C"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "C"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "C"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765034316
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "C"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "8": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6173"
+                    },
+                    {
+                      "player_id": "6173"
+                    },
+                    {
+                      "name": {
+                        "full": "Cameron Johnson",
+                        "first": "Cameron",
+                        "last": "Johnson",
+                        "ascii_first": "Cameron",
+                        "ascii_last": "Johnson"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.6173"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.7"
+                    },
+                    {
+                      "editorial_team_full_name": "Denver Nuggets"
+                    },
+                    {
+                      "editorial_team_abbr": "DEN"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/denver/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "23"
+                    },
+                    {
+                      "display_position": "SG,SF,PF"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "SG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1764836563
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "Util"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "9": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6703"
+                    },
+                    {
+                      "player_id": "6703"
+                    },
+                    {
+                      "name": {
+                        "full": "Jalen Duren",
+                        "first": "Jalen",
+                        "last": "Duren",
+                        "ascii_first": "Jalen",
+                        "ascii_last": "Duren"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.6703"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.8"
+                    },
+                    {
+                      "editorial_team_full_name": "Detroit Pistons"
+                    },
+                    {
+                      "editorial_team_abbr": "DET"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/detroit/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "0"
+                    },
+                    {
+                      "display_position": "C"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "C"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "C"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765076814
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "Util"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "10": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6417"
+                    },
+                    {
+                      "player_id": "6417"
+                    },
+                    {
+                      "name": {
+                        "full": "Immanuel Quickley",
+                        "first": "Immanuel",
+                        "last": "Quickley",
+                        "ascii_first": "Immanuel",
+                        "ascii_last": "Quickley"
+                      }
+                    },
+                    {},
+                    {
+                      "status": "INJ",
+                      "status_full": "Injured (IL-eligible)"
+                    },
+                    {
+                      "injury_note": "Illness"
+                    },
+                    {
+                      "editorial_player_key": "nba.p.6417"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.28"
+                    },
+                    {
+                      "editorial_team_full_name": "Toronto Raptors"
+                    },
+                    {
+                      "editorial_team_abbr": "TOR"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/toronto/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "5"
+                    },
+                    {
+                      "display_position": "PG,SG"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "PG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "Util"
+                        },
+                        {
+                          "position": "IL"
+                        },
+                        {
+                          "position": "IL+"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765324363
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "BN"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "11": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.3704"
+                    },
+                    {
+                      "player_id": "3704"
+                    },
+                    {
+                      "name": {
+                        "full": "LeBron James",
+                        "first": "LeBron",
+                        "last": "James",
+                        "ascii_first": "LeBron",
+                        "ascii_last": "James"
+                      }
+                    },
+                    {},
+                    {
+                      "editorial_player_key": "nba.p.3704"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.13"
+                    },
+                    {
+                      "editorial_team_full_name": "Los Angeles Lakers"
+                    },
+                    {
+                      "editorial_team_abbr": "LAL"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/la-lakers/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "23"
+                    },
+                    {
+                      "display_position": "SF,PF"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "1"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "SF"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "Util"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    {
+                      "has_recent_player_notes": 1
+                    },
+                    {
+                      "player_notes_last_timestamp": 1765432483
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "BN"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "12": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6226"
+                    },
+                    {
+                      "player_id": "6226"
+                    },
+                    {
+                      "name": {
+                        "full": "Daniel Gafford",
+                        "first": "Daniel",
+                        "last": "Gafford",
+                        "ascii_first": "Daniel",
+                        "ascii_last": "Gafford"
+                      }
+                    },
+                    {},
+                    {
+                      "status": "INJ",
+                      "status_full": "Injured (IL-eligible)"
+                    },
+                    {
+                      "injury_note": "Ankle"
+                    },
+                    {
+                      "editorial_player_key": "nba.p.6226"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.6"
+                    },
+                    {
+                      "editorial_team_full_name": "Dallas Mavericks"
+                    },
+                    {
+                      "editorial_team_abbr": "DAL"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/dallas/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "21"
+                    },
+                    {
+                      "display_position": "C"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "C"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "C"
+                        },
+                        {
+                          "position": "Util"
+                        },
+                        {
+                          "position": "IL"
+                        },
+                        {
+                          "position": "IL+"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765065612
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "BN"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "13": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.6165"
+                    },
+                    {
+                      "player_id": "6165"
+                    },
+                    {
+                      "name": {
+                        "full": "RJ Barrett",
+                        "first": "RJ",
+                        "last": "Barrett",
+                        "ascii_first": "RJ",
+                        "ascii_last": "Barrett"
+                      }
+                    },
+                    {},
+                    {
+                      "status": "INJ",
+                      "status_full": "Injured (IL-eligible)"
+                    },
+                    {
+                      "injury_note": "Knee"
+                    },
+                    {
+                      "editorial_player_key": "nba.p.6165"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.28"
+                    },
+                    {
+                      "editorial_team_full_name": "Toronto Raptors"
+                    },
+                    {
+                      "editorial_team_abbr": "TOR"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/toronto/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "9"
+                    },
+                    {
+                      "display_position": "SG,SF,PF"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "SG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "F"
+                        },
+                        {
+                          "position": "Util"
+                        },
+                        {
+                          "position": "IL"
+                        },
+                        {
+                          "position": "IL+"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    [],
+                    {
+                      "player_notes_last_timestamp": 1765217771
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "IL"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "14": {
+                "player": [
+                  [
+                    {
+                      "player_key": "466.p.4622"
+                    },
+                    {
+                      "player_id": "4622"
+                    },
+                    {
+                      "name": {
+                        "full": "Jrue Holiday",
+                        "first": "Jrue",
+                        "last": "Holiday",
+                        "ascii_first": "Jrue",
+                        "ascii_last": "Holiday"
+                      }
+                    },
+                    {},
+                    {
+                      "status": "INJ",
+                      "status_full": "Injured (IL-eligible)"
+                    },
+                    {
+                      "injury_note": "Calf"
+                    },
+                    {
+                      "editorial_player_key": "nba.p.4622"
+                    },
+                    {
+                      "editorial_team_key": "nba.t.22"
+                    },
+                    {
+                      "editorial_team_full_name": "Portland Trail Blazers"
+                    },
+                    {
+                      "editorial_team_abbr": "POR"
+                    },
+                    {
+                      "editorial_team_url": "https://sports.yahoo.com/nba/teams/portland/"
+                    },
+                    {
+                      "is_keeper": {
+                        "status": false,
+                        "cost": false,
+                        "kept": false
+                      }
+                    },
+                    {
+                      "uniform_number": "5"
+                    },
+                    {
+                      "display_position": "PG,SG"
+                    },
+                    {},
+                    {
+                      "is_undroppable": "0"
+                    },
+                    {
+                      "position_type": "P"
+                    },
+                    {
+                      "primary_position": "PG"
+                    },
+                    {
+                      "eligible_positions": [
+                        {
+                          "position": "PG"
+                        },
+                        {
+                          "position": "SG"
+                        },
+                        {
+                          "position": "G"
+                        },
+                        {
+                          "position": "Util"
+                        },
+                        {
+                          "position": "IL"
+                        },
+                        {
+                          "position": "IL+"
+                        }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        {
+                          "position": "SF"
+                        },
+                        {
+                          "position": "PF"
+                        },
+                        {
+                          "position": "C"
+                        }
+                      ]
+                    },
+                    [],
+                    [],
+                    {
+                      "has_player_notes": 1
+                    },
+                    {
+                      "has_recent_player_notes": 1
+                    },
+                    {
+                      "player_notes_last_timestamp": 1765408113
+                    }
+                  ],
+                  {
+                    "selected_position": [
+                      {
+                        "coverage_type": "date",
+                        "date": "2025-12-11"
+                      },
+                      {
+                        "position": "IL+"
+                      },
+                      {
+                        "is_flex": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "count": 15
+            }
+          },
+          "coverage_type": "date",
+          "date": "2025-12-11",
+          "is_prescoring": 0,
+          "is_editable": 0
+        }
+      }
+    ],
+    "time": "0ms"
+  }
+}

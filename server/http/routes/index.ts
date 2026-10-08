@@ -8,6 +8,7 @@ import { createLeagueController } from "../controllers/league-controller";
 import type { ServerDependencies } from "../dependencies";
 import { registerAuthRoutes } from "./auth";
 import { registerYahooOAuthRoutes } from "./yahoo-oauth";
+import { registerDevRoutes } from "./dev";
 import { registerLeagueRoutes } from "./leagues";
 import { registerMeRoutes } from "./me";
 
@@ -39,6 +40,7 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
     skipRateLimit: config.nodeEnv === "development",
     controller: createYahooOAuthController({ config }),
   });
+  registerDevRoutes(app, dependencies);
   registerMeRoutes(app, {
     requireAuth,
     controller: createAccountController(dependencies),

@@ -13,7 +13,7 @@ These rules apply to everyone who changes this repository: people and coding age
 
 ```text
 npm ci             # install (Node 24, npm 11)
-npm run dev        # run locally
+npm run dev        # run locally against a throwaway Supabase stack and the Yahoo stand-in (needs Docker)
 npm run lint       # ESLint, including the import-boundary and size rules
 npm run format     # Prettier (format:check only checks)
 npm run knip       # unused or unlisted packages and dead files

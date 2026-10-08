@@ -37,7 +37,9 @@ export class YahooApiClient {
       clock,
       network.refresher
     );
-    return new YahooApiClient(new YahooTransport(tokens, clock, onRequest, network.fetchFunction));
+    return new YahooApiClient(
+      new YahooTransport(tokens, clock, onRequest, app.apiBaseUrl, network.fetchFunction)
+    );
   }
 
   /** An authenticated GET of any Yahoo Fantasy path, with Yahoo's text decoded. */

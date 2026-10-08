@@ -1,5 +1,6 @@
 import { ProviderHttpError, requestJson, type FetchFunction } from "./provider-http";
 import { z } from "zod";
+import { YAHOO_OAUTH_BASE_URL } from "../../config/config";
 import {
   YAHOO_CALL_TIMEOUT_MS,
   providerStatus,
@@ -7,8 +8,6 @@ import {
   YahooUnavailableError,
 } from "./yahoo-request-policy";
 import { logger } from "../../utils/logger";
-
-const TOKEN_URL = "https://api.login.yahoo.com/oauth2/get_token";
 
 /** Posts a form to a Yahoo OAuth endpoint with the app's credentials as Basic auth. */
 function postForm(
@@ -64,11 +63,12 @@ export async function exchangeAuthorizationCode(
   clientId: string,
   clientSecret: string,
   redirectUri: string,
-  fetchFunction: FetchFunction = fetch
+  fetchFunction: FetchFunction = fetch,
+  oauthBaseUrl: string = YAHOO_OAUTH_BASE_URL
 ): Promise<YahooAuthorizationTokens> {
   try {
     const data = await postForm(
-      TOKEN_URL,
+      `${oauthBaseUrl}/oauth2/get_token`,
       clientId,
       clientSecret,
       {
@@ -115,11 +115,12 @@ async function requestRefresh(
   clientId: string,
   clientSecret: string,
   redirectUri: string,
-  fetchFunction: FetchFunction
+  fetchFunction: FetchFunction,
+  oauthBaseUrl: string
 ): Promise<unknown> {
   try {
     return await postForm(
-      TOKEN_URL,
+      `${oauthBaseUrl}/oauth2/get_token`,
       clientId,
       clientSecret,
       { redirect_uri: redirectUri, grant_type: "refresh_token", refresh_token: refreshToken },
@@ -143,7 +144,8 @@ export async function refreshAccessToken(
   clientId: string,
   clientSecret: string,
   redirectUri: string | null,
-  fetchFunction: FetchFunction = fetch
+  fetchFunction: FetchFunction = fetch,
+  oauthBaseUrl: string = YAHOO_OAUTH_BASE_URL
 ): Promise<YahooRefreshedTokens> {
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Yahoo refresh configuration is incomplete");
@@ -153,7 +155,8 @@ export async function refreshAccessToken(
     clientId,
     clientSecret,
     redirectUri,
-    fetchFunction
+    fetchFunction,
+    oauthBaseUrl
   );
   const parsed = refreshResponseSchema.safeParse(data);
   if (!parsed.success) {
@@ -177,7 +180,8 @@ export async function revokeYahooToken(
   token: string,
   clientId: string,
   clientSecret: string,
-  fetchFunction: FetchFunction = fetch
+  fetchFunction: FetchFunction = fetch,
+  oauthBaseUrl: string = YAHOO_OAUTH_BASE_URL
 ): Promise<boolean> {
   if (!token || !clientId || !clientSecret) {
     return false;
@@ -185,7 +189,7 @@ export async function revokeYahooToken(
 
   try {
     await postForm(
-      "https://api.login.yahoo.com/oauth2/revoke",
+      `${oauthBaseUrl}/oauth2/revoke`,
       clientId,
       clientSecret,
       { token, token_type_hint: "refresh_token" },
