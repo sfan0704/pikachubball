@@ -495,7 +495,7 @@ flowchart LR
 
 - **Scheduled work runs in GitHub Actions:** the weekly keep-alive, the weekly schema dump and the config checks. None of it calls Yahoo. The app does work only when a user makes a request.
 - **Staying awake.** The weekly keep-alive reads from the prod database so the free project doesn't pause in the off-season.
-- **Season rollover.** When every stored league is finished, the next visit refreshes the user's leagues from Yahoo, which picks up the new season. A league's stored row is removed once Yahoo no longer lists it.
+- **Season rollover.** When every stored league is finished, the next visit refreshes the user's leagues from Yahoo, which picks up the new season; while Yahoo still lists only finished leagues, it asks again at most once a day. A league's stored row is removed once Yahoo no longer lists it.
 - **Observability.** Vercel keeps the function logs. Each request's line carries its request id, route, status, duration and Yahoo call count, so a user's error message can be traced to its log line. Yahoo rate-limit errors and slow requests are the signals reviewed for the revisit triggers.
 - **Key rotation.** Each stored token records its encryption key version. Rotating sets a new `ENCRYPTION_KEY` and moves the old one to `ENCRYPTION_KEY_PREVIOUS`; new writes use the new key, tokens are re-encrypted at their next refresh, and the previous key is removed once no row uses it.
 - **Notifications.** Failed checks, deploys, smoke checks and config checks notify the owner through GitHub. There is no paging.

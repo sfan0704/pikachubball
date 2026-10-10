@@ -7,25 +7,52 @@ import type { FantasyDataSource } from "../fantasy/fantasy-data-source";
 import { getTeamRoster } from "../fantasy/yahoo/roster-service";
 
 type LeagueStorage = Pick<OwnerScopedStorage, "listUserLeagues" | "replaceUserLeagues">;
+type LeagueSource = Pick<FantasyDataSource, "listLeagues">;
 
-/** The user's stored leagues, or the stored list after replacing it with Yahoo's current one. */
+/** How long a list of only finished leagues is trusted before Yahoo is asked about a new season. */
+const ROLLOVER_CHECK_MS = 24 * 60 * 60 * 1000;
+
+/** Replaces the user's stored leagues with the ones Yahoo lists now; rows Yahoo dropped go. */
+export async function syncLeagues(storage: LeagueStorage, dataSource: LeagueSource): Promise<void> {
+  const fromYahoo = await dataSource.listLeagues();
+  await storage.replaceUserLeagues(
+    fromYahoo.map((league) => ({
+      leagueKey: league.leagueKey,
+      teamKey: league.teamKey,
+      name: league.name,
+      season: league.season,
+      isFinished: league.status === "finished",
+    }))
+  );
+}
+
+/**
+ * Nothing stored means the sign-in sync didn't finish. Only finished leagues,
+ * synced more than a day ago, means a new season may have opened since.
+ */
+function needsSync(stored: readonly UserLeague[], now: number): boolean {
+  if (stored.length === 0) {
+    return true;
+  }
+  return stored.every(
+    (league) => league.isFinished && now - Date.parse(league.syncedAt) > ROLLOVER_CHECK_MS
+  );
+}
+
+/** The user's stored leagues, synced from Yahoo first when asked to or when they are due. */
 export async function listLeagues(
   storage: LeagueStorage,
-  dataSource: Pick<FantasyDataSource, "listLeagues">,
-  refresh: boolean
+  dataSource: LeagueSource,
+  refresh: boolean,
+  clock: Clock
 ): Promise<UserLeague[]> {
-  if (refresh) {
-    const fromYahoo = await dataSource.listLeagues();
-    await storage.replaceUserLeagues(
-      fromYahoo.map((league) => ({
-        leagueKey: league.leagueKey,
-        teamKey: league.teamKey,
-        name: league.name,
-        season: league.season,
-        isFinished: league.status === "finished",
-      }))
-    );
+  if (!refresh) {
+    const stored = await storage.listUserLeagues();
+    if (!needsSync(stored, clock.now())) {
+      return stored;
+    }
   }
+  await syncLeagues(storage, dataSource);
   return storage.listUserLeagues();
 }
 

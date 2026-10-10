@@ -4,9 +4,12 @@ import { parse, serialize } from "cookie";
 import type { AppConfig } from "../../config/config";
 import { asyncHandler } from "../middleware/error-handler";
 import { getRequestContext } from "../request-context";
-import { UnauthorizedError, ValidationError } from "../../../shared/api/errors";
+import { AppError, UnauthorizedError, ValidationError } from "../../../shared/api/errors";
 import { applyAuthNoStore } from "../auth/supabase-auth";
 import { exchangeAuthorizationCode } from "../../fantasy/yahoo/yahoo-auth";
+import type { FantasyDataSource } from "../../fantasy/fantasy-data-source";
+import { syncLeagues } from "../../services/leagues-service";
+import type { RequestContext, YahooClientProvider } from "../request-context";
 
 const FANTASY_OAUTH_STATE_COOKIE = "pikachubball-yahoo-state";
 
@@ -24,6 +27,7 @@ function stateMatches(expected: string | undefined, received: unknown): boolean 
  */
 export interface YahooOAuthControllerDependencies {
   readonly config: AppConfig;
+  createFantasyDataSource(yahooClient: YahooClientProvider): FantasyDataSource;
 }
 
 function fantasyOAuthConfig(appConfig: AppConfig) {
@@ -78,8 +82,26 @@ function checkedCode(req: Request): string {
   return code;
 }
 
+/**
+ * Saves the user's leagues right after the connection. A failure never blocks
+ * sign-in: it is logged, and `GET /api/leagues` fetches them when it finds none.
+ */
+async function syncLeaguesAfterConnecting(
+  context: RequestContext,
+  createFantasyDataSource: YahooOAuthControllerDependencies["createFantasyDataSource"]
+): Promise<void> {
+  try {
+    await syncLeagues(context.storage, createFantasyDataSource(context.yahooClient));
+  } catch (error) {
+    context.logger.warn("League sync after connecting Yahoo failed; retried on first request", {
+      code: error instanceof AppError ? error.code : "UNEXPECTED",
+    });
+  }
+}
+
 export function createYahooOAuthController({
   config: appConfig,
+  createFantasyDataSource,
 }: YahooOAuthControllerDependencies) {
   return {
     beginFantasyAccess: asyncHandler(async (_req: Request, res: Response) => {
@@ -95,7 +117,8 @@ export function createYahooOAuthController({
 
     completeFantasyAccess: asyncHandler(async (req: Request, res: Response) => {
       applyAuthNoStore(res);
-      const { user: identity, storage, clock } = getRequestContext(req);
+      const context = getRequestContext(req);
+      const { user: identity, storage, clock } = context;
       const code = checkedCode(req);
 
       const config = fantasyOAuthConfig(appConfig);
@@ -119,6 +142,7 @@ export function createYahooOAuthController({
         refreshToken: tokens.refreshToken,
         expiresAt: Math.floor(clock.now() / 1000) + tokens.expiresIn,
       });
+      await syncLeaguesAfterConnecting(context, createFantasyDataSource);
       res.append("Set-Cookie", stateCookie(appConfig, "", 0));
       res.redirect(303, "/?yahoo_connected=true");
     }),

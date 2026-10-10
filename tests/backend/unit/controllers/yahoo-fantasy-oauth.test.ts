@@ -10,6 +10,9 @@ import { buildRequestContext } from "../../../support/context";
 import { systemClock } from "../../../../server/utils/clock";
 import { exchangeAuthorizationCode } from "../../../../server/fantasy/yahoo/yahoo-auth";
 import { defined } from "../../../support/defined";
+import { recordingLogger } from "../../../support/logger";
+import { AppError } from "../../../../shared/api/errors";
+import type { FantasyDataSource } from "../../../../server/fantasy/fantasy-data-source";
 
 vi.mock("../../../../server/fantasy/yahoo/yahoo-auth", () => ({
   exchangeAuthorizationCode: vi.fn(),
@@ -23,7 +26,15 @@ const config = buildTestConfig({
     providerRedirectUri: "https://basketball.example.test/api/auth/yahoo/fantasy/callback",
   },
 });
-const yahooOAuthController = createYahooOAuthController({ config });
+const listLeagues = vi.fn<FantasyDataSource["listLeagues"]>();
+const yahooOAuthController = createYahooOAuthController({
+  config,
+  createFantasyDataSource: () => ({
+    listLeagues,
+    getSeason: vi.fn(),
+    getWeek: vi.fn(),
+  }),
+});
 const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });
 
 const IDENTITY = {
@@ -35,10 +46,23 @@ const IDENTITY = {
 
 describe("Yahoo Fantasy OAuth handoff", () => {
   const saveYahooConnection = vi.fn();
+  const replaceUserLeagues = vi.fn();
+  const logger = recordingLogger();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    logger.lines.length = 0;
     saveYahooConnection.mockResolvedValue({});
+    replaceUserLeagues.mockResolvedValue(undefined);
+    listLeagues.mockResolvedValue([
+      {
+        leagueKey: "478.l.1",
+        teamKey: "478.l.1.t.4",
+        name: "League One",
+        season: 2026,
+        status: "preseason",
+      },
+    ]);
   });
 
   function app() {
@@ -46,8 +70,9 @@ describe("Yahoo Fantasy OAuth handoff", () => {
     application.use((req, _res, next) => {
       req.context = buildRequestContext({
         user: IDENTITY,
-        storage: { saveYahooConnection } as unknown as OwnerScopedStorage,
+        storage: { saveYahooConnection, replaceUserLeagues } as unknown as OwnerScopedStorage,
         clock: systemClock,
+        logger,
       });
       next();
     });
@@ -113,6 +138,53 @@ describe("Yahoo Fantasy OAuth handoff", () => {
         refreshToken: "approved-refresh-token",
       })
     );
+  });
+
+  async function connect() {
+    const start = await request(app()).get("/connect/start");
+    const state = defined(new URL(start.headers.location).searchParams.get("state"));
+    const cookie = start.headers["set-cookie"][0].split(";")[0];
+    vi.mocked(exchangeAuthorizationCode).mockResolvedValue({
+      accessToken: "approved-access-token",
+      refreshToken: "approved-refresh-token",
+      expiresIn: 3600,
+      yahooGuid: IDENTITY.yahooGuid,
+    });
+    return request(app())
+      .get(`/api/auth/yahoo/fantasy/callback?code=one-time-code&state=${encodeURIComponent(state)}`)
+      .set("Cookie", cookie);
+  }
+
+  it("saves the user's leagues after storing the connection", async () => {
+    const response = await connect();
+
+    expect(response.status).toBe(303);
+    expect(replaceUserLeagues).toHaveBeenCalledWith([
+      {
+        leagueKey: "478.l.1",
+        teamKey: "478.l.1.t.4",
+        name: "League One",
+        season: 2026,
+        isFinished: false,
+      },
+    ]);
+    expect(saveYahooConnection.mock.invocationCallOrder[0]).toBeLessThan(
+      defined(replaceUserLeagues.mock.invocationCallOrder[0])
+    );
+  });
+
+  it("still completes sign-in when the league sync fails, and logs only the error code", async () => {
+    listLeagues.mockRejectedValue(new AppError("YAHOO_UNAVAILABLE", "Yahoo is down"));
+
+    const response = await connect();
+
+    expect(response.status).toBe(303);
+    expect(response.headers.location).toBe("/?yahoo_connected=true");
+    expect(saveYahooConnection).toHaveBeenCalled();
+    expect(replaceUserLeagues).not.toHaveBeenCalled();
+    expect(logger.lines).toEqual([
+      expect.objectContaining({ level: "warn", fields: { code: "YAHOO_UNAVAILABLE" } }),
+    ]);
   });
 
   it("stores a legacy Fantasy token when Yahoo omits the optional guid", async () => {

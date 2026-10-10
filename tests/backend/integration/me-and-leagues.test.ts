@@ -12,6 +12,7 @@ import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-cli
 import { getTeamRoster } from "../../../server/fantasy/yahoo/roster-service";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { buildTestDependencies } from "../../support/dependencies";
+import { fixedClock } from "../../support/clock";
 
 vi.mock("../../../server/fantasy/yahoo/roster-service");
 
@@ -68,7 +69,9 @@ const STORED_LEAGUE = {
   syncedAt: "2026-10-08T01:00:00.000+00:00",
 };
 
-function buildApp(options: { member?: boolean; leagueRefreshLimit?: number } = {}) {
+function buildApp(
+  options: { member?: boolean; stored?: (typeof STORED_LEAGUE)[]; now?: string } = {}
+) {
   const storage = {
     getYahooToken: vi.fn(async () => ({ userId: "user-1", refreshToken: "r" })),
     getPreferences: vi.fn(async () => ({
@@ -77,7 +80,7 @@ function buildApp(options: { member?: boolean; leagueRefreshLimit?: number } = {
       display: {},
     })),
     savePreferences: vi.fn(async () => undefined),
-    listUserLeagues: vi.fn(async () => [STORED_LEAGUE]),
+    listUserLeagues: vi.fn(async () => options.stored ?? [STORED_LEAGUE]),
     replaceUserLeagues: vi.fn(async () => undefined),
     ownsLeague: vi.fn(async () => options.member ?? true),
   } as unknown as OwnerScopedStorage;
@@ -86,6 +89,7 @@ function buildApp(options: { member?: boolean; leagueRefreshLimit?: number } = {
     createOwnerStorage: () => storage,
     createYahooClient: async () => ({}) as unknown as YahooApiClient,
     createFantasyDataSource,
+    clock: fixedClock(options.now ?? "2026-10-10T16:00:00.000Z"),
   });
   const app = createApp(dependencies);
   app.use(createAppErrorHandler(dependencies));
@@ -201,6 +205,43 @@ describe("GET /api/leagues", () => {
       name: "League-33",
       season: 2025,
       isFinished: true,
+    });
+  });
+
+  it("fetches the leagues from Yahoo on the first request when none are stored", async () => {
+    const { app, storage } = buildApp({ stored: [] });
+
+    const response = await request(app).get("/api/leagues");
+
+    expect(response.status).toBe(200);
+    expect(yahooGet).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(storage.replaceUserLeagues).mock.calls[0]?.[0]).toHaveLength(19);
+  });
+
+  describe("at season rollover, when every stored league is finished", () => {
+    const finished = { ...STORED_LEAGUE, isFinished: true, syncedAt: "2026-10-08T16:00:00.000Z" };
+
+    it("asks Yahoo for the new season on the next visit", async () => {
+      const { app, storage } = buildApp({ stored: [finished], now: "2026-10-10T16:00:00.000Z" });
+
+      expect((await request(app).get("/api/leagues")).status).toBe(200);
+      expect(yahooGet).toHaveBeenCalledTimes(2);
+      expect(storage.replaceUserLeagues).toHaveBeenCalledOnce();
+    });
+
+    it("asks at most once a day", async () => {
+      const { app, storage } = buildApp({ stored: [finished], now: "2026-10-09T15:00:00.000Z" });
+
+      expect((await request(app).get("/api/leagues")).status).toBe(200);
+      expect(yahooGet).not.toHaveBeenCalled();
+      expect(storage.replaceUserLeagues).not.toHaveBeenCalled();
+    });
+
+    it("doesn't ask while any stored league is still going", async () => {
+      const { app } = buildApp({ stored: [finished, STORED_LEAGUE] });
+
+      expect((await request(app).get("/api/leagues")).status).toBe(200);
+      expect(yahooGet).not.toHaveBeenCalled();
     });
   });
 
