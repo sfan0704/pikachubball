@@ -58,6 +58,22 @@ describe("YahooScrubber", () => {
     expect(twice.a.guid).not.toBe(twice.c.guid);
   });
 
+  it("removes the league's invitation link and group chat, whatever the key", () => {
+    const league = {
+      short_invitation_url:
+        "https://basketball.fantasysports.yahoo.com/nba/1/invitation?key=secret",
+      recordbook_url: "https://basketball.fantasysports.yahoo.com/nba/1/recordbook",
+      sendbird_channel_url: "d76c9ff2",
+      iris_group_chat_id: "chat-1",
+    };
+
+    const text = JSON.stringify(new YahooScrubber().scrub(league));
+
+    for (const personal of ["key=secret", "nba/1/recordbook", "d76c9ff2", "chat-1"]) {
+      expect(text).not.toContain(personal);
+    }
+  });
+
   it("finds a removed value that survived elsewhere in the text", () => {
     const scrubber = new YahooScrubber();
     const scrubbed = scrubber.scrub(response);
