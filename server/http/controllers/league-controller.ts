@@ -18,14 +18,15 @@ export function createLeagueController({
   createFantasyDataSource,
 }: Pick<ServerDependencies, "createFantasyDataSource">) {
   return {
-    /** `GET /api/leagues`: the stored leagues, replaced from Yahoo first when `refresh=true`. */
+    /** `GET /api/leagues`: the stored leagues, synced from Yahoo first on `refresh=true` or when due. */
     listLeagues: asyncHandler(async (req: Request, res: Response) => {
       const query = leaguesQuerySchema.parse(req.query);
       const context = getRequestContext(req);
       const leagues = await listLeagues(
         context.storage,
         createFantasyDataSource(context.yahooClient),
-        query.refresh === "true"
+        query.refresh === "true",
+        context.clock
       );
       res.json(leaguesResponseSchema.parse({ leagues }));
     }),
