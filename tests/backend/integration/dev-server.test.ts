@@ -4,9 +4,9 @@ import path from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // Boots the real development server the way `npm run dev` does: tsx loads
-// server/index.ts, vite.config.ts and server/config/vite.ts as CommonJS
-// (package.json "type": "commonjs"), where import.meta.dirname is undefined.
-// Unit tests run as ESM and cannot see that failure mode.
+// server/index.ts and server/config/vite.ts as CommonJS (package.json
+// "type": "commonjs"), and they import vite.config.mts as ESM. Unit tests run
+// as ESM and cannot see failures in that mix.
 
 const projectRoot = path.resolve(__dirname, "../../..");
 const tsxBin = path.join(projectRoot, "node_modules", ".bin", "tsx");
