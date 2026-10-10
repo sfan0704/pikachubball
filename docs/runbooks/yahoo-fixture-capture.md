@@ -4,20 +4,14 @@ Use it when the recorded Yahoo responses need creating or refreshing: before wor
 
 ## Do
 
-1. Have the dev Yahoo app's client ID and secret to hand (from the Yahoo developer console, not from a file in the repo).
-2. Find a league key for a league you belong to, such as `466.l.12345`. A finished league from last season is worth capturing too.
-3. Run, in your own terminal:
-
-   ```text
-   YAHOO_CLIENT_ID=... YAHOO_CLIENT_SECRET=... npm run capture:yahoo -- <league_key> 1
-   ```
-
-   Open the link it prints, approve, and paste the code. If Yahoo refuses `oob`, set `YAHOO_ACCESS_TOKEN` to an access token instead.
-4. The script writes scrubbed responses to `tests/backend/fixtures/yahoo/captured/`: the user's teams, the season standings, the current week and the given week.
+1. Run `npm run capture:yahoo` in your own terminal. It takes the dev Yahoo app's `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` from the environment or `.env.local`.
+2. Approve access in the browser window it opens, and paste the code Yahoo shows into the terminal. If Yahoo refuses the `oob` sign-in, set `YAHOO_ACCESS_TOKEN` to an access token and run it again.
+3. It finds your NBA leagues and records the newest league and, if there is one, a league from an earlier season: its season standings, current week and week 1, plus your teams list. To record a particular league instead, pass its key: `npm run capture:yahoo -- 466.l.12345`.
+4. The scrubbed files go to `tests/backend/fixtures/yahoo/captured/`, replacing any earlier capture. If a removed name, identifier or email still appears anywhere in the output, the script stops and writes nothing.
 
 ## Check
 
-- Search the captured files for your Yahoo nickname, team names, league name and email. None should appear.
+- Skim the captured files for your Yahoo nickname, team names, league name and email. The script already checks for these, so none should appear.
 - Commit the files in a pull request for the issue that needs them.
 
 The script only makes read-only GET calls, and never writes or prints the token.
