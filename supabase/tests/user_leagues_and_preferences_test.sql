@@ -113,8 +113,8 @@ select is_empty(
 );
 
 select throws_ok(
-  $$insert into public.user_leagues (owner_id, league_key, team_key, name)
-    values ('23f99d06-30ff-4767-8c41-21510b7fd5d0', '466.l.3', '466.l.3.t.1', 'Forged')$$,
+  $$insert into public.user_leagues (owner_id, league_key, team_key, name, status)
+    values ('23f99d06-30ff-4767-8c41-21510b7fd5d0', '466.l.3', '466.l.3.t.1', 'Forged', 'active')$$,
   '42501',
   null,
   'owner B cannot insert a league for owner A'
