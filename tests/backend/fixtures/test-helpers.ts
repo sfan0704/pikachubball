@@ -1,33 +1,23 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from "express";
+import { vi, type Mock } from "vitest";
+import { buildRequestContext } from "../../support/context";
 
-export interface TestUser {
-  id: string;
-  username: string;
-  password: string | null;
-  yahooGuid: string | null;
-  displayName: string | null;
-  email: string | null;
-  createdAt: Date;
-}
-
-/**
- * Test helpers for creating mock Express objects
- */
-
-export interface MockRequest extends Partial<Request> {
-  body?: any;
+/** A request with only what the middleware tests read; cast to Request where Express wants one. */
+export type MockRequest = Partial<Omit<Request, "body" | "params" | "query">> & {
+  body?: unknown;
   params?: Record<string, string>;
-  query?: Record<string, any>;
-  user?: TestUser;
-  isAuthenticated?: () => boolean;
-  login?: (user: any, callback: (err?: Error) => void) => void;
-  logout?: (callback: (err?: Error) => void) => void;
-  rawBody?: Buffer;
-}
+  query?: Record<string, unknown>;
+};
 
-export interface MockResponse extends Partial<Response> {
+/** A response that records what was sent; its handlers are spies. */
+export type MockResponse = Partial<
+  Omit<
+    Response,
+    "statusCode" | "headers" | "json" | "status" | "send" | "redirect" | "cookie" | "clearCookie"
+  >
+> & {
   statusCode?: number;
-  body?: any;
+  body?: unknown;
   headers?: Record<string, string>;
   json?: ReturnType<typeof vi.fn>;
   status?: ReturnType<typeof vi.fn>;
@@ -35,7 +25,7 @@ export interface MockResponse extends Partial<Response> {
   redirect?: ReturnType<typeof vi.fn>;
   cookie?: ReturnType<typeof vi.fn>;
   clearCookie?: ReturnType<typeof vi.fn>;
-}
+};
 
 /**
  * Create a mock Express request object
@@ -46,15 +36,8 @@ export function createMockRequest(overrides: Partial<MockRequest> = {}): MockReq
     params: {},
     query: {},
     headers: {},
-    isAuthenticated: () => false,
-    login: (user: any, callback: (err?: Error) => void) => {
-      callback();
-    },
-    logout: (callback: (err?: Error) => void) => {
-      callback();
-    },
     ...overrides,
-  } as MockRequest;
+  };
 }
 
 /**
@@ -62,44 +45,46 @@ export function createMockRequest(overrides: Partial<MockRequest> = {}): MockReq
  */
 export function createMockResponse(): MockResponse {
   const eventListeners: Record<string, ((...args: unknown[]) => void)[]> = {};
-  
+
   const res: MockResponse = {
     statusCode: 200,
     body: null,
     headers: {},
-    json: vi.fn((body: any) => {
+  };
+  const asResponse = () => res as Response;
+  Object.assign(res, {
+    json: vi.fn((body: unknown) => {
       res.body = body;
-      return res as Response;
+      return asResponse();
     }),
     status: vi.fn((code: number) => {
       res.statusCode = code;
-      return res as Response;
+      return asResponse();
     }),
-    send: vi.fn((body: any) => {
+    send: vi.fn((body: unknown) => {
       res.body = body;
-      return res as Response;
+      return asResponse();
     }),
     redirect: vi.fn((url: string) => {
       res.statusCode = 302;
       res.headers = { ...res.headers, Location: url };
-      return res as Response;
+      return asResponse();
     }),
-    cookie: vi.fn(() => res as Response),
-    clearCookie: vi.fn(() => res as Response),
+    setHeader: vi.fn((name: string, value: string) => {
+      res.headers = { ...res.headers, [name]: value };
+      return asResponse();
+    }),
+    cookie: vi.fn(() => asResponse()),
+    clearCookie: vi.fn(() => asResponse()),
     on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
-      if (!eventListeners[event]) {
-        eventListeners[event] = [];
-      }
-      eventListeners[event].push(callback);
-      return res as any;
+      (eventListeners[event] ??= []).push(callback);
+      return asResponse();
     }),
-    emit: vi.fn((event: string, ...args: any[]) => {
-      if (eventListeners[event]) {
-        eventListeners[event].forEach(callback => callback(...args));
-      }
+    emit: vi.fn((event: string, ...args: unknown[]) => {
+      eventListeners[event]?.forEach((callback) => callback(...args));
       return true;
     }),
-  } as any;
+  });
 
   return res;
 }
@@ -107,82 +92,22 @@ export function createMockResponse(): MockResponse {
 /**
  * Create a mock NextFunction
  */
-export function createMockNext(): ReturnType<typeof vi.fn<NextFunction>> {
-  return vi.fn<NextFunction>();
+export function createMockNext(): NextFunction & Mock<NextFunction> {
+  return vi.fn<NextFunction>() as unknown as NextFunction & Mock<NextFunction>;
 }
 
 /**
- * Create a mock authenticated user (local auth with password)
+ * Create a mock request from a signed-in user
  */
-export function createMockUser(overrides: Partial<TestUser> = {}): TestUser {
-  return {
-    id: 'test-user-id',
-    username: 'testuser',
-    password: 'hashed-password',
-    yahooGuid: null,
-    displayName: null,
-    email: null,
-    createdAt: new Date(),
-    ...overrides,
-  };
-}
-
-/**
- * Create a mock OAuth user (Yahoo social login, no password)
- */
-export function createMockOAuthUser(overrides: Partial<TestUser> = {}): TestUser {
-  return {
-    id: 'test-oauth-user-id',
-    username: 'yahoo_user_abc123',
-    password: null,
-    yahooGuid: 'YAHOO_GUID_ABC123',
-    displayName: 'Test Yahoo User',
-    email: 'test@yahoo.com',
-    createdAt: new Date(),
-    ...overrides,
-  };
-}
-
-/**
- * Create a mock authenticated request
- */
-export function createAuthenticatedRequest(user?: TestUser): MockRequest {
-  const mockUser = user || createMockUser();
-  const request = createMockRequest({
-    user: mockUser,
-    isAuthenticated: () => true,
+export function createAuthenticatedRequest(): MockRequest {
+  const request = createMockRequest();
+  request.context = buildRequestContext({
+    user: {
+      userId: "test-user-id",
+      yahooGuid: "testuser",
+      displayName: null,
+      email: null,
+    },
   });
-  request.authIdentity = {
-    userId: mockUser.id,
-    yahooGuid: mockUser.yahooGuid ?? mockUser.username,
-    displayName: mockUser.displayName,
-    email: mockUser.email,
-  };
   return request;
-}
-
-/**
- * Create a mock Yahoo authenticated request
- */
-export function createYahooAuthenticatedRequest(
-  user?: TestUser,
-  mcpClient?: any
-): MockRequest {
-  const mockUser = user || createMockUser();
-  const req = createAuthenticatedRequest(mockUser);
-  
-  // Add Yahoo-specific properties
-  (req as any).yahooToken = {
-    accessToken: 'test-access-token',
-    refreshToken: 'test-refresh-token',
-    expiresAt: Date.now() / 1000 + 3600,
-  };
-  
-  (req as any).mcpClient = mcpClient || {
-    getUserLeagues: vi.fn(),
-    getTeamRoster: vi.fn(),
-    getLeagueStandings: vi.fn(),
-  };
-  
-  return req;
 }

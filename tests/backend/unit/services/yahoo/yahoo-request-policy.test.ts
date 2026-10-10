@@ -8,7 +8,7 @@ import {
   YahooRateLimitedError,
   YahooUnavailableError,
   type YahooRequestClock,
-} from "../../../../../server/services/yahoo/yahoo-request-policy";
+} from "../../../../../server/fantasy/yahoo/yahoo-request-policy";
 
 function fakeClock(start = 1_800_000_000_000) {
   let now = start;
@@ -24,10 +24,9 @@ function fakeClock(start = 1_800_000_000_000) {
 }
 
 const status = (code: number, headers: Record<string, string> = {}) => ({
-  isAxiosError: true,
   response: { status: code, headers },
 });
-const timeout = { isAxiosError: true, code: "ECONNABORTED" };
+const timeout = { isNetworkError: true, code: "ETIMEDOUT" };
 
 describe("withYahooRetries", () => {
   it("returns the first success without waiting", async () => {
@@ -44,9 +43,7 @@ describe("withYahooRetries", () => {
     const { clock, sleeps } = fakeClock();
     const call = vi.fn().mockRejectedValue(status(502));
 
-    await expect(withYahooRetries(call, clock)).rejects.toBeInstanceOf(
-      YahooUnavailableError,
-    );
+    await expect(withYahooRetries(call, clock)).rejects.toBeInstanceOf(YahooUnavailableError);
     expect(call).toHaveBeenCalledTimes(YAHOO_MAX_ATTEMPTS);
     expect(sleeps).toEqual([250, 500]);
   });
@@ -75,11 +72,13 @@ describe("withYahooRetries", () => {
     const tooLong = vi.fn().mockRejectedValue(status(429, { "retry-after": "30" }));
     const missing = vi.fn().mockRejectedValue(status(429));
 
-    const longError = await withYahooRetries(tooLong, clock).catch((error) => error);
+    const longError = (await withYahooRetries(tooLong, clock).catch(
+      (error) => error
+    )) as YahooRateLimitedError;
     const missingError = await withYahooRetries(missing, clock).catch((error) => error);
 
     expect(longError).toBeInstanceOf(YahooRateLimitedError);
-    expect(longError.statusCode).toBe(429);
+    expect(longError.code).toBe("YAHOO_RATE_LIMITED");
     expect(longError.details).toEqual({ retryAfterSeconds: 30 });
     expect(missingError).toBeInstanceOf(YahooRateLimitedError);
     expect(tooLong).toHaveBeenCalledTimes(1);
@@ -107,11 +106,9 @@ describe("withYahooRetries", () => {
       throw timeout;
     });
 
-    await expect(withYahooRetries(call, clock)).rejects.toBeInstanceOf(
-      YahooUnavailableError,
-    );
+    await expect(withYahooRetries(call, clock)).rejects.toBeInstanceOf(YahooUnavailableError);
     expect(timeouts.reduce((sum, value) => sum + value, 0)).toBeLessThanOrEqual(
-      YAHOO_TOTAL_BUDGET_MS,
+      YAHOO_TOTAL_BUDGET_MS
     );
     expect(timeouts[0]).toBe(YAHOO_CALL_TIMEOUT_MS);
     expect(call.mock.calls.length).toBeLessThanOrEqual(YAHOO_MAX_ATTEMPTS);
@@ -122,7 +119,7 @@ describe("withYahooRetries", () => {
     const call = vi.fn();
 
     await expect(withYahooRetries(call, clock, clock.now() - 1)).rejects.toBeInstanceOf(
-      YahooUnavailableError,
+      YahooUnavailableError
     );
     expect(call).not.toHaveBeenCalled();
   });

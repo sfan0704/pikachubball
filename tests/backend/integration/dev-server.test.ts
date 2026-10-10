@@ -24,7 +24,7 @@ function freePort(): Promise<number> {
       probe.close(() =>
         typeof address === "object" && address
           ? resolve(address.port)
-          : reject(new Error("could not allocate a port")),
+          : reject(new Error("could not allocate a port"))
       );
     });
   });
@@ -34,7 +34,7 @@ function waitForListening(child: ChildProcess, timeoutMs: number): Promise<void>
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error(`dev server did not start:\n${output}`)),
-      timeoutMs,
+      timeoutMs
     );
     const onData = (chunk: Buffer) => {
       output += chunk.toString();
@@ -97,7 +97,7 @@ describe("development server (CommonJS runtime)", () => {
   });
 
   it("keeps API routes on the Express handler", async () => {
-    const response = await fetch(`${baseUrl}/api/auth/me`);
+    const response = await fetch(`${baseUrl}/api/me`);
 
     expect(response.status).toBe(401);
     expect(output).not.toMatch(/ERR_INVALID_ARG_TYPE/);

@@ -59,7 +59,7 @@ describe("Supabase owner storage", () => {
         accessToken: "foreign-access",
         refreshToken: "foreign-refresh",
         expiresAt: 1_800_000_000,
-      }),
+      })
     ).rejects.toThrow(/foreign user id/);
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -77,16 +77,119 @@ describe("Supabase owner storage", () => {
       expiresAt: 1_800_003_600,
     };
 
-    await expect(
-      storage.saveYahooToken(rotation, { expectedVersion: 4 }),
-    ).resolves.toMatchObject({ version: 5 });
-    await expect(
-      storage.saveYahooToken(rotation, { expectedVersion: 4 }),
-    ).rejects.toThrow(/stale result rejected/);
+    await expect(storage.saveYahooToken(rotation, { expectedVersion: 4 })).resolves.toMatchObject({
+      version: 5,
+    });
+    await expect(storage.saveYahooToken(rotation, { expectedVersion: 4 })).rejects.toThrow(
+      /stale result rejected/
+    );
     expect(rpc).toHaveBeenNthCalledWith(
       1,
       "rotate_yahoo_tokens",
-      expect.objectContaining({ p_expected_version: 4 }),
+      expect.objectContaining({ p_expected_version: 4 })
     );
+  });
+});
+
+describe("league membership", () => {
+  function leagueClient(rows: unknown[] | null, error: unknown = null) {
+    const calls: [string, string, string][] = [];
+    const query = {
+      select: () => query,
+      eq: (column: string, value: string) => {
+        calls.push(["eq", column, value]);
+        return query;
+      },
+      limit: async () => ({ data: rows, error }),
+    };
+    const client = {
+      from: (table: string) => {
+        calls.push(["from", table, ""]);
+        return query;
+      },
+    } as unknown as SupabaseClient;
+    return { client, calls };
+  }
+
+  it("reads the owner's stored leagues for the exact league key", async () => {
+    const { client, calls } = leagueClient([{ league_key: "466.l.1" }]);
+    const storage = new SupabaseOwnerStorage(client, OWNER_A, cipher);
+
+    await expect(storage.ownsLeague("466.l.1")).resolves.toBe(true);
+    expect(calls).toEqual([
+      ["from", "user_leagues", ""],
+      ["eq", "owner_id", OWNER_A],
+      ["eq", "league_key", "466.l.1"],
+    ]);
+  });
+
+  it("says no when the league is not stored, and fails loudly when the read fails", async () => {
+    const none = new SupabaseOwnerStorage(leagueClient([]).client, OWNER_A, cipher);
+    await expect(none.ownsLeague("466.l.2")).resolves.toBe(false);
+
+    const failing = new SupabaseOwnerStorage(
+      leagueClient(null, { message: "boom" }).client,
+      OWNER_A,
+      cipher
+    );
+    await expect(failing.ownsLeague("466.l.2")).rejects.toThrow(/league read/);
+  });
+});
+
+describe("preferences and stored leagues", () => {
+  it("maps a stored preferences row and defaults to no choices when there is none", async () => {
+    const row = (data: unknown) =>
+      ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({ maybeSingle: async () => ({ data, error: null }) }),
+          }),
+        }),
+      }) as unknown as SupabaseClient;
+
+    const saved = new SupabaseOwnerStorage(
+      row({ selected_league_key: "466.l.1", selected_team_key: "466.l.1.t.2", display: { a: 1 } }),
+      OWNER_A,
+      cipher
+    );
+    await expect(saved.getPreferences()).resolves.toEqual({
+      selectedLeagueKey: "466.l.1",
+      selectedTeamKey: "466.l.1.t.2",
+      display: { a: 1 },
+    });
+
+    const none = new SupabaseOwnerStorage(row(null), OWNER_A, cipher);
+    await expect(none.getPreferences()).resolves.toEqual({
+      selectedLeagueKey: null,
+      selectedTeamKey: null,
+      display: {},
+    });
+  });
+
+  it("saves preferences for the owner and replaces leagues through the RPC", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const client = { from: () => ({ upsert }), rpc } as unknown as SupabaseClient;
+    const storage = new SupabaseOwnerStorage(client, OWNER_A, cipher);
+
+    await storage.savePreferences({ selectedLeagueKey: null, selectedTeamKey: null, display: {} });
+    await storage.replaceUserLeagues([
+      { leagueKey: "466.l.1", teamKey: "466.l.1.t.1", name: "L", season: null, isFinished: true },
+    ]);
+
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ owner_id: OWNER_A }), {
+      onConflict: "owner_id",
+    });
+    expect(rpc).toHaveBeenCalledWith("replace_user_leagues", {
+      p_leagues: [
+        {
+          league_key: "466.l.1",
+          team_key: "466.l.1.t.1",
+          season: null,
+          name: "L",
+          is_finished: true,
+        },
+      ],
+    });
   });
 });

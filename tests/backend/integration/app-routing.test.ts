@@ -3,12 +3,17 @@ import os from "os";
 import path from "path";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createApp } from "../../../server/app";
+import { createApp } from "../../../server/http/app";
 import { serveStatic } from "../../../server/config/vite";
-import { errorHandler } from "../../../server/middleware/error-handler";
+import { createAppErrorHandler } from "../../../server/http/composition-root";
+import { buildTestDependencies } from "../../support/dependencies";
+
+const dependencies = buildTestDependencies();
+const APP_ORIGIN = dependencies.config.auth.appOrigin;
+const errorHandler = createAppErrorHandler(dependencies);
 
 function createApiApp() {
-  const app = createApp();
+  const app = createApp(dependencies);
   app.use(errorHandler);
   return app;
 }
@@ -16,7 +21,7 @@ function createApiApp() {
 let staticFixturePath: string;
 
 function createProductionApp() {
-  const app = createApp();
+  const app = createApp(dependencies);
   serveStatic(app, staticFixturePath);
   app.use(errorHandler);
   return app;
@@ -27,7 +32,7 @@ beforeAll(() => {
   fs.mkdirSync(path.join(staticFixturePath, "assets"));
   fs.writeFileSync(
     path.join(staticFixturePath, "index.html"),
-    '<div id="root"></div><script type="module" src="/assets/app-a1b2c3.js"></script><link rel="stylesheet" href="/assets/app-d4e5f6.css">',
+    '<div id="root"></div><script type="module" src="/assets/app-a1b2c3.js"></script><link rel="stylesheet" href="/assets/app-d4e5f6.css">'
   );
   fs.writeFileSync(path.join(staticFixturePath, "assets/app-a1b2c3.js"), "export {};");
   fs.writeFileSync(path.join(staticFixturePath, "assets/app-d4e5f6.css"), ":root {}");
@@ -43,7 +48,46 @@ describe("application routing", () => {
 
     expect(response.status).toBe(200);
     expect(response.type).toBe("application/json");
-    expect(response.body).toEqual({ status: "ok", service: "pikachubball" });
+    expect(response.body).toEqual({
+      status: "ok",
+      service: "pikachubball",
+      commit: "test-build",
+    });
+  });
+
+  it("sends the build id on every response", async () => {
+    const app = createApiApp();
+
+    const responses = await Promise.all([
+      request(app).get("/api/health"),
+      request(app).get("/api/does-not-exist"),
+      request(app).get("/api/me"),
+    ]);
+
+    for (const response of responses) {
+      expect(response.headers["x-build-id"]).toBe("test-build");
+    }
+  });
+
+  it("refuses state-changing requests from another origin or with no origin", async () => {
+    const app = createApiApp();
+
+    const [foreign, missing, same] = await Promise.all([
+      request(app).post("/api/auth/logout").set("Origin", "https://evil.example.test"),
+      request(app).delete("/api/me/yahoo"),
+      request(app).post("/api/does-not-exist").set("Origin", APP_ORIGIN),
+    ]);
+
+    for (const refused of [foreign, missing]) {
+      expect(refused.status).toBe(403);
+      expect(refused.body).toEqual({
+        code: "FORBIDDEN",
+        message: "Cross-origin request refused",
+        requestId: expect.any(String),
+      });
+    }
+    // From the app's own origin the request reaches routing.
+    expect(same.status).toBe(404);
   });
 
   it("keeps unknown API routes JSON", async () => {
@@ -51,9 +95,11 @@ describe("application routing", () => {
 
     expect(response.status).toBe(404);
     expect(response.type).toBe("application/json");
+    expect(response.headers["x-request-id"]).toBe(response.body.requestId);
     expect(response.body).toEqual({
-      error: "API route not found",
       code: "NOT_FOUND",
+      message: "API route not found",
+      requestId: expect.any(String),
     });
   });
 
@@ -61,46 +107,73 @@ describe("application routing", () => {
     const app = createApiApp();
     const responses = await Promise.all([
       request(app).get("/api/health"),
-      request(app).get("/api/auth/yahoo/status"),
-      request(app).get("/api/yahoo/leagues"),
+      request(app).get("/api/me"),
+      request(app).get("/api/leagues"),
       request(app).get("/api/does-not-exist"),
     ]);
 
     for (const response of responses) {
       expect(response.headers["cache-control"]).toBe(
-        "private, no-cache, no-store, must-revalidate, max-age=0",
+        "private, no-cache, no-store, must-revalidate, max-age=0"
       );
       expect(response.headers.pragma).toBe("no-cache");
     }
   });
 
-  it("does not register excluded chat, schedule, or AI credential endpoints", async () => {
+  it("no longer serves the routes the typed API replaced", async () => {
+    const app = createApiApp();
+    const removed = [
+      "/api/auth/me",
+      "/api/auth/yahoo/status",
+      "/api/yahoo/leagues",
+      "/api/yahoo/league-rankings/466.l.1",
+      "/api/yahoo/roster-by-team/466.l.1.t.1",
+      "/api/viz/heatmap/466.l.1",
+      "/api/viz/matchup/466.l.1/466.l.1.t.1",
+    ];
+
+    const responses = await Promise.all(removed.map((path) => request(app).get(path)));
+    const disconnect = await request(app)
+      .delete("/api/auth/yahoo/disconnect")
+      .set("Origin", APP_ORIGIN);
+
+    for (const response of [...responses, disconnect]) {
+      expect(response.status).toBe(404);
+      expect(response.body).toMatchObject({ code: "NOT_FOUND" });
+    }
+  });
+
+  it("does not register excluded chat, schedule, AI credential or debug endpoints", async () => {
     const app = createApiApp();
     const responses = await Promise.all([
-      request(app).post("/api/chat/message").send({ message: "hello" }),
+      request(app).get("/api/yahoo/test-auth"),
+      request(app).post("/api/chat/message").set("Origin", APP_ORIGIN).send({ message: "hello" }),
       request(app).get("/api/viz/schedule/466.l.1/466.l.1.t.1"),
-      request(app).post("/api/settings/openai").send({ apiKey: "synthetic" }),
+      request(app)
+        .post("/api/settings/openai")
+        .set("Origin", APP_ORIGIN)
+        .send({ apiKey: "synthetic" }),
     ]);
 
     for (const response of responses) {
       expect(response.status).toBe(404);
       expect(response.body).toEqual({
-        error: "API route not found",
         code: "NOT_FOUND",
+        message: "API route not found",
+        requestId: expect.any(String),
       });
     }
   });
 
   it("passes route failures through the application error handler", async () => {
-    const response = await request(createApiApp()).get(
-      "/api/auth/callback",
-    );
+    const response = await request(createApiApp()).get("/api/auth/callback");
 
     expect(response.status).toBe(400);
     expect(response.type).toBe("application/json");
     expect(response.body).toEqual({
-      error: "Missing authorization code",
       code: "VALIDATION_ERROR",
+      message: "Missing authorization code",
+      requestId: expect.any(String),
     });
   });
 
@@ -122,10 +195,7 @@ describe("application routing", () => {
 
   it("serves hashed assets and does not disguise asset misses as HTML", async () => {
     const app = createProductionApp();
-    const indexHtml = fs.readFileSync(
-      path.join(staticFixturePath, "index.html"),
-      "utf8",
-    );
+    const indexHtml = fs.readFileSync(path.join(staticFixturePath, "index.html"), "utf8");
     const scriptPath = indexHtml.match(/<script[^>]+src="([^"]+)"/)?.[1];
     const stylesheetPath = indexHtml.match(/<link[^>]+href="([^"]+\.css)"/)?.[1];
 
@@ -152,7 +222,7 @@ describe("application routing", () => {
   it("handles concurrent requests without opening an application listener", async () => {
     const app = createApiApp();
     const responses = await Promise.all(
-      Array.from({ length: 14 }, () => request(app).get("/api/health")),
+      Array.from({ length: 14 }, () => request(app).get("/api/health"))
     );
 
     expect(responses.every((response) => response.status === 200)).toBe(true);

@@ -1,108 +1,104 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { logger } from '../../../../server/utils/logger';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createLogger } from "../../../../server/utils/logger";
 
-describe('logger', () => {
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
-  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+/** Parses the one JSON line a console spy received. */
+function lineOf(spy: ReturnType<typeof vi.spyOn>): Record<string, unknown> {
+  expect(spy).toHaveBeenCalledTimes(1);
+  return JSON.parse(String(spy.mock.calls[0][0]));
+}
+
+describe("logger", () => {
+  let log: ReturnType<typeof vi.spyOn>;
+  let warn: ReturnType<typeof vi.spyOn>;
+  let error: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    log = vi.spyOn(console, "log").mockImplementation(() => {});
+    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    error = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe('debug', () => {
-    it('should log in development mode', () => {
-      // ACT
-      // In test environment, debug might not log, but we can test the function exists
-      logger.debug('Debug message', { key: 'value' });
+  it("writes one JSON object per line with time, level and message", () => {
+    createLogger({ debug: false }).info("Hello", { leagueCount: 2 });
 
-      // ASSERT
-      // Debug only logs in development, test env is 'test'
-      // So it might not log, but function should not throw
-      expect(typeof logger.debug).toBe('function');
-    });
-
-    it('should not log in production mode', () => {
-      // ARRANGE
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
-
-      // ACT
-      logger.debug('Debug message');
-
-      // ASSERT
-      expect(consoleLogSpy).not.toHaveBeenCalled();
-
-      // Cleanup
-      process.env.NODE_ENV = originalEnv;
-    });
+    expect(lineOf(log)).toMatchObject({ level: "info", message: "Hello", leagueCount: 2 });
+    expect(lineOf(log)).not.toHaveProperty("details");
+    expect(Date.parse(String(lineOf(log).time))).not.toBeNaN();
   });
 
-  describe('info', () => {
-    it('should log info messages', () => {
-      // ACT
-      logger.info('Info message', 'arg1', 'arg2');
+  it("sends warnings and errors to their own console streams", () => {
+    const logger = createLogger({ debug: false });
+    logger.warn("careful");
+    logger.error("broken");
 
-      // ASSERT
-      expect(consoleLogSpy).toHaveBeenCalled();
-      const call = consoleLogSpy.mock.calls[0][0];
-      expect(call).toContain('[INFO]');
-      expect(call).toContain('Info message');
-    });
-
-    it('should include timestamp', () => {
-      // ACT
-      logger.info('Test message');
-
-      // ASSERT
-      const call = consoleLogSpy.mock.calls[0][0];
-      // Should contain time format (e.g., "3:45:23 PM")
-      expect(call).toMatch(/\d{1,2}:\d{2}:\d{2}/);
-    });
+    expect(lineOf(warn).level).toBe("warn");
+    expect(lineOf(error).level).toBe("error");
+    expect(log).not.toHaveBeenCalled();
   });
 
-  describe('warn', () => {
-    it('should log warning messages', () => {
-      // ACT
-      logger.warn('Warning message');
+  it("keeps time, level and message even if the fields use those names", () => {
+    createLogger({ debug: false }).info("real", { level: "fake", message: "fake", time: "fake" });
 
-      // ASSERT
-      expect(consoleWarnSpy).toHaveBeenCalled();
-      const call = consoleWarnSpy.mock.calls[0][0];
-      expect(call).toContain('[WARN]');
-      expect(call).toContain('Warning message');
-    });
+    expect(lineOf(log)).toMatchObject({ level: "info", message: "real" });
+    expect(Date.parse(String(lineOf(log).time))).not.toBeNaN();
   });
 
-  describe('error', () => {
-    it('should log error messages', () => {
-      // ACT
-      logger.error('Error message', new Error('test error'));
+  it("puts values that aren't a plain object under details", () => {
+    createLogger({ debug: false }).info("mixed", "text", 42, [1, 2]);
 
-      // ASSERT
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      const call = consoleErrorSpy.mock.calls[0][0];
-      expect(call).toContain('[ERROR]');
-      expect(call).toContain('Error message');
+    expect(lineOf(log).details).toEqual(["text", 42, [1, 2]]);
+  });
+
+  it("writes debug lines only when debug is enabled", () => {
+    createLogger({ debug: false }).debug("quiet");
+    expect(log).not.toHaveBeenCalled();
+
+    createLogger({ debug: true }).debug("loud");
+    expect(lineOf(log)).toMatchObject({ level: "debug", message: "loud" });
+  });
+
+  it("adds a child logger's fields to every line", () => {
+    createLogger({ debug: false }).child({ requestId: "r1" }).child({ route: "/x" }).info("done");
+
+    expect(lineOf(log)).toMatchObject({ requestId: "r1", route: "/x", message: "done" });
+  });
+
+  it("keeps an error's name, message and stack but never its request config", () => {
+    const failure = Object.assign(new Error("Request failed with status code 403"), {
+      config: { headers: { Authorization: "Bearer secret-access-token" } },
     });
 
-    it('should handle error objects', () => {
-      // ARRANGE
-      const error = new Error('Test error');
-      
-      // ACT
-      logger.error('Failed operation', error);
+    createLogger({ debug: false }).error("Yahoo call failed", failure);
 
-      // ASSERT
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(consoleErrorSpy.mock.calls[0][1]).toBe(error);
+    const entry = lineOf(error);
+    expect(entry.details).toEqual([
+      expect.objectContaining({ name: "Error", message: "Request failed with status code 403" }),
+    ]);
+    expect(JSON.stringify(entry)).not.toContain("secret-access-token");
+  });
+
+  it("redacts credentials by field name", () => {
+    createLogger({ debug: false }).info("saving", {
+      accessToken: "a-secret",
+      nested: { refreshToken: "r-secret", clientSecret: "c-secret", ok: 1 },
+      authorization: "Bearer x",
     });
+
+    const text = JSON.stringify(lineOf(log));
+    expect(text).not.toMatch(/a-secret|r-secret|c-secret|Bearer x/);
+    expect(text).toContain('"ok":1');
+  });
+
+  it("survives circular structures", () => {
+    const circular: Record<string, unknown> = { name: "loop" };
+    circular.self = circular;
+
+    createLogger({ debug: false }).info("circular", circular);
+
+    expect(JSON.stringify(lineOf(log))).toContain("[truncated]");
   });
 });
-

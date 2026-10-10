@@ -17,15 +17,15 @@ Vercel serves the client and API on one origin. The expected traffic is small, i
 
 ## Environments
 
-The app has three separated tiers. Each tier has its own Supabase project (or local stack), users, database and stored tokens. All three sign in through the same Yahoo app, `PikachuBball`, which lists every tier's Supabase callback.
+The app has three separated tiers. No tier holds another tier's credentials, and no Yahoo app redirects to another tier's Supabase project.
 
 | Tier | Runs at | Supabase | Yahoo app | Credentials live in | Used for |
 | --- | --- | --- | --- | --- | --- |
-| Local | laptop and CI | disposable local stack (`npm run test:db`) | `PikachuBball` (planned; see below) | nothing hosted | migrations and RLS tests |
-| Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
-| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball` (switching from `PikachuBball - Local`, CAR-57) | Vercel Production environment only | league members |
+| Local | laptop and CI | disposable local stack (`npm run dev`, `npm run test:db`) | none: a stand-in replays recorded responses | nothing hosted | everyday development, migrations and RLS tests |
+| Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
+| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball` | Vercel Production environment only | league members |
 
-Yahoo is used once per sign-in: Supabase's `custom:yahoo` provider requests `openid profile email fspt-r`, and the sign-in callback stores the Yahoo tokens that Supabase hands over (encrypted, owner-scoped). The server refreshes them with the same app's `YAHOO_CLIENT_ID`/`YAHOO_CLIENT_SECRET`, because a Yahoo refresh token only works with the app that issued it. Yahoo only grants Fantasy data to apps it has activated, and newly created apps return `403 This application is not authorized`. So every tier uses the activated `PikachuBball` app: each tier's Supabase `custom:yahoo` provider and server hold that app's client ID and secret, and the app lists each tier's Supabase callback as a redirect URI. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md#environment-tiers).
+One Yahoo sign-in does everything: Supabase's `custom:yahoo` provider signs the user in with the Fantasy read scope (`fspt-r`), and `/api/auth/callback` stores the Yahoo tokens from that session and syncs the user's leagues. Every tier uses the one Fantasy-activated Yahoo app, `PikachuBball`. The server refreshes tokens with that app's `YAHOO_CLIENT_ID` and secret, sending `YAHOO_PROVIDER_REDIRECT_URI` as the redirect, so the app registers each tier's Supabase callback and that refresh redirect. Yahoo only accepts `https://` redirect URIs. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/reference/infrastructure-inventory.md#environment-tiers).
 
 ## Local setup
 
@@ -36,16 +36,26 @@ nvm use
 npm ci
 ```
 
-To run the app against the dev tier, create `.env.local` from the template and fill in the dev values:
+### Everyday development
+
+`npm run dev` runs the whole app on your laptop with no hosted credentials and no network access to Yahoo. It needs Docker. It starts a throwaway Supabase stack, applies the migrations, starts the Yahoo stand-in (recorded, scrubbed responses played through the app's real transport) and seeds two synthetic managers in the recorded league, then starts the app on `http://localhost:5000` (set `PORT` to change it). Sign in as a manager with `http://localhost:5000/api/dev/login?user=a` (or `user=b`).
+
+The stand-in can fail the way Yahoo does. Tell it with `curl -X POST http://127.0.0.1:5090/__scenario -d '{"scenario":"rate-limit","times":2}'`; scenarios are `ok`, `rate-limit`, `unavailable`, `unauthorized` (an expired token) and `timeout`, and `times` limits how many requests are affected. Local mode (`LOCAL_STACK=true`) refuses production, a hosted Supabase project and a hosted Yahoo address, and `YAHOO_API_BASE_URL` / `YAHOO_OAUTH_BASE_URL` cannot be set outside it.
+
+Before a release, `npm run build && npm run load` simulates 14 managers using the app at once against the stand-in and reports league-view timings against the 2-second target and the Yahoo calls each step made (1 for a new scope, 0 for repeat views and comparisons).
+
+### Against the dev tier
+
+To run the app against the dev tier (`npm run dev:hosted`), create `.env.local` from the template and fill in the dev values:
 
 ```text
 cp .env.example .env.local
 openssl rand -hex 32   # use as ENCRYPTION_KEY
 ```
 
-The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball` Yahoo app, the same one the dev Supabase provider uses. Never copy other production values into `.env.local`. The Yahoo client secret is the one exception: every tier shares the one Fantasy-activated Yahoo app, so dev's secret is also production's. Keep `.env.local` on the owner's machine only. If it is exposed, regenerate the secret in Yahoo and update production first (Vercel and `npm run yahoo:provider -- prod`), then dev.
+The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball - Dev` Yahoo app. Never copy production values into `.env.local`.
 
-Optionally, serve local dev over HTTPS. Create the certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
+Create the local HTTPS certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
 
 ```text
 brew install mkcert
@@ -53,7 +63,7 @@ mkcert -install
 mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
 ```
 
-Start the app with `npm run dev` and open `https://localhost:5001`. When `DEV_HTTPS_CERT` and `DEV_HTTPS_KEY` are set, the dev server serves HTTPS; it refuses those variables in production. It uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
+Start the app with `npm run dev:hosted` and open `https://localhost:5001`. When `DEV_HTTPS_CERT` and `DEV_HTTPS_KEY` are set, the dev server serves HTTPS; it refuses those variables in production. It uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
 
 ## Checks
 
@@ -75,11 +85,12 @@ The migration in `supabase/migrations` creates only the minimum hosted records: 
 
 For configuration and verification, see:
 
-- [Yahoo authentication](docs/SUPABASE_YAHOO_AUTH.md)
-- [Owner-scoped storage](docs/SUPABASE_STORAGE.md)
-- [Retained product contract](docs/RETAINED_PRODUCT_CONTRACT.md)
-- [Infrastructure inventory](docs/INFRASTRUCTURE_INVENTORY.md)
+- [Runbooks](docs/runbooks/README.md): sign-in setup, secret exposure, key rotation, restore and rollback, season rollover
+- [Yahoo authentication](docs/reference/authentication.md)
+- [Owner-scoped storage](docs/reference/storage.md)
+- [Infrastructure inventory](docs/reference/infrastructure-inventory.md)
 
-## Architecture
+## Architecture and contributing
 
-HTTP controllers remain thin. Yahoo integration lives in services, response parsing stays in parser modules, shared response contracts stay in `shared/schema.ts`, and persistence stays behind the owner-scoped repository interfaces in `server/storage/`. This preserves the useful boundaries in the original app while removing the legacy Replit, Passport, chat, schedule, and direct PostgreSQL runtime paths.
+- [Target state](docs/target-state.md): the agreed architecture the code follows, with its [changelog](docs/target-state-changelog.md).
+- [AGENTS.md](AGENTS.md): the rules for every contribution, by people or coding agents.

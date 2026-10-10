@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-import RankingsPage from "@/pages/RankingsPage";
+import LeaguePage from "@/pages/LeaguePage";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/NotFoundPage";
 
@@ -48,11 +48,12 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/auth">
-        {user ? <Redirect to="/" /> : <AuthPage />}
+      <Route path="/auth">{user ? <Redirect to="/" /> : <AuthPage />}</Route>
+      <Route path="/leagues/:leagueKey/teams/:teamKey/:scope">
+        <ProtectedRoute component={LeaguePage} />
       </Route>
       <Route path="/">
-        <ProtectedRoute component={RankingsPage} />
+        <ProtectedRoute component={LeaguePage} />
       </Route>
       <Route component={NotFound} />
     </Switch>

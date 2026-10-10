@@ -10,7 +10,7 @@ import { createServer as createHttpsServer } from "https";
  */
 export function createDevServer(
   app: RequestListener,
-  environment: NodeJS.ProcessEnv = process.env,
+  environment: NodeJS.ProcessEnv = process.env
 ): Server {
   const certFile = environment.DEV_HTTPS_CERT?.trim();
   const keyFile = environment.DEV_HTTPS_KEY?.trim();
@@ -27,6 +27,6 @@ export function createDevServer(
 
   return createHttpsServer(
     { cert: fs.readFileSync(certFile), key: fs.readFileSync(keyFile) },
-    app,
+    app
   ) as unknown as Server;
 }

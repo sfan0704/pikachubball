@@ -1,0 +1,148 @@
+import { describe, expect, it } from "vitest";
+import { ESLint } from "eslint";
+
+const eslint = new ESLint({ cwd: process.cwd() });
+
+/** Lints a snippet as if it were the given existing file, returning the rule ids that fired as errors. */
+async function errorsFor(filePath: string, code: string): Promise<string[]> {
+  const [result] = await eslint.lintText(code, { filePath });
+  return result.messages
+    .filter((message) => message.severity === 2)
+    .map((message) => message.ruleId ?? "parse");
+}
+
+describe("import boundaries", () => {
+  it("lets shared/domain import only from itself", async () => {
+    expect(
+      await errorsFor(
+        "shared/domain/team-table.ts",
+        "import { z } from 'zod';\nexport const a = z;\n"
+      )
+    ).toEqual(["no-restricted-imports"]);
+    expect(
+      await errorsFor(
+        "shared/domain/team-table.ts",
+        "import fs from 'node:fs';\nexport const a = fs;\n"
+      )
+    ).toEqual(["no-restricted-imports"]);
+    expect(
+      await errorsFor(
+        "shared/domain/team-table.ts",
+        "import { CATEGORIES } from './stats';\nexport const a = CATEGORIES;\n"
+      )
+    ).toEqual([]);
+  });
+
+  it("lets shared/api import only shared/domain and zod", async () => {
+    expect(
+      await errorsFor("shared/api/errors.ts", "import { z } from 'zod';\nexport const a = z;\n")
+    ).toEqual([]);
+    expect(
+      await errorsFor(
+        "shared/api/errors.ts",
+        "import { CATEGORIES } from '../domain';\nexport const a = CATEGORIES;\n"
+      )
+    ).toEqual([]);
+    expect(
+      await errorsFor(
+        "shared/api/errors.ts",
+        "import express from 'express';\nexport const a = express;\n"
+      )
+    ).toEqual(["no-restricted-imports"]);
+    expect(
+      await errorsFor(
+        "shared/api/errors.ts",
+        "import { env } from '../../server/http/app';\nexport const a = env;\n"
+      )
+    ).toEqual(["no-restricted-imports"]);
+  });
+
+  it("keeps the client from importing server code", async () => {
+    expect(
+      await errorsFor(
+        "client/src/lib/utils.ts",
+        "import { createApp } from '../../../server/http/app';\nexport const a = createApp;\n"
+      )
+    ).toEqual(["no-restricted-imports"]);
+    expect(
+      await errorsFor(
+        "client/src/lib/utils.ts",
+        "import { CATEGORIES } from '@shared/domain';\nexport const a = CATEGORIES;\n"
+      )
+    ).toEqual([]);
+  });
+
+  it("allows fetch only in the client API module", async () => {
+    const call = "export const load = () => fetch('/api/me');\n";
+    expect(await errorsFor("client/src/lib/utils.ts", call)).toEqual(["no-restricted-globals"]);
+    expect(await errorsFor("client/src/lib/utils.ts", "export const f = window.fetch;\n")).toEqual([
+      "no-restricted-properties",
+    ]);
+    expect(await errorsFor("client/src/api/http.ts", call)).toEqual([]);
+  });
+
+  it("keeps the server from importing client code", async () => {
+    expect(
+      await errorsFor(
+        "server/http/app.ts",
+        "import { cn } from '../client/src/lib/utils';\nexport const a = cn;\n"
+      )
+    ).toEqual(["no-restricted-imports"]);
+  });
+});
+
+describe("promises and size limits where the target layout applies", () => {
+  it("fails an unawaited promise in shared code", async () => {
+    const code = "async function load() { return 1; }\nexport function run() {\n  load();\n}\n";
+    // A path no other test lints: the type-aware rules must not see a cached
+    // program for the same file with different code.
+    expect(await errorsFor("shared/domain/player.ts", code)).toContain(
+      "@typescript-eslint/no-floating-promises"
+    );
+  });
+
+  it("fails a function over 60 lines and a branchy function in shared code", async () => {
+    const longBody = Array.from({ length: 62 }, (_, i) => `  noop(${i});`).join("\n");
+    expect(
+      await errorsFor(
+        "shared/domain/team-table.ts",
+        `declare function noop(n: number): void;\nexport function big() {\n${longBody}\n}\n`
+      )
+    ).toContain("max-lines-per-function");
+
+    const branches = Array.from({ length: 11 }, (_, i) => `  if (n === ${i}) return ${i};`).join(
+      "\n"
+    );
+    expect(
+      await errorsFor(
+        "shared/domain/team-table.ts",
+        `export function branchy(n: number) {\n${branches}\n  return -1;\n}\n`
+      )
+    ).toContain("complexity");
+  });
+
+  it("fails the same code in every source folder", async () => {
+    const longBody = Array.from({ length: 62 }, (_, i) => `  noop(${i});`).join("\n");
+    const code = `declare function noop(n: number): void;\nexport function big() {\n${longBody}\n}\n`;
+
+    for (const path of [
+      "server/storage/yahoo-token-storage.ts",
+      "server/fantasy/yahoo/yahoo-auth.ts",
+      "client/src/lib/utils.ts",
+    ]) {
+      expect(await errorsFor(path, code)).toContain("max-lines-per-function");
+    }
+  });
+
+  it("rejects any and non-null assertions", async () => {
+    expect(
+      await errorsFor("server/storage/yahoo-token-storage.ts", "export const a: any = 1;\n")
+    ).toContain("@typescript-eslint/no-explicit-any");
+    expect(
+      await errorsFor(
+        "client/src/lib/utils.ts",
+        "export const b = (x: string | null) => x!.length;\n"
+      )
+    ).toContain("@typescript-eslint/no-non-null-assertion");
+  });
+});
