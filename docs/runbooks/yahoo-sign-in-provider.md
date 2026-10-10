@@ -1,6 +1,6 @@
 # Yahoo sign-in provider setup
 
-Each environment (local, dev, prod) has its own Supabase project and exactly one `custom:yahoo` provider. Yahoo is used twice on every sign-in: the provider signs the user in, then the app runs its own Fantasy access OAuth with the server's `YAHOO_CLIENT_ID`. See the [infrastructure inventory](../reference/infrastructure-inventory.md#environment-tiers) for which Yahoo app each tier uses.
+Each environment (local, dev, prod) has its own Supabase project and exactly one `custom:yahoo` provider. One Yahoo sign-in covers Fantasy access: the provider requests the `fspt-r` scope, and the app stores the Yahoo tokens Supabase returns. The server refreshes them with the same app's `YAHOO_CLIENT_ID` and secret. See the [infrastructure inventory](../reference/infrastructure-inventory.md#environment-tiers) for which Yahoo app each tier uses.
 
 ## 1. Create the provider in Supabase
 
@@ -22,9 +22,9 @@ The client ID and secret are the Yahoo app's for that tier.
 Yahoo accepts only `https://` redirect URIs. Register exactly:
 
 - the Supabase callback shown for the provider (`https://<project-ref>.supabase.co/auth/v1/callback`), and
-- the app's Fantasy access callback (`<APP_ORIGIN>/api/auth/yahoo/fantasy/callback`).
+- the redirect the server sends when it refreshes Yahoo tokens (`<APP_ORIGIN>/api/auth/yahoo/fantasy/callback`).
 
-Never remove the Fantasy callback of the shared app: that breaks Fantasy access for every league member. Local dev serves HTTPS with a mkcert certificate (see the README).
+Nothing is served at that second path; Yahoo only checks that a refresh names a registered redirect. Never remove it from the shared app: token refresh would then fail for every league member. Local dev serves HTTPS with a mkcert certificate (see the README).
 
 ## 3. Set the Supabase URL configuration
 

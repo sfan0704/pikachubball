@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
 import {
   AUTH_NO_STORE_HEADERS,
   hardenCookieOptions,
@@ -15,9 +15,71 @@ import { createSupabaseAuthController } from "../../../../server/http/controller
 import { createErrorHandler } from "../../../../server/http/middleware/error-handler";
 import { buildTestConfig, silentLogger } from "../../../support/dependencies";
 import { defined } from "../../../support/defined";
+import { buildRequestScope } from "../../../support/context";
+import { fixedClock } from "../../../support/clock";
+import { recordingLogger } from "../../../support/logger";
+import { AppError } from "../../../../shared/api/errors";
+import type { Logger } from "../../../../server/utils/logger";
+import type { OwnerScopedStorage } from "../../../../server/storage/yahoo-token-storage";
+import type { DiscoveredLeague } from "../../../../server/fantasy/user-leagues";
 
 const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });
 const auth = buildTestConfig().auth;
+
+const LEAGUE: DiscoveredLeague = {
+  leagueKey: "478.l.1",
+  teamKey: "478.l.1.t.4",
+  name: "League One",
+  season: 2026,
+  status: "preseason",
+};
+
+/** The sign-in controller over fakes; Yahoo is reached only through `listLeagues`. */
+function buildController(
+  client: SupabaseClient,
+  options: {
+    saveYahooConnection?: Mock;
+    replaceUserLeagues?: Mock;
+    listLeagues?: Mock<() => Promise<DiscoveredLeague[]>>;
+  } = {}
+) {
+  const storage = {
+    saveYahooConnection: options.saveYahooConnection ?? vi.fn().mockResolvedValue({}),
+    replaceUserLeagues: options.replaceUserLeagues ?? vi.fn().mockResolvedValue(undefined),
+  } as unknown as OwnerScopedStorage;
+  const createOwnerStorage = vi.fn(() => storage);
+  const controller = createSupabaseAuthController({
+    auth,
+    clock: fixedClock("2027-01-15T08:00:00.000Z"),
+    createClient: () => client,
+    createOwnerStorage,
+    createYahooClient: async () => {
+      throw new Error("the sign-in tests reach Yahoo only through listLeagues");
+    },
+    createFantasyDataSource: () => ({
+      listLeagues: options.listLeagues ?? vi.fn().mockResolvedValue([LEAGUE]),
+      getSeason: vi.fn(),
+      getWeek: vi.fn(),
+    }),
+  });
+  return { controller, createOwnerStorage };
+}
+
+/** An app serving one controller route, with the request scope the real app sets first. */
+function serve(
+  path: string,
+  handler: express.RequestHandler,
+  logger: Logger = silentLogger
+): express.Express {
+  const app = express();
+  app.use((req, _res, next) => {
+    req.scope = buildRequestScope({ logger });
+    next();
+  });
+  app.get(path, handler);
+  app.use(errorHandler);
+  return app;
+}
 
 const USER_ID = "23f99d06-30ff-4767-8c41-21510b7fd5d0";
 
@@ -142,13 +204,8 @@ describe("Supabase Yahoo auth boundary", () => {
       },
       error: null,
     });
-    const controller = createSupabaseAuthController({
-      auth,
-      createClient: () => fakeClient({ signInWithOAuth }),
-    });
-    const app = express();
-    app.get("/start", controller.beginYahooLogin);
-    app.use(errorHandler);
+    const { controller } = buildController(fakeClient({ signInWithOAuth }));
+    const app = serve("/start", controller.beginYahooLogin);
 
     const response = await request(app).get("/start");
 
@@ -170,43 +227,125 @@ describe("Supabase Yahoo auth boundary", () => {
     }
   });
 
-  it("establishes the Supabase session before starting Fantasy authorization", async () => {
+  it("stores the session's Yahoo tokens once and never exposes them", async () => {
     const exchangeCodeForSession = vi
       .fn()
       .mockResolvedValueOnce({ data: { session: yahooSession() }, error: null })
       .mockResolvedValueOnce({ data: { session: null }, error: new Error("used") });
-    const controller = createSupabaseAuthController({
-      auth,
-      createClient: () => fakeClient({ exchangeCodeForSession }),
-    });
-    const app = express();
-    app.get("/callback", controller.completeYahooLogin);
-    app.use(errorHandler);
+    const saveYahooConnection = vi.fn().mockResolvedValue({});
+    const { controller, createOwnerStorage } = buildController(
+      fakeClient({ exchangeCodeForSession }),
+      { saveYahooConnection }
+    );
+    const app = serve("/callback", controller.completeYahooLogin);
 
     const first = await request(app).get("/callback?code=one-time-code");
     const replay = await request(app).get("/callback?code=one-time-code");
 
     expect(first.status).toBe(303);
-    expect(first.headers.location).toBe("/connect/start");
+    expect(first.headers.location).toBe("/?yahoo_connected=true");
+    expect(createOwnerStorage).toHaveBeenCalledWith(expect.anything(), USER_ID);
+    expect(saveYahooConnection).toHaveBeenCalledTimes(1);
+    expect(saveYahooConnection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: USER_ID,
+        accessToken: "yahoo-access-token",
+        refreshToken: "yahoo-refresh-token",
+        expiresAt: Date.parse("2027-01-15T08:00:00.000Z") / 1000 + 3600,
+      })
+    );
     expect(replay.status).toBe(401);
     expect(first.text).not.toContain("yahoo-access-token");
     expect(first.headers.location).not.toContain("token");
   });
 
-  it("rejects callback completion when the Yahoo identity is incomplete", async () => {
-    const controller = createSupabaseAuthController({
-      auth,
-      createClient: () =>
-        fakeClient({
-          exchangeCodeForSession: vi.fn().mockResolvedValue({
-            data: { session: yahooSession({ user: yahooUser({ identities: [] }) }) },
-            error: null,
-          }),
+  it("saves the user's leagues after storing the tokens", async () => {
+    const saveYahooConnection = vi.fn().mockResolvedValue({});
+    const replaceUserLeagues = vi.fn().mockResolvedValue(undefined);
+    const { controller } = buildController(
+      fakeClient({
+        exchangeCodeForSession: vi
+          .fn()
+          .mockResolvedValue({ data: { session: yahooSession() }, error: null }),
+      }),
+      { saveYahooConnection, replaceUserLeagues }
+    );
+
+    const response = await request(serve("/callback", controller.completeYahooLogin)).get(
+      "/callback?code=one-time-code"
+    );
+
+    expect(response.status).toBe(303);
+    expect(replaceUserLeagues).toHaveBeenCalledWith([
+      {
+        leagueKey: "478.l.1",
+        teamKey: "478.l.1.t.4",
+        name: "League One",
+        season: 2026,
+        isFinished: false,
+      },
+    ]);
+    expect(saveYahooConnection.mock.invocationCallOrder[0]).toBeLessThan(
+      defined(replaceUserLeagues.mock.invocationCallOrder[0])
+    );
+  });
+
+  it("still signs in when the league sync fails, and logs only the error code", async () => {
+    const replaceUserLeagues = vi.fn();
+    const logger = recordingLogger();
+    const { controller } = buildController(
+      fakeClient({
+        exchangeCodeForSession: vi
+          .fn()
+          .mockResolvedValue({ data: { session: yahooSession() }, error: null }),
+      }),
+      {
+        replaceUserLeagues,
+        listLeagues: vi.fn().mockRejectedValue(new AppError("YAHOO_UNAVAILABLE", "Yahoo is down")),
+      }
+    );
+
+    const response = await request(serve("/callback", controller.completeYahooLogin, logger)).get(
+      "/callback?code=one-time-code"
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.location).toBe("/?yahoo_connected=true");
+    expect(replaceUserLeagues).not.toHaveBeenCalled();
+    expect(logger.lines).toEqual([
+      expect.objectContaining({ level: "warn", fields: { code: "YAHOO_UNAVAILABLE" } }),
+    ]);
+  });
+
+  it("rejects a callback without both Yahoo provider tokens and stores nothing", async () => {
+    const saveYahooConnection = vi.fn();
+    const { controller } = buildController(
+      fakeClient({
+        exchangeCodeForSession: vi.fn().mockResolvedValue({
+          data: { session: yahooSession({ provider_refresh_token: null }) },
+          error: null,
         }),
-    });
-    const app = express();
-    app.get("/callback", controller.completeYahooLogin);
-    app.use(errorHandler);
+      }),
+      { saveYahooConnection }
+    );
+    const app = serve("/callback", controller.completeYahooLogin);
+
+    const response = await request(app).get("/callback?code=no-refresh-token");
+
+    expect(response.status).toBe(401);
+    expect(saveYahooConnection).not.toHaveBeenCalled();
+  });
+
+  it("rejects callback completion when the Yahoo identity is incomplete", async () => {
+    const { controller } = buildController(
+      fakeClient({
+        exchangeCodeForSession: vi.fn().mockResolvedValue({
+          data: { session: yahooSession({ user: yahooUser({ identities: [] }) }) },
+          error: null,
+        }),
+      })
+    );
+    const app = serve("/callback", controller.completeYahooLogin);
 
     const response = await request(app).get("/callback?code=incomplete");
 

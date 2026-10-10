@@ -2,12 +2,10 @@ import type { Express } from "express";
 import { createRequireAuth } from "../middleware/auth";
 import { createRateLimiters } from "../middleware/rate-limiter";
 import { createSupabaseAuthController } from "../controllers/supabase-auth-controller";
-import { createYahooOAuthController } from "../controllers/yahoo-oauth-controller";
 import { createAccountController } from "../controllers/account-controller";
 import { createLeagueController } from "../controllers/league-controller";
 import type { ServerDependencies } from "../dependencies";
 import { registerAuthRoutes } from "./auth";
-import { registerYahooOAuthRoutes } from "./yahoo-oauth";
 import { registerDevRoutes } from "./dev";
 import { registerLeagueRoutes } from "./leagues";
 import { registerMeRoutes } from "./me";
@@ -31,14 +29,10 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   registerAuthRoutes(app, {
     authLimiter,
     controller: createSupabaseAuthController({
+      ...dependencies,
       auth: config.auth,
       createClient: createSupabaseClient,
     }),
-  });
-  registerYahooOAuthRoutes(app, {
-    requireAuth,
-    skipRateLimit: config.nodeEnv === "development" || config.localStack,
-    controller: createYahooOAuthController(dependencies),
   });
   registerDevRoutes(app, dependencies);
   registerMeRoutes(app, {

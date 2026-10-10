@@ -48,7 +48,7 @@ describe(".env.example dev-tier template", () => {
     expect(example.SUPABASE_URL).toBe("https://ocqdxmfpezxpgutoicyh.supabase.co");
   });
 
-  it("points the Fantasy callback at this app over https, as the controller requires", () => {
+  it("keeps the refresh redirect and local HTTPS settings on the app origin", () => {
     const redirect = new URL(example.YAHOO_PROVIDER_REDIRECT_URI);
 
     expect(redirect.protocol).toBe("https:");

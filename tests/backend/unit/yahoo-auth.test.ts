@@ -3,65 +3,10 @@ import {
   YahooReconnectRequiredError,
   YahooUnavailableError,
 } from "../../../server/fantasy/yahoo/yahoo-request-policy";
-import {
-  exchangeAuthorizationCode,
-  refreshAccessToken,
-  revokeYahooToken,
-} from "../../../server/fantasy/yahoo/yahoo-auth";
+import { refreshAccessToken, revokeYahooToken } from "../../../server/fantasy/yahoo/yahoo-auth";
 import { fakeFetch, jsonResponse, requestOf, timeoutError } from "../../support/fetch";
 
 const REDIRECT_URI = "https://basketball.example.test/api/auth/yahoo/fantasy/callback";
-
-describe("exchangeAuthorizationCode", () => {
-  it("sends Yahoo client credentials in the token form as required by the legacy client", async () => {
-    const fetchFunction = fakeFetch().mockResolvedValue(
-      jsonResponse({
-        access_token: "access-token",
-        refresh_token: "refresh-token",
-        expires_in: 3600,
-        xoauth_yahoo_guid: "yahoo-guid",
-      })
-    );
-
-    await exchangeAuthorizationCode(
-      "authorization-code",
-      "client-id",
-      "client-secret",
-      REDIRECT_URI,
-      fetchFunction
-    );
-
-    expect(fetchFunction).toHaveBeenCalledOnce();
-    const request = requestOf(fetchFunction);
-    expect(request.method).toBe("POST");
-    expect(request.form.get("client_id")).toBe("client-id");
-    expect(request.form.get("client_secret")).toBe("client-secret");
-    expect(request.form.get("redirect_uri")).toBe(REDIRECT_URI);
-    expect(request.form.get("code")).toBe("authorization-code");
-    expect(request.form.get("grant_type")).toBe("authorization_code");
-  });
-
-  it("accepts a legacy Fantasy token response that omits the guid", async () => {
-    const fetchFunction = fakeFetch().mockResolvedValueOnce(
-      jsonResponse({
-        access_token: "access-token",
-        refresh_token: "refresh-token",
-        expires_in: 3600,
-      })
-    );
-
-    const result = await exchangeAuthorizationCode(
-      "authorization-code",
-      "client-id",
-      "client-secret",
-      REDIRECT_URI,
-      fetchFunction
-    );
-
-    expect(result.yahooGuid).toBeUndefined();
-    expect(fetchFunction).toHaveBeenCalledOnce();
-  });
-});
 
 describe("refreshAccessToken", () => {
   it("bounds the call and returns a rotated refresh token", async () => {

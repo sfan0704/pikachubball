@@ -23,9 +23,9 @@ The app has three separated tiers. No tier holds another tier's credentials, and
 | --- | --- | --- | --- | --- | --- |
 | Local | laptop and CI | disposable local stack (`npm run dev`, `npm run test:db`) | none: a stand-in replays recorded responses | nothing hosted | everyday development, migrations and RLS tests |
 | Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
-| Prod | Vercel production alias | `Pikachu Basketball` | sign-in: `PikachuBball - Local`; Fantasy access: `PikachuBball` (consolidating on `PikachuBball`, CAR-57) | Vercel Production environment only | league members |
+| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball` | Vercel Production environment only | league members |
 
-Yahoo is used twice on every sign-in: Supabase's `custom:yahoo` provider signs the user in, then the app runs its own Fantasy access OAuth (`/connect/start` → `/api/auth/yahoo/fantasy/callback`) with the server's `YAHOO_CLIENT_ID`. A tier's Yahoo app therefore registers both its Supabase callback and the app's Fantasy callback. Yahoo only accepts `https://` redirect URIs, which is why local dev runs over HTTPS. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/reference/infrastructure-inventory.md#environment-tiers).
+One Yahoo sign-in does everything: Supabase's `custom:yahoo` provider signs the user in with the Fantasy read scope (`fspt-r`), and `/api/auth/callback` stores the Yahoo tokens from that session and syncs the user's leagues. Every tier uses the one Fantasy-activated Yahoo app, `PikachuBball`. The server refreshes tokens with that app's `YAHOO_CLIENT_ID` and secret, sending `YAHOO_PROVIDER_REDIRECT_URI` as the redirect, so the app registers each tier's Supabase callback and that refresh redirect. Yahoo only accepts `https://` redirect URIs. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/reference/infrastructure-inventory.md#environment-tiers).
 
 ## Local setup
 

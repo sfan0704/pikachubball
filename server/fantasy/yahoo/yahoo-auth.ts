@@ -1,4 +1,4 @@
-import { ProviderHttpError, requestJson, type FetchFunction } from "./provider-http";
+import { requestJson, type FetchFunction } from "./provider-http";
 import { z } from "zod";
 import { YAHOO_OAUTH_BASE_URL } from "../../config/config";
 import {
@@ -31,69 +31,6 @@ function postForm(
     YAHOO_CALL_TIMEOUT_MS,
     fetchFunction
   );
-}
-
-export interface YahooAuthorizationTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  yahooGuid?: string;
-}
-
-const authorizationResponseSchema = z.object({
-  access_token: z.string(),
-  refresh_token: z.string(),
-  expires_in: z.coerce.number().finite(),
-  xoauth_yahoo_guid: z.string().optional(),
-});
-
-/** What goes in the log when the code exchange fails: Yahoo's error words, never tokens. */
-function exchangeFailureFields(error: unknown) {
-  const fromYahoo = error instanceof ProviderHttpError ? error.data : undefined;
-  return {
-    error: error instanceof Error ? error.message : "Unknown error",
-    status: providerStatus(error),
-    yahooError: fromYahoo?.error,
-    yahooErrorDescription: fromYahoo?.error_description,
-  };
-}
-
-export async function exchangeAuthorizationCode(
-  code: string,
-  clientId: string,
-  clientSecret: string,
-  redirectUri: string,
-  fetchFunction: FetchFunction = fetch,
-  oauthBaseUrl: string = YAHOO_OAUTH_BASE_URL
-): Promise<YahooAuthorizationTokens> {
-  try {
-    const data = await postForm(
-      `${oauthBaseUrl}/oauth2/get_token`,
-      clientId,
-      clientSecret,
-      {
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-        code,
-      },
-      fetchFunction
-    );
-    const parsed = authorizationResponseSchema.safeParse(data);
-    if (!parsed.success) {
-      throw new Error("Yahoo token response was incomplete");
-    }
-    return {
-      accessToken: parsed.data.access_token,
-      refreshToken: parsed.data.refresh_token,
-      expiresIn: parsed.data.expires_in,
-      yahooGuid: parsed.data.xoauth_yahoo_guid,
-    };
-  } catch (error) {
-    logger.error("Yahoo authorization code exchange failed", exchangeFailureFields(error));
-    throw new Error("Failed to exchange Yahoo authorization code");
-  }
 }
 
 export interface YahooRefreshedTokens {
