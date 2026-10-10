@@ -22,10 +22,10 @@ insert into public.fantasy_memberships (owner_id, league_key, team_key)
 values
   ('23f99d06-30ff-4767-8c41-21510b7fd5d0', '466.l.1', '466.l.1.t.1'),
   ('d86688b2-0b07-4ddc-955b-655d600312ff', '466.l.2', '466.l.2.t.1');
-insert into public.user_leagues (owner_id, league_key, team_key, season, name)
+insert into public.user_leagues (owner_id, league_key, team_key, season, name, status)
 values
-  ('23f99d06-30ff-4767-8c41-21510b7fd5d0', '466.l.1', '466.l.1.t.1', 2025, 'League A'),
-  ('d86688b2-0b07-4ddc-955b-655d600312ff', '466.l.2', '466.l.2.t.1', 2025, 'League B');
+  ('23f99d06-30ff-4767-8c41-21510b7fd5d0', '466.l.1', '466.l.1.t.1', 2025, 'League A', 'active'),
+  ('d86688b2-0b07-4ddc-955b-655d600312ff', '466.l.2', '466.l.2.t.1', 2025, 'League B', 'active');
 insert into public.user_preferences (owner_id, selected_league_key)
 values
   ('23f99d06-30ff-4767-8c41-21510b7fd5d0', '466.l.1'),

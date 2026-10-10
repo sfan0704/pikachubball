@@ -7,3 +7,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-10-08 · Runbooks live in `docs/runbooks/`; reference docs in `docs/reference/` · #35
 - 2026-10-10 · The user's leagues come from the teams and leagues calls together, with the league status rules · #83
 - 2026-10-10 · At rollover, the leagues are rechecked at most once a day while Yahoo lists only finished ones · #84
+- 2026-10-10 · `user_leagues` stores a status (preseason, active or finished) instead of only whether a league is finished · #89

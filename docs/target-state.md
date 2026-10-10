@@ -349,7 +349,7 @@ erDiagram
 | Table | Holds |
 |---|---|
 | `yahoo_connections` | One per user: Yahoo identity (bound to the signed-in Supabase identity), encrypted tokens, expiry, token and key versions |
-| `user_leagues` | One per league the user belongs to: league key, the user's team key, season, name, whether it's finished, when it was last synced |
+| `user_leagues` | One per league the user belongs to: league key, the user's team key, season, name, status (preseason, active or finished), when it was last synced |
 | `user_preferences` | Selected league, team and display choices |
 
 - Stats, standings, scoreboards and rosters are never stored on the server. No raw Yahoo payloads and no other managers' personal details are kept. The whole league is under 100 rows.
