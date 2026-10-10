@@ -12,7 +12,7 @@ interface LeagueControlsProps {
 }
 
 const SELECT_CLASS =
-  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
 
 function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return (
