@@ -61,7 +61,7 @@ function ViewTabs({ selection, query, teamName, onPickLeague }: ViewTabsProps) {
     </TableBoundary>
   );
   return (
-    <Tabs defaultValue="rankings" className="space-y-4">
+    <Tabs defaultValue="rankings" className="flex flex-col gap-4">
       <TabsList className="flex h-auto w-full flex-wrap justify-start" aria-label="Views">
         {TABS.map((tab) => (
           <TabsTrigger key={tab} value={tab} className="min-h-[44px] capitalize">

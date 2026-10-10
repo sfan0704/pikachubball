@@ -13,7 +13,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
       role="region"
       aria-label={label}
       tabIndex={0}
-      className="relative w-full overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="relative w-full overflow-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
@@ -43,7 +43,7 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className)}
+    className={cn("border-t bg-muted/50 font-medium last:[&>tr]:border-b-0", className)}
     {...props}
   />
 ));
@@ -70,7 +70,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+      "h-12 px-4 text-left align-middle font-medium text-muted-foreground has-[[role=checkbox]]:pr-0",
       className
     )}
     {...props}
@@ -84,7 +84,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
+    className={cn("p-4 align-middle has-[[role=checkbox]]:pr-0", className)}
     {...props}
   />
 ));

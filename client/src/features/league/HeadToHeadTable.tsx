@@ -25,7 +25,7 @@ export function HeadToHeadTable({ myTeamName, summary }: HeadToHeadTableProps) {
         role="region"
         aria-label="Category comparison"
         tabIndex={0}
-        className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="overflow-x-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
       >
         <table className="w-full text-sm">
           <caption className="sr-only">
