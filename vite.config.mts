@@ -2,9 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-// The dev server loads this file as CommonJS (package "type": "commonjs"),
-// where import.meta.dirname is undefined; Vite's own loader provides both.
-const projectRoot = import.meta.dirname ?? __dirname;
+// .mts so that Node, Vite and the dev server always load this file as ESM.
+const projectRoot = import.meta.dirname;
 
 export default defineConfig({
   plugins: [react()],

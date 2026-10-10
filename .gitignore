@@ -3,7 +3,7 @@ dist
 /public/
 .DS_Store
 server/public
-vite.config.ts.*
+vite.config.mts.*
 *.tar.gz
 scripts/yahoo-api-responses/
 
