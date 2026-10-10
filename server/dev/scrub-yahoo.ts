@@ -4,9 +4,11 @@
  * has the shape the parsers must handle.
  */
 
-const PERSONAL_URL_KEYS = new Set(["url", "image_url", "logo_url", "felo_tier_url"]);
 const OPAQUE_ID_KEYS = new Set(["guid", "manager_id"]);
-const DROPPED_KEYS = new Set(["email", "nickname"]);
+// The chat identifiers lead to the league's group chat.
+const DROPPED_KEYS = new Set(["email", "nickname", "sendbird_channel_url", "iris_group_chat_id"]);
+// Every link goes: some carry the league's invitation key, others identify people.
+const URL = /^https?:\/\//;
 
 /** Yahoo lists a resource's properties as sibling single-key objects in one array. */
 const NAMED_RESOURCE_KEYS = [
@@ -63,7 +65,8 @@ function scrubRecord(
       out[key] = names.drop(value);
     } else if (OPAQUE_ID_KEYS.has(key) && typeof value === "string") {
       out[key] = names.of(key, value);
-    } else if (PERSONAL_URL_KEYS.has(key) && typeof value === "string") {
+    } else if (typeof value === "string" && URL.test(value)) {
+      names.drop(value);
       out[key] = "https://example.invalid/scrubbed";
     } else if (key === "name" && label && typeof value === "string") {
       out[key] = names.of(label, value);

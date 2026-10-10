@@ -1,0 +1,991 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/users;use_login=1/games;game_codes=nba/leagues",
+    "users": {
+      "0": {
+        "user": [
+          {
+            "guid": "guid-1"
+          },
+          {
+            "games": {
+              "0": {
+                "game": [
+                  {
+                    "game_key": "395",
+                    "game_id": "395",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2019",
+                    "is_registration_over": 1,
+                    "is_game_over": 1,
+                    "is_offseason": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "395.l.38081",
+                            "league_id": "38081",
+                            "name": "League-21",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2020-03-08",
+                            "weekly_deadline": "",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1591891052",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 19,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": 19,
+                            "start_week": "1",
+                            "start_date": "2019-10-22",
+                            "end_week": "19",
+                            "end_date": "2020-03-08",
+                            "is_finished": 1,
+                            "current_date": "2020-03-08",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2019"
+                          }
+                        ]
+                      },
+                      "count": 1
+                    }
+                  }
+                ]
+              },
+              "1": {
+                "game": [
+                  {
+                    "game_key": "402",
+                    "game_id": "402",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2020",
+                    "is_registration_over": 1,
+                    "is_game_over": 1,
+                    "is_offseason": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "402.l.64329",
+                            "league_id": "64329",
+                            "name": "League-22",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2021-05-09",
+                            "weekly_deadline": "",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1620627035",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "410_65832",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 19,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 0,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "19",
+                            "start_week": "1",
+                            "start_date": "2020-12-22",
+                            "end_week": "19",
+                            "end_date": "2021-05-09",
+                            "is_finished": 1,
+                            "current_date": "2021-05-09",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2020"
+                          }
+                        ]
+                      },
+                      "1": {
+                        "league": [
+                          {
+                            "league_key": "402.l.106791",
+                            "league_id": "106791",
+                            "name": "League-21",
+                            "url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "predraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2021-05-09",
+                            "weekly_deadline": "",
+                            "roster_type": "date",
+                            "league_update_timestamp": null,
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "395_38081",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 19,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "19",
+                            "start_week": "1",
+                            "start_date": "2020-12-22",
+                            "end_week": "19",
+                            "end_date": "2021-05-09",
+                            "current_date": "2021-05-09",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2020"
+                          }
+                        ]
+                      },
+                      "2": {
+                        "league": [
+                          {
+                            "league_key": "402.l.166838",
+                            "league_id": "166838",
+                            "name": "League-23",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 10,
+                            "max_teams": "12",
+                            "edit_key": "2021-05-09",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1620627099",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 19,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "19",
+                            "start_week": "1",
+                            "start_date": "2020-12-22",
+                            "end_week": "19",
+                            "end_date": "2021-05-09",
+                            "is_finished": 1,
+                            "current_date": "2021-05-09",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2020"
+                          }
+                        ]
+                      },
+                      "count": 3
+                    }
+                  }
+                ]
+              },
+              "2": {
+                "game": [
+                  {
+                    "game_key": "410",
+                    "game_id": "410",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2021",
+                    "is_registration_over": 1,
+                    "is_game_over": 1,
+                    "is_offseason": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "410.l.141571",
+                            "league_id": "141571",
+                            "name": "League-24",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2022-04-03",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1649066163",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2021-10-19",
+                            "end_week": "23",
+                            "end_date": "2022-04-03",
+                            "is_finished": 1,
+                            "current_date": "2022-04-03",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2021"
+                          }
+                        ]
+                      },
+                      "1": {
+                        "league": [
+                          {
+                            "league_key": "410.l.157984",
+                            "league_id": "157984",
+                            "name": "League-25",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2022-04-03",
+                            "weekly_deadline": "1",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1649066173",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2021-10-19",
+                            "end_week": "23",
+                            "end_date": "2022-04-03",
+                            "is_finished": 1,
+                            "current_date": "2022-04-03",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2021"
+                          }
+                        ]
+                      },
+                      "2": {
+                        "league": [
+                          {
+                            "league_key": "410.l.138091",
+                            "league_id": "138091",
+                            "name": "League-26",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2022-04-10",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1649658955",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "418_97225",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 24,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": 24,
+                            "start_week": "1",
+                            "start_date": "2021-10-19",
+                            "end_week": "24",
+                            "end_date": "2022-04-10",
+                            "is_finished": 1,
+                            "current_date": "2022-04-10",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2021"
+                          }
+                        ]
+                      },
+                      "3": {
+                        "league": [
+                          {
+                            "league_key": "410.l.173510",
+                            "league_id": "173510",
+                            "name": "League-27",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "16",
+                            "edit_key": "2022-04-03",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1649066386",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "418_76908",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2021-10-19",
+                            "end_week": "23",
+                            "end_date": "2022-04-03",
+                            "is_finished": 1,
+                            "current_date": "2022-04-03",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2021"
+                          }
+                        ]
+                      },
+                      "count": 4
+                    }
+                  }
+                ]
+              },
+              "3": {
+                "game": [
+                  {
+                    "game_key": "418",
+                    "game_id": "418",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2022",
+                    "is_registration_over": 1,
+                    "is_game_over": 1,
+                    "is_offseason": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "418.l.76908",
+                            "league_id": "76908",
+                            "name": "League-28",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2023-04-02",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1680508530",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "410_173510",
+                            "renewed": "428_71209",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "2",
+                            "start_date": "2022-10-24",
+                            "end_week": "23",
+                            "end_date": "2023-04-02",
+                            "is_finished": 1,
+                            "current_date": "2023-04-02",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2022"
+                          }
+                        ]
+                      },
+                      "1": {
+                        "league": [
+                          {
+                            "league_key": "418.l.123225",
+                            "league_id": "123225",
+                            "name": "League-29",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2023-04-02",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1680508701",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "428_98419",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2022-10-18",
+                            "end_week": "23",
+                            "end_date": "2023-04-02",
+                            "is_finished": 1,
+                            "current_date": "2023-04-02",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2022"
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                ]
+              },
+              "4": {
+                "game": [
+                  {
+                    "game_key": "428",
+                    "game_id": "428",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2023",
+                    "is_registration_over": 1,
+                    "is_game_over": 1,
+                    "is_offseason": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "428.l.71209",
+                            "league_id": "71209",
+                            "name": "League-28",
+                            "url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "predraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2024-04-07",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": null,
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "418_76908",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2023-10-24",
+                            "end_week": "23",
+                            "end_date": "2024-04-07",
+                            "current_date": "2024-04-07",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2023"
+                          }
+                        ]
+                      },
+                      "1": {
+                        "league": [
+                          {
+                            "league_key": "428.l.98419",
+                            "league_id": "98419",
+                            "name": "League-29",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2024-04-07",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1712563078",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "418_123225",
+                            "renewed": "454_106219",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2023-10-24",
+                            "end_week": "23",
+                            "end_date": "2024-04-07",
+                            "is_finished": 1,
+                            "current_date": "2024-04-07",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2023"
+                          }
+                        ]
+                      },
+                      "2": {
+                        "league": [
+                          {
+                            "league_key": "428.l.117327",
+                            "league_id": "117327",
+                            "name": "League-30",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2024-04-07",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1712562932",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "454_83660",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2023-10-24",
+                            "end_week": "23",
+                            "end_date": "2024-04-07",
+                            "is_finished": 1,
+                            "current_date": "2024-04-07",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2023"
+                          }
+                        ]
+                      },
+                      "3": {
+                        "league": [
+                          {
+                            "league_key": "428.l.150357",
+                            "league_id": "150357",
+                            "name": "League-31",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": false,
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2024-04-07",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1712563063",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "",
+                            "renewed": "478_52912",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "23",
+                            "start_week": "1",
+                            "start_date": "2023-10-24",
+                            "end_week": "23",
+                            "end_date": "2024-04-07",
+                            "is_finished": 1,
+                            "current_date": "2024-04-07",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2023"
+                          }
+                        ]
+                      },
+                      "count": 4
+                    }
+                  }
+                ]
+              },
+              "5": {
+                "game": [
+                  {
+                    "game_key": "454",
+                    "game_id": "454",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2024",
+                    "is_registration_over": 1,
+                    "is_game_over": 1,
+                    "is_offseason": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "454.l.83660",
+                            "league_id": "83660",
+                            "name": "League-32",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "postdraft",
+                            "num_teams": 14,
+                            "max_teams": "14",
+                            "edit_key": "2025-04-13",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1744617505",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "428_117327",
+                            "renewed": "466_29849",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 23,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": 23,
+                            "start_week": "1",
+                            "start_date": "2024-10-22",
+                            "end_week": "23",
+                            "end_date": "2025-04-13",
+                            "is_finished": 1,
+                            "current_date": "2025-04-13",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2024"
+                          }
+                        ]
+                      },
+                      "1": {
+                        "league": [
+                          {
+                            "league_key": "454.l.106219",
+                            "league_id": "106219",
+                            "name": "League-29",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "postdraft",
+                            "num_teams": 12,
+                            "max_teams": "12",
+                            "edit_key": "2025-04-06",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1744020204",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "428_98419",
+                            "renewed": "466_45707",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 22,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "22",
+                            "start_week": "1",
+                            "start_date": "2024-10-22",
+                            "end_week": "22",
+                            "end_date": "2025-04-06",
+                            "is_finished": 1,
+                            "current_date": "2025-04-06",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2024"
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                ]
+              },
+              "6": {
+                "game": [
+                  {
+                    "game_key": "466",
+                    "game_id": "466",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2025",
+                    "is_registration_over": 1,
+                    "is_game_over": 1,
+                    "is_offseason": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "466.l.29849",
+                            "league_id": "29849",
+                            "name": "League-33",
+                            "url": "https://example.invalid/scrubbed",
+                            "recordbook_url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "postdraft",
+                            "num_teams": 14,
+                            "max_teams": "14",
+                            "edit_key": "2026-03-29",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": "1774858086",
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "454_83660",
+                            "renewed": "478_14822",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 22,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": "22",
+                            "start_week": "1",
+                            "start_date": "2025-10-21",
+                            "end_week": "22",
+                            "end_date": "2026-03-29",
+                            "is_finished": 1,
+                            "current_date": "2026-03-29",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2025"
+                          }
+                        ]
+                      },
+                      "count": 1
+                    }
+                  }
+                ]
+              },
+              "7": {
+                "game": [
+                  {
+                    "game_key": "478",
+                    "game_id": "478",
+                    "name": "Basketball",
+                    "code": "nba",
+                    "type": "full",
+                    "url": "https://example.invalid/scrubbed",
+                    "season": "2026",
+                    "is_registration_over": 0,
+                    "is_game_over": 0,
+                    "is_offseason": 0,
+                    "is_live_draft_lobby_active": 1
+                  },
+                  {
+                    "leagues": {
+                      "0": {
+                        "league": [
+                          {
+                            "league_key": "478.l.14822",
+                            "league_id": "14822",
+                            "name": "League-34",
+                            "url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "postdraft",
+                            "num_teams": 14,
+                            "max_teams": "14",
+                            "edit_key": "2026-10-10",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": null,
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "466_29849",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 1,
+                            "iris_group_chat_id": "scrubbed",
+                            "short_invitation_url": "https://example.invalid/scrubbed",
+                            "allow_add_to_dl_extra_pos": 0,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": 1,
+                            "start_week": "1",
+                            "start_date": "2026-10-20",
+                            "end_week": "21",
+                            "end_date": "2027-03-28",
+                            "current_date": "2026-10-20",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2026"
+                          }
+                        ]
+                      },
+                      "1": {
+                        "league": [
+                          {
+                            "league_key": "478.l.52912",
+                            "league_id": "52912",
+                            "name": "League-31",
+                            "url": "https://example.invalid/scrubbed",
+                            "logo_url": "https://example.invalid/scrubbed",
+                            "draft_status": "predraft",
+                            "num_teams": 10,
+                            "max_teams": "12",
+                            "edit_key": "2026-10-10",
+                            "weekly_deadline": "intraday",
+                            "roster_type": "date",
+                            "league_update_timestamp": null,
+                            "scoring_type": "head",
+                            "scoring_label": "H2H Cat",
+                            "league_type": "private",
+                            "renew": "428_150357",
+                            "renewed": "",
+                            "felo_tier": "silver",
+                            "is_highscore": false,
+                            "is_guillotine": "0",
+                            "matchup_week": 1,
+                            "iris_group_chat_id": "scrubbed",
+                            "allow_add_to_dl_extra_pos": 1,
+                            "is_pro_league": "0",
+                            "is_cash_league": "0",
+                            "current_week": 1,
+                            "start_week": "1",
+                            "start_date": "2026-10-20",
+                            "end_week": "22",
+                            "end_date": "2027-04-04",
+                            "current_date": "2026-10-20",
+                            "is_plus_league": "0",
+                            "game_code": "nba",
+                            "season": "2026"
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                ]
+              },
+              "count": 8
+            }
+          }
+        ]
+      },
+      "count": 1
+    },
+    "time": "421.28491401672ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}
