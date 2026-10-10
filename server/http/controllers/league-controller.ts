@@ -24,7 +24,7 @@ export function createLeagueController({
       const context = getRequestContext(req);
       const leagues = await listLeagues(
         context.storage,
-        context.yahooClient,
+        createFantasyDataSource(context.yahooClient),
         query.refresh === "true"
       );
       res.json(leaguesResponseSchema.parse({ leagues }));

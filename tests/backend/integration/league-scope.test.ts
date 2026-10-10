@@ -45,6 +45,8 @@ function fixture(name: string): unknown {
 
 function buildApp(options: { member?: boolean; resources?: Partial<LeagueResources> } = {}) {
   const resources: LeagueResources = {
+    getUserTeams: vi.fn(),
+    getUserLeagues: vi.fn(),
     getSeasonStandings: vi.fn(async () => fixture("league-season")),
     getCurrentWeekScoreboard: vi.fn(async () => fixture("league-current-week")),
     getPastWeekScoreboard: vi.fn(async () => fixture("league-week-1")),

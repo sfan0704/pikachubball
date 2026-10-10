@@ -3,7 +3,7 @@ import type { RosterResponse, UserLeague } from "../../shared/api/leagues";
 import type { YahooClientProvider } from "../http/request-context";
 import type { Clock } from "../utils/clock";
 import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
-import { getUserLeagues } from "../fantasy/legacy/league-service";
+import type { FantasyDataSource } from "../fantasy/fantasy-data-source";
 import { getTeamRoster } from "../fantasy/yahoo/roster-service";
 
 type LeagueStorage = Pick<OwnerScopedStorage, "listUserLeagues" | "replaceUserLeagues">;
@@ -11,17 +11,17 @@ type LeagueStorage = Pick<OwnerScopedStorage, "listUserLeagues" | "replaceUserLe
 /** The user's stored leagues, or the stored list after replacing it with Yahoo's current one. */
 export async function listLeagues(
   storage: LeagueStorage,
-  yahooClient: YahooClientProvider,
+  dataSource: Pick<FantasyDataSource, "listLeagues">,
   refresh: boolean
 ): Promise<UserLeague[]> {
   if (refresh) {
-    const fromYahoo = await getUserLeagues(yahooClient);
+    const fromYahoo = await dataSource.listLeagues();
     await storage.replaceUserLeagues(
       fromYahoo.map((league) => ({
         leagueKey: league.leagueKey,
         teamKey: league.teamKey,
-        name: league.leagueName,
-        season: league.season ?? null,
+        name: league.name,
+        season: league.season,
         isFinished: league.status === "finished",
       }))
     );

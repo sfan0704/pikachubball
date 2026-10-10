@@ -1,16 +1,39 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { AppError } from "../../../shared/api/errors";
 import { createApp } from "../../../server/http/app";
 import { createAppErrorHandler } from "../../../server/http/composition-root";
+import { YahooFantasyDataSource } from "../../../server/fantasy/fantasy-data-source";
+import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
-import { getUserLeagues } from "../../../server/fantasy/legacy/league-service";
 import { getTeamRoster } from "../../../server/fantasy/yahoo/roster-service";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { buildTestDependencies } from "../../support/dependencies";
 
-vi.mock("../../../server/fantasy/legacy/league-service");
 vi.mock("../../../server/fantasy/yahoo/roster-service");
+
+const CAPTURED = join(__dirname, "../fixtures/yahoo/captured");
+const RECORDED: Record<string, string> = {
+  "/users;use_login=1/games;game_codes=nba/teams": "user-teams.json",
+  "/users;use_login=1/games;game_codes=nba/leagues": "user-leagues.json",
+};
+
+/** Answers Yahoo calls with the recorded responses. */
+const yahooGet = vi.fn(async (path: string): Promise<unknown> => {
+  const file = RECORDED[path];
+  if (!file) {
+    throw new Error(`nothing recorded for ${path}`);
+  }
+  return JSON.parse(readFileSync(join(CAPTURED, file), "utf8"));
+});
+
+const createFantasyDataSource = () =>
+  new YahooFantasyDataSource(new YahooLeagueResources(async () => ({ get: yahooGet })), {
+    now: () => Date.parse("2026-10-10T16:00:00Z"),
+  });
 
 const APP_ORIGIN = "https://basketball.example.test";
 
@@ -62,6 +85,7 @@ function buildApp(options: { member?: boolean; leagueRefreshLimit?: number } = {
     createSupabaseClient: () => verifiedClient,
     createOwnerStorage: () => storage,
     createYahooClient: async () => ({}) as unknown as YahooApiClient,
+    createFantasyDataSource,
   });
   const app = createApp(dependencies);
   app.use(createAppErrorHandler(dependencies));
@@ -69,7 +93,7 @@ function buildApp(options: { member?: boolean; leagueRefreshLimit?: number } = {
 }
 
 beforeEach(() => {
-  vi.mocked(getUserLeagues).mockReset();
+  yahooGet.mockClear();
   vi.mocked(getTeamRoster)
     .mockReset()
     .mockResolvedValue([
@@ -152,42 +176,50 @@ describe("GET /api/leagues", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ leagues: [STORED_LEAGUE] });
-    expect(getUserLeagues).not.toHaveBeenCalled();
+    expect(yahooGet).not.toHaveBeenCalled();
   });
 
-  it("replaces the stored leagues from Yahoo when refreshing", async () => {
-    vi.mocked(getUserLeagues).mockResolvedValue([
-      {
-        leagueKey: "466.l.9",
-        leagueName: "Fresh",
-        teamKey: "466.l.9.t.2",
-        teamName: "Mine",
-        season: 2025,
-        status: "finished",
-      },
-    ]);
+  it("replaces the stored leagues with every league Yahoo lists when refreshing", async () => {
     const { app, storage } = buildApp();
 
     const response = await request(app).get("/api/leagues?refresh=true");
 
     expect(response.status).toBe(200);
-    expect(storage.replaceUserLeagues).toHaveBeenCalledWith([
-      {
-        leagueKey: "466.l.9",
-        teamKey: "466.l.9.t.2",
-        name: "Fresh",
-        season: 2025,
-        isFinished: true,
-      },
-    ]);
+    expect(yahooGet).toHaveBeenCalledTimes(2);
+    const saved = vi.mocked(storage.replaceUserLeagues).mock.calls[0]?.[0];
+    expect(saved).toHaveLength(19);
+    expect(saved).toContainEqual({
+      leagueKey: "478.l.52912",
+      teamKey: "478.l.52912.t.5",
+      name: "League-31",
+      season: 2026,
+      isFinished: false,
+    });
+    expect(saved).toContainEqual({
+      leagueKey: "466.l.29849",
+      teamKey: "466.l.29849.t.10",
+      name: "League-33",
+      season: 2025,
+      isFinished: true,
+    });
+  });
+
+  it("keeps the stored leagues when Yahoo fails", async () => {
+    yahooGet.mockRejectedValueOnce(new AppError("YAHOO_UNAVAILABLE", "Yahoo is down"));
+    const { app, storage } = buildApp();
+
+    const response = await request(app).get("/api/leagues?refresh=true");
+
+    expect(response.body.code).toBe("YAHOO_UNAVAILABLE");
+    expect(storage.replaceUserLeagues).not.toHaveBeenCalled();
   });
 
   it("limits refreshes to one a minute but not plain reads", async () => {
-    vi.mocked(getUserLeagues).mockResolvedValue([]);
     const dependencies = buildTestDependencies({
       config: { ...buildTestDependencies().config, nodeEnv: "production" },
       createSupabaseClient: () => verifiedClient,
       createOwnerStorage: () => buildApp().storage,
+      createFantasyDataSource,
     });
     const app = createApp(dependencies);
     app.use(createAppErrorHandler(dependencies));

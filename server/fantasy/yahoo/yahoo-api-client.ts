@@ -9,11 +9,6 @@ import { systemClock, type YahooRequestClock } from "./yahoo-request-policy";
 import { YahooTokenManager, type TokenRefresher } from "./yahoo-token-manager";
 import { YahooTransport } from "./yahoo-transport";
 import type { FetchFunction } from "./provider-http";
-import {
-  readAllUserLeagues,
-  readUserGameLeagues,
-  type LegacyResponse,
-} from "../legacy/user-leagues";
 
 export class YahooApiClient {
   private constructor(private readonly transport: YahooTransport) {}
@@ -52,23 +47,6 @@ export class YahooApiClient {
     params?: Record<string, string | number>
   ): Promise<T> {
     return this.transport.get<T>(endpoint, params);
-  }
-
-  /** The user's leagues across all games (legacy discovery). */
-  getAllUserLeagues(): Promise<LegacyResponse> {
-    return readAllUserLeagues((endpoint) => this.apiRequest<LegacyResponse>(endpoint));
-  }
-
-  /** The user's leagues in one game, such as "nba" (legacy discovery). */
-  getUserGameLeagues(gameCode: string): Promise<LegacyResponse> {
-    return readUserGameLeagues((endpoint) => this.apiRequest<LegacyResponse>(endpoint), gameCode);
-  }
-
-  /**
-   * League resource methods
-   */
-  async getLeagueStandings(leagueKey: string): Promise<LegacyResponse> {
-    return this.apiRequest(`/league/${leagueKey}/standings`);
   }
 
   /**

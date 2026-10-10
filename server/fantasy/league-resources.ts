@@ -5,8 +5,12 @@ export interface YahooRequester {
   get(endpoint: string): Promise<unknown>;
 }
 
-/** The three league-scope Yahoo calls, one call each. Settings arrive with the stats. */
+/** The Yahoo calls behind the data source, one request each. Settings arrive with the stats. */
 export interface LeagueResources {
+  /** `/users;use_login=1/games;game_codes=nba/teams` */
+  getUserTeams(): Promise<unknown>;
+  /** `/users;use_login=1/games;game_codes=nba/leagues` */
+  getUserLeagues(): Promise<unknown>;
   /** `/league/{key};out=settings,standings` */
   getSeasonStandings(leagueKey: string): Promise<unknown>;
   /** `/league/{key};out=settings,scoreboard` */
@@ -28,6 +32,16 @@ function checkedLeagueKey(leagueKey: string): string {
 /** League resources over a lazily created Yahoo requester. */
 export class YahooLeagueResources implements LeagueResources {
   constructor(private readonly requester: () => Promise<YahooRequester>) {}
+
+  async getUserTeams(): Promise<unknown> {
+    const requester = await this.requester();
+    return requester.get("/users;use_login=1/games;game_codes=nba/teams");
+  }
+
+  async getUserLeagues(): Promise<unknown> {
+    const requester = await this.requester();
+    return requester.get("/users;use_login=1/games;game_codes=nba/leagues");
+  }
 
   async getSeasonStandings(leagueKey: string): Promise<unknown> {
     const requester = await this.requester();
