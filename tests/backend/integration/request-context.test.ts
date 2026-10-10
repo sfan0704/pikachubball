@@ -9,7 +9,11 @@ import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-sto
 import { buildTestDependencies } from "../../support/dependencies";
 import { recordingLogger } from "../../support/logger";
 import { readFileSync } from "node:fs";
-import type { FantasyDataSource } from "../../../server/fantasy/fantasy-data-source";
+import {
+  YahooFantasyDataSource,
+  type FantasyDataSource,
+} from "../../../server/fantasy/fantasy-data-source";
+import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import { parseSeasonTable } from "../../../server/fantasy/league-tables";
 
 const verifiedClient = {
@@ -68,6 +72,7 @@ function buildApp() {
   const createFantasyDataSource = (
     yahooClient: () => Promise<YahooApiClient>
   ): FantasyDataSource => ({
+    listLeagues: async () => [],
     getSeason: async () => {
       await (await yahooClient()).get("/first");
       await (await yahooClient()).get("/second");
@@ -172,6 +177,8 @@ describe("the request context, end to end", () => {
       createYahooClient: async () => {
         throw new YahooReconnectRequiredError();
       },
+      createFantasyDataSource: (yahooClient) =>
+        new YahooFantasyDataSource(new YahooLeagueResources(yahooClient), { now: () => 0 }),
     });
     const missingConnection = createApp(dependencies);
     missingConnection.use(createAppErrorHandler(dependencies));

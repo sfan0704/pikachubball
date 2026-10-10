@@ -121,7 +121,7 @@ describe("promises and size limits where the target layout applies", () => {
     ).toContain("complexity");
   });
 
-  it("fails the same code in every source folder, and only warns in the legacy league discovery", async () => {
+  it("fails the same code in every source folder", async () => {
     const longBody = Array.from({ length: 62 }, (_, i) => `  noop(${i});`).join("\n");
     const code = `declare function noop(n: number): void;\nexport function big() {\n${longBody}\n}\n`;
 
@@ -132,7 +132,6 @@ describe("promises and size limits where the target layout applies", () => {
     ]) {
       expect(await errorsFor(path, code)).toContain("max-lines-per-function");
     }
-    expect(await errorsFor("server/fantasy/legacy/league-service.ts", code)).toEqual([]);
   });
 
   it("rejects any and non-null assertions", async () => {

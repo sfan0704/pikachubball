@@ -35,8 +35,6 @@ export default defineConfig({
         "**/*.config.*",
         // The development-only Vite middleware.
         "server/config/vite.ts",
-        // The old league discovery, deleted when discovery moves behind FantasyDataSource.
-        "server/fantasy/legacy/**",
       ],
       // CI fails when coverage drops below these.
       thresholds: {

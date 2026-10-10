@@ -15,6 +15,8 @@ const NOW = Date.parse("2025-12-11T18:00:00.000Z");
 
 describe("YahooFantasyDataSource", () => {
   const resources: LeagueResources = {
+    getUserTeams: vi.fn(async () => fixture("captured/user-teams")),
+    getUserLeagues: vi.fn(async () => fixture("captured/user-leagues")),
     getSeasonStandings: vi.fn(async () => fixture("league-season")),
     getCurrentWeekScoreboard: vi.fn(async () => fixture("league-current-week")),
     getPastWeekScoreboard: vi.fn(async () => fixture("league-week-1")),
@@ -39,13 +41,43 @@ describe("YahooFantasyDataSource", () => {
     expect(current.scope).toEqual({ kind: "week", week: 8 });
     expect(past.scope).toEqual({ kind: "week", week: 1 });
   });
+
+  it("lists the user's leagues from one teams call and one leagues call", async () => {
+    const leagues = await source.listLeagues();
+
+    expect(resources.getUserTeams).toHaveBeenCalledOnce();
+    expect(resources.getUserLeagues).toHaveBeenCalledOnce();
+    expect(leagues).toHaveLength(19);
+  });
+
+  it.each([
+    ["the evening before the start, in New York", "2026-10-20T03:59:00Z", "preseason"],
+    ["the morning of the start, in New York", "2026-10-20T04:01:00Z", "active"],
+  ])("dates league starts by the NBA's timezone: %s", async (_when, now, status) => {
+    const atNow = new YahooFantasyDataSource(resources, { now: () => Date.parse(now) });
+
+    const leagues = await atNow.listLeagues();
+
+    expect(leagues.find((league) => league.leagueKey === "478.l.14822")?.status).toBe(status);
+  });
 });
 
 describe("YahooLeagueResources", () => {
   const get = vi.fn(async (_endpoint: string) => ({}));
   const resources = new YahooLeagueResources(async () => ({ get }));
 
+  it("asks Yahoo for the user's NBA teams and leagues", async () => {
+    await resources.getUserTeams();
+    await resources.getUserLeagues();
+
+    expect(get.mock.calls.map(([endpoint]) => endpoint)).toEqual([
+      "/users;use_login=1/games;game_codes=nba/teams",
+      "/users;use_login=1/games;game_codes=nba/leagues",
+    ]);
+  });
+
   it("asks Yahoo for the settings together with the stats, once per table", async () => {
+    get.mockClear();
     await resources.getSeasonStandings("466.l.12345");
     await resources.getCurrentWeekScoreboard("466.l.12345");
     await resources.getPastWeekScoreboard("466.l.12345", 3);

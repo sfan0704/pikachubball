@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-07.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-10-10.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -320,7 +320,7 @@ Yahoo data is grouped by how often it changes. Data that changes about once a se
 
 | Data | Changes | Yahoo call | When |
 |---|---|---|---|
-| The user's leagues and teams | About once a season | `/users;use_login=1/games;game_codes=nba/teams` | At sign-in, when the user refreshes their leagues, and at season rollover; the result is stored |
+| The user's leagues and teams | About once a season | `/users;use_login=1/games;game_codes=nba/teams` and `/users;use_login=1/games;game_codes=nba/leagues`, together | At sign-in, when the user refreshes their leagues, and at season rollover; the result is stored |
 | League settings | Before the draft, then weekly for the current week | Included in every table call below | With the stats |
 | Season table | While NBA games are live or being finalized | `/league/{key};out=settings,standings` | When the season scope is viewed |
 | Current week table | While NBA games are live or being finalized | `/league/{key};out=settings,scoreboard` | When the current week is viewed |
@@ -329,6 +329,7 @@ Yahoo data is grouped by how often it changes. Data that changes about once a se
 
 - **One call per response.** Settings and stats arrive together, so a response never mixes data from different moments, and the current week and season status come with the stats.
 - **Access before Yahoo.** A league that isn't in the user's stored leagues is refused without calling Yahoo.
+- **Two calls for the user's leagues.** The teams call has the user's team in each league but no league name or draft state; the leagues call has those but no team. Both are fixed-cost, whatever the number of leagues. A league is finished when Yahoo marks it or its game over, preseason when it hasn't drafted or starts after today in US Eastern time, and active otherwise.
 
 ### Yahoo request policy
 
