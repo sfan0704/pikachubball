@@ -1,0 +1,82 @@
+/**
+ * Removes names and personal details from a recorded Yahoo response while
+ * keeping its structure, so the committed fixture is safe to publish and still
+ * has the shape the parsers must handle.
+ */
+
+const PERSONAL_URL_KEYS = new Set(["url", "image_url", "logo_url", "felo_tier_url"]);
+const OPAQUE_ID_KEYS = new Set(["guid", "manager_id"]);
+const DROPPED_KEYS = new Set(["email", "nickname"]);
+
+/** Yahoo lists a resource's properties as sibling single-key objects in one array. */
+const NAMED_RESOURCE_KEYS = [
+  { idKey: "team_key", label: "Team" },
+  { idKey: "league_key", label: "League" },
+] as const;
+
+class Pseudonyms {
+  private readonly seen = new Map<string, string>();
+
+  /** The same input always maps to the same placeholder, so references stay linked. */
+  of(prefix: string, value: string): string {
+    const key = `${prefix}:${value}`;
+    const existing = this.seen.get(key);
+    if (existing) {
+      return existing;
+    }
+    const created = `${prefix}-${this.seen.size + 1}`;
+    this.seen.set(key, created);
+    return created;
+  }
+}
+
+function resourceLabel(siblings: readonly unknown[]): string | undefined {
+  for (const { idKey, label } of NAMED_RESOURCE_KEYS) {
+    if (siblings.some((item) => isRecord(item) && idKey in item)) {
+      return label;
+    }
+  }
+  return undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function scrubRecord(
+  record: Record<string, unknown>,
+  label: string | undefined,
+  names: Pseudonyms
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (DROPPED_KEYS.has(key)) {
+      out[key] = "scrubbed";
+    } else if (OPAQUE_ID_KEYS.has(key) && typeof value === "string") {
+      out[key] = names.of(key, value);
+    } else if (PERSONAL_URL_KEYS.has(key) && typeof value === "string") {
+      out[key] = "https://example.invalid/scrubbed";
+    } else if (key === "name" && label && typeof value === "string") {
+      out[key] = names.of(label, value);
+    } else {
+      out[key] = scrubValue(value, names);
+    }
+  }
+  return out;
+}
+
+function scrubValue(value: unknown, names: Pseudonyms, label?: string): unknown {
+  if (Array.isArray(value)) {
+    const siblingLabel = resourceLabel(value.flat());
+    return value.map((item) => scrubValue(item, names, siblingLabel ?? label));
+  }
+  if (isRecord(value)) {
+    return scrubRecord(value, label, names);
+  }
+  return value;
+}
+
+/** A copy of a Yahoo response with names, identifiers, emails and image links replaced. */
+export function scrubYahooResponse(response: unknown): unknown {
+  return scrubValue(response, new Pseudonyms());
+}
