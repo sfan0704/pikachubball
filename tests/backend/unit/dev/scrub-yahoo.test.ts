@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scrubYahooResponse } from "../../../../server/dev/scrub-yahoo";
+import { YahooScrubber } from "../../../../server/dev/scrub-yahoo";
 
 const response = {
   fantasy_content: {
@@ -21,9 +21,9 @@ const response = {
   },
 };
 
-describe("scrubYahooResponse", () => {
+describe("YahooScrubber", () => {
   it("removes names, identifiers, emails and links", () => {
-    const text = JSON.stringify(scrubYahooResponse(response));
+    const text = JSON.stringify(new YahooScrubber().scrub(response));
 
     for (const personal of [
       "Real Team Name",
@@ -37,14 +37,18 @@ describe("scrubYahooResponse", () => {
   });
 
   it("keeps the structure and the game's own name", () => {
-    const scrubbed = scrubYahooResponse(response) as typeof response;
+    const scrubbed = new YahooScrubber().scrub(response) as typeof response;
 
     expect(scrubbed.fantasy_content.team[0]?.[0]).toEqual({ team_key: "466.l.1.t.2" });
     expect(scrubbed.fantasy_content.game.name).toBe("Basketball");
   });
 
   it("gives the same identifier the same placeholder", () => {
-    const twice = scrubYahooResponse({ a: { guid: "X" }, b: { guid: "X" }, c: { guid: "Y" } }) as {
+    const twice = new YahooScrubber().scrub({
+      a: { guid: "X" },
+      b: { guid: "X" },
+      c: { guid: "Y" },
+    }) as {
       a: { guid: string };
       b: { guid: string };
       c: { guid: string };
@@ -52,5 +56,13 @@ describe("scrubYahooResponse", () => {
 
     expect(twice.a.guid).toBe(twice.b.guid);
     expect(twice.a.guid).not.toBe(twice.c.guid);
+  });
+
+  it("finds a removed value that survived elsewhere in the text", () => {
+    const scrubber = new YahooScrubber();
+    const scrubbed = scrubber.scrub(response);
+
+    expect(scrubber.leaksIn(JSON.stringify(scrubbed))).toEqual([]);
+    expect(scrubber.leaksIn("week won by Real Team Name")).toEqual(["Real Team Name"]);
   });
 });

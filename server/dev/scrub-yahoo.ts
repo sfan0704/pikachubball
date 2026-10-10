@@ -16,9 +16,11 @@ const NAMED_RESOURCE_KEYS = [
 
 class Pseudonyms {
   private readonly seen = new Map<string, string>();
+  readonly removed = new Set<string>();
 
   /** The same input always maps to the same placeholder, so references stay linked. */
   of(prefix: string, value: string): string {
+    this.removed.add(value);
     const key = `${prefix}:${value}`;
     const existing = this.seen.get(key);
     if (existing) {
@@ -27,6 +29,13 @@ class Pseudonyms {
     const created = `${prefix}-${this.seen.size + 1}`;
     this.seen.set(key, created);
     return created;
+  }
+
+  drop(value: unknown): string {
+    if (typeof value === "string") {
+      this.removed.add(value);
+    }
+    return "scrubbed";
   }
 }
 
@@ -51,7 +60,7 @@ function scrubRecord(
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record)) {
     if (DROPPED_KEYS.has(key)) {
-      out[key] = "scrubbed";
+      out[key] = names.drop(value);
     } else if (OPAQUE_ID_KEYS.has(key) && typeof value === "string") {
       out[key] = names.of(key, value);
     } else if (PERSONAL_URL_KEYS.has(key) && typeof value === "string") {
@@ -76,7 +85,20 @@ function scrubValue(value: unknown, names: Pseudonyms, label?: string): unknown 
   return value;
 }
 
-/** A copy of a Yahoo response with names, identifiers, emails and image links replaced. */
-export function scrubYahooResponse(response: unknown): unknown {
-  return scrubValue(response, new Pseudonyms());
+/**
+ * Scrubs several responses with one set of placeholders, so the same team or
+ * manager has the same placeholder in every file of a capture.
+ */
+export class YahooScrubber {
+  private readonly names = new Pseudonyms();
+
+  /** A copy of the response with names, identifiers, emails and links replaced. */
+  scrub(response: unknown): unknown {
+    return scrubValue(response, this.names);
+  }
+
+  /** Personal values removed so far that still appear in the text, for a final check. */
+  leaksIn(text: string): string[] {
+    return [...this.names.removed].filter((value) => value.length >= 3 && text.includes(value));
+  }
 }
