@@ -6,7 +6,7 @@
       {
         "league_key": "478.l.14822",
         "league_id": "14822",
-        "name": "League-21",
+        "name": "League-34",
         "url": "https://example.invalid/scrubbed",
         "logo_url": "https://example.invalid/scrubbed",
         "draft_status": "postdraft",
@@ -434,7 +434,7 @@
                               "team_id": "1"
                             },
                             {
-                              "name": "Team-22"
+                              "name": "Team-35"
                             },
                             [],
                             {
@@ -495,7 +495,7 @@
                               "managers": [
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-23",
+                                    "manager_id": "manager_id-36",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "is_commissioner": "1",
@@ -856,7 +856,7 @@
                               "team_id": "2"
                             },
                             {
-                              "name": "Team-24"
+                              "name": "Team-37"
                             },
                             [],
                             {
@@ -1029,7 +1029,7 @@
                               "team_id": "14"
                             },
                             {
-                              "name": "Team-41"
+                              "name": "Team-54"
                             },
                             [],
                             {
@@ -1090,7 +1090,7 @@
                               "managers": [
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-42",
+                                    "manager_id": "manager_id-55",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "email": "scrubbed",
@@ -1274,7 +1274,7 @@
                               "team_id": "3"
                             },
                             {
-                              "name": "Team-25"
+                              "name": "Team-38"
                             },
                             [],
                             {
@@ -1335,7 +1335,7 @@
                               "managers": [
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-26",
+                                    "manager_id": "manager_id-39",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "email": "scrubbed",
@@ -1447,7 +1447,7 @@
                               "team_id": "6"
                             },
                             {
-                              "name": "Team-30"
+                              "name": "Team-43"
                             },
                             [],
                             {
@@ -1508,7 +1508,7 @@
                               "managers": [
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-31",
+                                    "manager_id": "manager_id-44",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "email": "scrubbed",
@@ -1692,7 +1692,7 @@
                               "team_id": "4"
                             },
                             {
-                              "name": "Team-27"
+                              "name": "Team-40"
                             },
                             [],
                             {
@@ -1865,7 +1865,7 @@
                               "team_id": "9"
                             },
                             {
-                              "name": "Team-35"
+                              "name": "Team-48"
                             },
                             [],
                             {
@@ -1926,7 +1926,7 @@
                               "managers": [
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-36",
+                                    "manager_id": "manager_id-49",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "email": "scrubbed",
@@ -2110,7 +2110,7 @@
                               "team_id": "5"
                             },
                             {
-                              "name": "Team-28"
+                              "name": "Team-41"
                             },
                             [],
                             {
@@ -2181,7 +2181,7 @@
                                 },
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-29",
+                                    "manager_id": "manager_id-42",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "is_comanager": "1",
@@ -2294,7 +2294,7 @@
                               "team_id": "12"
                             },
                             {
-                              "name": "Team-38"
+                              "name": "Team-51"
                             },
                             [],
                             {
@@ -2539,7 +2539,7 @@
                               "team_id": "7"
                             },
                             {
-                              "name": "Team-32"
+                              "name": "Team-45"
                             },
                             [],
                             {
@@ -2600,7 +2600,7 @@
                               "managers": [
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-33",
+                                    "manager_id": "manager_id-46",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "email": "scrubbed",
@@ -2712,7 +2712,7 @@
                               "team_id": "8"
                             },
                             {
-                              "name": "Team-34"
+                              "name": "Team-47"
                             },
                             [],
                             {
@@ -2957,7 +2957,7 @@
                               "team_id": "11"
                             },
                             {
-                              "name": "Team-37"
+                              "name": "Team-50"
                             },
                             [],
                             {
@@ -3130,7 +3130,7 @@
                               "team_id": "13"
                             },
                             {
-                              "name": "Team-39"
+                              "name": "Team-52"
                             },
                             [],
                             {
@@ -3191,7 +3191,7 @@
                               "managers": [
                                 {
                                   "manager": {
-                                    "manager_id": "manager_id-40",
+                                    "manager_id": "manager_id-53",
                                     "nickname": "scrubbed",
                                     "guid": "guid-1",
                                     "email": "scrubbed",
@@ -3368,7 +3368,7 @@
         }
       }
     ],
-    "time": "146.42691612244ms",
+    "time": "145.72191238403ms",
     "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
     "refresh_rate": "30"
   }

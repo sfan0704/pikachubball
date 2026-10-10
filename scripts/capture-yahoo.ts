@@ -16,6 +16,7 @@ const AUTH_URL = "https://api.login.yahoo.com/oauth2";
 const BASE_URL = "https://fantasysports.yahooapis.com/fantasy/v2";
 const OUTPUT_DIR = "tests/backend/fixtures/yahoo/captured";
 const USER_TEAMS_PATH = "/users;use_login=1/games;game_codes=nba/teams";
+const USER_LEAGUES_PATH = "/users;use_login=1/games;game_codes=nba/leagues";
 const LEAGUE_KEY = /^\d+\.l\.\d+$/;
 const TEAM_KEY_IN_TEXT = /"team_key":"(\d+)\.l\.(\d+)\.t\.\d+"/g;
 
@@ -115,7 +116,10 @@ async function record(
   const scrubber = new YahooScrubber();
   const userTeams = await fetchJson(USER_TEAMS_PATH, token);
   const leagues = chosenLeague ? [chosenLeague] : pickLeagues(userTeams);
-  const files = new Map([["user-teams.json", userTeams]]);
+  const files = new Map([
+    ["user-teams.json", userTeams],
+    ["user-leagues.json", await fetchJson(USER_LEAGUES_PATH, token)],
+  ]);
   for (const [index, leagueKey] of leagues.entries()) {
     for (const capture of leagueCaptures(leagueKey, index === 0 ? "newest" : "earlier")) {
       files.set(capture.file, await fetchJson(capture.path, token));
