@@ -7,7 +7,13 @@
 set -euo pipefail
 
 BUILT=false
+SMOKE=false
 [ "${1:-}" = "--built" ] && BUILT=true
+if [ "${1:-}" = "--smoke" ]; then
+  BUILT=true
+  SMOKE=true
+  export PORT=5072 STANDIN_PORT=5098
+fi
 
 cd "$(dirname "$0")/.."
 
@@ -55,14 +61,23 @@ export YAHOO_PROVIDER_REDIRECT_URI="$APP_ORIGIN/api/auth/yahoo/fantasy/callback"
 export YAHOO_API_BASE_URL="http://127.0.0.1:$STANDIN_PORT/fantasy/v2"
 export YAHOO_OAUTH_BASE_URL="http://127.0.0.1:$STANDIN_PORT"
 
-STANDIN_PORT="$STANDIN_PORT" npx tsx scripts/yahoo-standin.ts &
+STANDIN_PORT="$STANDIN_PORT" node --import tsx scripts/yahoo-standin.ts &
 STANDIN_PID=$!
-trap 'kill $STANDIN_PID 2>/dev/null || true' EXIT
+APP_PID=
+cleanup() {
+  [ -z "$APP_PID" ] || kill "$APP_PID" 2>/dev/null || true
+  kill "$STANDIN_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 npx tsx scripts/seed-local.ts
 echo
 echo "Sign in as a seeded manager: http://localhost:$PORT/api/dev/login?user=a  (or user=b)"
-if $BUILT; then
+if $SMOKE; then
+  node dist/index.mjs &
+  APP_PID=$!
+  node scripts/agent-smoke.mjs
+elif $BUILT; then
   node dist/index.mjs
 else
   npx tsx --watch server/index.ts

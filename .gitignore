@@ -30,3 +30,6 @@ supabase/.temp
 # Playwright
 test-results/
 playwright-report/
+
+# Sanitized local agent evidence
+.agent/

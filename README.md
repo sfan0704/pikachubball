@@ -34,7 +34,7 @@ Token refresh sends `YAHOO_PROVIDER_REDIRECT_URI`; keep its registered HTTPS red
 
 ## Local setup
 
-Install the pinned toolchain and dependencies:
+For a fresh remote worker, use the [bounded Linux setup](docs/agent-setup.md). For local development, install the pinned toolchain and dependencies:
 
 ```text
 nvm use

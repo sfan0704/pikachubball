@@ -16,7 +16,8 @@ Follow the [remote development contract](docs/remote-development.md): explore â†
 ## Commands
 
 ```text
-npm ci             # install (Node 24, npm 11)
+npm run agent:setup # bounded setup on the supported disposable Linux worker
+npm ci             # install (versions pinned in .nvmrc and packageManager)
 npm run dev        # run locally against a throwaway Supabase stack and the Yahoo stand-in (needs Docker)
 npm run lint       # ESLint, including the import-boundary and size rules
 npm run format     # Prettier (format:check only checks)
