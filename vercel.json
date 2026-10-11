@@ -15,6 +15,10 @@
     {
       "source": "/auth",
       "destination": "/index.html"
+    },
+    {
+      "source": "/leagues/:path*",
+      "destination": "/index.html"
     }
   ],
   "headers": [
