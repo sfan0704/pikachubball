@@ -5,8 +5,8 @@ Merging to `main` migrates the dev database and Vercel deploys `main` to dev. A 
 ## One-time setup
 
 1. **Environments** (Settings → Environments):
-   - `dev`: secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` (dev database) and `SUPABASE_PROJECT_REF` (`ocqdxmfpezxpgutoicyh`).
-   - `production`: the same three secrets for the production project (`fpdwtpwpmxsbgjxizuxa`), `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (for the keep-alive read), and `PRODUCTION_DEPLOY_KEY`: the private half of a deploy key with write access that is allowed to push the `production` branch. Set **required reviewers** to the owner and limit **deployment branches** to `main`.
+   - `dev`: secrets `SUPABASE_DB_PASSWORD` (dev database) and `SUPABASE_PROJECT_REF` (`ocqdxmfpezxpgutoicyh`). Dev migrations connect directly through its session pooler with TLS, without a management access token. The workflow encodes the password and masks both the encoded password and connection URL before running the CLI. The pooler hostname was verified in the project's Connect dialog; recheck it if the project moves regions or is recreated.
+   - `production`: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_REF` for the production project (`fpdwtpwpmxsbgjxizuxa`), `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (for the keep-alive read), and `PRODUCTION_DEPLOY_KEY`: the private half of a deploy key with write access that is allowed to push the `production` branch. Set **required reviewers** to the owner and limit **deployment branches** to `main`.
 2. **The `production` branch**: create it from `main`, make it Vercel's production branch, and protect it so only the deploy key can push, fast-forward only.
 3. **Switch on**: set the repository variable `RELEASE_AUTOMATION` to `true` (Settings → Secrets and variables → Actions → Variables).
 
