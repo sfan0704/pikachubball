@@ -174,7 +174,7 @@ describe("preferences and stored leagues", () => {
 
     await storage.savePreferences({ selectedLeagueKey: null, selectedTeamKey: null, display: {} });
     await storage.replaceUserLeagues([
-      { leagueKey: "466.l.1", teamKey: "466.l.1.t.1", name: "L", season: null, isFinished: true },
+      { leagueKey: "466.l.1", teamKey: "466.l.1.t.1", name: "L", season: null, status: "finished" },
     ]);
 
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ owner_id: OWNER_A }), {
@@ -187,7 +187,7 @@ describe("preferences and stored leagues", () => {
           team_key: "466.l.1.t.1",
           season: null,
           name: "L",
-          is_finished: true,
+          status: "finished",
         },
       ],
     });

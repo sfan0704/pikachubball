@@ -33,7 +33,7 @@ const LEAGUES = {
       teamKey: "466.l.1.t.1",
       name: "League",
       season: 2025,
-      isFinished: false,
+      status: "active",
       syncedAt: "2026-10-08T01:00:00.000+00:00",
     },
   ],

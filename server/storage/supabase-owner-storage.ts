@@ -1,5 +1,9 @@
 import type { Preferences } from "../../shared/api/account";
-import type { UserLeague, UserLeagueInput } from "../../shared/api/leagues";
+import {
+  leagueStatusSchema,
+  type UserLeague,
+  type UserLeagueInput,
+} from "../../shared/api/leagues";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   FantasyMembership,
@@ -180,7 +184,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
   async listUserLeagues(): Promise<UserLeague[]> {
     const { data, error } = await this.client
       .from("user_leagues")
-      .select("league_key,team_key,name,season,is_finished,synced_at")
+      .select("league_key,team_key,name,season,status,synced_at")
       .eq("owner_id", this.ownerId)
       .order("season", { ascending: false, nullsFirst: false })
       .order("name");
@@ -192,7 +196,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
       teamKey: row.team_key,
       name: row.name,
       season: row.season,
-      isFinished: row.is_finished,
+      status: leagueStatusSchema.parse(row.status),
       syncedAt: row.synced_at,
     }));
   }
@@ -204,7 +208,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
         team_key: league.teamKey,
         season: league.season,
         name: league.name,
-        is_finished: league.isFinished,
+        status: league.status,
       })),
     });
     if (error) {

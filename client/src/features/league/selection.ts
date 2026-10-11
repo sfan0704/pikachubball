@@ -43,9 +43,16 @@ export function parseSelectionPath(path: string): RequestedSelection | null {
   }
 }
 
-/** Current leagues first (the list arrives newest season first); a finished league only when it's all there is. */
+/**
+ * A league in progress first, then one that hasn't started, then the newest
+ * finished one (the list arrives newest season first).
+ */
 export function pickDefaultLeague(leagues: readonly UserLeague[]): UserLeague | undefined {
-  return leagues.find((league) => !league.isFinished) ?? leagues[0];
+  return (
+    leagues.find((league) => league.status === "active") ??
+    leagues.find((league) => league.status === "preseason") ??
+    leagues[0]
+  );
 }
 
 function teamIn(league: UserLeague, teamKey: string | null): string {

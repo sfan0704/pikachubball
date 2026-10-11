@@ -13,7 +13,7 @@ export function LeagueHeader({ league, teamName }: LeagueHeaderProps) {
       <h2 className="text-2xl md:text-3xl font-bold">{league.name}</h2>
       <p className="text-sm md:text-base text-muted-foreground">
         {league.season === null ? "Season unknown" : `${league.season} season`}
-        {league.isFinished ? " (finished)" : ""} · {teamName ?? league.teamKey}
+        {league.status === "active" ? "" : ` (${league.status})`} · {teamName ?? league.teamKey}
       </p>
     </div>
   );
