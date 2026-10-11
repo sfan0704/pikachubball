@@ -1,8 +1,12 @@
 name: Scheduled
 
-# Weekly: read from the production database so the free Supabase project doesn't
+# Weekly: query the production database so the free Supabase project doesn't
 # pause for inactivity, and keep a dump of its schema as an artifact. Neither
-# calls Yahoo. Switched on by the repository variable RELEASE_AUTOMATION=true.
+# calls Yahoo. Both run unattended in the `maintenance` environment as the
+# `maintenance` database role, which reads no rows and can change nothing
+# (supabase/migrations/202610110001_maintenance_role.sql). Switched on by the
+# repository variable RELEASE_AUTOMATION=true; a manual run from main works
+# before that, to check the setup.
 on:
   schedule:
     - cron: "17 6 * * 1"
@@ -11,47 +15,52 @@ on:
 permissions:
   contents: read
 
+env:
+  # The production project's session pooler, from its Connect dialog.
+  POOLER_HOST: aws-0-us-east-1.pooler.supabase.com
+  POSTGRES_IMAGE: postgres:17
+
 jobs:
   keep-alive:
     name: Keep the production database awake
-    if: vars.RELEASE_AUTOMATION == 'true'
+    if: github.ref == 'refs/heads/main' && (vars.RELEASE_AUTOMATION == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
-    environment: production
+    environment: maintenance
     steps:
-      - name: Read from the database
+      - name: Query the database
         run: |
-          curl --fail --silent --show-error \
-            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
-            "$SUPABASE_URL/rest/v1/user_leagues?select=owner_id&limit=1"
+          test "$SUPABASE_PROJECT_REF" = "fpdwtpwpmxsbgjxizuxa"
+          test -n "$MAINTENANCE_DB_PASSWORD"
+          password=$(node -e 'process.stdout.write(encodeURIComponent(process.env.MAINTENANCE_DB_PASSWORD))')
+          echo "::add-mask::$password"
+          url="postgresql://maintenance.$SUPABASE_PROJECT_REF:$password@$POOLER_HOST:5432/postgres?sslmode=require"
+          echo "::add-mask::$url"
+          test "$(docker run --rm "$POSTGRES_IMAGE" psql "$url" -tAc 'select 1')" = "1"
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          MAINTENANCE_DB_PASSWORD: ${{ secrets.MAINTENANCE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
   schema-dump:
     name: Dump the production schema
-    if: vars.RELEASE_AUTOMATION == 'true'
+    if: github.ref == 'refs/heads/main' && (vars.RELEASE_AUTOMATION == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
-    environment: production
+    environment: maintenance
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
+      # pg_dump directly, not `supabase db dump`, which switches to the
+      # postgres role first; this role can't and shouldn't.
       - name: Dump the schema
         run: |
-          npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
-          npx supabase db dump --linked --file schema.sql
+          test "$SUPABASE_PROJECT_REF" = "fpdwtpwpmxsbgjxizuxa"
+          test -n "$MAINTENANCE_DB_PASSWORD"
+          password=$(node -e 'process.stdout.write(encodeURIComponent(process.env.MAINTENANCE_DB_PASSWORD))')
+          echo "::add-mask::$password"
+          url="postgresql://maintenance.$SUPABASE_PROJECT_REF:$password@$POOLER_HOST:5432/postgres?sslmode=require"
+          echo "::add-mask::$url"
+          docker run --rm "$POSTGRES_IMAGE" pg_dump --schema-only --schema=public \
+            --no-owner --no-privileges "$url" > schema.sql
+          grep -q "CREATE TABLE public.user_leagues" schema.sql
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          MAINTENANCE_DB_PASSWORD: ${{ secrets.MAINTENANCE_DB_PASSWORD }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
       - name: Keep the dump
