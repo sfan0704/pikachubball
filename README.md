@@ -38,11 +38,20 @@ npm ci
 
 ### Everyday development
 
-`npm run dev` runs the whole app on your laptop with no hosted credentials and no network access to Yahoo. It needs Docker. It starts a throwaway Supabase stack, applies the migrations, starts the Yahoo stand-in (recorded, scrubbed responses played through the app's real transport) and seeds two synthetic managers in the recorded league, then starts the app on `http://localhost:5000` (set `PORT` to change it). Sign in as a manager with `http://localhost:5000/api/dev/login?user=a` (or `user=b`).
+`npm run dev` runs the whole app on your laptop with no hosted credentials and no network access to Yahoo. It needs Docker. It starts a throwaway Supabase stack, applies the migrations, starts the Yahoo stand-in (recorded, scrubbed responses played through the app's real transport) and seeds two synthetic managers in the recorded league, then starts the app and prints its address and a sign-in link for a seeded manager (`/api/dev/login?user=a`, or `user=b`). The ports are this checkout's own: `npm run workspace` lists them.
 
-The stand-in can fail the way Yahoo does. Tell it with `curl -X POST http://127.0.0.1:5090/__scenario -d '{"scenario":"rate-limit","times":2}'`; scenarios are `ok`, `rate-limit`, `unavailable`, `unauthorized` (an expired token) and `timeout`, and `times` limits how many requests are affected. Local mode (`LOCAL_STACK=true`) refuses production, a hosted Supabase project and a hosted Yahoo address, and `YAHOO_API_BASE_URL` / `YAHOO_OAUTH_BASE_URL` cannot be set outside it.
+The stand-in can fail the way Yahoo does. Tell it with `curl -X POST http://127.0.0.1:<stand-in port>/__scenario -d '{"scenario":"rate-limit","times":2}'`, using the `devStandIn` port from `npm run workspace`; scenarios are `ok`, `rate-limit`, `unavailable`, `unauthorized` (an expired token) and `timeout`, and `times` limits how many requests are affected. Local mode (`LOCAL_STACK=true`) refuses production, a hosted Supabase project and a hosted Yahoo address, and `YAHOO_API_BASE_URL` / `YAHOO_OAUTH_BASE_URL` cannot be set outside it.
 
 Before a release, `npm run build && npm run load` simulates 14 managers using the app at once against the stand-in and reports league-view timings against the 2-second target and the Yahoo calls each step made (1 for a new scope, 0 for repeat views and comparisons).
+
+### Several workspaces
+
+Every checkout (a clone, a `git worktree`, a CI job) gets its own Supabase stack and ports, derived from its path by `scripts/workspace.mts`, so two of them can run `npm run dev`, `npm run test:db`, `npm run test:browser` or `npm run load` at the same time without resetting or reusing each other's database, app or stand-in. The tracked `supabase/config.toml` is never edited: each stack runs from a generated copy in the git-ignored `.workspace/` folder, and the scripts refuse to reset a stack unless the containers on the checkout's ports are its own. The browser tests never reuse a running server.
+
+- `npm run workspace` shows this checkout's stack name (`pikachubball-<id>`) and ports.
+- `npm run stack:stop` stops this checkout's stack and deletes its data, and nothing else.
+- **Stale stacks:** `docker ps -a --filter name=pikachubball` lists every local stack. One whose checkout is gone can be removed with `docker rm -f $(docker ps -aq --filter name=_pikachubball-<id>)`, plus `docker volume rm` on its volumes. The old shared stack from before workspaces (`supabase_*_pikachubball`, on ports 54321–54329) is stopped with `npx supabase stop --no-backup` from any checkout.
+- If two checkouts happen to get the same ports, the second one's scripts refuse to start and name the container holding the port; move the checkout or stop the other stack.
 
 ### Against the dev tier
 

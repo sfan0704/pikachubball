@@ -27,6 +27,8 @@
     "load": "bash scripts/load-test.sh",
     "test:browser": "playwright test",
     "test:db": "bash scripts/test-database.sh",
+    "workspace": "node scripts/workspace.mts",
+    "stack:stop": "bash scripts/stack-stop.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "knip": "knip"

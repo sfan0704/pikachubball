@@ -1,7 +1,12 @@
 import { defineConfig } from "@playwright/test";
+import { workspace } from "./scripts/workspace.mts";
 
-const PORT = Number(process.env.E2E_PORT ?? 5070);
-const STANDIN_PORT = Number(process.env.E2E_STANDIN_PORT ?? 5096);
+// This checkout's own ports (scripts/workspace.mts), so two workspaces can run
+// browser tests at once. Set here so the test workers inherit them.
+const { ports } = workspace();
+const PORT = ports.browser;
+const STANDIN_PORT = ports.browserStandIn;
+process.env.E2E_STANDIN_PORT = String(STANDIN_PORT);
 
 /**
  * Browser tests of the main flows against the production build, the throwaway
@@ -28,7 +33,9 @@ export default defineConfig({
     command: "bash scripts/dev-local.sh --built",
     url: `http://localhost:${PORT}/api/health`,
     timeout: 300_000,
-    reuseExistingServer: !process.env.CI,
+    // Never reuse a running server: it could be another commit's build. A busy
+    // port fails the run instead of testing the wrong thing.
+    reuseExistingServer: false,
     env: { PORT: String(PORT), STANDIN_PORT: String(STANDIN_PORT) },
   },
 });
