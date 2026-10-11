@@ -12,6 +12,7 @@ Merging to `main` migrates the dev database and Vercel deploys `main` to dev. A 
 
 ## Day to day
 
+- **Verify dev credentials before activation:** Actions → Migrate dev → Run workflow, from `main`. This manual run applies only to Basketball Development and works while `RELEASE_AUTOMATION` is unset. It does not enable production releases or scheduled jobs. Runs from other branches are skipped. Keep automatic jobs switched off until hosting and production setup are complete.
 - **A change reaches dev** by merging the pull request. If it changes `supabase/migrations`, *Migrate dev* applies it; a failure shows as a red run and a GitHub notification, and the database is left as the migration left it (migrations are backward compatible, so the running app keeps working).
 - **Release**: test on dev, then Actions → Release → Run workflow (from `main`). The *migrate* job waits for your approval, applies the migrations to production, and the *promote* job (also approved) fast-forwards `production` to the tested commit, tags it `vYYYY.M.N` and publishes release notes generated from the merged pull request titles. Vercel deploys production when `production` moves. Only one release runs at a time.
 - **If a release fails** after the migration, the schema is already ahead of the deployed app, which is safe. Fix forward and run the release again. To undo a bad deploy see [restore and rollback](restore-and-rollback.md).

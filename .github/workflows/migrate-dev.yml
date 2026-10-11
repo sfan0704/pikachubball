@@ -5,6 +5,7 @@ name: Migrate dev
 # variable RELEASE_AUTOMATION=true once the `dev` environment holds its secrets
 # (docs/runbooks/release.md).
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths: ["supabase/migrations/**"]
@@ -19,7 +20,7 @@ permissions:
 jobs:
   migrate:
     name: Migrate the dev database
-    if: vars.RELEASE_AUTOMATION == 'true'
+    if: github.ref == 'refs/heads/main' && (vars.RELEASE_AUTOMATION == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -38,6 +39,9 @@ jobs:
       # A failed migration fails this job, which notifies the owner through GitHub.
       - name: Apply the migrations
         run: |
+          test "$SUPABASE_PROJECT_REF" = "ocqdxmfpezxpgutoicyh"
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_DB_PASSWORD"
           npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
           npx supabase db push
         env:
