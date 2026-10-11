@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Local development: the app against a throwaway Supabase stack and the Yahoo
 # stand-in. No hosted credentials, no network access to Yahoo. Refuses to run in
-# production and refuses anything but loopback addresses. With --built it serves
+# production and refuses anything but loopback addresses. Each checkout gets its
+# own stack and ports (scripts/workspace.mts). With --built it serves
 # the production build (npm run build) instead of the development server, which
 # is how the browser tests run it.
 set -euo pipefail
@@ -24,24 +25,21 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-if supabase status -o env >/dev/null 2>&1 && ! supabase status -o env | grep -q '^API_URL='; then
-  supabase stop --no-backup
-fi
-supabase start \
-  -x studio,imgproxy,mailpit,realtime,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta
-supabase db reset --local
+# shellcheck source=scripts/workspace-stack.sh
+. scripts/workspace-stack.sh
+start_workspace_stack
+sb db reset --local
 
-status() { supabase status -o env | sed -n "s/^$1=\"\(.*\)\"$/\1/p"; }
-SUPABASE_URL="$(status API_URL)"
-SUPABASE_PUBLISHABLE_KEY="$(status PUBLISHABLE_KEY)"
-SUPABASE_DB_URL="$(status DB_URL)"
+SUPABASE_URL="$(workspace_status API_URL)"
+SUPABASE_PUBLISHABLE_KEY="$(workspace_status PUBLISHABLE_KEY)"
+SUPABASE_DB_URL="$(workspace_status DB_URL)"
 case "$SUPABASE_URL" in
   http://127.0.0.1:*|http://localhost:*) ;;
   *) echo "Refusing to use '$SUPABASE_URL' in local mode." >&2; exit 1 ;;
 esac
 
-STANDIN_PORT="${STANDIN_PORT:-5090}"
-PORT="${PORT:-5000}"
+STANDIN_PORT="${STANDIN_PORT:-$WORKSPACE_DEV_STANDIN_PORT}"
+PORT="${PORT:-$WORKSPACE_DEV_PORT}"
 # The built server serves the compiled client when NODE_ENV is not "development".
 if $BUILT; then export NODE_ENV=test; else export NODE_ENV=development; fi
 export LOCAL_STACK=true PORT
