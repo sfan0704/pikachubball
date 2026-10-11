@@ -8,6 +8,7 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { describe, expect, it, vi } from "vitest";
 import { ERROR_CODES } from "@shared/api/errors";
+import type { UserLeague } from "@shared/api/leagues";
 import { ApiError, type ApiErrorCode } from "../../../client/src/api/errors";
 import { describeError } from "../../../client/src/features/league/error-screens";
 import { formatAge } from "../../../client/src/features/league/freshness";
@@ -189,12 +190,12 @@ describe("the freshness label", () => {
 });
 
 describe("the header", () => {
-  const league = {
+  const league: UserLeague = {
     leagueKey: "466.l.1",
     teamKey: "466.l.1.t.3",
     name: "Test League",
     season: 2025,
-    isFinished: false,
+    status: "active",
     syncedAt: "2026-10-08T01:00:00.000+00:00",
   };
 
@@ -206,9 +207,15 @@ describe("the header", () => {
   });
 
   it("falls back to the team key and marks a finished league", () => {
-    render(<LeagueHeader league={{ ...league, isFinished: true }} teamName={null} />);
+    render(<LeagueHeader league={{ ...league, status: "finished" }} teamName={null} />);
 
     expect(screen.getByText(/finished/)).toHaveTextContent("466.l.1.t.3");
+  });
+
+  it("marks a league that hasn't started", () => {
+    render(<LeagueHeader league={{ ...league, status: "preseason" }} teamName="My Team" />);
+
+    expect(screen.getByText(/2025 season/)).toHaveTextContent("(preseason)");
   });
 });
 
