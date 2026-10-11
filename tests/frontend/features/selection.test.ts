@@ -13,7 +13,7 @@ function league(overrides: Partial<UserLeague>): UserLeague {
     teamKey: "466.l.1.t.3",
     name: "League",
     season: 2025,
-    isFinished: false,
+    status: "active",
     syncedAt: "2026-10-08T01:00:00.000+00:00",
     ...overrides,
   };
@@ -24,7 +24,7 @@ const OLD = league({
   leagueKey: "454.l.9",
   teamKey: "454.l.9.t.2",
   season: 2024,
-  isFinished: true,
+  status: "finished",
 });
 const NO_PREFERENCE = { selectedLeagueKey: null, selectedTeamKey: null, display: {} };
 
@@ -60,6 +60,13 @@ describe("default league", () => {
     expect(pickDefaultLeague([OLD, CURRENT])).toBe(CURRENT);
     expect(pickDefaultLeague([OLD])).toBe(OLD);
     expect(pickDefaultLeague([])).toBeUndefined();
+  });
+
+  it("prefers a league in progress, then one that hasn't started, over a finished one", () => {
+    const upcoming = league({ leagueKey: "478.l.5", teamKey: "478.l.5.t.1", status: "preseason" });
+
+    expect(pickDefaultLeague([upcoming, CURRENT, OLD])).toBe(CURRENT);
+    expect(pickDefaultLeague([OLD, upcoming])).toBe(upcoming);
   });
 });
 

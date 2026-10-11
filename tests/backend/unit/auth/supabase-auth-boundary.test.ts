@@ -282,7 +282,7 @@ describe("Supabase Yahoo auth boundary", () => {
         teamKey: "478.l.1.t.4",
         name: "League One",
         season: 2026,
-        isFinished: false,
+        status: "preseason",
       },
     ]);
     expect(saveYahooConnection.mock.invocationCallOrder[0]).toBeLessThan(

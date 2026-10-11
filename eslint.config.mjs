@@ -7,10 +7,17 @@ import reactHooks from "eslint-plugin-react-hooks";
 export default [
   js.configs.recommended,
   {
-    ignores: ["dist/**", "public/**", "node_modules/**", "*.config.js", "*.config.ts"],
+    ignores: [
+      "dist/**",
+      "public/**",
+      "node_modules/**",
+      ".workspace/**",
+      "*.config.js",
+      "*.config.ts",
+    ],
   },
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ["**/*.ts", "**/*.tsx", "**/*.mts"],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -141,7 +148,7 @@ export default [
     rules: { "no-console": "off" },
   },
   {
-    files: ["scripts/**/*.ts"],
+    files: ["scripts/**/*.ts", "scripts/**/*.mts"],
     rules: { "no-console": "off" },
   },
   // Layer boundaries: which module may import which (docs/target-state.md, Layout and dependency rules).

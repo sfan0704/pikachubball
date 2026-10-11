@@ -65,7 +65,7 @@ const STORED_LEAGUE = {
   teamKey: "466.l.1.t.3",
   name: "League One",
   season: 2025,
-  isFinished: false,
+  status: "active",
   syncedAt: "2026-10-08T01:00:00.000+00:00",
 };
 
@@ -197,14 +197,14 @@ describe("GET /api/leagues", () => {
       teamKey: "478.l.52912.t.5",
       name: "League-31",
       season: 2026,
-      isFinished: false,
+      status: "preseason",
     });
     expect(saved).toContainEqual({
       leagueKey: "466.l.29849",
       teamKey: "466.l.29849.t.10",
       name: "League-33",
       season: 2025,
-      isFinished: true,
+      status: "finished",
     });
   });
 
@@ -219,7 +219,7 @@ describe("GET /api/leagues", () => {
   });
 
   describe("at season rollover, when every stored league is finished", () => {
-    const finished = { ...STORED_LEAGUE, isFinished: true, syncedAt: "2026-10-08T16:00:00.000Z" };
+    const finished = { ...STORED_LEAGUE, status: "finished", syncedAt: "2026-10-08T16:00:00.000Z" };
 
     it("asks Yahoo for the new season on the next visit", async () => {
       const { app, storage } = buildApp({ stored: [finished], now: "2026-10-10T16:00:00.000Z" });

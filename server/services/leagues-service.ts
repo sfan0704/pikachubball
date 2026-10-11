@@ -21,7 +21,7 @@ export async function syncLeagues(storage: LeagueStorage, dataSource: LeagueSour
       teamKey: league.teamKey,
       name: league.name,
       season: league.season,
-      isFinished: league.status === "finished",
+      status: league.status,
     }))
   );
 }
@@ -35,7 +35,8 @@ function needsSync(stored: readonly UserLeague[], now: number): boolean {
     return true;
   }
   return stored.every(
-    (league) => league.isFinished && now - Date.parse(league.syncedAt) > ROLLOVER_CHECK_MS
+    (league) =>
+      league.status === "finished" && now - Date.parse(league.syncedAt) > ROLLOVER_CHECK_MS
   );
 }
 

@@ -318,19 +318,19 @@ describe("preferences and stored leagues through the Data API", () => {
 
   it("replaces and lists the owner's leagues, newest season first, and answers ownership", async () => {
     await ownerA.storage.replaceUserLeagues([
-      { ...leagueA, name: "Old", season: 2024, isFinished: true },
+      { ...leagueA, name: "Old", season: 2024, status: "finished" },
       {
         leagueKey: "466.l.303",
         teamKey: "466.l.303.t.1",
         name: "New",
         season: 2025,
-        isFinished: false,
+        status: "active",
       },
     ]);
 
     const leagues = await ownerA.storage.listUserLeagues();
     expect(leagues.map((league) => league.name)).toEqual(["New", "Old"]);
-    expect(leagues[1]).toMatchObject({ isFinished: true, season: 2024 });
+    expect(leagues[1]).toMatchObject({ status: "finished", season: 2024 });
     await expect(ownerA.storage.ownsLeague(leagueA.leagueKey)).resolves.toBe(true);
     await expect(ownerB.storage.ownsLeague(leagueA.leagueKey)).resolves.toBe(false);
     await expect(ownerB.storage.listUserLeagues()).resolves.toEqual([]);

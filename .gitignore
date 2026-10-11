@@ -30,3 +30,6 @@ supabase/.temp
 # Playwright
 test-results/
 playwright-report/
+
+# Generated per checkout by scripts/workspace.mts: its own Supabase stack config and logs.
+.workspace/
