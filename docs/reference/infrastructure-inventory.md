@@ -32,19 +32,32 @@ The basketball project references differ from both Card Benefits Supabase projec
 
 ## Environment tiers
 
-A hosted dev tier exists because every useful screen needs live Yahoo Fantasy data, which requires a real Yahoo sign-in through an HTTPS Supabase callback that a local-only stack cannot provide.
+The default development and CI environment is the disposable Supabase stack with the implemented offline Yahoo stand-in. It needs no real Yahoo sign-in. Real Yahoo validation remains manual, using the dedicated dev Supabase project.
 
-| Resource | Local | Dev | Prod |
+| Resource | Local / CI | Dev | Prod |
 | --- | --- | --- | --- |
 | Supabase project | Disposable CLI stack, `project_id = "pikachubball"` | `Pikachu Basketball Development` / `ocqdxmfpezxpgutoicyh` | `Pikachu Basketball` / `fpdwtpwpmxsbgjxizuxa` |
-| Supabase region | Docker on the developer machine or CI | AWS North Virginia (`us-east-1`), Free | AWS North Virginia (`us-east-1`), Free |
-| Yahoo Developer app | `PikachuBball` (`VZxFFbzH`), planned | `PikachuBball` (`VZxFFbzH`) | `PikachuBball` (`VZxFFbzH`), switched from `PikachuBball - Local` (`i19hJ8X4`) on 2026-10-10 |
-| Yahoo redirect URI | `http://127.0.0.1:54321/auth/v1/callback` (planned; loopback acceptance untested) | `https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback` and `https://localhost:5001/api/auth/yahoo/fantasy/callback` | `i19hJ8X4`: the prod Supabase callback. `VZxFFbzH`: the prod Supabase callback, `https://pikachubball.vercel.app/api/auth/yahoo/fantasy/callback`, and a legacy Replit URI |
-| Application callback | None | `https://localhost:5001/api/auth/callback` | `https://<production-domain>/api/auth/callback` |
-| Secret location | None | Developer's `.env.local` | Vercel Production environment |
-| Migrations | `npm run test:db` on every change | Applied first and validated | Applied only after dev validation |
+| Supabase region | Docker on worker or laptop | AWS North Virginia (`us-east-1`), Free | AWS North Virginia (`us-east-1`), Free |
+| Yahoo app | None; recorded-response stand-in | `PikachuBball` (`VZxFFbzH`) | `PikachuBball` (`VZxFFbzH`) |
+| Sign-in | Seeded synthetic managers via `/api/dev/login` | Owner's real Yahoo sign-in | League members' real Yahoo sign-in |
+| Application callback | No Yahoo callback | Local HTTPS exception: `https://localhost:5001/api/auth/callback`; hosted dev callback pending CAR-94 | `https://pikachubball.vercel.app/api/auth/callback` |
+| Secret location | Generated local/test values only | Owner-managed `.env.local` exception; hosted branch scope pending | Vercel Production environment |
+| Migrations | `npm run test:db`, disposable only | Manual main-only workflow verified; automatic activation pending | Approval-protected release workflow, activation pending |
 
-Decided on 2026-09-25: every tier uses one Yahoo app, `PikachuBball` (`VZxFFbzH`). Each Supabase project (and the local stack) holds one `custom:yahoo` provider configured with that app's client ID and secret, and the app lists each tier's Supabase callback as a redirect URI. Tiers keep separate Supabase projects, users, databases and stored tokens, but share Yahoo's rate limits and revocation. Since CAR-81, one sign-in covers Fantasy access: the provider requests `fspt-r` and the sign-in callback stores the Yahoo tokens from the Supabase session. The server refreshes them with the same app. Verified live on 2026-09-24: the Supabase-issued token reads Fantasy data, refresh returns 200 and rotates the token, and the Yahoo `sub` is the same across Yahoo apps. Only `VZxFFbzH` has Fantasy access; `si6rpgJq` (`PikachuBball - Dev`) and `rVqtn8Pt` (`Fantasy`) return 403, so every tier uses `VZxFFbzH`. Production's sign-in moved from `PikachuBball - Local` (`i19hJ8X4`) to `VZxFFbzH` on 2026-10-10, verified from the `client_id` in its sign-in redirect. Do not remove `VZxFFbzH`'s `/api/auth/yahoo/fantasy/callback` redirect URIs: nothing is served there, but token refresh sends them, so removing them breaks Fantasy access for every league member.
+### Verified state and remaining activation (2026-10-11)
+
+- [CAR-94](https://linear.app/card-benefits/issue/CAR-94): latest discussion at 00:25 UTC records `production` created at `ceb61b4b78629c3871224a4112d7e55bbc876fc5`. Vercel still follows `main` for production. Hosted dev configuration, stable origin, Vercel Authentication, exact callback allowlist and branch switch remain pending. Seven server variables were verified production-only; verify isolation on a fresh preview before claiming deployment-level acceptance.
+- [CAR-83](https://linear.app/card-benefits/issue/CAR-83): latest discussion at 15:59 UTC records a [successful manual dev migration](https://github.com/sfan0704/pikachubball/actions/runs/38153494925) through the verified dev session pooler with TLS. `RELEASE_AUTOMATION` remains unset; hosted main/dev and an approved production release remain unverified.
+- The GitHub production environment requires owner approval and allows deployment from `main` only. Preserve that protection. A branch or merged workflow is not evidence of an activated release.
+- Feature previews remain build-only, with no Supabase/Yahoo credentials or sign-in. Functional preview design belongs to CAR-128; implementation belongs to CAR-129.
+
+### Shared Yahoo boundary
+
+Dev and prod share `PikachuBball` (`VZxFFbzH`), its secret, rate limits and revocation. Local/CI has no Yahoo app, provider secret or real redirect. `PikachuBball - Dev` (`si6rpgJq`) and `Fantasy` (`rVqtn8Pt`) returned 403 for Fantasy access in the recorded verification; do not configure them as replacements.
+
+The hosted Supabase callbacks are `https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback` (dev) and `https://fpdwtpwpmxsbgjxizuxa.supabase.co/auth/v1/callback` (prod). The documented refresh redirects are `https://localhost:5001/api/auth/yahoo/fantasy/callback` for the local dev exception and `https://pikachubball.vercel.app/api/auth/yahoo/fantasy/callback` for prod. Nothing is served at these refresh paths, but token refresh sends them; removing them breaks access. Hosted dev must establish its own exact origin and redirect before activation.
+
+Production switched from `PikachuBball - Local` (`i19hJ8X4`) to `VZxFFbzH` on 2026-10-10, verified from the sign-in redirect's client ID. Since CAR-81, Supabase requests `fspt-r` and the callback stores its Yahoo tokens; there is no second connect step. Historical redirect registrations include a legacy Replit URI; this inventory does not authorize deleting registrations.
 
 The Supabase organization is on the Free plan, which allows two active projects. Both basketball projects are active, and the two Card Benefits projects are paused. Restoring a Card Benefits project requires pausing one basketball project first.
 

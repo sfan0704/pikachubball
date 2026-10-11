@@ -9,6 +9,10 @@ These rules apply to everyone who changes this repository: people and coding age
 - **Design changes** go in the same pull request as the code: update `docs/target-state.md` and its "As of" date, and add a line to [`docs/target-state-changelog.md`](docs/target-state-changelog.md).
 - **Runbooks and reference** are in `docs/`. Keep them true in the same pull request that changes what they describe.
 
+## Remote work
+
+Follow the [remote development contract](docs/remote-development.md): explore → retrieve task → bootstrap → implement → validate → deliver. It defines current support, environment exceptions, evidence and human decision boundaries.
+
 ## Commands
 
 ```text
