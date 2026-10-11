@@ -1,0 +1,56 @@
+# Remote development contract
+
+A worker starts with a repository, Linear issue ID, disposable compute and scoped access. The deliverable is a reviewed change with durable evidence. This contract applies to people and agents, independently of editor or personal configuration.
+
+## Current support
+
+Use Node 24, npm 11, the committed lockfile and Docker. The existing disposable stack works on a Docker-capable worker as it does locally: Supabase migrations, synthetic users and the Yahoo stand-in. It binds to loopback and rejects production and hosted service endpoints. Hosted credentials are unnecessary for implementation and tests. Do not read `.env.local`.
+
+Remote bootstrap, concurrent workspace isolation and functional deployed previews are still tracked in CAR-123, CAR-125 and CAR-128/CAR-129. Until isolation lands, use one checkout per Docker host; the fixed Supabase project and resets are not safe to share. A forwarded port is not permission to expose the synthetic login or database publicly.
+
+Feature-branch Vercel previews are build checks only. The target hosted dev/release model is not fully active; see the [dated inventory](reference/infrastructure-inventory.md#environment-tiers). The owner's manual `npm run dev:hosted` HTTPS setup is a local-only exception for real Yahoo validation, never an automated fallback.
+
+## Lifecycle
+
+1. **Explore.** Read [AGENTS.md](../AGENTS.md), [target state](target-state.md), relevant runbooks and the working tree status. Record the source commit. Preserve unrelated changes; inspect implementation before assuming the target state is already deployed.
+2. **Retrieve task.** Read the Linear issue, full description, discussion, dependencies and linked PRs. Check completion evidence as well as status. Identify acceptance criteria and unresolved decisions. Claim the issue and set In Progress when work begins. Missing task access is a blocker, not permission to invent its requirements.
+3. **Bootstrap.** Provision Node 24/npm 11 and a running Docker engine in disposable compute, then `npm ci`. Run `npm run dev` for the app and seed users. Browser validation additionally needs `npx playwright install --with-deps chromium`. Linux browser system packages require a provisioned image or explicit host administration access. Stop on missing prerequisites; never substitute hosted credentials. Record versions and setup failures without secrets.
+4. **Implement.** Use the issue's branch name, make one bounded change and add behavior tests where appropriate. Keep design, runbooks and code consistent. An unresolved dependency permits investigation or a draft, not a claim of acceptance.
+5. **Validate.** Run the checks below on the final change. Record command, result, commit and limitations. A missing prerequisite is a blocked check, never a pass. Re-run affected checks after changes.
+6. **Deliver.** Push the issue branch and open a small PR using the repository title convention. Link the issue and describe behavior, tests, remaining blockers and design changes. Record the exact commit, PR URL, CI/evidence links and next action in the issue; use In Review only when the change is reviewable. Human review and release are separate from implementation.
+
+## Validation today
+
+The shared executable contract is pending CAR-124. Until it lands, use:
+
+```text
+npm run lint
+npm run format:check
+npm run knip
+npm run check
+npm run test:coverage
+npm run build
+npm run check:bundle
+npm run test:db
+npm run test:browser
+```
+
+The database and browser checks require Docker; the browser check requires Chromium and the build. CI enforces all of these. `npm test` is a useful focused iteration check but does not enforce CI coverage. Before a release, also run `npm run load` against the stand-in. Never run automation against real Yahoo. For docs-only changes, do not invent browser evidence; record that no UI changed and rely on the required CI results.
+
+## Authority and escalation
+
+| Action | Worker authority |
+| --- | --- |
+| Read source, tasks, checks and redacted platform metadata | Proceed with available scoped access |
+| Edit code/docs, install locked dependencies, test isolated disposable state | Proceed within the task and compute permissions |
+| Push an issue branch, open/update its PR, record task evidence | Proceed; preserve unrelated work and existing checks |
+| Missing credentials, platform permission, acceptance decision or failed prerequisite | Record the precise blocker and owner action; continue independent work |
+| Provision hosted resources, change deployment/auth settings or expand trust boundaries | Prepare a concrete plan/diff; obtain the owner's decision before mutation |
+| Production writes, credential rotation, migrations, destructive cleanup | Require explicit owner authorization and the documented runbook; preserve production approval gates |
+| Merge, release or mark consequential rollout complete | Require owner authorization and verified acceptance; green tests alone are insufficient |
+
+Do not grant yourself broader credentials or weaken checks to unblock work. Never copy production values into dev, tests, PRs or issues. Card Benefits infrastructure is outside scope. Default worker access ends at human review, without production write or merge authority.
+
+## Handoff
+
+Before stopping, leave the issue and PR sufficient for another worker: source and head commits, branch, changed behavior, checks with durable links, decisions, blockers and the next exact step. Keep secrets and private rows out of artifacts. If checks cannot run, leave a draft and report the limitation. Do not mark Done because a PR exists or a workflow file was merged; acceptance requires evidence of the promised outcome. CAR-127 will standardize this record further.

@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-10.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-10-11.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -116,24 +116,26 @@ One zod schema parses all configuration once at startup in the composition root;
 
 ### Environments
 
+This table is the agreed destination. As verified in CAR-94/CAR-83 discussions on 2026-10-11, `main` still serves production, hosted dev activation is pending, and `RELEASE_AUTOMATION` remains unset. A manual dev migration passed; an approved production release has not been demonstrated. See the [dated inventory](reference/infrastructure-inventory.md#environment-tiers) for current state and the [remote development contract](remote-development.md) for worker authority.
+
 | Environment | Purpose | Supabase | Yahoo | Who signs in |
 |---|---|---|---|---|
-| Local | Development and tests on a laptop | Throwaway local database | Stand-in that replays recorded responses | Test users |
+| Local | Development and tests on a laptop or remote worker | Throwaway local database | Stand-in that replays recorded responses | Test users |
 | CI | The same tests on every pull request | Throwaway local database | Stand-in | Test users |
 | Preview | A build of each feature branch, as a build check | None | None | Nobody |
 | Dev | Hosted deployment of `main`: every merged change is tested here with real Yahoo data before release | `Pikachu Basketball Development` | `PikachuBball` | The owner only |
 | Prod | Deployment of the `production` branch, for the league | `Pikachu Basketball` | `PikachuBball` | League members |
 
-#### Local development
+#### Disposable development
 
-- `npm ci` and `npm run dev` run the whole app on a laptop against the throwaway Supabase stack and the Yahoo stand-in. No hosted credentials are needed or kept locally.
+- `npm ci` and `npm run dev` run the whole app on a laptop or a remote worker with Docker against the throwaway Supabase stack and the Yahoo stand-in. No hosted credentials are needed or kept locally.
 - **The Yahoo stand-in** replays recorded responses through the real transport, and can also simulate timeouts, 429s, 5xx errors and expired tokens.
 - **Recorded responses** are captured from the dev deployment by a repo script, scrubbed of names and personal details, and refreshed each season.
 - **A seed script** creates two synthetic users with leagues; the browser tests use the same seed.
 
 #### Separation
 
-Each environment has its own database, users, encryption key, sessions, redirect allowlist and secrets. A credential from one environment doesn't work in another.
+Each environment keeps separate database, users, encryption key, sessions and redirect allowlist. Yahoo app credentials are the explicit dev/prod exception below. Preview has no database or sign-in. While hosted dev activation is pending, the owner-only local HTTPS client uses dev values in `.env.local`; automation must not use that exception.
 
 | Resource | Local / CI | Preview | Dev | Prod |
 |---|---|---|---|---|

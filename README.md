@@ -17,15 +17,20 @@ Vercel serves the client and API on one origin. The expected traffic is small, i
 
 ## Environments
 
-The app has three separated tiers. No tier holds another tier's credentials, and no Yahoo app redirects to another tier's Supabase project.
+The supported development path is the disposable stack and Yahoo stand-in, on a laptop or a remote worker with Docker. Hosted dev and the release branch model are still being activated; the [inventory](docs/reference/infrastructure-inventory.md#environment-tiers) records dated evidence.
 
-| Tier | Runs at | Supabase | Yahoo app | Credentials live in | Used for |
-| --- | --- | --- | --- | --- | --- |
-| Local | laptop and CI | disposable local stack (`npm run dev`, `npm run test:db`) | none: a stand-in replays recorded responses | nothing hosted | everyday development, migrations and RLS tests |
-| Dev | `https://localhost:5001` | `Pikachu Basketball Development` | `PikachuBball - Dev` | `.env.local` | live Yahoo sign-in and data; validating migrations before production |
-| Prod | Vercel production alias | `Pikachu Basketball` | `PikachuBball` | Vercel Production environment only | league members |
+| Environment | Current behavior | Authentication and credentials |
+| --- | --- | --- |
+| Local / CI | Disposable Supabase, recorded Yahoo responses, synthetic managers | No hosted credentials or real Yahoo calls |
+| Preview | Feature-branch build check only | No Supabase/Yahoo credentials or sign-in |
+| Dev | Dedicated Supabase project; local HTTPS client remains an owner-only exception while hosted `main` is pending (CAR-94) | Real Yahoo via `PikachuBball`; dev values only |
+| Prod | Vercel production alias still follows `main` in the latest verified CAR-94 evidence | Production Supabase and Vercel Production variables |
 
-One Yahoo sign-in does everything: Supabase's `custom:yahoo` provider signs the user in with the Fantasy read scope (`fspt-r`), and `/api/auth/callback` stores the Yahoo tokens from that session and syncs the user's leagues. Every tier uses the one Fantasy-activated Yahoo app, `PikachuBball`. The server refreshes tokens with that app's `YAHOO_CLIENT_ID` and secret, sending `YAHOO_PROVIDER_REDIRECT_URI` as the redirect, so the app registers each tier's Supabase callback and that refresh redirect. Yahoo only accepts `https://` redirect URIs. Vercel preview deployments receive no Supabase or Yahoo credentials. Project identifiers are recorded in the [infrastructure inventory](docs/reference/infrastructure-inventory.md#environment-tiers).
+The desired model is hosted `main` → dev and an approved release → `production` → prod. A `production` branch exists, but that alone does not activate the model. CAR-83 verified a manual dev migration on 2026-10-11; automatic releases remain disabled. Do not switch deployment branches before completing those issues.
+
+One Yahoo sign-in does everything in hosted environments: Supabase's `custom:yahoo` provider requests Fantasy read scope (`fspt-r`), and `/api/auth/callback` stores the session's Yahoo tokens and syncs leagues. Dev and prod share the Fantasy-enabled Yahoo app, `PikachuBball`, including its secret, rate limits and revocation. Their databases, users, tokens and encryption keys remain separate. Local/CI uses the stand-in and synthetic login instead of a Yahoo provider.
+
+Token refresh sends `YAHOO_PROVIDER_REDIRECT_URI`; keep its registered HTTPS redirect even though no route is served there. Yahoo requires HTTPS redirects. See the [remote development contract](docs/remote-development.md) before starting a task.
 
 ## Local setup
 
@@ -44,16 +49,16 @@ The stand-in can fail the way Yahoo does. Tell it with `curl -X POST http://127.
 
 Before a release, `npm run build && npm run load` simulates 14 managers using the app at once against the stand-in and reports league-view timings against the 2-second target and the Yahoo calls each step made (1 for a new scope, 0 for repeat views and comparisons).
 
-### Against the dev tier
+### Owner-only local HTTPS exception
 
-To run the app against the dev tier (`npm run dev:hosted`), create `.env.local` from the template and fill in the dev values:
+This is a temporary manual path for the owner to validate real Yahoo sign-in while CAR-94 is unfinished. It is not the remote worker bootstrap and must not be used by tests or automation. To use it (`npm run dev:hosted`), create `.env.local` from the template and fill in the dev values:
 
 ```text
 cp .env.example .env.local
 openssl rand -hex 32   # use as ENCRYPTION_KEY
 ```
 
-The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the `PikachuBball - Dev` Yahoo app. Never copy production values into `.env.local`.
+The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the Fantasy-enabled `PikachuBball` Yahoo app shared with production. Never copy production values into `.env.local`.
 
 Create the local HTTPS certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
 
