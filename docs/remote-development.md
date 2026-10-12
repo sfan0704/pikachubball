@@ -47,4 +47,4 @@ Do not grant yourself broader credentials or weaken checks to unblock work. Neve
 
 ## Handoff
 
-Before stopping, leave the issue and PR sufficient for another worker: source and head commits, branch, changed behavior, checks with durable links, decisions, blockers and the next exact step. Keep secrets and private rows out of artifacts. If checks cannot run, leave a draft and report the limitation. Do not mark Done because a PR exists or a workflow file was merged; acceptance requires evidence of the promised outcome. CAR-127 will standardize this record further.
+Before stopping, leave the issue and PR sufficient for another worker: source and head commits, branch, changed behavior, checks with durable links, decisions, blockers and the next exact step. Keep secrets and private rows out of artifacts. If checks cannot run, leave a draft and report the limitation. Do not mark Done because a PR exists or a workflow file was merged; acceptance requires evidence of the promised outcome. The steps, status levels and record formats are in [Issue to review](issue-workflow.md).

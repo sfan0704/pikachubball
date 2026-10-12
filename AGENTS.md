@@ -75,3 +75,4 @@ The target state has the detail; these are the rules most often broken.
 - Title: `type: summary (ISSUE-ID)`, where type is `feat`, `fix`, `refactor`, `test`, `docs` or `chore`.
 - The description says what changed, why, and how it was verified.
 - Merged by squash once every check is green.
+- A merge is not a finished issue: follow [Issue to review](docs/issue-workflow.md) for claiming an issue, the review record, and checking acceptance after merge.
