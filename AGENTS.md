@@ -19,6 +19,8 @@ Follow the [remote development contract](docs/remote-development.md): explore â†
 npm run agent:setup # bounded setup on the supported disposable Linux worker
 npm ci             # install (versions pinned in .nvmrc and packageManager)
 npm run dev        # run locally against a throwaway Supabase stack and the Yahoo stand-in (needs Docker)
+npm run validate   # every check CI requires (needs Docker and Chromium); profiles: static, unit, build, database, browser
+npm run validate -- iterate # lint, types and tests: fast while working, never enough for review
 npm run lint       # ESLint, including the import-boundary and size rules
 npm run format     # Prettier (format:check only checks)
 npm run knip       # unused or unlisted packages and dead files
@@ -30,7 +32,7 @@ npm run load       # 14 simultaneous users against the stand-in, before a releas
 npm run test:browser # browser tests of the main flows with accessibility checks (needs Docker and a build)
 ```
 
-Run `lint`, `format:check`, `knip`, `check` and `test` before opening a pull request, and `test:db` when you change anything in `supabase/`. Don't call a change done until they pass.
+Run `npm run validate` before opening a pull request or asking for review: it runs exactly what CI requires and fails if any check fails or can't run. Don't call a change done until it passes. A check reported `unavailable` (no Docker or Chromium) is a failure, not a pass; say so in the pull request.
 
 ## Architecture rules
 
