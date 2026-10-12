@@ -31,4 +31,7 @@ jobs:
         with:
           name: agent-setup
           path: .agent/*.json
+          # .agent/ is a hidden folder, which upload-artifact skips unless told otherwise.
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 14
