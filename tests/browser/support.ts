@@ -5,7 +5,16 @@ export const LEAGUE = "466.l.100000";
 export const MY_TEAM = `${LEAGUE}.t.11`;
 export const TABS = ["rankings", "heatmap", "matchup", "compare", "roster", "account"] as const;
 
-const STANDIN = `http://127.0.0.1:${process.env.E2E_STANDIN_PORT ?? 5096}`;
+/** This workspace's stand-in; playwright.config.mts sets the port. */
+function standIn(): string {
+  const port = process.env.E2E_STANDIN_PORT;
+  if (!port) {
+    throw new Error(
+      "E2E_STANDIN_PORT is unset; run the browser tests through playwright.config.mts"
+    );
+  }
+  return `http://127.0.0.1:${port}`;
+}
 
 /** Signs in as a seeded manager through the local-only shortcut and lands on the league page. */
 export async function signIn(page: Page, user: "a" | "b" = "a"): Promise<void> {
@@ -15,7 +24,7 @@ export async function signIn(page: Page, user: "a" | "b" = "a"): Promise<void> {
 
 /** Tells the Yahoo stand-in how to answer from now on. */
 export async function setScenario(scenario: string, times?: number): Promise<void> {
-  const response = await fetch(`${STANDIN}/__scenario`, {
+  const response = await fetch(`${standIn()}/__scenario`, {
     method: "POST",
     body: JSON.stringify({ scenario, times }),
   });

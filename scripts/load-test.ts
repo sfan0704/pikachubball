@@ -4,8 +4,9 @@
 // take against the 2-second target and how many Yahoo calls each phase made.
 import { SEED_LEAGUE_KEY, seedUsers, type SeedUser } from "../server/dev/seed-users";
 
-const BASE = process.env.LOAD_BASE_URL ?? "http://localhost:5071";
-const STANDIN = process.env.LOAD_STANDIN_URL ?? "http://127.0.0.1:5097";
+// scripts/load-test.sh passes this workspace's ports (scripts/workspace.mts).
+const BASE = process.env.LOAD_BASE_URL ?? "";
+const STANDIN = process.env.LOAD_STANDIN_URL ?? "";
 const USERS = 14;
 const TARGET_MS = 2000;
 

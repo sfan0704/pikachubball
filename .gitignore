@@ -33,3 +33,6 @@ playwright-report/
 
 # Sanitized local agent evidence
 .agent/
+
+# Generated per checkout by scripts/workspace.mts: its own Supabase stack config and logs.
+.workspace/

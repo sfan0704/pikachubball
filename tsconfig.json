@@ -5,7 +5,8 @@
     "server/**/*",
     "tests/**/*",
     "scripts/**/*.ts",
-    "playwright.config.ts"
+    "scripts/**/*.mts",
+    "playwright.config.mts"
   ],
   "exclude": ["node_modules", "build", "dist"],
   "compilerOptions": {

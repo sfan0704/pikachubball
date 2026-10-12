@@ -1,4 +1,4 @@
-import type { UserLeague } from "@shared/api/leagues";
+import type { LeagueStatus, UserLeague } from "@shared/api/leagues";
 import type { TeamTable } from "@shared/domain";
 import type { Selection } from "./selection";
 import { optionFor, scopeOptions } from "./scope-options";
@@ -10,6 +10,13 @@ interface LeagueControlsProps {
   table: TeamTable | undefined;
   onSelect: (change: Partial<Selection>) => void;
 }
+
+/** What follows a league's name in the picker; a league in progress needs no note. */
+const STATUS_SUFFIX: Record<LeagueStatus, string> = {
+  preseason: " – preseason",
+  active: "",
+  finished: " – finished",
+};
 
 const SELECT_CLASS =
   "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
@@ -46,7 +53,7 @@ function LeagueSelect({
           <option key={league.leagueKey} value={league.leagueKey}>
             {league.name}
             {league.season ? ` (${league.season})` : ""}
-            {league.isFinished ? " – finished" : ""}
+            {STATUS_SUFFIX[league.status]}
           </option>
         ))}
       </select>

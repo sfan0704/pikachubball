@@ -61,7 +61,7 @@ async function main(): Promise<void> {
         teamKey: manager.teamKey,
         name: "Test League",
         season: 2025,
-        isFinished: false,
+        status: "active",
       },
     ]);
     console.log(`Seeded ${manager.email} (${manager.teamKey})`);

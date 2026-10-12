@@ -17,7 +17,7 @@ const LEAGUES = {
       teamKey: "466.l.1.t.3",
       name: "Current",
       season: 2025,
-      isFinished: false,
+      status: "active",
       syncedAt: "2026-10-08T01:00:00.000+00:00",
     },
     {
@@ -25,7 +25,7 @@ const LEAGUES = {
       teamKey: "454.l.9.t.2",
       name: "Past",
       season: 2024,
-      isFinished: true,
+      status: "finished",
       syncedAt: "2026-10-08T01:00:00.000+00:00",
     },
   ],
