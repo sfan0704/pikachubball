@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-11.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-10-12.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -123,6 +123,7 @@ This table is the agreed destination. As verified in CAR-94/CAR-83 discussions o
 | Local | Development and tests on a laptop or remote worker | Throwaway local database | Stand-in that replays recorded responses | Test users |
 | CI | The same tests on every pull request | Throwaway local database | Stand-in | Test users |
 | Preview | A build of each feature branch, as a build check | None | None | Nobody |
+| Review | A throwaway, signed-in copy of one commit, so a reviewer or agent can see the change working | Throwaway local database | Stand-in | Synthetic users |
 | Dev | Hosted deployment of `main`: every merged change is tested here with real Yahoo data before release | `Pikachu Basketball Development` | `PikachuBball` | The owner only |
 | Prod | Deployment of the `production` branch, for the league | `Pikachu Basketball` | `PikachuBball` | League members |
 
@@ -134,6 +135,15 @@ This table is the agreed destination. As verified in CAR-94/CAR-83 discussions o
 - **A seed script** creates two synthetic users with leagues; the browser tests use the same seed.
 
 #### Separation
+
+#### Review environment
+
+Vercel previews stay build-only. Seeing a change working, signed in, happens in a **review environment**: the exact commit's production build, a throwaway local Supabase stack with synthetic managers and the Yahoo stand-in, started the same way the browser tests start it.
+
+- **Where:** on a GitHub Actions runner for every pull request, or on the worker making the change (its own stack and ports). Nothing is hosted, and there is no public URL.
+- **Identity and access:** synthetic managers only, through the local-only `/api/dev/login`, which stays limited to loopback. No real Yahoo tokens, no hosted dev or prod database, no secrets: the job runs on `pull_request`, so pull requests from forks get the same environment with nothing to misuse.
+- **Evidence:** a reviewer or agent gets screenshots of each main screen and the Playwright trace, uploaded as an artifact named after the commit (`review-<commit>`), with the commit printed on every page by `/api/health`. An agent on its own worker can open the app at its workspace address instead.
+- **Lifetime and teardown:** it lives for one job or one session. The runner is destroyed after the job; on a worker, `npm run stack:stop` removes the stack, and the job checks that none of its containers remain.
 
 Each environment keeps separate database, users, encryption key, sessions and redirect allowlist. Yahoo app credentials are the explicit dev/prod exception below. Preview has no database or sign-in. While hosted dev activation is pending, the owner-only local HTTPS client uses dev values in `.env.local`; automation must not use that exception.
 
@@ -523,6 +533,7 @@ flowchart LR
 | Supabase project slots | Basketball keeps both free slots | Drop hosted dev once the Yahoo stand-in exists, freeing a slot for Card Benefits |
 | Error tracking | Vercel logs | Sentry's free tier, a new third party |
 | Repository visibility | Public, for free security scanning | Private |
+| Seeing a change working before merge | A review environment on the CI runner or worker: the build, a throwaway stack, synthetic users and the stand-in, with screenshots and traces as evidence | A public tunnel to it, which needs the loopback-only guard loosened; a hosted preview with its own Supabase project, which the two free project slots don't allow; previews wired to dev, which spreads real tokens and the Yahoo secret |
 
 ### When to revisit
 
