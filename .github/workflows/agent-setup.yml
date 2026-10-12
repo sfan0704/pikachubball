@@ -1,0 +1,37 @@
+name: Agent setup
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    name: Clean and repeat Linux setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - name: Use the repository package manager
+        run: npm install --global npm@11.17.0
+      - name: Clean setup
+        run: npm run agent:setup
+      - name: Preserve clean evidence
+        run: cp .agent/setup.json .agent/setup-clean.json
+      - name: Repeat setup
+        run: npm run agent:setup
+      - name: Keep sanitized setup evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: agent-setup
+          path: .agent/*.json
+          # .agent/ is a hidden folder, which upload-artifact skips unless told otherwise.
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

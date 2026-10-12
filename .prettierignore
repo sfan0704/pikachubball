@@ -12,3 +12,5 @@ public
 coverage
 .claude
 *.md
+
+.agent
