@@ -8,4 +8,4 @@
 
 ## How it was verified
 
-<!-- Commands run, tests added, what you saw. `lint`, `format:check`, `knip`, `check` and `test` must pass; `test:db` too when `supabase/` changed. -->
+<!-- Tests added and what you saw. `npm run validate` must pass: paste its summary table. A check reported `unavailable` is a failure, not a pass. -->

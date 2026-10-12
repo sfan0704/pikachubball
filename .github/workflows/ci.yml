@@ -24,32 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Format check
-        run: npm run format:check
-
-      - name: Unused code and packages
-        run: npm run knip
-
-      - name: Type check
-        run: npm run check
-
-      - name: Run tests with coverage thresholds
-        run: npm run test:coverage
-        env:
-          NODE_ENV: test
-          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-
-      - name: Build
-        run: npm run build
-        env:
-          NODE_ENV: production
-          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-
-      - name: Initial JavaScript size
-        run: npm run check:bundle
+      # The same contract people and agents run (scripts/validate.mts): lint,
+      # format, knip, types, tests with coverage thresholds, build and bundle size.
+      - name: Static checks, tests with coverage, build and bundle size
+        run: npm run validate -- static unit build
 
   database:
     name: Database migrations & RLS
@@ -70,7 +48,7 @@ jobs:
 
       # Disposable local Supabase stack only; no hosted project or secret.
       - name: Apply migrations and run pgTAP tests
-        run: npm run test:db
+        run: npm run validate -- database
 
   browser:
     name: Browser tests
@@ -92,16 +70,10 @@ jobs:
       - name: Install the browser
         run: npx playwright install --with-deps chromium
 
-      - name: Build
-        run: npm run build
-        env:
-          NODE_ENV: production
-          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-
-      # The production build against the disposable local Supabase stack and the
-      # Yahoo stand-in (scripts/dev-local.sh --built); no hosted project or secret.
+      # Builds, then runs the production build against the disposable local
+      # Supabase stack and the Yahoo stand-in; no hosted project or secret.
       - name: Main flows at phone and desktop widths, with accessibility checks
-        run: npm run test:browser
+        run: npm run validate -- browser
 
       - name: Keep the report when it fails
         if: failure()

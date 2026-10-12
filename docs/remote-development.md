@@ -19,23 +19,17 @@ Feature-branch Vercel previews are build checks only. The target hosted dev/rele
 5. **Validate.** Run the checks below on the final change. Record command, result, commit and limitations. A missing prerequisite is a blocked check, never a pass. Re-run affected checks after changes.
 6. **Deliver.** Push the issue branch and open a small PR using the repository title convention. Link the issue and describe behavior, tests, remaining blockers and design changes. Record the exact commit, PR URL, CI/evidence links and next action in the issue; use In Review only when the change is reviewable. Human review and release are separate from implementation.
 
-## Validation today
+## Validation
 
-The shared executable contract is pending CAR-124. Until it lands, use:
+One command is the contract, for people, agents and CI alike:
 
 ```text
-npm run lint
-npm run format:check
-npm run knip
-npm run check
-npm run test:coverage
-npm run build
-npm run check:bundle
-npm run test:db
-npm run test:browser
+npm run validate                 # review: everything CI requires before a merge
+npm run validate -- static unit  # named profiles: static, unit, build, database, browser
+npm run validate -- iterate      # lint, types and tests while working; never enough for review
 ```
 
-The database and browser checks require Docker; the browser check requires Chromium and the build. CI enforces all of these. `npm test` is a useful focused iteration check but does not enforce CI coverage. Before a release, also run `npm run load` against the stand-in. Never run automation against real Yahoo. For docs-only changes, do not invent browser evidence; record that no UI changed and rely on the required CI results.
+It prints which checks passed, failed, were unavailable or didn't run because a check they need failed, and exits nonzero unless every check passed. The database and browser profiles need Docker, and browser needs Chromium; without them those checks are `unavailable`, which fails the run. CI's three jobs run the same profiles (`static unit build`, `database`, `browser`). Before a release, also run `npm run load` against the stand-in. Never run automation against real Yahoo. For docs-only changes, do not invent browser evidence; record that no UI changed and rely on the required CI results.
 
 ## Authority and escalation
 
