@@ -33,7 +33,8 @@
     "format:check": "prettier --check .",
     "knip": "knip",
     "agent:setup": "node scripts/agent-setup.mts",
-    "validate": "node scripts/validate.mts"
+    "validate": "node scripts/validate.mts",
+    "doctor": "node scripts/doctor.mts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
