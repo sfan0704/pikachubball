@@ -10,3 +10,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-10-10 · `user_leagues` stores a status (preseason, active or finished) instead of only whether a league is finished · #89
 - 2026-10-11 · The weekly keep-alive and schema dump run unattended as a `maintenance` database role that reads no rows · #96
 - 2026-10-11 · Define remote worker lifecycle and authority; distinguish pending hosted delivery from verified state and the owner-only HTTPS exception · #93
+- 2026-10-12 · A review environment (the build, a throwaway stack, synthetic users and the stand-in on the CI runner or worker) for seeing changes working; Vercel previews stay build-only · #101
