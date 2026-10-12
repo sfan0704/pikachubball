@@ -17,6 +17,7 @@ Follow the [remote development contract](docs/remote-development.md): explore â†
 
 ```text
 npm run agent:setup # bounded setup on the supported disposable Linux worker
+npm run doctor     # read-only: tools, which integrations this environment reaches, and their targets (no secrets shown)
 npm ci             # install (versions pinned in .nvmrc and packageManager)
 npm run dev        # run locally against a throwaway Supabase stack and the Yahoo stand-in (needs Docker)
 npm run validate   # every check CI requires (needs Docker and Chromium); profiles: static, unit, build, database, browser
