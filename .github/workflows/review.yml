@@ -27,6 +27,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
       - name: Hosted configuration is refused
         run: |
           if SUPABASE_URL=https://example.supabase.co YAHOO_CLIENT_SECRET=x npm run review:start; then
@@ -43,6 +46,35 @@ jobs:
           url=$(node -e 'const t=require("fs").readFileSync("review.json","utf8"); console.log(JSON.parse(t.slice(t.indexOf("{"))).url)')
           test "$(curl -s "$url/api/health" | node -pe 'JSON.parse(require("fs").readFileSync(0)).commit')" = "$(git rev-parse HEAD)"
           test "$(curl -s -o /dev/null -w '%{http_code}' "$url/api/dev/login?user=a")" = "303"
+
+      # First, so its empty report doesn't replace the real evidence below.
+      - name: Evidence against the wrong commit is refused
+        run: |
+          if EXPECTED_COMMIT=0000000000000000000000000000000000000000 npm run review:evidence; then
+            echo "review:evidence accepted a review at a different commit" >&2
+            exit 1
+          fi
+
+      # Signed-in browser evidence for this exact commit: every main flow at phone
+      # and desktop sizes, with accessibility checks, screenshots and browser errors.
+      - name: Browser evidence for this commit
+        id: evidence
+        run: npm run review:evidence
+
+      - name: Put the evidence summary on the run page
+        if: always() && steps.evidence.outcome != 'skipped'
+        run: cat .workspace/evidence/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the evidence
+        if: always() && steps.evidence.outcome != 'skipped'
+        uses: actions/upload-artifact@v6
+        with:
+          name: review-${{ github.event.pull_request.head.sha || github.sha }}
+          path: .workspace/evidence/
+          # .workspace/ is a hidden folder, which upload-artifact skips unless told otherwise.
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Stop it and check nothing is left
         if: always()

@@ -22,10 +22,20 @@ A status is a claim; the evidence makes it true. Use these words, in issues and 
 2. **Check for existing work.** Open branches and pull requests for the issue, and recent commits on `main` that mention it. Continue them rather than starting over; if another worker may still be active on them, ask before taking over.
 3. **Claim it.** Assign yourself, set In Progress, and comment a start record (below). Work on the branch Linear names for the issue, in your own checkout (`npm run workspace` shows its own stack and ports).
 4. **Build and validate.** Keep the change to the issue's scope. Run `npm run validate`; a check that fails or is `unavailable` means the change isn't ready.
-5. **Open the pull request.** Use the template: what changed, why, the validation table, browser or preview evidence when the user interface changed, decisions, and remaining risks. Then comment the review record on the issue and set In Review.
+5. **Open the pull request.** Use the template: what changed, why, the validation table, review evidence when the user interface changed (below), decisions, and remaining risks. Then comment the review record on the issue and set In Review.
 6. **After merge,** check acceptance as above, and record the outcome on the issue.
 
 If you stop before finishing, at any step, leave a handoff record. Never leave an issue In Progress with nothing on it saying where things stand.
+
+## Evidence for user interface changes
+
+A green build, passing tests or an anonymous health check don't show that a screen works for a signed-in user. When a change touches what users see:
+
+1. Run `npm run review:start`, then `npm run review:evidence`. Or use the *Review environment* job on the pull request, which does the same. The evidence run refuses a review that isn't this checkout's or isn't at the expected commit.
+2. Open `.workspace/evidence/report/index.html` (or the job's `review-<commit>` artifact, kept 14 days) and look at the screenshots of the flows the change affects, at both phone and desktop sizes. Note anything wrong, and any browser errors the summary lists.
+3. Link the evidence in the pull request and in the review record: the job run or artifact, the commit, and what you looked at.
+
+The evidence holds synthetic data only. Screenshots are taken for every flow; traces, which include the synthetic session's cookies, only for failures.
 
 ## Records
 
@@ -42,6 +52,7 @@ Open questions: <none, or the question and who decides>
 **<In review | Handoff | Merged>** · <worker> · head <commit> · <PR link>
 Level: <implemented | validated | in review | merged | complete>
 Validation: <npm run validate result, or which checks failed or were unavailable>
+Evidence: <for UI changes: review-<commit> run or artifact link, and the flows inspected>
 Acceptance: <each criterion: met (evidence) | open (why)>
 Decisions: <made, with reasons; or needed, and from whom>
 Next action: <the exact next step, and who takes it>
