@@ -38,9 +38,11 @@ type PortName =
   | "dev"
   | "browser"
   | "load"
+  | "review"
   | "devStandIn"
   | "browserStandIn"
-  | "loadStandIn";
+  | "loadStandIn"
+  | "reviewStandIn";
 
 /** The identity, stack name and ports of the checkout this file lives in. */
 export function workspace(root: string = ROOT): Workspace {
@@ -70,9 +72,11 @@ export function workspace(root: string = ROOT): Workspace {
       dev: app,
       browser: app + 1,
       load: app + 2,
+      review: app + 3,
       devStandIn: app + 5,
       browserStandIn: app + 6,
       loadStandIn: app + 7,
+      reviewStandIn: app + 8,
     },
   };
 }
