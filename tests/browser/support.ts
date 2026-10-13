@@ -1,5 +1,43 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page } from "@playwright/test";
+import { test as base, expect, type Page } from "@playwright/test";
+
+export { expect };
+
+/**
+ * Every browser test, with the page's console errors, uncaught exceptions and
+ * failed or 5xx requests attached as "browser-errors" when there are any. Only
+ * the message, method, path and status are kept: never headers, cookies or bodies.
+ */
+export const test = base.extend<{ browserErrors: void }>({
+  browserErrors: [
+    async ({ page }, use, testInfo) => {
+      const errors: string[] = [];
+      page.on("console", (message) => {
+        if (message.type() === "error") errors.push(`console: ${message.text()}`);
+      });
+      page.on("pageerror", (error) => errors.push(`exception: ${error.message}`));
+      page.on("requestfailed", (request) =>
+        errors.push(`request failed: ${request.method()} ${new URL(request.url()).pathname}`)
+      );
+      page.on("response", (response) => {
+        if (response.status() >= 500) {
+          const request = response.request();
+          errors.push(
+            `HTTP ${response.status()}: ${request.method()} ${new URL(response.url()).pathname}`
+          );
+        }
+      });
+      await use();
+      if (errors.length > 0) {
+        await testInfo.attach("browser-errors", {
+          body: errors.join("\n"),
+          contentType: "text/plain",
+        });
+      }
+    },
+    { auto: true },
+  ],
+});
 
 export const LEAGUE = "466.l.100000";
 export const MY_TEAM = `${LEAGUE}.t.11`;

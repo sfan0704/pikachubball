@@ -1,5 +1,4 @@
-import { expect, test } from "@playwright/test";
-import { LEAGUE, MY_TEAM, TABS, openTab, setScenario, signIn } from "./support";
+import { LEAGUE, MY_TEAM, TABS, openTab, setScenario, signIn, expect, test } from "./support";
 
 test.beforeEach(async () => {
   await setScenario("ok");

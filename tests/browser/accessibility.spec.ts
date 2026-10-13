@@ -1,5 +1,13 @@
-import { expect, test } from "@playwright/test";
-import { TABS, accessibilityViolations, openTab, setScenario, signIn, useTheme } from "./support";
+import {
+  TABS,
+  accessibilityViolations,
+  openTab,
+  setScenario,
+  signIn,
+  useTheme,
+  expect,
+  test,
+} from "./support";
 
 test.beforeEach(async () => {
   await setScenario("ok");
