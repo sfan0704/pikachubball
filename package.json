@@ -34,7 +34,10 @@
     "knip": "knip",
     "agent:setup": "node scripts/agent-setup.mts",
     "validate": "node scripts/validate.mts",
-    "doctor": "node scripts/doctor.mts"
+    "doctor": "node scripts/doctor.mts",
+    "review:start": "node scripts/review.mts start",
+    "review:status": "node scripts/review.mts status",
+    "review:stop": "node scripts/review.mts stop"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

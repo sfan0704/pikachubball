@@ -20,6 +20,7 @@ npm run agent:setup # bounded setup on the supported disposable Linux worker
 npm run doctor     # read-only: tools, which integrations this environment reaches, and their targets (no secrets shown)
 npm ci             # install (versions pinned in .nvmrc and packageManager)
 npm run dev        # run locally against a throwaway Supabase stack and the Yahoo stand-in (needs Docker)
+npm run review:start # the review environment: this commit, signed-in, on this checkout (review:status, review:stop)
 npm run validate   # every check CI requires (needs Docker and Chromium); profiles: static, unit, build, database, browser
 npm run validate -- iterate # lint, types and tests: fast while working, never enough for review
 npm run lint       # ESLint, including the import-boundary and size rules
