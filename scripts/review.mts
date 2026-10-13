@@ -25,6 +25,7 @@ const ws = workspace();
 process.chdir(ws.root);
 const RECORD = join(ws.workdir, "review.json");
 const LOG = join(ws.workdir, "review.log");
+const START_TIMEOUT_MS = 20 * 60_000;
 
 // Only what the tools need, so no hosted configuration reaches the app.
 function cleanEnv(extra: Record<string, string>): NodeJS.ProcessEnv {
@@ -70,9 +71,25 @@ async function healthyAt(url: string, commit: string): Promise<boolean> {
   }
 }
 
+const WATCHER = `${join(ws.root, "scripts", "review.mts")} expire`;
+
+/** Ends this checkout's expiry watchers (matched by full path, so never another checkout's), except this process. */
+function stopWatchers(): void {
+  const found = spawnSync("pgrep", ["-f", WATCHER], { encoding: "utf8" });
+  const pids = found.stdout.split("\n").map(Number);
+  for (const pid of pids.filter((each) => each > 0 && each !== process.pid)) {
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {
+      // Already gone.
+    }
+  }
+}
+
 async function stop(): Promise<void> {
   const record = readRecord();
   if (!record) {
+    stopWatchers();
     console.log("No review is running in this checkout.");
     return;
   }
@@ -80,6 +97,7 @@ async function stop(): Promise<void> {
     process.kill(-record.pid, "SIGTERM");
     for (let attempt = 0; attempt < 20 && ours(record); attempt += 1) await pause(500);
   }
+  stopWatchers();
   const stopped = spawnSync("bash", ["scripts/stack-stop.sh"], {
     stdio: "inherit",
     env: cleanEnv({}),
@@ -128,21 +146,29 @@ async function start(): Promise<void> {
     }),
   });
   child.unref();
-  const record = newRecord({
-    url,
-    commit,
-    workspace: ws.projectId,
-    pid: child.pid ?? -1,
-    now: Date.now(),
-    lifetimeMinutes: minutes,
-  });
-  writeFileSync(RECORD, `${JSON.stringify(record, null, 2)}\n`);
-  for (let attempt = 0; attempt < 300 && !(await healthyAt(url, commit)); attempt += 1)
-    await pause(1000);
+  const recordAt = (now: number): ReviewRecord =>
+    newRecord({
+      url,
+      commit,
+      workspace: ws.projectId,
+      pid: child.pid ?? -1,
+      now,
+      lifetimeMinutes: minutes,
+    });
+  // Written now so `review:stop` can find the process while it starts.
+  writeFileSync(RECORD, `${JSON.stringify(recordAt(Date.now()), null, 2)}\n`);
+  // A fresh local stack can take many minutes to initialize on a small Docker VM.
+  const deadline = Date.now() + START_TIMEOUT_MS;
+  while (Date.now() < deadline && !(await healthyAt(url, commit))) await pause(1000);
   if (!(await healthyAt(url, commit))) {
     await stop();
-    throw new Error(`The review didn't become healthy; see ${LOG}`);
+    throw new Error(
+      `The review didn't become healthy within ${START_TIMEOUT_MS / 60_000} minutes; see ${LOG}`
+    );
   }
+  // The lifetime counts from when the review answers, not from when it began starting.
+  const record = recordAt(Date.now());
+  writeFileSync(RECORD, `${JSON.stringify(record, null, 2)}\n`);
   // The lifetime limit: a detached watcher stops this review when it expires.
   spawn(process.execPath, [join(ws.root, "scripts", "review.mts"), "expire", record.startedAt], {
     detached: true,
