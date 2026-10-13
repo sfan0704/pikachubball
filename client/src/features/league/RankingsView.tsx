@@ -76,7 +76,7 @@ function RankingsRowView({ row }: { row: RankingsRow }) {
   return (
     <TableRow
       className={row.isMine ? "bg-primary/5 font-medium" : ""}
-      data-testid={`row-ranking-${row.teamKey}`}
+      data-testid={`row-broken-${row.teamKey}`}
     >
       <TableCell>
         <Badge variant={row.position === 1 ? "default" : "outline"}>
