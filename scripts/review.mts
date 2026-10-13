@@ -75,8 +75,11 @@ const WATCHER = `${join(ws.root, "scripts", "review.mts")} expire`;
 
 /** Ends this checkout's expiry watchers (matched by full path, so never another checkout's), except this process. */
 function stopWatchers(): void {
-  const found = spawnSync("pgrep", ["-f", WATCHER], { encoding: "utf8" });
-  const pids = found.stdout.split("\n").map(Number);
+  const found = spawnSync("ps", ["-A", "-o", "pid=,command="], { encoding: "utf8" });
+  const pids = found.stdout
+    .split("\n")
+    .filter((line) => line.includes(WATCHER))
+    .map((line) => Number.parseInt(line.trim(), 10));
   for (const pid of pids.filter((each) => each > 0 && each !== process.pid)) {
     try {
       process.kill(pid, "SIGTERM");

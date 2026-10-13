@@ -50,4 +50,4 @@ jobs:
           npm run review:stop
           npm run review:stop
           test "$(docker ps -q --filter "name=_$(node scripts/workspace.mts | node -pe 'JSON.parse(require("fs").readFileSync(0)).projectId')" | wc -l)" -eq 0
-          test "$(pgrep -f 'review.mts expire' | wc -l)" -eq 0
+          test "$(ps -A -o command= | grep -c '[r]eview.mts expire')" -eq 0
