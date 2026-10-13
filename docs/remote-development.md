@@ -31,6 +31,20 @@ npm run validate -- iterate      # lint, types and tests while working; never en
 
 It prints which checks passed, failed, were unavailable or didn't run because a check they need failed, and exits nonzero unless every check passed. The database and browser profiles need Docker, and browser needs Chromium; without them those checks are `unavailable`, which fails the run. CI's three jobs run the same profiles (`static unit build`, `database`, `browser`). Before a release, also run `npm run load` against the stand-in. Never run automation against real Yahoo. For docs-only changes, do not invent browser evidence; record that no UI changed and rely on the required CI results.
 
+## Seeing a change working
+
+The [review environment](target-state.md#review-environment) runs the exact commit, signed in as synthetic managers, on this checkout's own stack:
+
+```text
+npm run review:start   # refuses hosted configuration or uncommitted tracked changes; builds, starts, prints {url, commit, workspace, startedAt, expiresAt}
+npm run review:status  # that record, plus running, healthy and expired; exits nonzero unless healthy
+npm run review:stop    # stops this checkout's review, its stack and its expiry watcher; safe to repeat
+```
+
+Sign in at `<url>/api/dev/login?user=a` (or `user=b`); the URL is loopback-only. A review stops itself after `REVIEW_LIFETIME_MINUTES` (default 120, at most 720), counted from when it became healthy, and never touches another checkout's processes or stack. The *Review environment* workflow does the same on every pull request and checks that hosted configuration is refused and that nothing is left after stopping.
+
+**Runtime and cost.** On GitHub's runners it is free for this public repository, takes a few minutes, and lasts only for the job. Locally it needs Docker; on a small Docker VM (2 CPUs, 4 GB) a fresh stack has taken up to 14 minutes to initialize, so start waits up to 20 minutes before giving up. It uses no Supabase project slot and no hosted service.
+
 ## Authority and escalation
 
 | Action | Worker authority |

@@ -1,0 +1,53 @@
+name: Review environment
+
+# The review environment (docs/target-state.md, "Review environment") for each
+# pull request: the exact commit's build with a throwaway stack, synthetic
+# managers and the Yahoo stand-in on this runner. No secrets: pull requests
+# from forks get the same job with nothing to misuse.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: Review environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Hosted configuration is refused
+        run: |
+          if SUPABASE_URL=https://example.supabase.co YAHOO_CLIENT_SECRET=x npm run review:start; then
+            echo "review:start accepted hosted configuration" >&2
+            exit 1
+          fi
+
+      - name: Start the review environment
+        run: npm run review:start | tee review.json
+
+      - name: Check it answers for this commit and signs in a synthetic manager
+        run: |
+          npm run review:status
+          url=$(node -e 'const t=require("fs").readFileSync("review.json","utf8"); console.log(JSON.parse(t.slice(t.indexOf("{"))).url)')
+          test "$(curl -s "$url/api/health" | node -pe 'JSON.parse(require("fs").readFileSync(0)).commit')" = "$(git rev-parse HEAD)"
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$url/api/dev/login?user=a")" = "303"
+
+      - name: Stop it and check nothing is left
+        if: always()
+        run: |
+          npm run review:stop
+          npm run review:stop
+          test "$(docker ps -q --filter "name=_$(node scripts/workspace.mts | node -pe 'JSON.parse(require("fs").readFileSync(0)).projectId')" | wc -l)" -eq 0
+          test "$(pgrep -f 'review.mts expire' | wc -l)" -eq 0
