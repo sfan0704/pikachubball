@@ -8,7 +8,7 @@
 
 ## How it was verified
 
-<!-- Tests added and what you saw. `npm run validate` must pass: paste its summary table. A check reported `unavailable` is a failure, not a pass. Add browser or preview evidence when the user interface changed. -->
+<!-- Tests added and what you saw. `npm run validate` must pass: paste its summary table. A check reported `unavailable` is a failure, not a pass. When the user interface changed, link the Review environment job's evidence (review-<commit>) and say which flows you looked at; a green build alone isn't UI validation. -->
 
 ## Remaining work
 

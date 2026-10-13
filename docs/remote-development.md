@@ -38,6 +38,7 @@ The [review environment](target-state.md#review-environment) runs the exact comm
 ```text
 npm run review:start   # refuses hosted configuration or uncommitted tracked changes; builds, starts, prints {url, commit, workspace, startedAt, expiresAt}
 npm run review:status  # that record, plus running, healthy and expired; exits nonzero unless healthy
+npm run review:evidence # browser evidence against it: refuses another commit or checkout; writes .workspace/evidence/
 npm run review:stop    # stops this checkout's review, its stack and its expiry watcher; safe to repeat
 ```
 

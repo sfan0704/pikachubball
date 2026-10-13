@@ -6,7 +6,8 @@
     "tests/**/*",
     "scripts/**/*.ts",
     "scripts/**/*.mts",
-    "playwright.config.mts"
+    "playwright.config.mts",
+    "playwright.review.config.mts"
   ],
   "exclude": ["node_modules", "build", "dist"],
   "compilerOptions": {
