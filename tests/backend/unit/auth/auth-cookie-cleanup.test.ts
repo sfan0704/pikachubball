@@ -20,7 +20,9 @@ describe("rejected callback session cookies", () => {
     const response = await request(app)
       .get("/rejected")
       .set("Cookie", "pikachubball-auth.1=old; theme=dark");
-    const headers = response.headers["set-cookie"] as string[];
+    const rawHeaders: unknown = response.headers["set-cookie"];
+    if (!Array.isArray(rawHeaders)) throw new Error("Response did not set cookies");
+    const headers = rawHeaders.map(String);
     expect(headers).toContain("theme=dark; Path=/");
     expect(headers).toContain("pikachubball-auth-code-verifier=; Max-Age=0; Path=/");
     const sessions = headers.filter(
