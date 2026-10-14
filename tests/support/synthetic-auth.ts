@@ -46,6 +46,7 @@ const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("
 // This is not a signature/nonce test of Supabase itself; no real identity server is contacted.
 const accessToken = `${encode({ alg: "HS256", typ: "JWT" })}.${encode({
   sub: USER_ID,
+  session_id: "5161f00d-25bf-4cd8-92c6-0f3c325af11b",
   aud: "authenticated",
   role: "authenticated",
   exp: 2_400_000_000,
@@ -55,6 +56,7 @@ const accessToken = `${encode({ alg: "HS256", typ: "JWT" })}.${encode({
 /** Real SSR SDK/Express routes over a PKCE-bound synthetic Auth transport and recording storage. */
 export function syntheticAuth() {
   const codes = new Map<string, { challenge: string; incomplete: boolean; used: boolean }>();
+  let active = true;
   const save = vi.fn().mockResolvedValue({});
   const storage = {
     saveYahooConnection: save,
@@ -90,7 +92,13 @@ export function syntheticAuth() {
       }
       return HttpResponse.json(user);
     }),
-    http.post(`${auth.supabaseUrl}/auth/v1/logout`, () => new HttpResponse(null, { status: 204 }))
+    http.post(`${auth.supabaseUrl}/rest/v1/rpc/is_current_session_active`, ({ request }) =>
+      HttpResponse.json(active && request.headers.get("authorization") === `Bearer ${accessToken}`)
+    ),
+    http.post(`${auth.supabaseUrl}/auth/v1/logout`, () => {
+      active = false;
+      return new HttpResponse(null, { status: 204 });
+    })
   );
 
   function app() {

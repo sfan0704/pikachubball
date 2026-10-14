@@ -30,9 +30,10 @@ export interface Owner {
   storage: SupabaseOwnerStorage;
 }
 
-export function newClient(): SupabaseClient {
+export function newClient(accessToken?: string): SupabaseClient {
   return createClient(supabaseUrl, publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} },
   });
 }
 

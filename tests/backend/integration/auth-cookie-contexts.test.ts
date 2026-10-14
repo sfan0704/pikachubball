@@ -43,6 +43,12 @@ describe("real Express/SSR SDK callback isolation over synthetic Auth", () => {
     expect(cold.body).toEqual({ userId: "23f99d06-30ff-4767-8c41-21510b7fd5d0" });
     expect((await browser.post("/logout")).status).toBe(200);
     expect((await browser.get("/protected")).status).toBe(401);
+    // The synthetic Auth user endpoint still accepts the unexpired JWT.
+    // A fresh app must reject it because logout removed its backing session.
+    expect(
+      (await request(flow.app()).get("/protected").set("Cookie", cookieHeader(accepted.headers)))
+        .status
+    ).toBe(401);
   });
 
   it("does not leave an authenticated browser after a rejected provider-token handoff", async () => {

@@ -43,6 +43,7 @@ describe("Supabase auth middleware", () => {
     const createYahooClient = vi.fn().mockResolvedValue(yahooClient);
     const clock = fixedClock();
     const verifiedClient = {
+      rpc: async () => ({ data: true, error: null }),
       auth: {
         getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
         getUser: async () => ({
