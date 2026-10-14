@@ -17,6 +17,7 @@ import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import { parseSeasonTable } from "../../../server/fantasy/league-tables";
 
 const verifiedClient = {
+  rpc: async () => ({ data: true, error: null }),
   auth: {
     getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
     getUser: async () => ({

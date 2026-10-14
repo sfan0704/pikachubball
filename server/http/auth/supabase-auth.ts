@@ -145,5 +145,9 @@ export async function readVerifiedYahooIdentity(
   if (error || !data.user || data.user.id !== claimsData.claims.sub) {
     throw new Error("Supabase session user is invalid");
   }
+  const { data: active, error: sessionError } = await client.rpc("is_current_session_active");
+  if (sessionError || active !== true) {
+    throw new Error("Supabase session is no longer active");
+  }
   return projectYahooIdentity(data.user);
 }

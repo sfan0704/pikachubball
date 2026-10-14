@@ -10,6 +10,7 @@ const APP_ORIGIN = "https://basketball.example.test";
 
 function verifiedClient(signOut = vi.fn().mockResolvedValue({ error: null })) {
   return {
+    rpc: async () => ({ data: true, error: null }),
     auth: {
       signOut,
       getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
