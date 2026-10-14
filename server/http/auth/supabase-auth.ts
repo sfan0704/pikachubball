@@ -35,6 +35,39 @@ export function applyAuthNoStore(res: Response): void {
   res.set(AUTH_NO_STORE_HEADERS);
 }
 
+/** Discard SDK-issued session cookies when the app rejects an exchanged callback. */
+export function clearAuthSessionCookies(
+  req: Request,
+  res: Response,
+  config: HostedAuthConfig
+): void {
+  const isSession = (name: string) => /^pikachubball-auth(?:-user)?(?:\.\d+)?$/.test(name);
+  const incoming = Object.keys(parse(req.headers.cookie ?? "")).filter(isSession);
+  const header = res.getHeader("Set-Cookie");
+  const outgoing = Array.isArray(header)
+    ? header.map(String)
+    : typeof header === "string"
+      ? [header]
+      : [];
+  const names = new Set([
+    ...incoming,
+    ...outgoing.map((cookie) => cookie.split("=")[0]).filter(isSession),
+  ]);
+  const retained = outgoing.filter((cookie) => !isSession(cookie.split("=")[0]));
+  res.removeHeader("Set-Cookie");
+  if (retained.length > 0) res.setHeader("Set-Cookie", retained);
+  for (const name of names) {
+    res.append(
+      "Set-Cookie",
+      serialize(
+        name,
+        "",
+        hardenCookieOptions({ maxAge: 0, expires: new Date(0) }, config.secureCookies)
+      )
+    );
+  }
+}
+
 /** A Supabase client acting as the request's user, reading and writing session cookies. */
 export function createSupabaseRequestClient(
   req: Request,

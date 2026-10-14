@@ -5,6 +5,7 @@ import { AppError, UnauthorizedError, ValidationError } from "../../../shared/ap
 import type { HostedAuthConfig } from "../../config/config";
 import {
   applyAuthNoStore,
+  clearAuthSessionCookies,
   projectYahooIdentity,
   requireYahooProviderTokens,
   YAHOO_PROVIDER,
@@ -125,7 +126,13 @@ export function createSupabaseAuthController(dependencies: AuthControllerDepende
         throw new UnauthorizedError("Yahoo authentication callback was rejected");
       }
 
-      await connectYahoo(req, client, data.session, dependencies);
+      try {
+        await connectYahoo(req, client, data.session, dependencies);
+      } catch (error) {
+        // Exchange writes cookies before the app validates Yahoo/token handoff.
+        clearAuthSessionCookies(req, res, dependencies.auth);
+        throw error;
+      }
       res.redirect(303, "/?yahoo_connected=true");
     }),
 
