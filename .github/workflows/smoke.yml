@@ -28,6 +28,11 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Check the deployment
+        id: deployment-smoke
         env:
           SMOKE_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: node scripts/smoke-check.mjs "${{ github.event.deployment_status.environment_url }}" "${{ github.event.deployment.sha }}"
+
+      - name: Link the manual production rollback runbook
+        if: ${{ failure() && steps.deployment-smoke.outcome == 'failure' && github.event.deployment.environment == 'Production' }}
+        run: bash scripts/smoke-failure-summary.sh

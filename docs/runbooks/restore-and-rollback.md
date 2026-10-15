@@ -2,6 +2,10 @@
 
 ## Roll back a bad deploy
 
+Rollback is manual (owner decision, 2026-10-14). A failed production smoke check leaves a link to this runbook in its GitHub job summary. The workflow does not change production traffic or the database.
+
+Inspect the failed checks and identify the last deployment with passing smoke checks for its expected commit. The owner restores that verified deployment, then confirms `/api/health` reports its commit and runs the smoke check again. If the failure is caused by configuration or schema drift, correct that cause through the approved process; an app rollback alone may not resolve it.
+
 Vercel keeps every deployment. In the Vercel dashboard, open the project's Deployments, pick the last good production deployment and choose **Instant Rollback** (or run `vercel rollback <deployment-url>`). Rollback changes only which deployment serves traffic; it does not touch the database.
 
 Migrations are written to be backward compatible, so the previous app version works with the current schema. If a migration itself is the problem, write a new forward migration that fixes it; do not edit one that has already run.
