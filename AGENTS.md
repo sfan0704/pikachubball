@@ -36,6 +36,8 @@ npm run test:browser # browser tests of the main flows with accessibility checks
 
 Run `npm run validate` before opening a pull request or asking for review: it runs exactly what CI requires and fails if any check fails or can't run. Don't call a change done until it passes. A check reported `unavailable` (no Docker or Chromium) is a failure, not a pass; say so in the pull request.
 
+Hosted configuration evidence uses `npm run config:baseline`, `npm run config:capture` and `npm run config:check`; follow the [configuration-check runbook](docs/runbooks/configuration-checks.md). They compare non-secret metadata and never repair hosted settings. Missing metadata is a failed/unavailable check, not a pass.
+
 ## Architecture rules
 
 The target state has the detail; these are the rules most often broken.

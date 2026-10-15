@@ -1,0 +1,32 @@
+{
+  "vercelProjectId": "prj_izIWbhRIRM77Kij7YoH8e8ciBkPT",
+  "vercelTeamId": "team_h0Yl4tlqpwkycY1Wl2ZppyOo",
+  "requiredVariables": [
+    "APP_ORIGIN",
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "ENCRYPTION_KEY",
+    "YAHOO_CLIENT_ID",
+    "YAHOO_CLIENT_SECRET",
+    "YAHOO_PROVIDER_REDIRECT_URI"
+  ],
+  "forbiddenVariables": [
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_SECRET_KEY",
+    "SUPABASE_DB_PASSWORD",
+    "DATABASE_URL",
+    "LOCAL_STACK"
+  ],
+  "environments": {
+    "dev": {
+      "projectRef": "ocqdxmfpezxpgutoicyh",
+      "siteUrl": "https://localhost:5001",
+      "redirectAllowList": ["https://localhost:5001/api/auth/callback"]
+    },
+    "prod": {
+      "projectRef": "fpdwtpwpmxsbgjxizuxa",
+      "siteUrl": "https://pikachubball.vercel.app",
+      "redirectAllowList": ["https://pikachubball.vercel.app/api/auth/callback"]
+    }
+  }
+}

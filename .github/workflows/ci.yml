@@ -50,6 +50,18 @@ jobs:
       - name: Apply migrations and run pgTAP tests
         run: npm run validate -- database
 
+      - name: Capture the migration-built schema reference
+        run: npm run config:baseline -- .workspace/config-baseline.json
+
+      - name: Keep the non-secret schema reference
+        uses: actions/upload-artifact@v6
+        with:
+          name: config-baseline
+          path: .workspace/config-baseline.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
   browser:
     name: Browser tests
     runs-on: ubuntu-latest

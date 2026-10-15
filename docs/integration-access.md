@@ -45,6 +45,8 @@ In each row, try the access paths in order: the agent's built-in connector, then
 
 Hosted configuration comparison (provider, redirect allowlist, Vercel variables) belongs to CAR-100's config checks, and release activation to CAR-83's runbook; this page doesn't duplicate them.
 
+The [configuration-check runbook](runbooks/configuration-checks.md) defines the metadata-only input contract, safe database projections and migration-built schema reference. Auth configuration must come from a selective non-secret metadata source; the full Management API response is not an approved input. Vercel variable values are never requested or accepted. Missing acquisition capability remains a failed/unavailable check.
+
 ## When access is missing
 
 A restricted worker still has a path for most things:
