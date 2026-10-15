@@ -480,7 +480,7 @@ flowchart LR
 - **Checks on every pull request:** lint (including the dependency and code-quality rules), type checking, unit tests with coverage thresholds, database access-rule tests, browser tests of the main flows at phone and desktop widths, and a production build.
 - **Two stages.** Merging to `main` migrates the dev database and deploys the dev environment, where the change is tested with real data. A manual release then migrates prod and moves the `production` branch to the tested commit, which Vercel deploys. Only tested commits reach production.
 - **Migrations are backward compatible,** so the app and the database can update in either order.
-- **After each deploy,** a smoke check confirms the app is up, protected routes refuse anonymous requests, deep links load, and security headers are present. A failure means rolling back to the previous deployment.
+- **After each deploy,** a smoke check confirms the app is up, protected routes refuse anonymous requests, deep links load, and security headers are present. A production failure notifies the owner through GitHub and links the manual rollback runbook. The owner restores the last verified good deployment; automation does not change production traffic (owner decision, 2026-10-14).
 - **Config checks** compare each environment against the repo without reading secret values: the Yahoo sign-in provider and scopes; the redirect allowlist; that the schema matches the migrations; that the expected Vercel variables exist in each scope.
 - **Supply chain.** Dependabot security alerts and weekly grouped updates, secret scanning with push protection, and CodeQL.
 - **Pull requests** are small and single-purpose, linked to a Linear issue, titled `type: summary (issue)` with types `feat`, `fix`, `refactor`, `test`, `docs` and `chore`, and say how the change was verified.
@@ -498,7 +498,7 @@ flowchart LR
 #### Workflows
 
 1. **On merge to `main`:** migrate the dev database. Vercel deploys `main` to dev; when it reports success, a smoke check runs against the dev URL.
-2. **Release** (started with Run workflow after testing in dev): wait for approval → migrate the prod database → move `production` to the tested commit → tag it and publish the release notes. Vercel deploys production; when it reports success, the smoke and config checks run, and a failure rolls back to the previous production deployment.
+2. **Release** (started with Run workflow after testing in dev): wait for approval → migrate the prod database → move `production` to the tested commit → tag it and publish the release notes. Vercel deploys production; when it reports success, the smoke and config checks run, and a failure notifies the owner and links the manual rollback runbook. The owner restores the last verified good production deployment; automation does not change production traffic.
 3. Only one release runs at a time.
 
 **Secrets,** all in GitHub environments: a Supabase access token, the dev and prod database passwords, and the deploy key for `production`. No Vercel token is needed.
