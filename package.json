@@ -81,7 +81,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/express": "4.17.21",
