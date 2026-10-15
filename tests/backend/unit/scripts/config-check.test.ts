@@ -1,4 +1,4 @@
-import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { readFileSync, readdirSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
@@ -238,9 +238,43 @@ describe("configuration comparison", () => {
 
   it("binds repository expectations to migration and query bytes", () => {
     const input = repositoryInputs(resolve("."));
-    expect(input.migrationVersions).toHaveLength(6);
+    expect(input.migrationVersions).toEqual(
+      readdirSync(resolve("supabase/migrations"))
+        .filter((name) => name.endsWith(".sql"))
+        .sort()
+        .map((name) => name.split("_")[0])
+    );
     expect(input.queryDigest).toBe(digest(input.query));
     expect(input.query).not.toContain("client_secret");
+  });
+
+  it("orders migrations and detects byte changes without a fixed repository count", () => {
+    const root = mkdtempSync(join(tmpdir(), "config-inputs-"));
+    try {
+      const migrations = join(root, "supabase/migrations");
+      const queries = join(root, "scripts/config-check");
+      mkdirSync(migrations, { recursive: true });
+      mkdirSync(queries, { recursive: true });
+      writeFileSync(join(migrations, "202601020001_second.sql"), "select 2;");
+      writeFileSync(join(migrations, "202601010001_first.sql"), "select 1;");
+      writeFileSync(join(migrations, "README.md"), "not a migration");
+      writeFileSync(join(queries, "schema.sql"), "select 'catalog';");
+      const input = repositoryInputs(root);
+      expect(input.migrationVersions).toEqual(["202601010001", "202601020001"]);
+      expect(input.migrationsDigest).toBe(
+        digest(
+          ["202601010001_first.sql", "select 1;", "202601020001_second.sql", "select 2;", ""].join(
+            "\0"
+          )
+        )
+      );
+      writeFileSync(join(migrations, "202601020001_second.sql"), "select 2;\n");
+      expect(repositoryInputs(root).migrationsDigest).not.toBe(input.migrationsDigest);
+      writeFileSync(join(queries, "schema.sql"), "select 'catalog';\n");
+      expect(repositoryInputs(root).queryDigest).not.toBe(input.queryDigest);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("rejects secret-bearing snapshots and never prints their content", () => {
