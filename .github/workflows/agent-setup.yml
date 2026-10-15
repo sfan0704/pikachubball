@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
       - name: Use the repository package manager
@@ -27,7 +27,7 @@ jobs:
       - name: Repeat setup
         run: npm run agent:setup
       - name: Keep sanitized setup evidence
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: agent-setup
           path: .agent/*.json
