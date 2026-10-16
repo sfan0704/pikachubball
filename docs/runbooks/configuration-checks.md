@@ -43,7 +43,7 @@ The current Supabase connector exposes safe SQL projections but no selective Aut
 
 When `vercel-metadata.json` is omitted and an externally injected `CONFIG_VERCEL_TOKEN` is available, capture acquires Vercel metadata in the same run. Limit the credential to read access on the basketball project/team; it is not a deployment or rollback credential and never belongs in the app's runtime environments. An explicitly supplied projection file takes precedence, so existing trusted connector-based capture still works without a worker token.
 
-The hosted contract rejects both `CONFIG_VERCEL_TOKEN` and `CONFIG_SUPABASE_ACCESS_TOKEN` in app runtime variable scopes. Keep these acquisition credentials outside the deployed app, even when they have only read access.
+The hosted contract rejects both `CONFIG_VERCEL_TOKEN` and `CONFIG_SUPABASE_ACCESS_TOKEN` in app runtime variable scopes, including their browser-exposed `VITE_` forms. Keep these acquisition credentials outside the deployed app, even when they have only read access.
 
 The collector first checks the project ID and account/team ID using `GET /v9/projects/<project-id>?teamId=<team-id>`. Only after that identity check succeeds does it request `GET /v10/projects/<project-id>/env?teamId=<team-id>&decrypt=false`. It does not filter to a single branch: every row is required to detect generic Preview leaks and shared scopes. It rejects unexpected scope shapes, refuses redirects and times each request out after 30 seconds. Any failure stops capture with a generic error; it never becomes a successful empty observation.
 

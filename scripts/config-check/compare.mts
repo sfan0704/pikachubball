@@ -48,7 +48,8 @@ function variablesMatch(snapshot: Snapshot, contract: Contract): boolean | null 
     (item) =>
       forbidden.has(item.key) ||
       (required.has(item.key) && item.target.length !== 1) ||
-      (item.key.startsWith("VITE_") && required.has(item.key.slice(5))) ||
+      (item.key.startsWith("VITE_") &&
+        (required.has(item.key.slice(5)) || forbidden.has(item.key.slice(5)))) ||
       (required.has(item.key) && item.target.includes("preview") && item.gitBranch !== "main")
   );
   if (leaks) return false;
