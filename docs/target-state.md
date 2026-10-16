@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-14.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-10-16.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -501,7 +501,7 @@ flowchart LR
 2. **Release** (started with Run workflow after testing in dev): wait for approval → migrate the prod database → move `production` to the tested commit → tag it and publish the release notes. Vercel deploys production; when it reports success, the smoke and config checks run, and a failure notifies the owner and links the manual rollback runbook. The owner restores the last verified good production deployment; automation does not change production traffic.
 3. Only one release runs at a time.
 
-**Secrets,** all in GitHub environments: a Supabase access token, the dev and prod database passwords, and the deploy key for `production`. No Vercel token is needed.
+**Secrets,** all in GitHub environments: a Supabase access token, the dev and prod database passwords, and the deploy key for `production`. Deployment and manual rollback need no Vercel automation token. Configuration capture can use a separate read-only basketball-scoped `CONFIG_VERCEL_TOKEN` to acquire variable names and scopes with decryption disabled; it never receives deployment authority or enters the app runtime. Trusted connector-projected metadata remains supported without that token. Hosted configuration workflows remain inactive until their sources and scoped credentials are provisioned and verified.
 
 ## Operations
 

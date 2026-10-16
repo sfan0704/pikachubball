@@ -2,6 +2,8 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-10-16 · Optional read-only Vercel metadata acquisition checks project/team identity and saves only variable names/scopes, without decryption or deployment authority · CAR-100
+
 - 2026-10-14 · Failed production smoke checks link the recovery runbook; the owner manually restores the last verified good deployment, and automation never changes production traffic · CAR-100 (PR pending)
 
 - 2026-10-07 · First agreed version, moved into the repository from Notion · #16
