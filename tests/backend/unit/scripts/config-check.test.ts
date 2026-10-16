@@ -63,6 +63,18 @@ function snapshot(): Snapshot {
 }
 
 describe("configuration comparison", () => {
+  it.each(["CONFIG_VERCEL_TOKEN", "CONFIG_SUPABASE_ACCESS_TOKEN"])(
+    "rejects the metadata credential %s in app runtime scopes",
+    (key) => {
+      const s = snapshot();
+      s.vercel?.variables.push({ key, target: ["production"], gitBranch: null });
+      expect(compare(s, baseline, contract, context)).toContainEqual({
+        check: "Vercel variables and isolation",
+        outcome: "mismatch",
+      });
+    }
+  );
+
   it("passes a complete matching capture; scope ordering does not matter", () => {
     const s = snapshot();
     s.providers?.[0]?.scopes.reverse();
