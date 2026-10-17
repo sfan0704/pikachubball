@@ -44,6 +44,13 @@ The default development and CI environment is the disposable Supabase stack with
 | Secret location | Generated local/test values only | Owner-managed `.env.local` exception; hosted branch scope pending | Vercel Production environment |
 | Migrations | `npm run test:db`, disposable only | Manual main-only workflow verified; automatic activation pending | Approval-protected release workflow, activation pending |
 
+### Hosted-dev preparation (2026-10-16, America/New_York)
+
+- All seven dev server variables are staged as Development-only Vercel rows, including the owner's sensitive `ENCRYPTION_KEY`; seven separate Production-only rows are unchanged. No values were read and no main Preview overrides are active.
+- The [main-only dev migration](https://github.com/sfan0704/pikachubball/actions/runs/38988510977) passed at `f0c8ac4e3d12dff1bb7070e4c713a68999ed5c44`. Dev now has all seven canonical migrations and the restricted session-check RPC. Owner sign-in/logout acceptance is still open.
+- Public production health still reports `f0c8ac4e3d12dff1bb7070e4c713a68999ed5c44`. The `production` branch is still at `ceb61b4b78629c3871224a4112d7e55bbc876fc5` and unprotected. Production release secret-name inventory is unavailable to the worker (403).
+- The contract specifies the intended hosted-main dev origin, but hosting/auth activation remains pending. Follow the [guarded transition](../runbooks/hosted-dev-transition.md), with owner approval, before changing branch tracking or moving staged variables. Earlier observations below are historical.
+
 ### Verified state and remaining activation (2026-10-11)
 
 - [CAR-94](https://linear.app/card-benefits/issue/CAR-94): latest discussion at 00:25 UTC records `production` created at `ceb61b4b78629c3871224a4112d7e55bbc876fc5`. Vercel still follows `main` for production. Hosted dev configuration, stable origin, Vercel Authentication, exact callback allowlist and branch switch remain pending. Seven server variables were verified production-only; verify isolation on a fresh preview before claiming deployment-level acceptance.
