@@ -136,6 +136,14 @@ describe("sessionSetup", () => {
     );
   });
 
+  it("installs with nvm without depending on nvm's default alias", () => {
+    const ctx = fake({ nodeVersion: "22.22.0", nvmDir: "/nvm", files: { "/nvm/nvm.sh": "" } });
+    expect(() => sessionSetup(ctx, { pathFile: undefined })).toThrow("nvm did not provide it.");
+    // Loading nvm normally switches to its default alias and exits nonzero when that is missing.
+    expect(ctx.shown).toHaveLength(1);
+    expect(ctx.shown[0]).toContain('nvm.sh" --no-use >/dev/null; nvm install "$2"');
+  });
+
   it("never reads hosted configuration or prints the environment", () => {
     const read: string[] = [];
     const ctx = fake({});

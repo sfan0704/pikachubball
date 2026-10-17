@@ -85,9 +85,10 @@ export function resolveNode(ctx: Context, pinned: string): Node {
     throw new Error(`${refusal} Install it (for example \`nvm install\`) and run setup again.`);
   }
   // nvm is a shell function, so it runs inside bash; the version is an argument, never spliced in.
+  // --no-use: loading nvm otherwise switches to its default alias, and fails when that is missing.
   const nvm = (command: string): string[] => [
     "-c",
-    `export NVM_DIR="$1"; . "$NVM_DIR/nvm.sh" >/dev/null && nvm ${command} "$2"`,
+    `export NVM_DIR="$1"; . "$NVM_DIR/nvm.sh" --no-use >/dev/null; nvm ${command} "$2"`,
     "nvm",
     ctx.nvmDir ?? "",
     pinned,
