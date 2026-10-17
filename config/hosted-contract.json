@@ -20,8 +20,10 @@
   "environments": {
     "dev": {
       "projectRef": "ocqdxmfpezxpgutoicyh",
-      "siteUrl": "https://localhost:5001",
-      "redirectAllowList": ["https://localhost:5001/api/auth/callback"]
+      "siteUrl": "https://pikachubball-git-main-sfan0704s-projects.vercel.app",
+      "redirectAllowList": [
+        "https://pikachubball-git-main-sfan0704s-projects.vercel.app/api/auth/callback"
+      ]
     },
     "prod": {
       "projectRef": "fpdwtpwpmxsbgjxizuxa",

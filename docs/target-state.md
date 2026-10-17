@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-14.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-10-16.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -126,6 +126,8 @@ This table is the agreed destination. As verified in CAR-94/CAR-83 discussions o
 | Review | A throwaway, signed-in copy of one commit, so a reviewer or agent can see the change working | Throwaway local database | Stand-in | Synthetic users |
 | Dev | Hosted deployment of `main`: every merged change is tested here with real Yahoo data before release | `Pikachu Basketball Development` | `PikachuBball` | The owner only |
 | Prod | Deployment of the `production` branch, for the league | `Pikachu Basketball` | `PikachuBball` | League members |
+
+The intended hosted dev origin is `https://pikachubball-git-main-sfan0704s-projects.vercel.app`, with exactly `/api/auth/callback` in dev Supabase's redirect allowlist. The [hosted-dev transition](runbooks/hosted-dev-transition.md) preserves the verified production deployment while branch tracking and dev scopes are changed under owner approval. Seven staged Development variables and a passing dev migration do not mean the hosted environment is active.
 
 #### Disposable development
 

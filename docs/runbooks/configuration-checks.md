@@ -2,7 +2,7 @@
 
 CAR-100's metadata comparison is `npm run config:check -- <snapshot.json> <baseline.json>`. It exits nonzero on a mismatch, unavailable evidence, wrong project, invalid input or a capture older than 24 hours (or more than five minutes in the future). It prints only criterion names and outcomes; in Actions it also writes those to the job summary. A failed workflow notifies the owner through GitHub. No command repairs settings or changes production traffic.
 
-The checked expectations live in `config/hosted-contract.json`: basketball project/team identities, exact site/callback URLs, server-variable names and scope isolation. Dev currently uses the documented owner-only localhost HTTPS exception; hosted dev origin/activation is still CAR-94. Update this contract in the PR that approves that change. Main-specific preview variables are dev-only; feature previews remain build-only. Shared dev/prod variable rows, generic preview leaks, browser-prefixed server variables and runtime admin credentials fail.
+The checked expectations live in `config/hosted-contract.json`: basketball project/team identities, exact site/callback URLs, server-variable names and scope isolation. The dev contract names the intended hosted-main origin; activation is still pending CAR-94's [guarded transition](hosted-dev-transition.md). The owner's localhost HTTPS exception remains the current real-Yahoo validation path until that transition is verified. A contract change is not evidence that dashboard settings changed. Main-specific preview variables are dev-only; feature previews remain build-only. Shared dev/prod variable rows, generic preview leaks, browser-prefixed server variables and runtime admin credentials fail.
 
 ## Schema reference
 
