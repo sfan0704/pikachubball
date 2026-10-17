@@ -37,6 +37,8 @@ function fake(overrides: {
   nodeVersion?: string;
   nvmDir?: string;
   shownStatus?: number;
+  /** Answers that replace earlier ones once a shown command succeeds, as an install would. */
+  afterShown?: Record<string, string>;
 }): Fake {
   const files: Record<string, string> = {
     ".nvmrc": "24.21.0\n",
@@ -65,7 +67,9 @@ function fake(overrides: {
     },
     runShown: (command, args) => {
       shown.push([command, ...args].join(" "));
-      return overrides.shownStatus ?? 0;
+      const status = overrides.shownStatus ?? 0;
+      if (status === 0) Object.assign(answers, overrides.afterShown);
+      return status;
     },
     read: (path) => files[path] ?? appended[path],
     exists: (path) => path in files,
@@ -133,6 +137,54 @@ describe("sessionSetup", () => {
     sessionSetup(ctx, { pathFile: "/session/env" });
     expect(ctx.appended["/session/env"]).toBe(
       'export PATH="/nvm/versions/node/v24.21.0/bin:$PATH"\n'
+    );
+  });
+
+  describe("npm of a Node from nvm", () => {
+    const NVM_NPM = "/nvm/versions/node/v24.21.0/bin/npm";
+    const fromNvm = (npm: string, more: Parameters<typeof fake>[0] = {}): Fake =>
+      fake({
+        nodeVersion: "22.22.0",
+        nvmDir: "/nvm",
+        files: { "/nvm/nvm.sh": "" },
+        ...more,
+        answers: {
+          "bash -c": "/nvm/versions/node/v24.21.0/bin/node",
+          [`${NVM_NPM} --version`]: npm,
+        },
+      });
+
+    it("installs the pinned npm into that Node, and nothing on a second run", () => {
+      const ctx = fromNvm("11.19.0", { afterShown: { [`${NVM_NPM} --version`]: "11.17.0" } });
+      sessionSetup(ctx, { pathFile: undefined });
+      sessionSetup(ctx, { pathFile: undefined });
+      expect(ctx.shown).toEqual([`${NVM_NPM} install --global npm@11.17.0`]);
+      expect(ctx.lines).toContain(
+        "Session setup: Node 24.21.0, npm 11.17.0, Docker not reachable, Chromium not installed."
+      );
+    });
+
+    it("fails clearly when installing the pinned npm fails", () => {
+      const ctx = fromNvm("11.19.0", { shownStatus: 1 });
+      expect(() => sessionSetup(ctx, { pathFile: undefined })).toThrow(
+        "Installing npm@11.17.0 into nvm's Node 24.21.0 failed."
+      );
+    });
+
+    it("fails when the install leaves a different npm", () => {
+      const ctx = fromNvm("11.19.0");
+      expect(() => sessionSetup(ctx, { pathFile: undefined })).toThrow(
+        "Installing npm@11.17.0 into nvm's Node 24.21.0 failed. It reports npm 11.19.0."
+      );
+    });
+  });
+
+  it("only warns about a different npm minor in the Node that was already running", () => {
+    const ctx = fake({ answers: { "/node24/bin/npm --version": "11.19.0" } });
+    sessionSetup(ctx, { pathFile: undefined });
+    expect(ctx.shown).toEqual([]);
+    expect(ctx.lines).toContain(
+      "Warning: npm 11.19.0 is here; packageManager pins 11.17.0 (agent:setup needs it exactly)."
     );
   });
 
