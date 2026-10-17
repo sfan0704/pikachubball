@@ -17,3 +17,31 @@ After setup, `npm run dev` starts the long-running disposable app separately.
 Like every local-stack command, setup uses this checkout's own stack and ports ("Several workspaces" in the [README](../README.md)), so several workers can share a Docker host. It refuses to touch a stack whose ports are held by another checkout's containers; never stop or delete another checkout's stack to get past that. On a disposable worker, destroying the worker removes its stack. On a reused host, `npm run workspace` and `docker ps --filter name=pikachubball` show which stacks exist.
 
 Node and npm updates must update the recipe and pass clean/repeat evidence. This command does not grant platform administration or production authority. See the [remote development contract](remote-development.md).
+
+## Cloud sessions
+
+Claude Code and Codex cloud sessions start with the same command, which knows nothing about either provider:
+
+```text
+npm run session:setup
+```
+
+It does the light, always-safe part and is safe on a laptop too. It checks the pinned Node (`.nvmrc`) and npm (`packageManager`); a different Node major is used only when nvm can provide the pinned version, and otherwise setup refuses and names the version to install. A different npm major is refused; a different npm minor is a warning, since `agent:setup` needs it exactly. It then runs `npm ci` unless `node_modules` already matches `package-lock.json`, so a second run installs nothing. It ends with which validate profiles can run here and which are left to CI. It never starts a stack (with Docker present it points to `npm run agent:setup`), never reads hosted configuration, and makes no hosted or Yahoo calls. When it had to get Node from nvm, `--path-file <file>` adds that Node to `PATH` in a file the host's later shells source; without it, setup says to run `nvm use`.
+
+Each provider has a thin adapter that only calls the command; a unit test (`tests/backend/unit/dev/session-setup.test.ts`) fails if an adapter does more.
+
+| Setting | Claude Code | Codex |
+| --- | --- | --- |
+| Where setup lives | The SessionStart hook in [`.claude/settings.json`](../.claude/settings.json), in this repository | The environment's setup script, pasted from below; Codex doesn't read it from the repository |
+| Network | Trusted (the default) | Default; internet is on for setup and off for the agent by default, so every install happens in setup |
+| Environment variables and secrets | None | None |
+| Node | The image's default Node is 22; the hook gets 24 through nvm and passes `$CLAUDE_ENV_FILE`, so the session's shells use it | Choose Node 24 for the environment, so the agent's shell has it |
+
+The Codex setup script:
+
+<!-- codex-setup -->
+```text
+npm run session:setup
+```
+
+Neither cloud runs Docker, so a cloud session runs the `static`, `unit` and `build` profiles (`npm run validate -- iterate` while working), and the database, browser and review checks run in CI on the pull request. The *Agent setup* workflow runs `session:setup` twice on a clean runner and fails unless the second run installs nothing.

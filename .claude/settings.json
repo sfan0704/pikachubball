@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run session:setup -- --path-file \"$CLAUDE_ENV_FILE\"",
+            "timeout": 900
+          }
+        ]
+      }
+    ]
+  }
+}
