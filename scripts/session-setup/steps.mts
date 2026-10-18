@@ -34,6 +34,7 @@ export interface Context {
 export interface Node {
   readonly version: string;
   readonly bin: string;
+  /** False exactly when setup got this Node from nvm rather than using the running one. */
   readonly onPath: boolean;
 }
 
@@ -108,19 +109,37 @@ export function resolveNode(ctx: Context, pinned: string): Node {
   return { version: pinned, bin: binary.slice(0, -"/node".length), onPath: false };
 }
 
-/** npm from the chosen Node: the pinned major is required, the exact version only warned about. */
-export function checkNpm(ctx: Context, node: Node, pinned: string): string {
+function npmVersion(ctx: Context, node: Node): string {
   const result = ctx.run(`${node.bin}/npm`, ["--version"], node.bin);
-  const version = result.status === 0 ? result.stdout.trim() : "missing";
+  return result.status === 0 ? result.stdout.trim() : "missing";
+}
+
+/**
+ * npm from the chosen Node: the pinned major is required. When setup got that
+ * Node from nvm, the exact pin is installed into it, since nothing else uses
+ * that install; any other npm belongs to the person or image, so a different
+ * version there is only warned about.
+ */
+export function checkNpm(ctx: Context, node: Node, pinned: string): string {
+  const version = npmVersion(ctx, node);
   if (major(version) !== major(pinned)) {
     throw new Error(`npm ${version} is here, but package.json pins npm@${pinned}.`);
   }
-  if (version !== pinned) {
+  if (version === pinned) return version;
+  if (node.onPath) {
     ctx.log(
       `Warning: npm ${version} is here; packageManager pins ${pinned} (agent:setup needs it exactly).`
     );
+    return version;
   }
-  return version;
+  ctx.log(`Installing npm ${pinned} into nvm's Node ${node.version} (it has npm ${version}).`);
+  const failed = `Installing npm@${pinned} into nvm's Node ${node.version} failed.`;
+  if (ctx.runShown(`${node.bin}/npm`, ["install", "--global", `npm@${pinned}`], node.bin) !== 0) {
+    throw new Error(failed);
+  }
+  const installed = npmVersion(ctx, node);
+  if (installed !== pinned) throw new Error(`${failed} It reports npm ${installed}.`);
+  return installed;
 }
 
 interface LockEntry {
