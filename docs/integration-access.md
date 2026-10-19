@@ -8,9 +8,9 @@ What access a worker, person or agent, needs for each kind of work, how it gets 
 | --- | --- | --- |
 | **Local** | Code, tests, `npm run validate`, the local stack | None. Docker, Node and npm only; the Yahoo stand-in replaces Yahoo |
 | **Task** | Reading issues, pushing a branch, opening and updating a pull request, reading checks and deployment status | Scoped and read-mostly: Linear, GitHub write on this repository, optionally dev-only Supabase and read-only Vercel |
-| **Privileged** | Production data or configuration, migrations on prod, secrets, releases, merging | The owner, or the approval-gated release workflow. Never on a normal worker |
+| **Privileged** | Production data or configuration, migrations on prod, secrets, releases, merging | The owner, or the *Deploy* workflow, which runs only for commits on `main`. Never on a normal worker |
 
-Normal worker setup (`npm run agent:setup`) needs only the local tier. `npm run doctor` warns if a production-write secret (`SUPABASE_DB_PASSWORD`, `PRODUCTION_DEPLOY_KEY`, `ENCRYPTION_KEY`, `YAHOO_CLIENT_SECRET` and the like) is present, or if a token reaches the production database.
+Normal worker setup (`npm run agent:setup`) needs only the local tier. `npm run doctor` warns if a production-write secret (`SUPABASE_DB_PASSWORD`, `ENCRYPTION_KEY`, `YAHOO_CLIENT_SECRET` and the like) is present, or if a token reaches the production database.
 
 ## Targets
 
@@ -37,7 +37,7 @@ In each row, try the access paths in order: the agent's built-in connector, then
 | Deployment status of a commit (preview, prod) | Task | `gh api repos/sfan0704/pikachubball/deployments` (Vercel reports to GitHub) → Vercel connector → REST `api.vercel.com` | GitHub access as above; no Vercel token needed | As above |
 | Vercel runtime logs, project settings | Task (read) | Vercel connector → `vercel logs` → REST | `VERCEL_TOKEN` scoped to the team, read-only | Connector authorized for the team, or an environment variable |
 | Production SQL, provider settings, secrets | Privileged | The owner, in the dashboard | Owner's account | Never given to a worker |
-| Production migrations and releases | Privileged | The *Release* workflow, approved by the owner; it checks for drift first | `production` GitHub environment: the database password and deploy key | GitHub environment with required reviewers |
+| Production migrations and deploys | Privileged | The *Deploy* workflow, after CI passes on a `main` commit; it checks for drift first | `production` GitHub environment: the database password and a project-scoped Vercel token | GitHub environment limited to `main`; pull request jobs never see it |
 | Weekly keep-alive and schema dump | Automated | The *Scheduled* workflow | `maintenance` environment: a role that reads no rows | GitHub environment |
 
 Hosted configuration comparison (provider, redirect allowlist, Vercel variables) belongs to CAR-100's config checks, and release activation to CAR-83's runbook; this page doesn't duplicate them.
@@ -52,6 +52,6 @@ A restricted worker still has a path for most things:
 - **Checks and CI logs:** `gh run view <id> --log-failed`, or the GitHub connector.
 - **Deployment status:** GitHub's deployments API, which Vercel updates, needs no Vercel access.
 - **Vercel runtime logs:** they need Vercel access. Without it, record "runtime logs unavailable" and what you needed them for. The owner can share the relevant lines.
-- **Database state:** the local stack covers schema and behavior; there is no hosted dev. Production state is the owner's, and the release's drift check compares it with the migrations.
+- **Database state:** the local stack covers schema and behavior; there is no hosted dev. Production state is the owner's, and each deploy's drift check compares it with the migrations.
 
 `npm run doctor` turns each of these into a line: `ok`, `unavailable` with the action to take, `mismatch` when access points at the wrong repository or project, `warning` when it holds more than the task needs, or `failed` for a missing required tool. Only `failed` and `mismatch` make it exit nonzero; missing optional access is reported, not treated as a pass.

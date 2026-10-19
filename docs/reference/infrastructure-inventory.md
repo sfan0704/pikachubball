@@ -41,14 +41,15 @@ There are three tiers and no hosted dev (owner decision, 2026-10-18; supersedes 
 | Sign-in | Seeded synthetic managers via `/api/dev/login` | None | League members' real Yahoo sign-in |
 | Application callback | No Yahoo callback | None | `https://pikachubball.vercel.app/api/auth/callback` |
 | Secret location | Generated local/test values only | None | Vercel Production environment; GitHub `production` and `maintenance` environments for the database |
-| Migrations | `npm run test:db`, disposable only | None | Approval-protected release workflow with a drift check, activation pending |
+| Migrations | `npm run test:db`, disposable only | None | *Deploy* workflow after CI passes on `main`, with a drift check first; activation pending |
 
 ### Verified state and remaining activation (2026-10-19)
 
 - CAR-138 replaced the seven migrations with one baseline (`20261019000000_baseline.sql`), removed *Migrate dev*, and made the release migrate production with `SUPABASE_DB_PASSWORD` only, after a drift check. Project refs are written in the workflows.
 - The read-only check on 2026-10-17 (CAR-100) found production's schema digest differing from the migrations it recorded, including the platform's `public.rls_auto_enable()` and function privileges. The release drift check now ignores the platform's event-trigger functions, and the baseline sets every privilege explicitly. Production still holds the old seven-migration history, so a release stops at the drift check until the [production reset](../runbooks/production-reset.md) runs (CAR-139, owner only).
-- Still to do in CAR-139: add `SUPABASE_DB_PASSWORD` and `PRODUCTION_DEPLOY_KEY` to `production`, create `maintenance`, switch Vercel's production branch from `main` to `production`, run the reset and a first release, then remove the retired dev resources (the `Pikachu Basketball Development` project, its Vercel Development-scope variables, the `dev` GitHub environment and its localhost Yahoo redirects). `RELEASE_AUTOMATION` remains unset.
-- The GitHub production environment requires owner approval and allows deployment from `main` only. Preserve that protection. A branch or merged workflow is not evidence of an activated release.
+- CAR-140 replaced the manual *Release* workflow (and its `production` branch and deploy key) with *Deploy*, which runs when CI passes on a `main` commit: drift check, migrate, Vercel CLI deploy of that commit, tag, smoke check. `vercel.json` turns off Vercel's Git deploys from `main`, so once it merges production gets no new deploy until *Deploy* is switched on.
+- Still to do in CAR-139: add `SUPABASE_DB_PASSWORD` and a project-scoped `VERCEL_TOKEN` to `production` and remove its required reviewers (owner default: no approval), add the "require branches to be up to date" rule to `main`'s ruleset, create `maintenance`, run the reset, set `RELEASE_AUTOMATION` and re-run the latest *Deploy* run, then remove the retired dev resources (the `Pikachu Basketball Development` project, its Vercel Development-scope variables, the `dev` GitHub environment and its localhost Yahoo redirects). `RELEASE_AUTOMATION` remains unset.
+- The GitHub production environment allows deployment from `main` only. Preserve that limit; pull request jobs must never reach it. A branch or merged workflow is not evidence of an activated release.
 - Feature previews remain build-only, with no Supabase/Yahoo credentials or sign-in. Functional preview design belongs to CAR-128; implementation belongs to CAR-129.
 
 ### Yahoo boundary

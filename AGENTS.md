@@ -31,6 +31,7 @@ npm run check      # TypeScript
 npm test           # unit and route tests (npm run test:coverage also enforces the coverage thresholds CI uses)
 npm run build      # production build
 npm run test:db    # database and access-rule tests (needs Docker)
+npm run check:migrations # every added migration sorts after the newest on origin/main
 npm run load       # 14 simultaneous users against the stand-in, before a release (needs Docker and a build)
 npm run test:browser # browser tests of the main flows with accessibility checks (needs Docker and a build)
 ```
@@ -72,7 +73,7 @@ The target state has the detail; these are the rules most often broken.
 - Yahoo access is read-only. Tests and automation never call the real Yahoo API.
 - Never commit, print or log secrets, tokens or keys, and don't read `.env.local`. Never put credentials in fixtures, docs, Linear or pull requests.
 - The server never uses the Supabase admin (service-role) key.
-- Schema changes are new files in `supabase/migrations`, backward compatible with the running app, with access-rule tests in `supabase/tests`.
+- Schema changes are new files in `supabase/migrations`, named with a timestamp later than the newest on `main` (`npm run check:migrations`), backward compatible with the running app, with access-rule tests in `supabase/tests`. Merging deploys: the migration runs before the code goes live, so removing a column or table takes two merges (stop using it, then drop it).
 
 ## Pull requests
 

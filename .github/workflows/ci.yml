@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# Checks only. No job here uses an environment or a secret: anyone can open a
+# pull request against this public repository, and it runs that branch's copy
+# of this file. Production changes happen after merge (deploy.yml).
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: Build & Test
@@ -24,8 +30,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The migration order check compares this change's migrations with main's.
+      - name: Fetch main
+        run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+
       # The same contract people and agents run (scripts/validate.mts): lint,
-      # format, knip, types, tests with coverage thresholds, build and bundle size.
+      # format, knip, types, migration order, tests with coverage thresholds,
+      # build and bundle size.
       - name: Static checks, tests with coverage, build and bundle size
         run: npm run validate -- static unit build
 

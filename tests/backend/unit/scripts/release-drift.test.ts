@@ -178,7 +178,7 @@ describe("the production connection", () => {
   });
 
   it.each([
-    [{ ...env, GITHUB_ACTIONS: undefined }, "only from the Release workflow"],
+    [{ ...env, GITHUB_ACTIONS: undefined }, "only from the Deploy workflow"],
     [{ ...env, SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst" }, "not the production project"],
     [{ ...env, SUPABASE_DB_PASSWORD: "" }, "SUPABASE_DB_PASSWORD is not set"],
   ])("refuses to connect outside a production release: %#", (badEnv, message) => {

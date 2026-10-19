@@ -17,15 +17,15 @@ Vercel serves the client and API on one origin. The expected traffic is small, i
 
 ## Environments
 
-The supported development path is the disposable stack and Yahoo stand-in, on a laptop or a remote worker with Docker. There is no hosted dev environment (owner decision, 2026-10-18): pull request checks and the review environment stand in for it, and an approved release takes a change to production. The [inventory](docs/reference/infrastructure-inventory.md#environment-tiers) records dated evidence.
+The supported development path is the disposable stack and Yahoo stand-in, on a laptop or a remote worker with Docker. There is no hosted dev environment (owner decision, 2026-10-18): pull request checks and the review environment stand in for it, and merging takes a change to production once CI passes on `main`. The [inventory](docs/reference/infrastructure-inventory.md#environment-tiers) records dated evidence.
 
 | Environment | Current behavior | Authentication and credentials |
 | --- | --- | --- |
 | Local / CI | Disposable Supabase, recorded Yahoo responses, synthetic managers | No hosted credentials or real Yahoo calls |
 | Preview | Feature-branch build check only | No Supabase/Yahoo credentials or sign-in |
-| Prod | Vercel production; the release model below is being switched on (CAR-139) | Production Supabase and Vercel Production variables |
+| Prod | Vercel production, deployed by the *Deploy* workflow once it is switched on (CAR-139) | Production Supabase and Vercel Production variables |
 
-The model is merge to `main`, then an approved release that checks production for drift, migrates it and moves the `production` branch, which Vercel deploys. Automatic releases stay off until the owner finishes the hosted setup in CAR-139; see the [release runbook](docs/runbooks/release.md).
+The model is deploy on merge: pull requests run checks only, and when CI passes on a `main` commit the *Deploy* workflow checks production for drift, migrates it, deploys that exact commit with the Vercel CLI and smoke checks it. Deploys stay off until the owner finishes the hosted setup in CAR-139; see the [release runbook](docs/runbooks/release.md).
 
 One Yahoo sign-in does everything in production: Supabase's `custom:yahoo` provider requests Fantasy read scope (`fspt-r`), and `/api/auth/callback` stores the session's Yahoo tokens and syncs leagues. Production uses the Fantasy-enabled Yahoo app, `PikachuBball`. Local/CI uses the stand-in and synthetic login instead of a Yahoo provider.
 
