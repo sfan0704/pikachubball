@@ -1,6 +1,6 @@
 # Season rollover check
 
-Yahoo opens a new fantasy season each autumn with new league keys. The app picks them up from the user's league list; nothing is configured per season. Run this check when the new season opens, on dev first.
+Yahoo opens a new fantasy season each autumn with new league keys. The app picks them up from the user's league list; nothing is configured per season. Run this check on production when the new season opens.
 
 1. Sign in with the owner's account and open the league picker.
 2. Confirm the new season's leagues are listed and the previous season's leagues show as finished (or are gone).

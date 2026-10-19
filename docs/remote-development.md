@@ -60,7 +60,7 @@ Sign in at `<url>/api/dev/login?user=a` (or `user=b`); the URL is loopback-only.
 | Production writes, credential rotation, migrations, destructive cleanup | Require explicit owner authorization and the documented runbook; preserve production approval gates |
 | Merge, release or mark consequential rollout complete | Require owner authorization and verified acceptance; green tests alone are insufficient |
 
-Do not grant yourself broader credentials or weaken checks to unblock work. Never copy production values into dev, tests, PRs or issues. Card Benefits infrastructure is outside scope. Default worker access ends at human review, without production write or merge authority.
+Do not grant yourself broader credentials or weaken checks to unblock work. Never copy production values into local files, tests, PRs or issues. Card Benefits infrastructure is outside scope. Default worker access ends at human review, without production write or merge authority.
 
 ## Handoff
 

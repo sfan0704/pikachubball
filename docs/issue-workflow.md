@@ -11,7 +11,7 @@ A status is a claim; the evidence makes it true. Use these words, in issues and 
 | Implemented | The change exists on the issue's branch | Branch and head commit | In Progress |
 | Validated | `npm run validate` passed on that commit | Its summary table, and the commit | In Progress |
 | In review | A pull request is open with the record below | The PR link | In Review |
-| Merged | On `main`, and so deployed to dev (and today to prod) | Merge commit; `/api/health` showing it where relevant | In Review, until acceptance is checked |
+| Merged | On `main`; today Vercel also deploys it to prod, until releases move the `production` branch (CAR-139) | Merge commit; `/api/health` showing it where relevant | In Review, until acceptance is checked |
 | Complete | Every acceptance criterion holds | One line of evidence per criterion | Done |
 
 **Merging is not completing.** Linear moves an issue to Done when a pull request naming it merges, whether or not the issue's acceptance criteria are met. After every merge, check each criterion; if any remain, set the issue back to In Progress and comment what is done and what remains (as CAR-100 and CAR-121 needed). A pull request that does only part of an issue says so in its description: `Part of CAR-123`.
