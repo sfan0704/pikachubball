@@ -1,12 +1,12 @@
 # Production reset
 
-Use it when production's database must start over from the migrations: once, for the clean start onto the baseline migration (CAR-138, run in CAR-139), and again only if the [release drift check](release.md#day-to-day) finds drift nobody can explain while production still has no users to lose. It is irreversible: every stored Yahoo connection, league list and preference is deleted. Supabase sign-in users (`auth.users`) stay, so nobody needs a new account, but everyone connects Yahoo again on their next sign-in. Only the owner runs it, and only after deciding to.
+Use it when production's database must start over from the migrations: once, for the clean start onto the baseline migration (CAR-138, run in CAR-139), and again only if the [deploy drift check](release.md#day-to-day) finds drift nobody can explain while production still has no users to lose. It is irreversible: every stored Yahoo connection, league list and preference is deleted. Supabase sign-in users (`auth.users`) stay, so nobody needs a new account, but everyone connects Yahoo again on their next sign-in. Only the owner runs it, and only after deciding to.
 
 The reset happens in place, in project `fpdwtpwpmxsbgjxizuxa`. Everything outside the app's own schema stays as it is: the project URL and keys, the `custom:yahoo` provider and its secret, the Site URL and redirect allowlist, the Vercel Production variables, and the `maintenance` role with its password.
 
 ## Before
 
-1. Merge the change that the release will apply, and check `main` is green.
+1. Merge the change the deploy will apply, and check CI is green on `main`. Leave `RELEASE_AUTOMATION` unset until the reset is done, so the merge doesn't deploy yet.
 2. Check nobody is using production: in the SQL editor, `select count(*) from public.yahoo_connections;` should be only your own test connections. If real managers are connected, stop and decide again.
 3. Download the latest `production-schema` artifact from the *Scheduled* workflow, or dump the schema yourself, so you can compare afterwards.
 
@@ -50,12 +50,12 @@ where n.nspname = 'public' and p.prorettype <> 'event_trigger'::regtype
     and d.objid = p.oid and d.deptype = 'e');
 ```
 
-Rebuild it through the normal release: Actions → Release → Run workflow, from `main` (the [release runbook](release.md) has the one-time setup it needs). The drift check sees an empty history and an empty schema, matches them against a replay of no migrations, and passes; the migrate step then applies the baseline and everything after it.
+Rebuild it through the normal deploy: set `RELEASE_AUTOMATION` to `true`, then Actions → Deploy, open the latest run for `main`'s newest commit and choose **Re-run all jobs** (the [release runbook](release.md) has the one-time setup it needs). The drift check sees an empty history and an empty schema, matches them against a replay of no migrations, and passes; the migrate step then applies the baseline and everything after it.
 
 ## Check
 
-- The release's drift check passed and *migrate* applied `20261019000000_baseline.sql`.
+- The deploy's drift check passed, *Apply the migrations* applied `20261019000000_baseline.sql`, and the smoke check passed.
 - In the SQL editor, `select version from supabase_migrations.schema_migrations order by version;` lists exactly the files in `supabase/migrations`.
 - Sign in to production with Yahoo and follow the [verification checkpoint](../reference/authentication.md#verification-checkpoint): sign-in, league list, a protected route, sign-out.
 - Run Actions → Scheduled → Run workflow once: the `maintenance` role can still sign in and dump the new schema.
-- Run another release with no new migrations: its drift check must pass. A mismatch now means the hosted database differs from the local replay in a way the check doesn't yet ignore; record it on the issue before changing anything.
+- Merge a change with no new migration, or re-run the deploy: its drift check must pass. A mismatch now means the hosted database differs from the local replay in a way the check doesn't yet ignore; record it on the issue before changing anything.

@@ -1,4 +1,4 @@
-// How the Release workflow reaches the production database: its session pooler,
+// How the Deploy workflow reaches the production database: its session pooler,
 // with TLS, as the postgres user and the database password only. No Supabase
 // access token is involved, so nothing here can reach another project.
 import { readFileSync } from "node:fs";
@@ -17,7 +17,7 @@ export interface ProductionDatabase {
 }
 
 /**
- * Production's connection, refusing anything but a Release workflow run whose
+ * Production's connection, refusing anything but a Deploy workflow run whose
  * hard-coded project ref matches the repository's hosted contract.
  */
 export function productionDatabase(
@@ -25,7 +25,7 @@ export function productionDatabase(
   env: Readonly<Record<string, string | undefined>>
 ): ProductionDatabase {
   if (env.GITHUB_ACTIONS !== "true") {
-    throw new Error("Production is reached only from the Release workflow");
+    throw new Error("Production is reached only from the Deploy workflow");
   }
   const contract = contractSchema.parse(
     JSON.parse(readFileSync(join(root, "config/hosted-contract.json"), "utf8"))

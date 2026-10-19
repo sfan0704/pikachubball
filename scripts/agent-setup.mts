@@ -30,7 +30,7 @@ const env: NodeJS.ProcessEnv = Object.fromEntries(
   )
 );
 env.PATH = `${join(ws.root, "node_modules", ".bin")}:${env.PATH ?? ""}`;
-env.VERCEL_GIT_COMMIT_SHA = capture("git", ["rev-parse", "HEAD"]);
+env.DEPLOYED_COMMIT = capture("git", ["rev-parse", "HEAD"]);
 
 /** A prerequisite command's output; any failure stops setup. */
 function capture(command: string, args: readonly string[]): string {
@@ -114,7 +114,7 @@ async function main(): Promise<void> {
   stackStarted = true;
   await run("bash", ["scripts/dev-local.sh", "--smoke"]);
   const evidence = {
-    commit: env.VERCEL_GIT_COMMIT_SHA,
+    commit: env.DEPLOYED_COMMIT,
     workspace: ws.projectId,
     node: process.versions.node,
     npm,

@@ -116,7 +116,7 @@ One zod schema parses all configuration once at startup in the composition root;
 
 ### Environments
 
-This table is the agreed destination. There is no hosted dev (owner decision, 2026-10-18): pull request checks and the review environment stand in for it. Until the owner finishes the hosted setup (CAR-139), `main` still serves production and `RELEASE_AUTOMATION` remains unset; an approved production release has not been demonstrated. See the [dated inventory](reference/infrastructure-inventory.md#environment-tiers) for current state and the [remote development contract](remote-development.md) for worker authority.
+This table is the agreed destination. There is no hosted dev (owner decision, 2026-10-18): pull request checks and the review environment stand in for it. Until the owner finishes the hosted setup (CAR-139), `RELEASE_AUTOMATION` remains unset and nothing deploys production; a deploy on merge has not been demonstrated. See the [dated inventory](reference/infrastructure-inventory.md#environment-tiers) for current state and the [remote development contract](remote-development.md) for worker authority.
 
 | Environment | Purpose | Supabase | Yahoo | Who signs in |
 |---|---|---|---|---|
@@ -124,7 +124,7 @@ This table is the agreed destination. There is no hosted dev (owner decision, 20
 | CI | The same tests on every pull request | Throwaway local database | Stand-in | Test users |
 | Preview | A build of each feature branch, as a build check | None | None | Nobody |
 | Review | A throwaway, signed-in copy of one commit, so a reviewer or agent can see the change working | Throwaway local database | Stand-in | Synthetic users |
-| Prod | Deployment of the `production` branch, for the league | `Pikachu Basketball` | `PikachuBball` | League members |
+| Prod | Deployment of each `main` commit that passed CI, for the league | `Pikachu Basketball` | `PikachuBball` | League members |
 
 #### Disposable development
 
@@ -460,20 +460,19 @@ One set of codes in `shared/api`, turned into HTTP responses in one place on the
 flowchart LR
     PR["Pull request"] --> CI["Checks: lint, types, unit,<br>database, browser, build"]
     PR --> PV["Vercel preview"]
-    CI -->|"all green"| M["Squash merge to main"]
-    M --> R["Release workflow<br>after approval"]
-    R --> DC["Drift check:<br>prod matches its migrations"]
+    CI -->|"all green, up to date with main"| M["Squash merge to main"]
+    M --> MC["CI on the main commit"]
+    MC -->|"green"| DC["Drift check:<br>prod matches its migrations"]
     DC --> MP["Migrate prod"]
-    MP --> PB["Move production branch<br>to the tested commit"]
-    PB --> VP["Vercel production deploy"]
-    VP --> SC["Smoke and config checks"]
+    MP --> VP["Vercel CLI deploys<br>that exact commit"]
+    VP --> SC["Smoke check"]
 ```
 
-- **Protected main branch.** Changes arrive only through pull requests with every check green. Squash merges only, no force pushes, and branches are deleted after merge.
-- **Checks on every pull request:** lint (including the dependency and code-quality rules), type checking, unit tests with coverage thresholds, database access-rule tests, browser tests of the main flows at phone and desktop widths, and a production build.
-- **One hosted stage.** Merging to `main` changes nothing hosted. A manual, approved release checks prod for drift, migrates it and moves the `production` branch to the commit, which Vercel deploys. Only commits that passed every check reach production.
+- **Protected main branch.** Changes arrive only through pull requests with every check green and the branch up to date with `main`, so changes that each pass alone are tested together. Squash merges only, no force pushes, and branches are deleted after merge.
+- **Checks on every pull request:** lint (including the dependency and code-quality rules), type checking, unit tests with coverage thresholds, database access-rule tests, browser tests of the main flows at phone and desktop widths, a production build, and a migration order check (every added migration sorts after the newest on `main`). Pull request jobs only check: none has a production secret, since the repository is public and a pull request runs its own copy of the workflows. There is no drift check on a pull request; drift is a property of prod that its author can't fix.
+- **One hosted stage, deployed on merge.** When CI passes on a `main` commit, the *Deploy* workflow checks prod for drift, migrates it and deploys exactly that commit. Only commits that passed every check reach production, and there is no manual release step or approval (owner default, CAR-140).
 - **Drift check.** Before anything changes, the release compares prod's public schema with a throwaway replay of exactly the migrations prod records, leaving out Supabase-managed objects (extension objects and the platform's event-trigger functions). A history this commit doesn't have, or any other difference, stops the release. The schema is defined by one baseline migration plus the migrations after it; each migration grants every privilege explicitly, since hosted and local defaults differ.
-- **Migrations are backward compatible,** so the app and the database can update in either order.
+- **Migrations are backward compatible,** so the app and the database can update in either order. Removing a column or table takes two merges (expand and contract): stop using it, then drop it.
 - **After each deploy,** a smoke check confirms the app is up, protected routes refuse anonymous requests, deep links load, and security headers are present. A production failure notifies the owner through GitHub and links the manual rollback runbook. The owner restores the last verified good deployment; automation does not change production traffic (owner decision, 2026-10-14).
 - **Config checks** compare production against the repo without reading secret values: the Yahoo sign-in provider and scopes; the redirect allowlist; that the schema matches the migrations; that the expected Vercel variables exist in the Production scope only.
 - **Supply chain.** Dependabot security alerts and weekly grouped updates, secret scanning with push protection, and CodeQL.
@@ -483,19 +482,19 @@ flowchart LR
 
 | Piece | Setup |
 |---|---|
-| Branch rulesets | `main`: pull requests with all checks green, squash only. `production`: only the release workflow can move it, and only fast-forward. |
-| GitHub environments | `production` holds the prod database password and the deploy key that moves `production`; its jobs wait for the owner's approval and run only from `main`. `maintenance` holds the `maintenance` role's password for the unattended weekly jobs. |
-| Vercel | Git integration. `production` is the production branch; every other branch builds a preview with no Supabase or Yahoo settings. Vercel reports each production deployment back to GitHub, which triggers the smoke check. |
-| Supabase | The Supabase CLI runs migrations from the release workflow (`supabase db push` through the session pooler, with the database password only), in a fixed order with logs in GitHub and behind the approval. Project refs are written in the workflows; they are not secrets. |
-| Releases | Each release is a tag (for example `v2026.10.1`) with a GitHub Release whose notes are generated from merged pull request titles. |
+| Branch rulesets | `main`: pull requests with all checks green and the branch up to date, squash only. There is no `production` branch. |
+| GitHub environments | `production` holds the prod database password and a Vercel token scoped to this project; its jobs run only from `main`, with no required reviewers. `maintenance` holds the `maintenance` role's password for the unattended weekly jobs. |
+| Vercel | Production deploys only from the *Deploy* workflow, with the Vercel CLI (`vercel build --prod`, `vercel deploy --prebuilt --prod`), which sets `DEPLOYED_COMMIT` for the health check. `vercel.json` turns off Git deploys from `main`; every other branch builds a preview with no Supabase or Yahoo settings. No deploy hook: it would deploy the branch's latest commit, whose migration may not have run. |
+| Supabase | The Supabase CLI runs migrations from the *Deploy* workflow (`supabase db push` through the session pooler, with the database password only), in merge order with logs in GitHub. Project refs are written in the workflows; they are not secrets. |
+| Releases | Each deploy is a tag (for example `v2026.10.1`) with a GitHub Release whose notes are generated from merged pull request titles. The tags also order deploys: a commit that doesn't contain every tagged one is skipped. |
 
 #### Workflows
 
-1. **On merge to `main`:** nothing hosted changes.
-2. **Release** (started with Run workflow once `main` is green): wait for approval → check prod for drift → migrate the prod database → move `production` to the tested commit → tag it and publish the release notes. Vercel deploys production; when it reports success, the smoke and config checks run, and a failure notifies the owner and links the manual rollback runbook. The owner restores the last verified good production deployment; automation does not change production traffic.
-3. Only one release runs at a time.
+1. **Pull request (CI):** checks only, with no production secret.
+2. **Deploy** (when CI passes on a `main` commit): refuse a commit older than the last deploy → check prod for drift → migrate the prod database → deploy that commit with the Vercel CLI → tag it and publish the release notes → smoke check. A drift mismatch stops it before anything changes; a failed migration deploys nothing; a failed deploy after a migration leaves the schema ahead of the code, which is safe, and is fixed forward. A smoke failure notifies the owner and links the manual rollback runbook. The owner restores the last verified good production deployment; automation does not change production traffic.
+3. One deploy runs at a time, in merge order. GitHub cancels queued runs in between; the newest commit contains them and applies all their migrations. Re-running the latest run deploys `main`'s newest commit without a merge.
 
-**Secrets,** all in GitHub environments: the prod database password and the deploy key for `production`, and the `maintenance` role's password. No Supabase access token and no Vercel token are needed.
+**Secrets,** all in GitHub environments: the prod database password and a project-scoped Vercel token in `production`, and the `maintenance` role's password. No Supabase access token is needed. There is no scheduled drift check: every deploy checks first.
 
 ## Operations
 
@@ -520,9 +519,9 @@ flowchart LR
 | Code style | Pure functions for domain logic, small classes for adapters, constructor injection wired by hand | Class-heavy domain models, or a dependency-injection library |
 | Protecting `main` | Pull requests with required checks, squash only | Leave unprotected |
 | Migration history | One baseline migration for the schema as of 2026-10-19, with later changes as new migrations on top; prod was reset onto it before anyone used it | Reconciling prod's drifted history migration by migration |
-| Migration deploys | Supabase CLI in the release workflow, with the database password only and a prod approval step | Supabase's GitHub integration: no secrets in GitHub, but no control over order and failures surface only in Supabase |
-| Vercel deploys | Vercel's Git integration, with the release moving the `production` branch | Vercel CLI from the workflow: deploys the exact tested bundle, but needs a Vercel token and replaces automatic previews |
-| Release model | No hosted dev; a manual release moves the `production` branch, which Vercel deploys | A hosted dev on `main`: a second copy of every secret and setting, and not isolated anyway, since dev and prod must share the one Fantasy Yahoo app; or `main` deploying straight to prod |
+| Migration deploys | Supabase CLI in the *Deploy* workflow, with the database password only, after CI passes on the `main` commit | Supabase's GitHub integration: no secrets in GitHub, but no control over order and failures surface only in Supabase |
+| Vercel deploys | Vercel CLI from the *Deploy* workflow, after the migration: deploys the exact tested commit with a project-scoped token; previews stay on Vercel's Git integration | Vercel's Git integration or a deploy hook: no token, but it deploys the branch's latest commit, which may be a newer merge whose migration hasn't run |
+| Release model | No hosted dev; every `main` commit that passes CI is migrated and deployed, with no approval (CAR-140) | A manual, approved release moving a `production` branch: an extra step, branch and deploy key whose only job was ordering migrate before deploy; or a hosted dev on `main`: a second copy of every secret and setting, and not isolated anyway, since dev and prod must share the one Fantasy Yahoo app |
 | Pausing and backups | Weekly keep-alive; recovery by design | Supabase Pro ($25/month) for backups and no pausing |
 | Supabase project slots | Basketball uses one free slot, leaving one for Card Benefits | A second basketball project for hosted dev |
 | Error tracking | Vercel logs | Sentry's free tier, a new third party |

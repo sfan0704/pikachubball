@@ -2,6 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-10-19 · Deploy on merge: pull requests run checks only (plus a migration order check); when CI passes on a `main` commit, the Deploy workflow checks drift, migrates and deploys that exact commit with the Vercel CLI. No `production` branch, deploy key, approval or manual release · CAR-140 (PR pending)
 - 2026-10-14 · Failed production smoke checks link the recovery runbook; the owner manually restores the last verified good deployment, and automation never changes production traffic · CAR-100 (PR pending)
 
 - 2026-10-07 · First agreed version, moved into the repository from Notion · #16

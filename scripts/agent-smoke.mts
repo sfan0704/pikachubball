@@ -8,11 +8,9 @@ const expected = `http://localhost:${workspace().ports.dev}`;
 if (origin !== expected) {
   throw new Error(`Smoke check refuses ${origin ?? "an unset APP_ORIGIN"}; expected ${expected}`);
 }
-const commit = process.env.VERCEL_GIT_COMMIT_SHA;
+const commit = process.env.DEPLOYED_COMMIT;
 if (!commit) {
-  throw new Error(
-    "VERCEL_GIT_COMMIT_SHA is unset; run the smoke check through npm run agent:setup"
-  );
+  throw new Error("DEPLOYED_COMMIT is unset; run the smoke check through npm run agent:setup");
 }
 
 /** Waits up to a minute for /api/health to report this service at the source commit. */

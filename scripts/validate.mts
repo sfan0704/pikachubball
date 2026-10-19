@@ -18,6 +18,7 @@ export type CheckName =
   | "format"
   | "knip"
   | "types"
+  | "migrations"
   | "unit"
   | "quick"
   | "build"
@@ -44,6 +45,8 @@ const CHECKS: Readonly<Record<CheckName, Check>> = {
   format: { script: "format:check" },
   knip: { script: "knip" },
   types: { script: "check" },
+  // Compares with origin/main, so CI fetches main first.
+  migrations: { script: "check:migrations" },
   unit: { script: "test:coverage", env: { NODE_ENV: "test", ENCRYPTION_KEY: TEST_KEY } },
   quick: { script: "test" },
   build: { script: "build", env: { NODE_ENV: "production", ENCRYPTION_KEY: TEST_KEY } },
@@ -54,12 +57,23 @@ const CHECKS: Readonly<Record<CheckName, Check>> = {
 
 /** Named groups of checks. `review` is what a change needs before review; `iterate` is not enough. */
 export const PROFILES: Readonly<Record<string, readonly CheckName[]>> = {
-  static: ["lint", "format", "knip", "types"],
+  static: ["lint", "format", "knip", "types", "migrations"],
   unit: ["unit"],
   build: ["build", "bundle"],
   database: ["database"],
   browser: ["build", "browser"],
-  review: ["lint", "format", "knip", "types", "unit", "build", "bundle", "database", "browser"],
+  review: [
+    "lint",
+    "format",
+    "knip",
+    "types",
+    "migrations",
+    "unit",
+    "build",
+    "bundle",
+    "database",
+    "browser",
+  ],
   iterate: ["lint", "types", "quick"],
 };
 
@@ -134,7 +148,7 @@ function report(results: readonly Result[], profiles: readonly string[]): void {
   console.log(`\nValidation (${profiles.length > 0 ? profiles.join(" ") : "review"}):`);
   for (const result of results) {
     console.log(
-      `  ${result.outcome.padEnd(11)} ${result.check.padEnd(9)} ${String(result.seconds).padStart(4)}s  ${result.detail}`
+      `  ${result.outcome.padEnd(11)} ${result.check.padEnd(10)} ${String(result.seconds).padStart(4)}s  ${result.detail}`
     );
   }
   if (profiles.includes("iterate")) {

@@ -1,0 +1,138 @@
+name: Deploy
+
+# Takes each commit on main to production once CI has passed on that exact
+# commit: check production for drift, migrate it, deploy the commit with the
+# Vercel CLI, then smoke check it (docs/runbooks/release.md). Pull requests
+# never reach this workflow or its secrets. Switched on by the repository
+# variable RELEASE_AUTOMATION=true; to start it for main's newest commit,
+# re-run that commit's latest Deploy run.
+#
+# One run at a time, in merge order. GitHub keeps only the newest pending run
+# and cancels the ones in between, which is safe: the newest commit contains
+# every earlier one and applies all their migrations.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SHA: ${{ github.event.workflow_run.head_sha }}
+
+jobs:
+  order:
+    name: Check this is the newest commit
+    # Only CI runs for pushes to this repository's main; a fork's pull request
+    # can name its branch main too.
+    if: >-
+      vars.RELEASE_AUTOMATION == 'true' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      newest: ${{ steps.order.outputs.newest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+          fetch-depth: 0
+
+      # Each deploy is tagged vYYYY.M.N. A commit that doesn't contain every
+      # tagged one is older than what production runs, so it is skipped:
+      # never older code over newer.
+      - name: Compare with the deployed releases
+        id: order
+        run: |
+          newest=true
+          for tag in $(git tag --list 'v*'); do
+            if ! git merge-base --is-ancestor "$tag" "$SHA"; then
+              echo "::notice::Skipped: production already runs $tag, which is newer than $SHA."
+              newest=false
+              break
+            fi
+          done
+          echo "newest=$newest" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Migrate and deploy production
+    needs: order
+    if: needs.order.outputs.newest == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    env:
+      # Neither is a secret: production's Supabase project and Vercel project.
+      SUPABASE_PROJECT_REF: fpdwtpwpmxsbgjxizuxa
+      VERCEL_ORG_ID: team_h0Yl4tlqpwkycY1Wl2ZppyOo
+      VERCEL_PROJECT_ID: prj_izIWbhRIRM77Kij7YoH8e8ciBkPT
+      VERCEL_CLI: vercel@62.2.0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Changes nothing: stops here when production's schema isn't what
+      # replaying the migrations it records produces.
+      - name: Check production for drift
+        run: npm run release:drift
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      # A failure here deploys nothing.
+      - name: Apply the migrations
+        run: npm run release:migrate
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      # Builds and deploys this checkout, not the branch's latest commit, so a
+      # newer merge whose migration hasn't run can't go live here. The token is
+      # scoped to this project and read from the environment.
+      - name: Deploy this commit to Vercel production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx --yes "$VERCEL_CLI" pull --yes --environment=production
+          npx --yes "$VERCEL_CLI" build --prod
+          npx --yes "$VERCEL_CLI" deploy --prebuilt --prod --env DEPLOYED_COMMIT="$SHA"
+
+      - name: Tag the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$(git tag --points-at "$SHA" --list 'v*')" ]; then
+            echo "$SHA is already tagged."
+            exit 0
+          fi
+          prefix="v$(date -u +%Y.%-m)"
+          count="$(git tag --list "$prefix.*" | wc -l | tr -d ' ')"
+          tag="$prefix.$((count + 1))"
+          gh release create "$tag" --target "$SHA" --title "$tag" --generate-notes
+
+      - name: Smoke check production
+        id: deployment-smoke
+        run: node scripts/smoke-check.mjs https://pikachubball.vercel.app "$SHA"
+
+      - name: Link the manual production rollback runbook
+        if: ${{ failure() && steps.deployment-smoke.outcome == 'failure' }}
+        run: bash scripts/smoke-failure-summary.sh

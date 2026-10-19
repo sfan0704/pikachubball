@@ -145,7 +145,7 @@ async function start(): Promise<void> {
     env: cleanEnv({
       PORT: String(ws.ports.review),
       STANDIN_PORT: String(ws.ports.reviewStandIn),
-      VERCEL_GIT_COMMIT_SHA: commit,
+      DEPLOYED_COMMIT: commit,
     }),
   });
   child.unref();

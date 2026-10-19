@@ -230,7 +230,7 @@ export async function checkSupabase(ctx: Context): Promise<Finding> {
         status: "warning",
         detail: "token can reach the production project",
         action:
-          "Normal work needs no hosted project; keep production access to the owner and release workflow",
+          "Normal work needs no hosted project; keep production access to the owner and Deploy workflow",
       }
     : { area: "supabase", status: "ok", detail: "token can't reach the production project" };
 }
@@ -272,7 +272,6 @@ export async function checkVercel(ctx: Context): Promise<Finding> {
 const PRIVILEGED = [
   "SUPABASE_DB_PASSWORD",
   "MAINTENANCE_DB_PASSWORD",
-  "PRODUCTION_DEPLOY_KEY",
   "ENCRYPTION_KEY",
   "ENCRYPTION_KEY_PREVIOUS",
   "YAHOO_CLIENT_SECRET",
@@ -289,7 +288,7 @@ export function checkPrivilege(ctx: Context): Finding[] {
           area: "privileged secrets",
           status: "warning",
           detail: `set: ${held.join(", ")}`,
-          action: "Normal work needs none of these; leave them to the owner and release workflow",
+          action: "Normal work needs none of these; leave them to the owner and Deploy workflow",
         },
   ];
   if (ctx.hasEnvLocal) {
