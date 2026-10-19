@@ -1,8 +1,9 @@
 name: Release
 
-# Started by hand (Run workflow) after the change has been tested on dev. The
-# production environment makes each job wait for the owner's approval and only
-# lets it run from main. Only one release runs at a time.
+# Started by hand (Run workflow) once main is green. The production environment
+# makes each job wait for the owner's approval and only lets it run from main.
+# Only one release runs at a time. Production's project ref is not a secret, so
+# it is written here; the database password is the only database credential.
 on:
   workflow_dispatch:
 
@@ -32,14 +33,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Apply the migrations
-        run: |
-          npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
-          npx supabase db push
+      # Changes nothing: stops the release when production's schema isn't what
+      # replaying the migrations it records produces (docs/runbooks/release.md).
+      - name: Check production for drift
+        run: npm run release:drift
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_PROJECT_REF: fpdwtpwpmxsbgjxizuxa
+
+      - name: Apply the migrations
+        run: npm run release:migrate
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: fpdwtpwpmxsbgjxizuxa
 
   promote:
     name: Move production to the tested commit

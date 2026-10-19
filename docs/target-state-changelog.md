@@ -15,3 +15,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-10-12 · A review environment (the build, a throwaway stack, synthetic users and the stand-in on the CI runner or worker) for seeing changes working; Vercel previews stay build-only · #101
 
 - 2026-10-14 · Protected requests verify the caller’s active Supabase session to reject copied cookies immediately after logout; migrate before deploying the code · #108 (CAR-132)
+- 2026-10-19 · No hosted dev; one baseline migration; releases check prod for drift and migrate with the database password only, with project refs written in the workflows · CAR-138 (PR pending)

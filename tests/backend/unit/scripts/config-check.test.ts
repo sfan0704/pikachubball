@@ -143,7 +143,7 @@ describe("configuration comparison", () => {
       },
     ],
     [
-      "shared dev/prod row",
+      "shared production and preview row",
       (s: Snapshot) => {
         if (s.vercel?.variables[0]) s.vercel.variables[0].target.push("preview");
       },
@@ -218,22 +218,13 @@ describe("configuration comparison", () => {
     }
   });
 
-  it("requires main-specific variables for dev and keeps production variables separate", () => {
+  it("rejects server variables in any preview, main's included", () => {
     const s = snapshot();
-    s.environment = "dev";
-    s.projectRef = contract.environments.dev.projectRef;
-    s.auth = {
-      siteUrl: contract.environments.dev.siteUrl,
-      redirectAllowList: [...contract.environments.dev.redirectAllowList],
-    };
-    s.vercel?.variables.push(
-      ...contract.requiredVariables.map((key) => ({
-        key,
-        target: ["preview" as const],
-        gitBranch: "main",
-      }))
-    );
-    expect(allPassed(compare(s, baseline, contract, context))).toBe(true);
+    s.vercel?.variables.push({ key: "SUPABASE_URL", target: ["preview"], gitBranch: "main" });
+    expect(compare(s, baseline, contract, context)).toContainEqual({
+      check: "Vercel variables and isolation",
+      outcome: "mismatch",
+    });
   });
 
   it("binds repository expectations to migration and query bytes", () => {

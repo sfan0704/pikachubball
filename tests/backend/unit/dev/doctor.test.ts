@@ -152,15 +152,14 @@ describe("checkSupabase", () => {
 
   it("warns when a worker's token can reach production", async () => {
     const finding = await checkSupabase(
-      withProjects([{ id: TARGETS.supabaseDev }, { id: TARGETS.supabaseProd }])
+      withProjects([{ id: "otherproject" }, { id: TARGETS.supabaseProd }])
     );
 
     expect(finding.status).toBe("warning");
   });
 
-  it("passes dev-only access and flags a token for another organization", async () => {
-    expect((await checkSupabase(withProjects([{ id: TARGETS.supabaseDev }]))).status).toBe("ok");
-    expect((await checkSupabase(withProjects([{ id: "otherproject" }]))).status).toBe("mismatch");
+  it("passes a token that can't reach production", async () => {
+    expect((await checkSupabase(withProjects([{ id: "otherproject" }]))).status).toBe("ok");
   });
 });
 
