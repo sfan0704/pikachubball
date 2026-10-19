@@ -6,8 +6,7 @@ import { repositoryInputs } from "./repository.mts";
 
 try {
   const [, , environment, output, authFile, vercelFile] = process.argv;
-  if ((environment !== "dev" && environment !== "prod") || !output)
-    throw new Error("Invalid arguments");
+  if (environment !== "prod" || !output) throw new Error("Invalid arguments");
   const root = resolve(import.meta.dirname, "../..");
   const contract = contractSchema.parse(
     JSON.parse(readFileSync(`${root}/config/hosted-contract.json`, "utf8"))

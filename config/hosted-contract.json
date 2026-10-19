@@ -18,11 +18,6 @@
     "LOCAL_STACK"
   ],
   "environments": {
-    "dev": {
-      "projectRef": "ocqdxmfpezxpgutoicyh",
-      "siteUrl": "https://localhost:5001",
-      "redirectAllowList": ["https://localhost:5001/api/auth/callback"]
-    },
     "prod": {
       "projectRef": "fpdwtpwpmxsbgjxizuxa",
       "siteUrl": "https://pikachubball.vercel.app",

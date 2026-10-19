@@ -10,7 +10,6 @@
   "license": "MIT",
   "scripts": {
     "dev": "bash scripts/dev-local.sh",
-    "dev:hosted": "NODE_ENV=development node -r dotenv/config node_modules/.bin/tsx --watch server/index.ts dotenv_config_path=.env.local",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --out-extension:.js=.mjs",
@@ -42,7 +41,9 @@
     "review:evidence": "playwright test -c playwright.review.config.mts",
     "config:check": "node scripts/config-check/cli.mts",
     "config:baseline": "node scripts/config-check/baseline.mts",
-    "config:capture": "node scripts/config-check/capture.mts"
+    "config:capture": "node scripts/config-check/capture.mts",
+    "release:drift": "bash scripts/release/drift-check.sh",
+    "release:migrate": "node scripts/release/migrate.mts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

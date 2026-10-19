@@ -7,7 +7,6 @@
 export const TARGETS = {
   repository: "sfan0704/pikachubball",
   linearTeam: "CAR",
-  supabaseDev: "ocqdxmfpezxpgutoicyh",
   supabaseProd: "fpdwtpwpmxsbgjxizuxa",
   vercelProject: "prj_izIWbhRIRM77Kij7YoH8e8ciBkPT",
   vercelTeam: "team_h0Yl4tlqpwkycY1Wl2ZppyOo",
@@ -225,23 +224,15 @@ export async function checkSupabase(ctx: Context): Promise<Finding> {
   const refs = new Set(
     (response.json as { ref?: string; id?: string }[]).map((project) => project.ref ?? project.id)
   );
-  if (refs.has(TARGETS.supabaseProd)) {
-    return {
-      area: "supabase",
-      status: "warning",
-      detail: "token can reach the production project",
-      action:
-        "Normal work needs at most dev; keep production access to the owner and release workflow",
-    };
-  }
-  return refs.has(TARGETS.supabaseDev)
-    ? { area: "supabase", status: "ok", detail: "token reaches the dev project only" }
-    : {
+  return refs.has(TARGETS.supabaseProd)
+    ? {
         area: "supabase",
-        status: "mismatch",
-        detail: "token sees neither basketball project",
-        action: "Use a token for the basketball organization",
-      };
+        status: "warning",
+        detail: "token can reach the production project",
+        action:
+          "Normal work needs no hosted project; keep production access to the owner and release workflow",
+      }
+    : { area: "supabase", status: "ok", detail: "token can't reach the production project" };
 }
 
 /** Vercel project metadata through VERCEL_TOKEN; deployment status is also on GitHub. */
