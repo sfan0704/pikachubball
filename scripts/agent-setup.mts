@@ -23,11 +23,23 @@ const steps: Step[] = [];
 // Set just before the stack starts, so a setup that refuses early stops nothing.
 let stackStarted = false;
 
-// Only what the tools need; never hosted app configuration.
+// Only what the tools need; never hosted app configuration. The proxy settings
+// let Playwright download Chromium on a worker whose egress goes through a proxy,
+// and PLAYWRIGHT_BROWSERS_PATH keeps it where the later browser checks look.
 const env: NodeJS.ProcessEnv = Object.fromEntries(
-  ["PATH", "HOME", "TMPDIR", "CI", "DOCKER_HOST"].flatMap((name) =>
-    process.env[name] ? [[name, process.env[name]]] : []
-  )
+  [
+    "PATH",
+    "HOME",
+    "TMPDIR",
+    "CI",
+    "DOCKER_HOST",
+    "HTTPS_PROXY",
+    "https_proxy",
+    "NO_PROXY",
+    "no_proxy",
+    "NODE_EXTRA_CA_CERTS",
+    "PLAYWRIGHT_BROWSERS_PATH",
+  ].flatMap((name) => (process.env[name] ? [[name, process.env[name]]] : []))
 );
 env.PATH = `${join(ws.root, "node_modules", ".bin")}:${env.PATH ?? ""}`;
 env.DEPLOYED_COMMIT = capture("git", ["rev-parse", "HEAD"]);
