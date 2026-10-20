@@ -209,6 +209,11 @@ export function install(ctx: Context, node: Node): void {
 const AWAIT_DOCKER =
   "for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1";
 
+// A resumed container keeps the last dockerd's pid file but not its process. If
+// that PID now belongs to another process, dockerd refuses to start, so a pid
+// file is removed whenever no dockerd runs.
+const CLEAR_STALE_PID = "pgrep -x dockerd >/dev/null || rm -f /var/run/docker.pid";
+
 /**
  * Starts the Docker daemon when this machine has the engine installed but not
  * running and setup runs as root: a cloud container, where nothing else starts
@@ -218,6 +223,7 @@ export function startDocker(ctx: Context): void {
   if (ctx.run("docker", ["info"]).status === 0) return;
   if (!ctx.root || ctx.run("sh", ["-c", "command -v dockerd"]).status !== 0) return;
   ctx.log("Starting the Docker daemon.");
+  ctx.run("sh", ["-c", CLEAR_STALE_PID]);
   ctx.startDetached("dockerd", [], ctx.daemonLog);
   if (ctx.run("sh", ["-c", AWAIT_DOCKER]).status !== 0) {
     ctx.log(`Warning: the Docker daemon did not answer; its output is in ${ctx.daemonLog}.`);
