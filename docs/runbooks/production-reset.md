@@ -50,7 +50,7 @@ where n.nspname = 'public' and p.prorettype <> 'event_trigger'::regtype
     and d.objid = p.oid and d.deptype = 'e');
 ```
 
-Rebuild it through the normal deploy: set `RELEASE_AUTOMATION` to `true`, then Actions → Deploy, open the latest run for `main`'s newest commit and choose **Re-run all jobs** (the [release runbook](release.md) has the one-time setup it needs). The drift check sees an empty history and an empty schema, matches them against a replay of no migrations, and passes; the migrate step then applies the baseline and everything after it.
+Rebuild it through the normal deploy: set `RELEASE_AUTOMATION` to `true`, then Actions → CI, open the latest run for `main`'s newest commit and choose **Re-run all jobs**. When it passes, it starts a fresh *Deploy* run with the current secrets; re-running an old *Deploy* run can keep a database password the reset preparation replaced. The [release runbook](release.md) has the one-time setup it needs. The drift check sees an empty history and an empty schema, matches them against a replay of no migrations, and passes; the migrate step then applies the baseline and everything after it.
 
 ## Check
 
@@ -58,4 +58,4 @@ Rebuild it through the normal deploy: set `RELEASE_AUTOMATION` to `true`, then A
 - In the SQL editor, `select version from supabase_migrations.schema_migrations order by version;` lists exactly the files in `supabase/migrations`.
 - Sign in to production with Yahoo and follow the [verification checkpoint](../reference/authentication.md#verification-checkpoint): sign-in, league list, a protected route, sign-out.
 - Run Actions → Scheduled → Run workflow once: the `maintenance` role can still sign in and dump the new schema.
-- Merge a change with no new migration, or re-run the deploy: its drift check must pass. A mismatch now means the hosted database differs from the local replay in a way the check doesn't yet ignore; record it on the issue before changing anything.
+- Merge a change with no new migration, or re-run CI on `main`'s newest commit to start a fresh deploy: its drift check must pass. A mismatch now means the hosted database differs from the local replay in a way the check doesn't yet ignore; record it on the issue before changing anything.

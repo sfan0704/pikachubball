@@ -32,8 +32,8 @@ Merge a pull request. When CI passes on the merged commit, *Deploy* runs for exa
 
 Only one deploy runs at a time, in merge order. When several merges queue, GitHub cancels the pending runs in between; the newest commit contains every earlier one and applies all their migrations.
 
-- **If a deploy fails after the migration,** the schema is ahead of the deployed app, which is safe because migrations are backward compatible. Fix forward with another merge, or re-run the failed run.
-- **To start a deploy without a merge** (after the [production reset](production-reset.md), or once `RELEASE_AUTOMATION` is switched on): Actions → Deploy, open the latest run for `main`'s newest commit, and choose **Re-run all jobs**. It deploys that run's commit; if that commit isn't `main`'s newest, re-run the newest commit's run instead.
+- **If a deploy fails after the migration,** the schema is ahead of the deployed app, which is safe because migrations are backward compatible. Fix forward with another merge, or re-run the failed run. Only re-run it if no `production` secret has changed since it first ran: a re-run kept using the replaced database password in CAR-139. After changing a secret, start a fresh run as below.
+- **To start a deploy without a merge** (after the [production reset](production-reset.md), or once `RELEASE_AUTOMATION` is switched on): Actions → CI, open the latest run for `main`'s newest commit, and choose **Re-run all jobs**. When it passes, it starts a fresh *Deploy* run for that commit, which uses the current secrets. Don't re-run an old *Deploy* run for this: after a secret changes, a re-run can keep using the old value.
 - **Removing a column or table takes two merges** (expand and contract): first stop using it, then drop it in a later migration. The code live while a migration runs must keep working with the schema after it.
 
 ## Scheduled jobs
