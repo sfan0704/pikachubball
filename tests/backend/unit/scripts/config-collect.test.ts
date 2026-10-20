@@ -24,7 +24,7 @@ describe("configuration metadata collection", () => {
     );
     transport.mockResolvedValueOnce(new Response(JSON.stringify([{ version: "202609120001" }])));
     const result = await collectDatabase(
-      "ocqdxmfpezxpgutoicyh",
+      "fpdwtpwpmxsbgjxizuxa",
       "synthetic-token",
       "select fingerprint",
       "select metadata",
@@ -32,7 +32,7 @@ describe("configuration metadata collection", () => {
     );
     expect(result.database?.migrationVersions).toEqual(["202609120001"]);
     for (const [url, init] of transport.mock.calls) {
-      expect(url).toBe("https://api.supabase.com/v1/projects/ocqdxmfpezxpgutoicyh/database/query");
+      expect(url).toBe("https://api.supabase.com/v1/projects/fpdwtpwpmxsbgjxizuxa/database/query");
       expect(init?.redirect).toBe("error");
       expect(JSON.parse(String(init?.body)).read_only).toBe(true);
     }
@@ -44,7 +44,7 @@ describe("configuration metadata collection", () => {
       .mockResolvedValue(new Response("never-print-credential", { status: 403 }));
     await expect(
       collectDatabase(
-        "ocqdxmfpezxpgutoicyh",
+        "fpdwtpwpmxsbgjxizuxa",
         "synthetic-token",
         "select metadata",
         "select metadata",
@@ -60,7 +60,7 @@ describe("configuration metadata collection", () => {
       .mockResolvedValue(new Response(JSON.stringify([{ client_secret: "synthetic" }])));
     await expect(
       collectDatabase(
-        "ocqdxmfpezxpgutoicyh",
+        "fpdwtpwpmxsbgjxizuxa",
         "synthetic-token",
         "select metadata",
         "select metadata",

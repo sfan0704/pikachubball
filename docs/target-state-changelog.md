@@ -2,8 +2,8 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
-- 2026-10-16 · Optional read-only Vercel metadata acquisition checks project/team identity and saves only variable names/scopes, without decryption or deployment authority · #115
-
+- 2026-10-20 · Optional read-only Vercel metadata acquisition checks project/team identity and saves only variable names and scopes, without decryption or deployment authority · #115
+- 2026-10-19 · Deploy on merge: pull requests run checks only (plus a migration order check); when CI passes on a `main` commit, the Deploy workflow checks drift, migrates and deploys that exact commit with the Vercel CLI. No `production` branch, deploy key, approval or manual release · CAR-140 (PR pending)
 - 2026-10-14 · Failed production smoke checks link the recovery runbook; the owner manually restores the last verified good deployment, and automation never changes production traffic · CAR-100 (PR pending)
 
 - 2026-10-07 · First agreed version, moved into the repository from Notion · #16
@@ -17,3 +17,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-10-12 · A review environment (the build, a throwaway stack, synthetic users and the stand-in on the CI runner or worker) for seeing changes working; Vercel previews stay build-only · #101
 
 - 2026-10-14 · Protected requests verify the caller’s active Supabase session to reject copied cookies immediately after logout; migrate before deploying the code · #108 (CAR-132)
+- 2026-10-19 · No hosted dev; one baseline migration; releases check prod for drift and migrate with the database password only, with project refs written in the workflows · CAR-138 (PR pending)

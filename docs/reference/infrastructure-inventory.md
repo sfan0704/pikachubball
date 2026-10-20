@@ -25,41 +25,42 @@ The basketball migration must not change any of these resources.
 | GitHub repository | `sfan0704/pikachubball` |
 | Vercel production origin | `https://pikachubball.vercel.app` |
 | Supabase production project | `Pikachu Basketball` / `fpdwtpwpmxsbgjxizuxa` |
-| Supabase development project | `Pikachu Basketball Development` / `ocqdxmfpezxpgutoicyh` |
 | Repository-local Supabase ID | `pikachubball` |
 
 The basketball project references differ from both Card Benefits Supabase projects, and the Vercel project differs from Card Benefits'. Production secrets are scoped only to basketball production; preview builds receive no production authentication, database or Yahoo credentials.
 
 ## Environment tiers
 
-The default development and CI environment is the disposable Supabase stack with the implemented offline Yahoo stand-in. It needs no real Yahoo sign-in. Real Yahoo validation remains manual, using the dedicated dev Supabase project.
+There are three tiers and no hosted dev (owner decision, 2026-10-18; supersedes CAR-94). Development and CI use the disposable Supabase stack with the offline Yahoo stand-in and need no real Yahoo sign-in. Pull request checks and the review environment cover what hosted dev was for.
 
-| Resource | Local / CI | Dev | Prod |
+| Resource | Local / CI | Preview | Prod |
 | --- | --- | --- | --- |
-| Supabase project | Disposable CLI stack, `project_id = "pikachubball"` | `Pikachu Basketball Development` / `ocqdxmfpezxpgutoicyh` | `Pikachu Basketball` / `fpdwtpwpmxsbgjxizuxa` |
-| Supabase region | Docker on worker or laptop | AWS North Virginia (`us-east-1`), Free | AWS North Virginia (`us-east-1`), Free |
-| Yahoo app | None; recorded-response stand-in | `PikachuBball` (`VZxFFbzH`) | `PikachuBball` (`VZxFFbzH`) |
-| Sign-in | Seeded synthetic managers via `/api/dev/login` | Owner's real Yahoo sign-in | League members' real Yahoo sign-in |
-| Application callback | No Yahoo callback | Local HTTPS exception: `https://localhost:5001/api/auth/callback`; hosted dev callback pending CAR-94 | `https://pikachubball.vercel.app/api/auth/callback` |
-| Secret location | Generated local/test values only | Owner-managed `.env.local` exception; hosted branch scope pending | Vercel Production environment |
-| Migrations | `npm run test:db`, disposable only | Manual main-only workflow verified; automatic activation pending | Approval-protected release workflow, activation pending |
+| Supabase project | Disposable CLI stack, `project_id = "pikachubball"` | None | `Pikachu Basketball` / `fpdwtpwpmxsbgjxizuxa` |
+| Supabase region | Docker on worker or laptop | None | AWS North Virginia (`us-east-1`), Free |
+| Yahoo app | None; recorded-response stand-in | None | `PikachuBball` (`VZxFFbzH`) |
+| Sign-in | Seeded synthetic managers via `/api/dev/login` | None | League members' real Yahoo sign-in |
+| Application callback | No Yahoo callback | None | `https://pikachubball.vercel.app/api/auth/callback` |
+| Secret location | Generated local/test values only | None | Vercel Production environment; GitHub `production` and `maintenance` environments for the database |
+| Migrations | `npm run test:db`, disposable only | None | *Deploy* workflow after CI passes on `main`, with a drift check first; activation pending |
 
-### Verified state and remaining activation (2026-10-11)
+### Verified state and remaining activation (2026-10-19)
 
-- [CAR-94](https://linear.app/card-benefits/issue/CAR-94): latest discussion at 00:25 UTC records `production` created at `ceb61b4b78629c3871224a4112d7e55bbc876fc5`. Vercel still follows `main` for production. Hosted dev configuration, stable origin, Vercel Authentication, exact callback allowlist and branch switch remain pending. Seven server variables were verified production-only; verify isolation on a fresh preview before claiming deployment-level acceptance.
-- [CAR-83](https://linear.app/card-benefits/issue/CAR-83): latest discussion at 15:59 UTC records a [successful manual dev migration](https://github.com/sfan0704/pikachubball/actions/runs/38153494925) through the verified dev session pooler with TLS. `RELEASE_AUTOMATION` remains unset; hosted main/dev and an approved production release remain unverified.
-- The GitHub production environment requires owner approval and allows deployment from `main` only. Preserve that protection. A branch or merged workflow is not evidence of an activated release.
+- CAR-138 replaced the seven migrations with one baseline (`20261019000000_baseline.sql`), removed *Migrate dev*, and made the release migrate production with `SUPABASE_DB_PASSWORD` only, after a drift check. Project refs are written in the workflows.
+- The read-only check on 2026-10-17 (CAR-100) found production's schema digest differing from the migrations it recorded, including the platform's `public.rls_auto_enable()` and function privileges. The release drift check now ignores the platform's event-trigger functions, and the baseline sets every privilege explicitly. Production still holds the old seven-migration history, so a release stops at the drift check until the [production reset](../runbooks/production-reset.md) runs (CAR-139, owner only).
+- CAR-140 replaced the manual *Release* workflow (and its `production` branch and deploy key) with *Deploy*, which runs when CI passes on a `main` commit: drift check, migrate, Vercel CLI deploy of that commit, tag, smoke check. `vercel.json` turns off Vercel's Git deploys from `main`, so once it merges production gets no new deploy until *Deploy* is switched on.
+- Still to do in CAR-139: add `SUPABASE_DB_PASSWORD` and a project-scoped `VERCEL_TOKEN` to `production` and remove its required reviewers (owner default: no approval), add the "require branches to be up to date" rule to `main`'s ruleset, create `maintenance`, run the reset, set `RELEASE_AUTOMATION` and re-run the latest *Deploy* run, then remove the retired dev resources (the `Pikachu Basketball Development` project, its Vercel Development-scope variables, the `dev` GitHub environment and its localhost Yahoo redirects). `RELEASE_AUTOMATION` remains unset.
+- The GitHub production environment allows deployment from `main` only. Preserve that limit; pull request jobs must never reach it. A branch or merged workflow is not evidence of an activated release.
 - Feature previews remain build-only, with no Supabase/Yahoo credentials or sign-in. Functional preview design belongs to CAR-128; implementation belongs to CAR-129.
 
-### Shared Yahoo boundary
+### Yahoo boundary
 
-Dev and prod share `PikachuBball` (`VZxFFbzH`), its secret, rate limits and revocation. Local/CI has no Yahoo app, provider secret or real redirect. `PikachuBball - Dev` (`si6rpgJq`) and `Fantasy` (`rVqtn8Pt`) returned 403 for Fantasy access in the recorded verification; do not configure them as replacements.
+Production uses `PikachuBball` (`VZxFFbzH`), the only Fantasy-activated app. Local/CI has no Yahoo app, provider secret or real redirect. `PikachuBball - Dev` (`si6rpgJq`) and `Fantasy` (`rVqtn8Pt`) returned 403 for Fantasy access in the recorded verification; do not configure them as replacements.
 
-The hosted Supabase callbacks are `https://ocqdxmfpezxpgutoicyh.supabase.co/auth/v1/callback` (dev) and `https://fpdwtpwpmxsbgjxizuxa.supabase.co/auth/v1/callback` (prod). The documented refresh redirects are `https://localhost:5001/api/auth/yahoo/fantasy/callback` for the local dev exception and `https://pikachubball.vercel.app/api/auth/yahoo/fantasy/callback` for prod. Nothing is served at these refresh paths, but token refresh sends them; removing them breaks access. Hosted dev must establish its own exact origin and redirect before activation.
+The hosted Supabase callback is `https://fpdwtpwpmxsbgjxizuxa.supabase.co/auth/v1/callback`. The documented refresh redirect is `https://pikachubball.vercel.app/api/auth/yahoo/fantasy/callback`. Nothing is served at that path, but token refresh sends it; removing it breaks access.
 
 Production switched from `PikachuBball - Local` (`i19hJ8X4`) to `VZxFFbzH` on 2026-10-10, verified from the sign-in redirect's client ID. Since CAR-81, Supabase requests `fspt-r` and the callback stores its Yahoo tokens; there is no second connect step. Historical redirect registrations include a legacy Replit URI; this inventory does not authorize deleting registrations.
 
-The Supabase organization is on the Free plan, which allows two active projects. Both basketball projects are active, and the two Card Benefits projects are paused. Restoring a Card Benefits project requires pausing one basketball project first.
+The Supabase organization is on the Free plan, which allows two active projects. Once the retired basketball project is removed, one slot is free for Card Benefits.
 
 ## Legacy application inventory
 

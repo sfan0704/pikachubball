@@ -57,7 +57,8 @@ const optionalTrimmed = z
 const environmentSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().int().positive().default(5000),
-  VERCEL_GIT_COMMIT_SHA: optionalTrimmed,
+  // Set per deployment by the Deploy workflow (vercel deploy --env), so health shows the exact commit.
+  DEPLOYED_COMMIT: optionalTrimmed,
   TRUST_PROXY: z
     .string()
     .optional()
@@ -170,7 +171,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
     nodeEnv: values.NODE_ENV,
     port: values.PORT,
     trustProxy: production || values.TRUST_PROXY,
-    buildId: values.VERCEL_GIT_COMMIT_SHA ?? "development",
+    buildId: values.DEPLOYED_COMMIT ?? "development",
     auth: {
       appOrigin: parseOrigin(
         values.APP_ORIGIN ?? "http://localhost:5000",

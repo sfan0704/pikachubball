@@ -17,18 +17,17 @@ Vercel serves the client and API on one origin. The expected traffic is small, i
 
 ## Environments
 
-The supported development path is the disposable stack and Yahoo stand-in, on a laptop or a remote worker with Docker. Hosted dev and the release branch model are still being activated; the [inventory](docs/reference/infrastructure-inventory.md#environment-tiers) records dated evidence.
+The supported development path is the disposable stack and Yahoo stand-in, on a laptop or a remote worker with Docker. There is no hosted dev environment (owner decision, 2026-10-18): pull request checks and the review environment stand in for it, and merging takes a change to production once CI passes on `main`. The [inventory](docs/reference/infrastructure-inventory.md#environment-tiers) records dated evidence.
 
 | Environment | Current behavior | Authentication and credentials |
 | --- | --- | --- |
 | Local / CI | Disposable Supabase, recorded Yahoo responses, synthetic managers | No hosted credentials or real Yahoo calls |
 | Preview | Feature-branch build check only | No Supabase/Yahoo credentials or sign-in |
-| Dev | Dedicated Supabase project; local HTTPS client remains an owner-only exception while hosted `main` is pending (CAR-94) | Real Yahoo via `PikachuBball`; dev values only |
-| Prod | Vercel production alias still follows `main` in the latest verified CAR-94 evidence | Production Supabase and Vercel Production variables |
+| Prod | Vercel production, deployed by the *Deploy* workflow once it is switched on (CAR-139) | Production Supabase and Vercel Production variables |
 
-The desired model is hosted `main` → dev and an approved release → `production` → prod. A `production` branch exists, but that alone does not activate the model. CAR-83 verified a manual dev migration on 2026-10-11; automatic releases remain disabled. Do not switch deployment branches before completing those issues.
+The model is deploy on merge: pull requests run checks only, and when CI passes on a `main` commit the *Deploy* workflow checks production for drift, migrates it, deploys that exact commit with the Vercel CLI and smoke checks it. Deploys stay off until the owner finishes the hosted setup in CAR-139; see the [release runbook](docs/runbooks/release.md).
 
-One Yahoo sign-in does everything in hosted environments: Supabase's `custom:yahoo` provider requests Fantasy read scope (`fspt-r`), and `/api/auth/callback` stores the session's Yahoo tokens and syncs leagues. Dev and prod share the Fantasy-enabled Yahoo app, `PikachuBball`, including its secret, rate limits and revocation. Their databases, users, tokens and encryption keys remain separate. Local/CI uses the stand-in and synthetic login instead of a Yahoo provider.
+One Yahoo sign-in does everything in production: Supabase's `custom:yahoo` provider requests Fantasy read scope (`fspt-r`), and `/api/auth/callback` stores the session's Yahoo tokens and syncs leagues. Production uses the Fantasy-enabled Yahoo app, `PikachuBball`. Local/CI uses the stand-in and synthetic login instead of a Yahoo provider.
 
 Token refresh sends `YAHOO_PROVIDER_REDIRECT_URI`; keep its registered HTTPS redirect even though no route is served there. Yahoo requires HTTPS redirects. See the [remote development contract](docs/remote-development.md) before starting a task.
 
@@ -58,27 +57,6 @@ Every checkout (a clone, a `git worktree`, a CI job) gets its own Supabase stack
 - **Stale stacks:** `docker ps -a --filter name=pikachubball` lists every local stack. One whose checkout is gone can be removed with `docker rm -f $(docker ps -aq --filter name=_pikachubball-<id>)`, plus `docker volume rm` on its volumes. The old shared stack from before workspaces (`supabase_*_pikachubball`, on ports 54321–54329) is stopped with `npx supabase stop --no-backup` from any checkout.
 - If two checkouts happen to get the same ports, the second one's scripts refuse to start and name the container holding the port; move the checkout or stop the other stack.
 
-### Owner-only local HTTPS exception
-
-This is a temporary manual path for the owner to validate real Yahoo sign-in while CAR-94 is unfinished. It is not the remote worker bootstrap and must not be used by tests or automation. To use it (`npm run dev:hosted`), create `.env.local` from the template and fill in the dev values:
-
-```text
-cp .env.example .env.local
-openssl rand -hex 32   # use as ENCRYPTION_KEY
-```
-
-The Supabase URL and publishable key come from the dev project's API settings. The Yahoo client ID and secret come from the Fantasy-enabled `PikachuBball` Yahoo app shared with production. Never copy production values into `.env.local`.
-
-Create the local HTTPS certificate once. `mkcert -install` adds mkcert's local certificate authority to your system trust store (it asks for your password); the certificate files stay in the gitignored `.certs/` directory:
-
-```text
-brew install mkcert
-mkcert -install
-mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
-```
-
-Start the app with `npm run dev:hosted` and open `https://localhost:5001`. When `DEV_HTTPS_CERT` and `DEV_HTTPS_KEY` are set, the dev server serves HTTPS; it refuses those variables in production. It uses port 5001 because macOS AirPlay Receiver listens on 5000; without `PORT`, the server defaults to 5000.
-
 ## Checks
 
 ```text
@@ -95,11 +73,11 @@ The production build creates the client assets and the local Node server bundle.
 
 ## Supabase
 
-The migration in `supabase/migrations` creates only the minimum hosted records: an encrypted Yahoo connection and owned league/team memberships. It uses foreign keys to `auth.users`, forced RLS, and authenticated security-invoker functions. The web runtime uses the publishable key and the signed-in user's session. It does not use a service-role key or database password.
+The baseline migration in `supabase/migrations` defines the schema: an encrypted Yahoo connection, the user's leagues and saved preferences. Later changes are new migrations on top of it. It uses foreign keys to `auth.users`, forced RLS, and authenticated security-invoker functions. The web runtime uses the publishable key and the signed-in user's session. It does not use a service-role key or database password.
 
 For configuration and verification, see:
 
-- [Runbooks](docs/runbooks/README.md): sign-in setup, secret exposure, key rotation, restore and rollback, season rollover
+- [Runbooks](docs/runbooks/README.md): releases, the production reset, sign-in setup, secret exposure, key rotation, restore and rollback, season rollover
 - [Yahoo authentication](docs/reference/authentication.md)
 - [Owner-scoped storage](docs/reference/storage.md)
 - [Infrastructure inventory](docs/reference/infrastructure-inventory.md)

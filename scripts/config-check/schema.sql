@@ -15,6 +15,9 @@ with relations as (
   where n.nspname = 'public' and p.prokind in ('f', 'p')
     and not exists (select 1 from pg_depend d where d.classid = 'pg_proc'::regclass
       and d.objid = p.oid and d.deptype = 'e')
+    -- Event-trigger functions here (such as rls_auto_enable) come from the
+    -- platform; no migration of ours creates one.
+    and p.prorettype <> 'event_trigger'::regtype
 )
 select encode(sha256(convert_to(jsonb_build_object(
   'relations', coalesce((select jsonb_agg(to_jsonb(r) - 'oid' order by r.relname) from relations r), '[]'::jsonb),

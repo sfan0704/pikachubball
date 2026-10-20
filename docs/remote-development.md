@@ -6,9 +6,11 @@ A worker starts with a repository, Linear issue ID, disposable compute and scope
 
 Use Node 24, npm 11, the committed lockfile and Docker. The existing disposable stack works on a Docker-capable worker as it does locally: Supabase migrations, synthetic users and the Yahoo stand-in. It binds to loopback and rejects production and hosted service endpoints. Hosted credentials are unnecessary for implementation and tests. Do not read `.env.local`.
 
+Claude Code and Codex cloud sessions start with `npm run session:setup` (see [Cloud sessions](agent-setup.md#cloud-sessions)). Docker is unavailable there, so they run the `static`, `unit` and `build` profiles; the database, browser and review checks run in CI on the pull request, and their CI results are the evidence for those checks.
+
 Each checkout gets its own Supabase stack and ports (CAR-125; see "Several workspaces" in the [README](../README.md)), so several workspaces can share a Docker host; `npm run workspace` shows a checkout's ports. The bounded Linux bootstrap is documented in [Disposable worker setup](agent-setup.md). Seeing a change working, signed in, uses the review environment in the [target state](target-state.md#review-environment), being built in CAR-129. A forwarded port is not permission to expose the synthetic login or database publicly.
 
-Feature-branch Vercel previews are build checks only. The target hosted dev/release model is not fully active; see the [dated inventory](reference/infrastructure-inventory.md#environment-tiers). The owner's manual `npm run dev:hosted` HTTPS setup is a local-only exception for real Yahoo validation, never an automated fallback.
+Feature-branch Vercel previews are build checks only. There is no hosted dev; the release model is not fully active yet, see the [dated inventory](reference/infrastructure-inventory.md#environment-tiers).
 
 ## Lifecycle
 
@@ -58,7 +60,7 @@ Sign in at `<url>/api/dev/login?user=a` (or `user=b`); the URL is loopback-only.
 | Production writes, credential rotation, migrations, destructive cleanup | Require explicit owner authorization and the documented runbook; preserve production approval gates |
 | Merge, release or mark consequential rollout complete | Require owner authorization and verified acceptance; green tests alone are insufficient |
 
-Do not grant yourself broader credentials or weaken checks to unblock work. Never copy production values into dev, tests, PRs or issues. Card Benefits infrastructure is outside scope. Default worker access ends at human review, without production write or merge authority.
+Do not grant yourself broader credentials or weaken checks to unblock work. Never copy production values into local files, tests, PRs or issues. Card Benefits infrastructure is outside scope. Default worker access ends at human review, without production write or merge authority.
 
 ## Handoff
 

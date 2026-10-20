@@ -9,6 +9,26 @@ permissions:
   contents: read
 
 jobs:
+  session:
+    name: Clean and repeat cloud session setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - name: Use the repository package manager
+        run: npm install --global npm@11.17.0
+      - name: Clean session setup
+        run: npm run session:setup
+      - name: Repeat session setup installs nothing
+        run: |
+          npm run session:setup | tee repeat.log
+          grep -qx "node_modules already matches package-lock.json; nothing installed." repeat.log
+      - name: Iterate checks pass after setup
+        run: npm run validate -- iterate
+
   setup:
     name: Clean and repeat Linux setup
     runs-on: ubuntu-24.04

@@ -4,7 +4,7 @@ name: Scheduled
 # pause for inactivity, and keep a dump of its schema as an artifact. Neither
 # calls Yahoo. Both run unattended in the `maintenance` environment as the
 # `maintenance` database role, which reads no rows and can change nothing
-# (supabase/migrations/202610110001_maintenance_role.sql). Switched on by the
+# (supabase/migrations/20261019000000_baseline.sql). Switched on by the
 # repository variable RELEASE_AUTOMATION=true; a manual run from main works
 # before that, to check the setup.
 on:
@@ -16,7 +16,9 @@ permissions:
   contents: read
 
 env:
-  # The production project's session pooler, from its Connect dialog.
+  # The production project and its session pooler, from its Connect dialog.
+  # Neither is a secret.
+  SUPABASE_PROJECT_REF: fpdwtpwpmxsbgjxizuxa
   POOLER_HOST: aws-0-us-east-1.pooler.supabase.com
   POSTGRES_IMAGE: postgres:17
 
@@ -29,7 +31,6 @@ jobs:
     steps:
       - name: Query the database
         run: |
-          test "$SUPABASE_PROJECT_REF" = "fpdwtpwpmxsbgjxizuxa"
           test -n "$MAINTENANCE_DB_PASSWORD"
           password=$(node -e 'process.stdout.write(encodeURIComponent(process.env.MAINTENANCE_DB_PASSWORD))')
           echo "::add-mask::$password"
@@ -38,7 +39,6 @@ jobs:
           test "$(docker run --rm "$POSTGRES_IMAGE" psql "$url" -tAc 'select 1')" = "1"
         env:
           MAINTENANCE_DB_PASSWORD: ${{ secrets.MAINTENANCE_DB_PASSWORD }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
   schema-dump:
     name: Dump the production schema
@@ -50,7 +50,6 @@ jobs:
       # postgres role first; this role can't and shouldn't.
       - name: Dump the schema
         run: |
-          test "$SUPABASE_PROJECT_REF" = "fpdwtpwpmxsbgjxizuxa"
           test -n "$MAINTENANCE_DB_PASSWORD"
           password=$(node -e 'process.stdout.write(encodeURIComponent(process.env.MAINTENANCE_DB_PASSWORD))')
           echo "::add-mask::$password"
@@ -61,7 +60,6 @@ jobs:
           grep -q "CREATE TABLE public.user_leagues" schema.sql
         env:
           MAINTENANCE_DB_PASSWORD: ${{ secrets.MAINTENANCE_DB_PASSWORD }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
       - name: Keep the dump
         uses: actions/upload-artifact@v6

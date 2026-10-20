@@ -219,11 +219,7 @@ describe("loadConfig", () => {
 
   it("takes the build id from the deployed commit, or says it is a development build", () => {
     expect(loadConfig(minimalEnvironment()).buildId).toBe("development");
-    expect(loadConfig(minimalEnvironment({ VERCEL_GIT_COMMIT_SHA: "abc1234" })).buildId).toBe(
-      "abc1234"
-    );
-    expect(loadConfig(minimalEnvironment({ VERCEL_GIT_COMMIT_SHA: "  " })).buildId).toBe(
-      "development"
-    );
+    expect(loadConfig(minimalEnvironment({ DEPLOYED_COMMIT: "abc1234" })).buildId).toBe("abc1234");
+    expect(loadConfig(minimalEnvironment({ DEPLOYED_COMMIT: "  " })).buildId).toBe("development");
   });
 });

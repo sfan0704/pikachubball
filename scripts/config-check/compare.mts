@@ -43,25 +43,18 @@ function variablesMatch(snapshot: Snapshot, contract: Contract): boolean | null 
   if (v.projectId !== contract.vercelProjectId || v.teamId !== contract.vercelTeamId) return false;
   const required = new Set(contract.requiredVariables);
   const forbidden = new Set(contract.forbiddenVariables);
-  // Only main's preview scope is dev; all other previews must remain build-only.
+  // Server variables live in production alone; every preview, main's included, is build-only.
   const leaks = v.variables.some(
     (item) =>
       forbidden.has(item.key) ||
-      (required.has(item.key) && item.target.length !== 1) ||
       (item.key.startsWith("VITE_") &&
         (required.has(item.key.slice(5)) || forbidden.has(item.key.slice(5)))) ||
-      (required.has(item.key) && item.target.includes("preview") && item.gitBranch !== "main")
+      (required.has(item.key) &&
+        (item.target.length !== 1 || item.target[0] !== "production" || item.gitBranch !== null))
   );
   if (leaks) return false;
   return contract.requiredVariables.every(
-    (key) =>
-      v.variables.filter(
-        (item) =>
-          item.key === key &&
-          (snapshot.environment === "prod"
-            ? item.target.includes("production") && item.gitBranch === null
-            : item.target.includes("preview") && item.gitBranch === "main")
-      ).length === 1
+    (key) => v.variables.filter((item) => item.key === key).length === 1
   );
 }
 

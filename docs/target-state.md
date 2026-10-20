@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-16.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-10-20.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -110,13 +110,13 @@ One zod schema parses all configuration once at startup in the composition root;
 | `APP_ORIGIN` | The app's public origin, for redirects | No |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | The environment's Supabase project | No; the key is public by design |
 | `ENCRYPTION_KEY`, `ENCRYPTION_KEY_VERSION`, `ENCRYPTION_KEY_PREVIOUS` | 32-byte keys for stored Yahoo tokens: the current one with its version number (default 1, raised by one at each rotation), and the previous one (the version below) only during a rotation | Yes; one per environment |
-| `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | The `PikachuBball` app, for token refresh | The secret is; shared by dev and prod |
+| `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | The `PikachuBball` app, for token refresh | The secret is |
 | `YAHOO_PROVIDER_REDIRECT_URI` | The Supabase callback registered with Yahoo | No |
 | `NODE_ENV`, `TRUST_PROXY` | Runtime mode and proxy handling | No |
 
 ### Environments
 
-This table is the agreed destination. As verified in CAR-94/CAR-83 discussions on 2026-10-11, `main` still serves production, hosted dev activation is pending, and `RELEASE_AUTOMATION` remains unset. A manual dev migration passed; an approved production release has not been demonstrated. See the [dated inventory](reference/infrastructure-inventory.md#environment-tiers) for current state and the [remote development contract](remote-development.md) for worker authority.
+This table is the agreed destination. There is no hosted dev (owner decision, 2026-10-18): pull request checks and the review environment stand in for it. Until the owner finishes the hosted setup (CAR-139), `RELEASE_AUTOMATION` remains unset and nothing deploys production; a deploy on merge has not been demonstrated. See the [dated inventory](reference/infrastructure-inventory.md#environment-tiers) for current state and the [remote development contract](remote-development.md) for worker authority.
 
 | Environment | Purpose | Supabase | Yahoo | Who signs in |
 |---|---|---|---|---|
@@ -124,14 +124,13 @@ This table is the agreed destination. As verified in CAR-94/CAR-83 discussions o
 | CI | The same tests on every pull request | Throwaway local database | Stand-in | Test users |
 | Preview | A build of each feature branch, as a build check | None | None | Nobody |
 | Review | A throwaway, signed-in copy of one commit, so a reviewer or agent can see the change working | Throwaway local database | Stand-in | Synthetic users |
-| Dev | Hosted deployment of `main`: every merged change is tested here with real Yahoo data before release | `Pikachu Basketball Development` | `PikachuBball` | The owner only |
-| Prod | Deployment of the `production` branch, for the league | `Pikachu Basketball` | `PikachuBball` | League members |
+| Prod | Deployment of each `main` commit that passed CI, for the league | `Pikachu Basketball` | `PikachuBball` | League members |
 
 #### Disposable development
 
 - `npm ci` and `npm run dev` run the whole app on a laptop or a remote worker with Docker against the throwaway Supabase stack and the Yahoo stand-in. No hosted credentials are needed or kept locally.
 - **The Yahoo stand-in** replays recorded responses through the real transport, and can also simulate timeouts, 429s, 5xx errors and expired tokens.
-- **Recorded responses** are captured from the dev deployment by a repo script, scrubbed of names and personal details, and refreshed each season.
+- **Recorded responses** are captured by the owner with a repo script against real Yahoo, scrubbed of names and personal details, and refreshed each season.
 - **A seed script** creates two synthetic users with leagues; the browser tests use the same seed.
 
 #### Separation
@@ -141,27 +140,22 @@ This table is the agreed destination. As verified in CAR-94/CAR-83 discussions o
 Vercel previews stay build-only. Seeing a change working, signed in, happens in a **review environment**: the exact commit's production build, a throwaway local Supabase stack with synthetic managers and the Yahoo stand-in, started the same way the browser tests start it.
 
 - **Where:** on a GitHub Actions runner for every pull request, or on the worker making the change (its own stack and ports). Nothing is hosted, and there is no public URL.
-- **Identity and access:** synthetic managers only, through the local-only `/api/dev/login`, which stays limited to loopback. No real Yahoo tokens, no hosted dev or prod database, no secrets: the job runs on `pull_request`, so pull requests from forks get the same environment with nothing to misuse.
+- **Identity and access:** synthetic managers only, through the local-only `/api/dev/login`, which stays limited to loopback. No real Yahoo tokens, no hosted database, no secrets: the job runs on `pull_request`, so pull requests from forks get the same environment with nothing to misuse.
 - **Evidence:** a reviewer or agent gets screenshots of each main screen and the Playwright trace, uploaded as an artifact named after the commit (`review-<commit>`), with the commit printed on every page by `/api/health`. An agent on its own worker can open the app at its workspace address instead.
 - **Lifetime and teardown:** it lives for one job or one session. The runner is destroyed after the job; on a worker, `npm run stack:stop` removes the stack, and the job checks that none of its containers remain.
 
-Each environment keeps separate database, users, encryption key, sessions and redirect allowlist. Yahoo app credentials are the explicit dev/prod exception below. Preview has no database or sign-in. While hosted dev activation is pending, the owner-only local HTTPS client uses dev values in `.env.local`; automation must not use that exception.
+Each environment keeps separate database, users, encryption key, sessions and redirect allowlist. Preview has no database or sign-in. Only production holds real credentials.
 
-| Resource | Local / CI | Preview | Dev | Prod |
-|---|---|---|---|---|
-| Database and users | Throwaway | None | Dev project | Prod project |
-| Encryption key | Fixed test value | None | Dev only | Prod only |
-| Supabase admin credentials | Local only | None | GitHub `dev` environment | GitHub `production` environment, approval required |
-| Sign-in redirect allowlist | Local callback | None | The dev deployment's callback | The production callback only |
-| Yahoo app and secret | None | None | `PikachuBball` (shared with prod) | `PikachuBball` |
-| Vercel variables | — | No Supabase or Yahoo values | Preview scope, `main` branch only | Production scope only |
+| Resource | Local / CI | Preview | Prod |
+|---|---|---|---|
+| Database and users | Throwaway | None | Prod project |
+| Encryption key | Fixed test value | None | Prod only |
+| Supabase database password | Local only | None | GitHub `production` environment, approval required |
+| Sign-in redirect allowlist | Local callback | None | The production callback only |
+| Yahoo app and secret | None | None | `PikachuBball` |
+| Vercel variables | — | No Supabase or Yahoo values | Production scope only |
 
-**Shared by necessity.** Yahoo grants Fantasy access to one app only, so dev and prod share its secret, its rate limit and its revocation switch. Safeguards:
-
-- The dev copy of the secret exists only in Vercel's `main`-branch settings and the owner's password manager.
-- If it's exposed, regenerate it in Yahoo and update prod first, then dev.
-- Dev traffic stays manual and light; nothing automated calls Yahoo from dev. The dev deployment is behind Vercel Authentication, so only the owner can open it.
-- Dev holds only the owner's own account, and its data can be wiped at any time.
+**Yahoo secret.** Yahoo grants Fantasy access to one app only. Its secret exists in two places, the minimum: the Supabase sign-in provider and Vercel's Production scope (plus the owner's password manager). If it's exposed, regenerate it in Yahoo and update both.
 
 ## Code
 
@@ -466,22 +460,21 @@ One set of codes in `shared/api`, turned into HTTP responses in one place on the
 flowchart LR
     PR["Pull request"] --> CI["Checks: lint, types, unit,<br>database, browser, build"]
     PR --> PV["Vercel preview"]
-    CI -->|"all green"| M["Squash merge to main"]
-    M --> MD["Migrate dev"]
-    MD --> DD["Dev deployment<br>test with real data"]
-    DD --> R["Release workflow<br>after approval"]
-    R --> MP["Migrate prod"]
-    MP --> PB["Move production branch<br>to the tested commit"]
-    PB --> VP["Vercel production deploy"]
-    VP --> SC["Smoke and config checks"]
+    CI -->|"all green, up to date with main"| M["Squash merge to main"]
+    M --> MC["CI on the main commit"]
+    MC -->|"green"| DC["Drift check:<br>prod matches its migrations"]
+    DC --> MP["Migrate prod"]
+    MP --> VP["Vercel CLI deploys<br>that exact commit"]
+    VP --> SC["Smoke check"]
 ```
 
-- **Protected main branch.** Changes arrive only through pull requests with every check green. Squash merges only, no force pushes, and branches are deleted after merge.
-- **Checks on every pull request:** lint (including the dependency and code-quality rules), type checking, unit tests with coverage thresholds, database access-rule tests, browser tests of the main flows at phone and desktop widths, and a production build.
-- **Two stages.** Merging to `main` migrates the dev database and deploys the dev environment, where the change is tested with real data. A manual release then migrates prod and moves the `production` branch to the tested commit, which Vercel deploys. Only tested commits reach production.
-- **Migrations are backward compatible,** so the app and the database can update in either order.
+- **Protected main branch.** Changes arrive only through pull requests with every check green and the branch up to date with `main`, so changes that each pass alone are tested together. Squash merges only, no force pushes, and branches are deleted after merge.
+- **Checks on every pull request:** lint (including the dependency and code-quality rules), type checking, unit tests with coverage thresholds, database access-rule tests, browser tests of the main flows at phone and desktop widths, a production build, and a migration order check (every added migration sorts after the newest on `main`). Pull request jobs only check: none has a production secret, since the repository is public and a pull request runs its own copy of the workflows. There is no drift check on a pull request; drift is a property of prod that its author can't fix.
+- **One hosted stage, deployed on merge.** When CI passes on a `main` commit, the *Deploy* workflow checks prod for drift, migrates it and deploys exactly that commit. Only commits that passed every check reach production, and there is no manual release step or approval (owner default, CAR-140).
+- **Drift check.** Before anything changes, the release compares prod's public schema with a throwaway replay of exactly the migrations prod records, leaving out Supabase-managed objects (extension objects and the platform's event-trigger functions). A history this commit doesn't have, or any other difference, stops the release. The schema is defined by one baseline migration plus the migrations after it; each migration grants every privilege explicitly, since hosted and local defaults differ.
+- **Migrations are backward compatible,** so the app and the database can update in either order. Removing a column or table takes two merges (expand and contract): stop using it, then drop it.
 - **After each deploy,** a smoke check confirms the app is up, protected routes refuse anonymous requests, deep links load, and security headers are present. A production failure notifies the owner through GitHub and links the manual rollback runbook. The owner restores the last verified good deployment; automation does not change production traffic (owner decision, 2026-10-14).
-- **Config checks** compare each environment against the repo without reading secret values: the Yahoo sign-in provider and scopes; the redirect allowlist; that the schema matches the migrations; that the expected Vercel variables exist in each scope.
+- **Config checks** compare production against the repo without reading secret values: the Yahoo sign-in provider and scopes; the redirect allowlist; that the schema matches the migrations; that the expected Vercel variables exist in the Production scope only.
 - **Supply chain.** Dependabot security alerts and weekly grouped updates, secret scanning with push protection, and CodeQL.
 - **Pull requests** are small and single-purpose, linked to a Linear issue, titled `type: summary (issue)` with types `feat`, `fix`, `refactor`, `test`, `docs` and `chore`, and say how the change was verified.
 
@@ -489,19 +482,19 @@ flowchart LR
 
 | Piece | Setup |
 |---|---|
-| Branch rulesets | `main`: pull requests with all checks green, squash only. `production`: only the release workflow can move it, and only fast-forward. |
-| GitHub environments | `dev` holds the dev database credentials. `production` holds the prod database credentials and the deploy key that moves `production`; its jobs wait for the owner's approval and run only from `main`. |
-| Vercel | Git integration. `production` is the production branch. `main` deploys with dev settings scoped to that branch. Vercel reports each deployment back to GitHub, which triggers the smoke check. |
-| Supabase | The Supabase CLI runs migrations from the workflows (`supabase db push`), in a fixed order with logs in GitHub and the prod run behind the approval. |
-| Releases | Each release is a tag (for example `v2026.10.1`) with a GitHub Release whose notes are generated from merged pull request titles. |
+| Branch rulesets | `main`: pull requests with all checks green and the branch up to date, squash only. There is no `production` branch. |
+| GitHub environments | `production` holds the prod database password and a Vercel token scoped to this project; its jobs run only from `main`, with no required reviewers. `maintenance` holds the `maintenance` role's password for the unattended weekly jobs. |
+| Vercel | Production deploys only from the *Deploy* workflow, with the Vercel CLI (`vercel build --prod`, `vercel deploy --prebuilt --prod`), which sets `DEPLOYED_COMMIT` for the health check. `vercel.json` turns off Git deploys from `main`; every other branch builds a preview with no Supabase or Yahoo settings. No deploy hook: it would deploy the branch's latest commit, whose migration may not have run. |
+| Supabase | The Supabase CLI runs migrations from the *Deploy* workflow (`supabase db push` through the session pooler, with the database password only), in merge order with logs in GitHub. Project refs are written in the workflows; they are not secrets. |
+| Releases | Each deploy is a tag (for example `v2026.10.1`) with a GitHub Release whose notes are generated from merged pull request titles. The tags also order deploys: a commit that doesn't contain every tagged one is skipped. |
 
 #### Workflows
 
-1. **On merge to `main`:** migrate the dev database. Vercel deploys `main` to dev; when it reports success, a smoke check runs against the dev URL.
-2. **Release** (started with Run workflow after testing in dev): wait for approval → migrate the prod database → move `production` to the tested commit → tag it and publish the release notes. Vercel deploys production; when it reports success, the smoke and config checks run, and a failure notifies the owner and links the manual rollback runbook. The owner restores the last verified good production deployment; automation does not change production traffic.
-3. Only one release runs at a time.
+1. **Pull request (CI):** checks only, with no production secret.
+2. **Deploy** (when CI passes on a `main` commit): refuse a commit older than the last deploy → check prod for drift → migrate the prod database → deploy that commit with the Vercel CLI → tag it and publish the release notes → smoke check. A drift mismatch stops it before anything changes; a failed migration deploys nothing; a failed deploy after a migration leaves the schema ahead of the code, which is safe, and is fixed forward. A smoke failure notifies the owner and links the manual rollback runbook. The owner restores the last verified good production deployment; automation does not change production traffic.
+3. One deploy runs at a time, in merge order. GitHub cancels queued runs in between; the newest commit contains them and applies all their migrations. Re-running the latest run deploys `main`'s newest commit without a merge.
 
-**Secrets,** all in GitHub environments: a Supabase access token, the dev and prod database passwords, and the deploy key for `production`. Deployment and manual rollback need no Vercel automation token. Configuration capture can use a separate read-only basketball-scoped `CONFIG_VERCEL_TOKEN` to acquire variable names and scopes with decryption disabled; it never receives deployment authority or enters the app runtime. Trusted connector-projected metadata remains supported without that token. Hosted configuration workflows remain inactive until their sources and scoped credentials are provisioned and verified.
+**Secrets,** all in GitHub environments: the prod database password and a project-scoped Vercel token in `production`, and the `maintenance` role's password. No Supabase access token is needed. There is no scheduled drift check: every deploy checks first. Configuration capture can use a separate read-only, project-scoped `CONFIG_VERCEL_TOKEN` to read variable names and scopes with decryption disabled; it has no deployment authority and never enters the app runtime. Trusted connector-projected metadata works without it. The config checks stay off until their sources and scoped credentials are provisioned and verified.
 
 ## Operations
 
@@ -511,7 +504,7 @@ flowchart LR
 - **Observability.** Vercel keeps the function logs. Each request's line carries its request id, route, status, duration and Yahoo call count, so a user's error message can be traced to its log line. Yahoo rate-limit errors and slow requests are the signals reviewed for the revisit triggers.
 - **Key rotation.** Each stored token records its encryption key version. Rotating sets a new `ENCRYPTION_KEY` and moves the old one to `ENCRYPTION_KEY_PREVIOUS`; new writes use the new key, tokens are re-encrypted at their next refresh, and the previous key is removed once no row uses it.
 - **Notifications.** Failed checks, deploys, smoke checks and config checks notify the owner through GitHub. There is no paging.
-- **Runbooks** in `docs/runbooks/` cover: Yahoo secret exposure, encryption key rotation, restore and rollback, Yahoo sign-in provider setup, and the season rollover check.
+- **Runbooks** in `docs/runbooks/` cover: releases, the production reset, Yahoo secret exposure, encryption key rotation, restore and rollback, Yahoo sign-in provider setup, and the season rollover check.
 - **Settings that live in dashboards** (the Yahoo sign-in provider, Yahoo redirect URIs, Vercel variables) are changed with repo scripts where possible and always verified by the config checks.
 - **Yahoo registration** is one app, `PikachuBball`, whose redirect URIs are exactly the Supabase callbacks in use. An inventory of app IDs, redirect URIs and scopes is kept in the repo and rechecked each season.
 - **Recovery.** Supabase Free has no backups; the app is designed so none are needed. Lost Yahoo tokens mean the user signs in again; lost league lists are fetched again from Yahoo; lost preferences mean choosing the league again. A weekly schema dump is kept as a CI artifact, and a written runbook covers restore and rollback.
@@ -525,15 +518,15 @@ flowchart LR
 | Stored data scope | Per user | Shared per league: fewer calls, but needs a database role only the server holds, since users can write their own rows |
 | Code style | Pure functions for domain logic, small classes for adapters, constructor injection wired by hand | Class-heavy domain models, or a dependency-injection library |
 | Protecting `main` | Pull requests with required checks, squash only | Leave unprotected |
-| Dev and Yahoo | Share `PikachuBball` with the safeguards above | Ask Yahoo to grant Fantasy access to a second app for dev |
-| Migration deploys | Supabase CLI in GitHub workflows, with environment secrets and a prod approval step | Supabase's GitHub integration: no secrets in GitHub, but no control over order and failures surface only in Supabase |
-| Vercel deploys | Vercel's Git integration, with the release moving the `production` branch | Vercel CLI from the workflow: deploys the exact tested bundle, but needs a Vercel token and replaces automatic previews |
-| Release model | `main` deploys to dev; a manual release moves the `production` branch, which Vercel deploys | `main` deploys straight to prod; or every preview wired to dev, which spreads the Yahoo secret to all branches |
+| Migration history | One baseline migration for the schema as of 2026-10-19, with later changes as new migrations on top; prod was reset onto it before anyone used it | Reconciling prod's drifted history migration by migration |
+| Migration deploys | Supabase CLI in the *Deploy* workflow, with the database password only, after CI passes on the `main` commit | Supabase's GitHub integration: no secrets in GitHub, but no control over order and failures surface only in Supabase |
+| Vercel deploys | Vercel CLI from the *Deploy* workflow, after the migration: deploys the exact tested commit with a project-scoped token; previews stay on Vercel's Git integration | Vercel's Git integration or a deploy hook: no token, but it deploys the branch's latest commit, which may be a newer merge whose migration hasn't run |
+| Release model | No hosted dev; every `main` commit that passes CI is migrated and deployed, with no approval (CAR-140) | A manual, approved release moving a `production` branch: an extra step, branch and deploy key whose only job was ordering migrate before deploy; or a hosted dev on `main`: a second copy of every secret and setting, and not isolated anyway, since dev and prod must share the one Fantasy Yahoo app |
 | Pausing and backups | Weekly keep-alive; recovery by design | Supabase Pro ($25/month) for backups and no pausing |
-| Supabase project slots | Basketball keeps both free slots | Drop hosted dev once the Yahoo stand-in exists, freeing a slot for Card Benefits |
+| Supabase project slots | Basketball uses one free slot, leaving one for Card Benefits | A second basketball project for hosted dev |
 | Error tracking | Vercel logs | Sentry's free tier, a new third party |
 | Repository visibility | Public, for free security scanning | Private |
-| Seeing a change working before merge | A review environment on the CI runner or worker: the build, a throwaway stack, synthetic users and the stand-in, with screenshots and traces as evidence | A public tunnel to it, which needs the loopback-only guard loosened; a hosted preview with its own Supabase project, which the two free project slots don't allow; previews wired to dev, which spreads real tokens and the Yahoo secret |
+| Seeing a change working before merge | A review environment on the CI runner or worker: the build, a throwaway stack, synthetic users and the stand-in, with screenshots and traces as evidence | A public tunnel to it, which needs the loopback-only guard loosened; a hosted preview with its own Supabase project, which the two free project slots don't allow; previews wired to a hosted database, which spreads real tokens and the Yahoo secret |
 
 ### When to revisit
 

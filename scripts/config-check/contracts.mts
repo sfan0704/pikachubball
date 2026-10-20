@@ -24,7 +24,7 @@ const variable = z
 /** Safe observed metadata; unexpected fields (including values/secrets) are rejected. */
 export const snapshotSchema = z
   .object({
-    environment: z.enum(["dev", "prod"]),
+    environment: z.literal("prod"),
     capturedAt: z.string().datetime(),
     projectRef: z.string(),
     providers: z.array(provider).nullable(),
@@ -47,7 +47,7 @@ export const baselineSchema = z
   })
   .strict();
 
-/** The approved environment identities and non-secret configuration expectations. */
+/** The production identities and non-secret configuration expectations. */
 export const contractSchema = z
   .object({
     vercelProjectId: z.string(),
@@ -56,9 +56,6 @@ export const contractSchema = z
     forbiddenVariables: strings,
     environments: z
       .object({
-        dev: z
-          .object({ projectRef: z.string(), siteUrl: z.string(), redirectAllowList: strings })
-          .strict(),
         prod: z
           .object({ projectRef: z.string(), siteUrl: z.string(), redirectAllowList: strings })
           .strict(),

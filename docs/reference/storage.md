@@ -20,7 +20,7 @@ Token ciphertext is bound to the owner UUID, token purpose, and key version as a
 
 ## Versioned migration
 
-Apply [`202609120001_owner_scoped_connections.sql`](../../supabase/migrations/202609120001_owner_scoped_connections.sql) to an empty dedicated Supabase project. The migration creates the two retained tables, foreign keys to `auth.users`, forced RLS, explicit authenticated policies, and security-invoker RPCs. It does not alter or drop any legacy table, so importing or retaining the old schema is non-destructive.
+Apply the migrations in `supabase/migrations`, starting with [`20261019000000_baseline.sql`](../../supabase/migrations/20261019000000_baseline.sql), to an empty dedicated Supabase project. The baseline creates the tables, foreign keys to `auth.users`, forced RLS, explicit authenticated policies, security-invoker RPCs and explicit grants. It does not alter or drop any legacy table, so importing or retaining the old schema is non-destructive.
 
 Run the RLS matrix against a disposable local Supabase instance (requires a running Docker engine):
 
