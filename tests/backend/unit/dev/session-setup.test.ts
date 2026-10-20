@@ -28,6 +28,7 @@ interface Fake extends Context {
   readonly lines: string[];
   readonly shown: string[];
   readonly appended: Record<string, string>;
+  readonly started: string[];
 }
 
 /** A checkout and machine; commands answer from a table, anything unlisted fails. */
@@ -39,6 +40,9 @@ function fake(overrides: {
   shownStatus?: number;
   /** Answers that replace earlier ones once a shown command succeeds, as an install would. */
   afterShown?: Record<string, string>;
+  root?: boolean;
+  /** Answers that replace earlier ones once a daemon starts. */
+  afterStart?: Record<string, string>;
 }): Fake {
   const files: Record<string, string> = {
     ".nvmrc": "24.21.0\n",
@@ -54,10 +58,12 @@ function fake(overrides: {
   const lines: string[] = [];
   const shown: string[] = [];
   const appended: Record<string, string> = {};
+  const started: string[] = [];
   return {
     lines,
     shown,
     appended,
+    started,
     run: (command, args) => {
       const key = [command, ...args].join(" ");
       const match = Object.keys(answers).find((prefix) => key.startsWith(prefix));
@@ -81,6 +87,12 @@ function fake(overrides: {
     nodeBin: "/node24/bin",
     nvmDir: overrides.nvmDir,
     chromeChannel: false,
+    root: overrides.root ?? false,
+    startDetached: (command, args, log) => {
+      started.push(`${[command, ...args].join(" ")} > ${log}`);
+      Object.assign(answers, overrides.afterStart);
+    },
+    daemonLog: "/tmp/dockerd.log",
   };
 }
 
@@ -194,6 +206,43 @@ describe("sessionSetup", () => {
     // Loading nvm normally switches to its default alias and exits nonzero when that is missing.
     expect(ctx.shown).toHaveLength(1);
     expect(ctx.shown[0]).toContain('nvm.sh" --no-use >/dev/null; nvm install "$2"');
+  });
+
+  describe("Docker", () => {
+    const DOCKERD = { "sh -c command -v dockerd": "/usr/bin/dockerd" };
+    const AWAIT = { "sh -c for _ in": "" };
+
+    it("starts an installed, stopped daemon as root and reports Docker reachable", () => {
+      const ctx = fake({
+        root: true,
+        answers: DOCKERD,
+        afterStart: { "docker info": "", ...AWAIT },
+      });
+      sessionSetup(ctx, { pathFile: undefined });
+      expect(ctx.started).toEqual(["dockerd > /tmp/dockerd.log"]);
+      expect(ctx.lines).toContain("Starting the Docker daemon.");
+      expect(ctx.lines.some((line) => line.includes("Docker reachable"))).toBe(true);
+    });
+
+    it("warns, pointing to the daemon's log, when it never answers", () => {
+      const ctx = fake({ root: true, answers: DOCKERD });
+      sessionSetup(ctx, { pathFile: undefined });
+      expect(ctx.lines).toContain(
+        "Warning: the Docker daemon did not answer; its output is in /tmp/dockerd.log."
+      );
+      expect(ctx.lines.some((line) => line.includes("Docker not reachable"))).toBe(true);
+    });
+
+    it("leaves Docker alone when it already runs, when not root, or when no engine is installed", () => {
+      for (const ctx of [
+        fake({ root: true, answers: { "docker info": "", ...DOCKERD } }),
+        fake({ root: false, answers: DOCKERD }),
+        fake({ root: true }),
+      ]) {
+        sessionSetup(ctx, { pathFile: undefined });
+        expect(ctx.started).toEqual([]);
+      }
+    });
   });
 
   it("never reads hosted configuration or prints the environment", () => {

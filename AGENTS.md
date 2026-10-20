@@ -16,7 +16,7 @@ Follow the [remote development contract](docs/remote-development.md): explore â†
 ## Commands
 
 ```text
-npm run session:setup # light setup for a cloud session or laptop: pinned Node, npm ci, which checks run here
+npm run session:setup # light setup for a cloud session or laptop: pinned Node, npm ci, Docker in a cloud container, which checks run here
 npm run agent:setup # bounded setup on the supported disposable Linux worker
 npm run doctor     # read-only: tools, which integrations this environment reaches, and their targets (no secrets shown)
 npm ci             # install (versions pinned in .nvmrc and packageManager)
