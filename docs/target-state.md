@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-19.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-10-20.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -494,7 +494,7 @@ flowchart LR
 2. **Deploy** (when CI passes on a `main` commit): refuse a commit older than the last deploy → check prod for drift → migrate the prod database → deploy that commit with the Vercel CLI → tag it and publish the release notes → smoke check. A drift mismatch stops it before anything changes; a failed migration deploys nothing; a failed deploy after a migration leaves the schema ahead of the code, which is safe, and is fixed forward. A smoke failure notifies the owner and links the manual rollback runbook. The owner restores the last verified good production deployment; automation does not change production traffic.
 3. One deploy runs at a time, in merge order. GitHub cancels queued runs in between; the newest commit contains them and applies all their migrations. Re-running CI on `main`'s newest commit starts a fresh *Deploy* run, which deploys it without a merge; re-running an old *Deploy* run is not used for this, because it can keep secrets that have since changed.
 
-**Secrets,** all in GitHub environments: the prod database password and a project-scoped Vercel token in `production`, and the `maintenance` role's password. No Supabase access token is needed. There is no scheduled drift check: every deploy checks first.
+**Secrets,** all in GitHub environments: the prod database password and a project-scoped Vercel token in `production`, and the `maintenance` role's password. No Supabase access token is needed. There is no scheduled drift check: every deploy checks first. Configuration capture can use a separate read-only, project-scoped `CONFIG_VERCEL_TOKEN` to read variable names and scopes with decryption disabled; it has no deployment authority and never enters the app runtime. Trusted connector-projected metadata works without it. The config checks stay off until their sources and scoped credentials are provisioned and verified.
 
 ## Operations
 

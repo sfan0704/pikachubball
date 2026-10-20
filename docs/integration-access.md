@@ -42,6 +42,8 @@ In each row, try the access paths in order: the agent's built-in connector, then
 
 Hosted configuration comparison (provider, redirect allowlist, Vercel variables) belongs to CAR-100's config checks, and release activation to CAR-83's runbook; this page doesn't duplicate them.
 
+`config:capture` can use a separate `CONFIG_VERCEL_TOKEN` with read access to the basketball project/team to acquire variable names and scopes directly, without decryption. It never grants deployment authority or enters app runtime configuration. A trusted connector projection is still supported when the worker has no token. See [configuration checks](runbooks/configuration-checks.md) for acquisition and redaction rules; workflow activation remains a separate, unverified checkpoint.
+
 The [configuration-check runbook](runbooks/configuration-checks.md) defines the metadata-only input contract, safe database projections and migration-built schema reference. Auth configuration must come from a selective non-secret metadata source; the full Management API response is not an approved input. Vercel variable values are never requested or accepted. Missing acquisition capability remains a failed/unavailable check.
 
 ## When access is missing

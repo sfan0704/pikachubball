@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { collectDatabase } from "./collect.mts";
 import { contractSchema, snapshotSchema, type Snapshot } from "./contracts.mts";
 import { repositoryInputs } from "./repository.mts";
+import { collectVercel } from "./vercel.mts";
 
 try {
   const [, , environment, output, authFile, vercelFile] = process.argv;
@@ -15,9 +16,12 @@ try {
   const auth = authFile
     ? snapshotSchema.shape.auth.unwrap().parse(JSON.parse(readFileSync(authFile, "utf8")))
     : null;
+  const vercelToken = process.env.CONFIG_VERCEL_TOKEN;
   const vercel = vercelFile
     ? snapshotSchema.shape.vercel.unwrap().parse(JSON.parse(readFileSync(vercelFile, "utf8")))
-    : null;
+    : vercelToken
+      ? await collectVercel(contract, vercelToken)
+      : null;
   let database: Pick<Snapshot, "providers" | "database"> = { providers: null, database: null };
   const token = process.env.CONFIG_SUPABASE_ACCESS_TOKEN;
   if (token) {
