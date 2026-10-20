@@ -29,6 +29,8 @@ interface Fake extends Context {
   readonly shown: string[];
   readonly appended: Record<string, string>;
   readonly started: string[];
+  /** Every command run through `run`, in order. */
+  readonly ran: string[];
 }
 
 /** A checkout and machine; commands answer from a table, anything unlisted fails. */
@@ -59,13 +61,16 @@ function fake(overrides: {
   const shown: string[] = [];
   const appended: Record<string, string> = {};
   const started: string[] = [];
+  const ran: string[] = [];
   return {
     lines,
     shown,
     appended,
     started,
+    ran,
     run: (command, args) => {
       const key = [command, ...args].join(" ");
+      ran.push(key);
       const match = Object.keys(answers).find((prefix) => key.startsWith(prefix));
       return match === undefined
         ? { status: 1, stdout: "" }
@@ -222,6 +227,12 @@ describe("sessionSetup", () => {
       expect(ctx.started).toEqual(["dockerd > /tmp/dockerd.log"]);
       expect(ctx.lines).toContain("Starting the Docker daemon.");
       expect(ctx.lines.some((line) => line.includes("Docker reachable"))).toBe(true);
+    });
+
+    it("clears a stale pid file before starting, so a resumed container's daemon starts", () => {
+      const ctx = fake({ root: true, answers: DOCKERD });
+      sessionSetup(ctx, { pathFile: undefined });
+      expect(ctx.ran).toContain("sh -c pgrep -x dockerd >/dev/null || rm -f /var/run/docker.pid");
     });
 
     it("warns, pointing to the daemon's log, when it never answers", () => {
