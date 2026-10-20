@@ -302,6 +302,13 @@ describe("profileSummary", () => {
     ]);
   });
 
+  it("points to agent:setup for Chromium rather than leaving browser to CI", () => {
+    expect(profileSummary({ docker: true, chromium: false })).toEqual([
+      "Validate profiles here: static, unit, build, database",
+      "Docker is here: `npm run agent:setup` builds and smoke-tests this checkout's stack and installs Chromium, so browser runs here after it.",
+    ]);
+  });
+
   it("runs everything here with Docker and Chromium, pointing to agent:setup", () => {
     const lines = profileSummary({ docker: true, chromium: true });
     expect(lines[0]).toBe("Validate profiles here: static, unit, build, database, browser");

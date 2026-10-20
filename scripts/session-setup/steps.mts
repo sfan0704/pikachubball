@@ -248,12 +248,14 @@ export function profileSummary(caps: { docker: boolean; chromium: boolean }): st
   if (caps.docker) here.push("database");
   else ci.push("database (needs Docker)");
   if (caps.docker && caps.chromium) here.push("browser");
-  else ci.push(`browser (needs ${caps.docker ? "Chromium" : "Docker"})`);
+  else if (!caps.docker) ci.push("browser (needs Docker)");
   const lines = [`Validate profiles here: ${here.join(", ")}`];
   if (ci.length > 0) lines.push(`Left to CI: ${ci.join(", ")}; review:start needs Docker too`);
   if (caps.docker) {
+    // agent:setup installs Chromium, so with Docker here the browser profile needn't wait for CI.
+    const chromium = caps.chromium ? "" : " and installs Chromium, so browser runs here after it";
     lines.push(
-      "Docker is here: `npm run agent:setup` builds and smoke-tests this checkout's stack."
+      `Docker is here: \`npm run agent:setup\` builds and smoke-tests this checkout's stack${chromium}.`
     );
   }
   return lines;
