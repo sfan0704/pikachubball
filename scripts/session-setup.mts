@@ -1,11 +1,13 @@
 // `npm run session:setup`: the light, always-safe setup for a cloud session or
 // a laptop, the same for every provider. It checks capabilities, never the
 // provider: the pinned Node and npm, then `npm ci` unless node_modules already
-// matches the lockfile, then which validate profiles run here. It never starts
-// a stack, reads hosted configuration or calls a hosted service. Providers'
+// matches the lockfile, starts an installed but stopped Docker daemon when it runs
+// as root (a cloud container), then which validate profiles run here. It never
+// starts a stack, reads hosted configuration or calls a hosted service. Providers'
 // adapters only call it (docs/agent-setup.md, Cloud sessions).
-import { spawnSync } from "node:child_process";
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { appendFileSync, existsSync, openSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseOptions, sessionSetup, type Context } from "./session-setup/steps.mts";
@@ -64,6 +66,13 @@ const ctx: Context = {
   nodeBin: dirname(process.execPath),
   nvmDir: NVM_DIRS.find((dir) => existsSync(join(dir, "nvm.sh"))),
   chromeChannel: Boolean(process.env.PW_CHANNEL),
+  root: process.getuid?.() === 0,
+  startDetached: (command, args, log) => {
+    // Detached and unreferenced, so the daemon outlives setup and the hook can finish.
+    const out = openSync(log, "a");
+    spawn(command, args, { detached: true, stdio: ["ignore", out, out] }).unref();
+  },
+  daemonLog: join(tmpdir(), "dockerd.log"),
 };
 
 try {

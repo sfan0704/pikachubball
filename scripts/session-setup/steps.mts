@@ -28,6 +28,12 @@ export interface Context {
   readonly nvmDir: string | undefined;
   /** Whether a locally installed Chrome stands in for Playwright's Chromium (PW_CHANNEL). */
   readonly chromeChannel: boolean;
+  /** Whether setup runs as root, as in a cloud container, so it may start a daemon itself. */
+  readonly root: boolean;
+  /** Starts a long-running command in the background, its output going to `log`. */
+  readonly startDetached: (command: string, args: readonly string[], log: string) => void;
+  /** Where a daemon setup starts writes its output. */
+  readonly daemonLog: string;
 }
 
 /** The Node setup uses: its version, its bin directory, and whether it is already on PATH. */
@@ -199,6 +205,25 @@ export function install(ctx: Context, node: Node): void {
   if (ctx.runShown(`${node.bin}/npm`, ["ci"], node.bin) !== 0) throw new Error("npm ci failed.");
 }
 
+// Polled in the shell: dockerd takes a few seconds before its socket answers.
+const AWAIT_DOCKER =
+  "for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1";
+
+/**
+ * Starts the Docker daemon when this machine has the engine installed but not
+ * running and setup runs as root: a cloud container, where nothing else starts
+ * it. A laptop's Docker belongs to its owner and is left alone.
+ */
+export function startDocker(ctx: Context): void {
+  if (ctx.run("docker", ["info"]).status === 0) return;
+  if (!ctx.root || ctx.run("sh", ["-c", "command -v dockerd"]).status !== 0) return;
+  ctx.log("Starting the Docker daemon.");
+  ctx.startDetached("dockerd", [], ctx.daemonLog);
+  if (ctx.run("sh", ["-c", AWAIT_DOCKER]).status !== 0) {
+    ctx.log(`Warning: the Docker daemon did not answer; its output is in ${ctx.daemonLog}.`);
+  }
+}
+
 /** Docker and Chromium, which decide the validate profiles that can run here. */
 export function capabilities(ctx: Context, node: Node): { docker: boolean; chromium: boolean } {
   const docker = ctx.run("docker", ["info"]).status === 0;
@@ -246,6 +271,7 @@ export function sessionSetup(ctx: Context, options: Options): void {
   const node = resolveNode(ctx, pinned.node);
   const npm = checkNpm(ctx, node, pinned.npm);
   install(ctx, node);
+  startDocker(ctx);
   const caps = capabilities(ctx, node);
   exportNode(ctx, node, options);
   ctx.log(
