@@ -52,3 +52,26 @@ Whether a worker given only a Linear issue ID and this repository can take the i
 ## Result
 
 Every acceptance criterion was met in the two runs, with the deviations above: a fresh start from the issue ID, bootstrap and full validation in the session itself, a pull request with green CI and an In Review record that stopped before merge, and a resume by a different session from the repository, Linear and the pull request alone. No missing capability needed a follow-up issue.
+
+## Run 3: repeat of the clean start, 2026-10-21
+
+**Worker.** A new Claude Code cloud session in a fresh container, started 02:42 UTC from a project thread, asked to run this audit again from CAR-131. It had the Linear and GitHub connectors and no environment variables or secrets. Source commit `69b0b2a3ddc8542ed5bcaba86b6f4bc518fc854e` (run 2's merge). No change to the application was needed, so this run checks setup and validation only.
+
+| Step | Command or action | Time | Result |
+| --- | --- | --- | --- |
+| Session setup | SessionStart hook | did not run | The shell had the image's Node 22.22.0 and npm 10.9.4, no Docker daemon and no Chromium; `node_modules` was already installed |
+| Doctor, before setup | `npm run doctor` | 2 s | Not ready: Node and npm differ from the pins, Docker unavailable |
+| Session setup, by hand | `npm run session:setup`, then `nvm use` | 13 s | Node 24.21.0, npm 11.17.0, Docker 29.9.1 started; `node_modules` already matched the lock file |
+| Doctor | `npm run doctor` | 2 s | OK to work; same warnings as runs 1 and 2 |
+| Bootstrap | `npm run agent:setup` | 224 s | Passed: Chromium, build, migrations, seeds, health and synthetic sign-in |
+| Full validation | `npm run validate` | 228 s | Passed every check: lint, format, knip, types, migrations, unit, build, bundle, database (80 s), browser (42 tests, 99 s) |
+
+**Interventions.** None by a person.
+
+**Gaps and deviations.**
+
+- *Setup hook skipped.* This host started Claude Code reading user settings only (`--setting-sources user`), so the repository's SessionStart hook in `.claude/settings.json` never ran. Nothing in the session said so; `npm run doctor` showed it as wrong Node and npm and no Docker. Running `npm run session:setup` by hand, then `nvm use` because no `--path-file` was given, recovered fully, and the [Cloud sessions](../agent-setup.md#cloud-sessions) section now says to do that. Every later step matched runs 1 and 2.
+- *Context beyond the issue.* As before, the host injected the shared project memory, and the request came with a short note from the project's coordinator.
+- *Access wider than needed.* Unchanged: admin GitHub access, Linear through the connector only, and no Vercel token.
+
+The result above still holds: the workflow passes from a clean start once session setup has run.
