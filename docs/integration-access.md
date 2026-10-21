@@ -19,7 +19,7 @@ Work must point at these identities; `npm run doctor` reports a **mismatch** oth
 | Integration | Identity |
 | --- | --- |
 | GitHub | `sfan0704/pikachubball` |
-| Linear | team `CAR` (projects "Pikachu Basketball — …") |
+| Linear | team `FAN` (Fantasy Moose; projects "Pikachu Basketball — …") |
 | Supabase prod | `fpdwtpwpmxsbgjxizuxa` (Pikachu Basketball), privileged only |
 | Vercel | project `prj_izIWbhRIRM77Kij7YoH8e8ciBkPT` in team `team_h0Yl4tlqpwkycY1Wl2ZppyOo` |
 
@@ -31,7 +31,7 @@ In each row, try the access paths in order: the agent's built-in connector, then
 
 | Operation | Tier | Connector → CLI → API | Credential and scope | How it's supplied |
 | --- | --- | --- | --- | --- |
-| Read an issue, its comments and relations; comment; change its state | Task | Linear connector → none → GraphQL `api.linear.app` | `LINEAR_API_KEY`, a personal key with access to team CAR | The session's connector, or an environment variable |
+| Read an issue, its comments and relations; comment; change its state | Task | Linear connector → none → GraphQL `api.linear.app` | `LINEAR_API_KEY`, a personal key with access to team FAN | The session's connector, or an environment variable |
 | Push the issue branch; open or update its pull request | Task | GitHub connector → `gh` → REST `api.github.com` | `gh auth login`, or `GITHUB_TOKEN` with contents:write and pull_requests:write on this repository only | `gh` keychain, or an environment variable |
 | Read checks and their logs | Task | GitHub connector → `gh pr checks`, `gh run view --log` → REST | As above, read is enough | As above |
 | Deployment status of a commit (preview, prod) | Task | `gh api repos/sfan0704/pikachubball/deployments` (Vercel reports to GitHub) → Vercel connector → REST `api.vercel.com` | GitHub access as above; no Vercel token needed | As above |

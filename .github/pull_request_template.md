@@ -1,6 +1,6 @@
 ## Linear issue
 
-<!-- e.g. CAR-123 -->
+<!-- e.g. FAN-123 -->
 
 ## What changed
 
