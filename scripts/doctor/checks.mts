@@ -6,7 +6,7 @@
 /** The identities this repository's work must target (docs/integration-access.md). */
 export const TARGETS = {
   repository: "sfan0704/pikachubball",
-  linearTeam: "CAR",
+  linearTeam: "FAN",
   supabaseProd: "fpdwtpwpmxsbgjxizuxa",
   vercelProject: "prj_izIWbhRIRM77Kij7YoH8e8ciBkPT",
   vercelTeam: "team_h0Yl4tlqpwkycY1Wl2ZppyOo",
@@ -188,7 +188,7 @@ export async function checkLinear(ctx: Context): Promise<Finding> {
       area: "linear",
       status: "unavailable",
       detail: `HTTP ${response.status}`,
-      action: "Check the key is valid and can read the CAR team",
+      action: `Check the key is valid and can read the ${TARGETS.linearTeam} team`,
     };
   }
   const nodes =
@@ -200,7 +200,7 @@ export async function checkLinear(ctx: Context): Promise<Finding> {
         area: "linear",
         status: "mismatch",
         detail: `key can't see team ${TARGETS.linearTeam}`,
-        action: "Use a key from the workspace that holds CAR",
+        action: `Use a key from the workspace that holds ${TARGETS.linearTeam}`,
       };
 }
 

@@ -125,7 +125,7 @@ describe("checkLinear", () => {
     expect((await checkLinear(withKey(httpReturning(401, {})))).status).toBe("unavailable");
   });
 
-  it("flags a key from a workspace without the CAR team", async () => {
+  it("flags a key from a workspace without the FAN team", async () => {
     const finding = await checkLinear(
       withKey(httpReturning(200, { data: { teams: { nodes: [] } } }))
     );
@@ -135,7 +135,7 @@ describe("checkLinear", () => {
 
   it("passes a key that can read the team", async () => {
     const finding = await checkLinear(
-      withKey(httpReturning(200, { data: { teams: { nodes: [{ key: "CAR" }] } } }))
+      withKey(httpReturning(200, { data: { teams: { nodes: [{ key: "FAN" }] } } }))
     );
 
     expect(finding.status).toBe("ok");
