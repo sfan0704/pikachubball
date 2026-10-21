@@ -1,7 +1,8 @@
-import { appendFileSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { allPassed, compare } from "./compare.mts";
 import { baselineSchema, contractSchema, snapshotSchema } from "./contracts.mts";
+import { printReport } from "./report.mts";
 import { repositoryInputs } from "./repository.mts";
 
 function readJson(path: string): unknown {
@@ -19,14 +20,7 @@ try {
     ...repositoryInputs(root),
     now: new Date(),
   });
-  const report = results.map((r) => `${r.outcome.padEnd(11)} ${r.check}`).join("\n");
-  console.log(report);
-  if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(
-      process.env.GITHUB_STEP_SUMMARY,
-      `## Configuration checks\n\n\`\`\`text\n${report}\n\`\`\`\n`
-    );
-  }
+  printReport("Configuration checks", results);
   process.exitCode = allPassed(results) ? 0 : 1;
 } catch {
   // Parse errors may contain untrusted input, including accidental credentials.
