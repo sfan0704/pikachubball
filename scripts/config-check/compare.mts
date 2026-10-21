@@ -58,6 +58,15 @@ function variablesMatch(snapshot: Snapshot, contract: Contract): boolean | null 
   );
 }
 
+function inputResults(snapshot: Snapshot, contract: Contract, now: Date): Result[] {
+  const expected = contract.environments[snapshot.environment];
+  const age = now.getTime() - Date.parse(snapshot.capturedAt);
+  return [
+    result("project identity", snapshot.projectRef === expected.projectRef),
+    result("fresh metadata", age >= -300_000 && age <= 86_400_000),
+  ];
+}
+
 /** Compare each promised criterion; reports never echo observed metadata or values. */
 export function compare(
   snapshot: Snapshot,
@@ -66,11 +75,8 @@ export function compare(
   context: Context
 ): Result[] {
   const expected = contract.environments[snapshot.environment];
-  const age = context.now.getTime() - Date.parse(snapshot.capturedAt);
-  const identity = snapshot.projectRef === expected.projectRef;
-  const fresh = age >= -300_000 && age <= 86_400_000;
-  const inputs = [result("project identity", identity), result("fresh metadata", fresh)];
-  if (!identity || !fresh)
+  const inputs = inputResults(snapshot, contract, context.now);
+  if (!allPassed(inputs))
     return [
       ...inputs,
       ...[
@@ -101,6 +107,21 @@ export function compare(
     ),
     result("schema and migrations", schema),
     result("Vercel variables and isolation", variablesMatch(snapshot, contract)),
+  ];
+}
+
+/**
+ * The checks the Deploy workflow runs after each deploy. Its drift check
+ * already covers the schema, and Auth's URLs are read by hand: the only API
+ * for them needs an account-wide Supabase token.
+ */
+export function compareAfterDeploy(snapshot: Snapshot, contract: Contract, now: Date): Result[] {
+  const inputs = inputResults(snapshot, contract, now);
+  const trusted = allPassed(inputs);
+  return [
+    ...inputs,
+    result("Yahoo provider and scopes", trusted ? providerMatches(snapshot.providers) : null),
+    result("Vercel variables and isolation", trusted ? variablesMatch(snapshot, contract) : null),
   ];
 }
 

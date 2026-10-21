@@ -2,6 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-10-21 · Every deploy checks the Yahoo sign-in provider and the Vercel variable scopes after its smoke check, with the database password and Vercel token it already holds; Auth's site URL and redirect allowlist stay a manual check (no Supabase access token) · CAR-100 (PR pending)
 - 2026-10-20 · Optional read-only Vercel metadata acquisition checks project/team identity and saves only variable names and scopes, without decryption or deployment authority · #115
 - 2026-10-19 · A deploy without a merge starts by re-running CI on `main`'s newest commit (a fresh *Deploy* run with current secrets), not by re-running an old *Deploy* run · CAR-142 (PR pending)
 - 2026-10-19 · Deploy on merge: pull requests run checks only (plus a migration order check); when CI passes on a `main` commit, the Deploy workflow checks drift, migrates and deploys that exact commit with the Vercel CLI. No `production` branch, deploy key, approval or manual release · CAR-140 (PR pending)

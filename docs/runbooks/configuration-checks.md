@@ -49,9 +49,17 @@ The collector first checks the project ID and account/team ID using `GET /v9/pro
 
 Platform responses can include encrypted or readable Config values even with decryption disabled. They stay transient in the collector: the saved snapshot contains only project/team IDs and each variable's `key`, `target` and `gitBranch`. No full response, value field or platform error detail is logged or saved. Missing branch metadata is normalized to `null`; missing variable lists or scope metadata fail. Vercel connector read access was verified on 2026-10-16, superseding the earlier 403 handoff. This does not establish that `CONFIG_VERCEL_TOKEN` has been provisioned for unattended capture.
 
+## After every deploy
+
+The *Deploy* workflow runs `npm run release:config` after its smoke check ([release runbook](release.md)). It needs no credential beyond the deploy's own: the provider projection in `providers.sql` runs in a read-only transaction through the session pooler with `SUPABASE_DB_PASSWORD`, and the Vercel collector above runs with the deploy's `VERCEL_TOKEN`. It checks project identity, freshness, `Yahoo provider and scopes` and `Vercel variables and isolation`, prints only their outcomes and fails the run on anything but `passed`, which notifies the owner through GitHub. The schema is the drift check's job, earlier in the same run.
+
+It does not check the site URL or redirect allowlist: Supabase's only API for them takes an account-wide access token, which the workflows don't hold. Check those by hand with the capture above whenever you change Auth settings.
+
+To see a mismatch fail it (the seeded-mismatch drill), change one checked setting in a way that doesn't break sign-in, for example add a variable named `CONFIG_VERCEL_TOKEN` with a dummy value to Vercel's Preview scope (forbidden, and read by nothing), then re-run CI on `main`'s newest commit so a fresh *Deploy* runs: its last step reports `mismatch    Vercel variables and isolation`. Remove the variable and re-run again to see it pass.
+
 ## Automation and acceptance boundary
 
-The comparator, read-only database/Vercel capture, isolated reference generation and seeded mismatch tests are implemented. Hosted Auth metadata acquisition and deployment/scheduled workflow activation remain pending a safe selective Auth projection and the required scoped CI credentials. This runbook does not claim unattended hosted checks are active. Attach source commit, capture time, acquisition path, schema reference and sanitized check summary to Linear/PR evidence before claiming hosted verification.
+The comparator, read-only database/Vercel capture, isolated reference generation and seeded mismatch tests are implemented, and the provider and Vercel checks run after every deploy. Hosted Auth URL acquisition is not automated. Attach source commit, capture time, acquisition path, schema reference and sanitized check summary to Linear/PR evidence before claiming hosted verification.
 
 Existing CI runs the mismatch tests; its database job also injects catalog drift inside rolled-back transactions (column, RLS, policy, grant, trigger, function, constraint and extra table). No real Yahoo call or hosted write occurs.
 
