@@ -44,6 +44,7 @@
     "config:capture": "node scripts/config-check/capture.mts",
     "release:drift": "bash scripts/release/drift-check.sh",
     "release:migrate": "node scripts/release/migrate.mts",
+    "release:config": "node scripts/release/config-cli.mts",
     "check:migrations": "node scripts/release/migration-order.mts"
   },
   "dependencies": {

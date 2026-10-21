@@ -29,6 +29,7 @@ Merge a pull request. When CI passes on the merged commit, *Deploy* runs for exa
 4. **Deploys this commit** with the Vercel CLI (`vercel build --prod` and `vercel deploy --prebuilt --prod`), never the branch's latest commit, and sets `DEPLOYED_COMMIT` so `/api/health` reports it.
 5. **Tags it** `vYYYY.M.N` and publishes release notes generated from the merged pull request titles.
 6. **Smoke checks production** at `https://pikachubball.vercel.app`, expecting this commit. A failure links the [manual rollback runbook](restore-and-rollback.md); automation never changes production traffic.
+7. **Checks production's configuration** (`npm run release:config`): the Yahoo sign-in provider and scopes, read in a read-only transaction with the same database password, and the Vercel variable names and scopes, read with the same Vercel token and decryption off. A `mismatch` fails the run, which notifies the owner; the app is already live, so see [configuration checks](configuration-checks.md) for what each check means and fix the setting by hand.
 
 Only one deploy runs at a time, in merge order. When several merges queue, GitHub cancels the pending runs in between; the newest commit contains every earlier one and applies all their migrations.
 

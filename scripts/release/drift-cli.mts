@@ -6,7 +6,6 @@
 //
 // Every query runs in a read-only transaction. Nothing printed holds a row,
 // a value or a credential: only check names and outcomes.
-import { execFileSync } from "node:child_process";
 import { appendFileSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { repositoryInputs } from "../config-check/repository.mts";
@@ -19,54 +18,20 @@ import {
   replayVersions,
   writeReplayStack,
   type DatabaseState,
-  type ReadOnlyQuery,
 } from "./drift.mts";
-import { productionDatabase } from "./production-database.mts";
+import { productionQuery, psql } from "./psql.mts";
 
-// The production database runs Postgres 17; its client reads the catalog the same way.
-const POSTGRES_IMAGE = "postgres:17";
 const root = resolve(import.meta.dirname, "../..");
-
-function psql(
-  before: readonly string[],
-  after: readonly string[],
-  env?: NodeJS.ProcessEnv
-): ReadOnlyQuery {
-  return async (sql) => {
-    const output = execFileSync(
-      "docker",
-      [
-        ...before,
-        "psql",
-        "-qAt",
-        "-v",
-        "ON_ERROR_STOP=1",
-        "-c",
-        "begin transaction read only",
-        "-c",
-        sql,
-        "-c",
-        "commit",
-        ...after,
-      ],
-      { encoding: "utf8", timeout: 120_000, env, stdio: ["ignore", "pipe", "inherit"] }
-    );
-    return output.split("\n").filter((line) => line !== "");
-  };
-}
 
 function readState(path: string): DatabaseState {
   return databaseStateSchema.parse(JSON.parse(readFileSync(path, "utf8")));
 }
 
 async function readProduction(output: string): Promise<void> {
-  const database = productionDatabase(root, process.env);
-  // The password goes to the container through the environment, never as an argument.
-  const query = psql(["run", "--rm", "-e", "PGPASSWORD", POSTGRES_IMAGE], [database.url], {
-    ...process.env,
-    PGPASSWORD: database.password,
-  });
-  const state = await readDatabaseState(query, repositoryInputs(root).query);
+  const state = await readDatabaseState(
+    productionQuery(root, process.env),
+    repositoryInputs(root).query
+  );
   writeFileSync(output, JSON.stringify(state, null, 2) + "\n", { mode: 0o600 });
   console.log(`Production records ${state.migrationVersions.length} migrations.`);
 }
