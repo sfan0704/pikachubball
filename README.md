@@ -81,6 +81,7 @@ For configuration and verification, see:
 - [Yahoo authentication](docs/reference/authentication.md)
 - [Owner-scoped storage](docs/reference/storage.md)
 - [Infrastructure inventory](docs/reference/infrastructure-inventory.md)
+- [Yahoo data for daily stats](docs/reference/yahoo-daily-stats-data.md)
 
 ## Architecture and contributing
 
