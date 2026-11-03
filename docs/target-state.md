@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-10-21.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-11-03.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -501,7 +501,7 @@ flowchart LR
 - **Scheduled work runs in GitHub Actions:** the weekly keep-alive and the weekly schema dump. None of it calls Yahoo. The app does work only when a user makes a request.
 - **Staying awake.** The weekly keep-alive queries the prod database so the free project doesn't pause in the off-season. It and the schema dump run unattended as a `maintenance` database role that reads no rows and can change nothing.
 - **Season rollover.** When every stored league is finished, the next visit refreshes the user's leagues from Yahoo, which picks up the new season; while Yahoo still lists only finished leagues, it asks again at most once a day. A league's stored row is removed once Yahoo no longer lists it.
-- **Observability.** Vercel keeps the function logs. Each request's line carries its request id, route, status, duration and Yahoo call count, so a user's error message can be traced to its log line. Yahoo rate-limit errors and slow requests are the signals reviewed for the revisit triggers.
+- **Observability.** Vercel keeps the function logs. Each request's line carries its request id, route, status, duration and Yahoo call count, and a failed request's line adds its error code and, for a Yahoo response that fails validation, the failing schema paths (never values), so a user's error message can be traced to its log line and its cause. Yahoo rate-limit errors and slow requests are the signals reviewed for the revisit triggers.
 - **Key rotation.** Each stored token records its encryption key version. Rotating sets a new `ENCRYPTION_KEY` and moves the old one to `ENCRYPTION_KEY_PREVIOUS`; new writes use the new key, tokens are re-encrypted at their next refresh, and the previous key is removed once no row uses it.
 - **Notifications.** Failed checks, deploys, smoke checks and config checks notify the owner through GitHub. There is no paging.
 - **Runbooks** in `docs/runbooks/` cover: releases, the production reset, Yahoo secret exposure, encryption key rotation, restore and rollback, Yahoo sign-in provider setup, and the season rollover check.

@@ -15,6 +15,7 @@ import {
 } from "../../../server/fantasy/fantasy-data-source";
 import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import { parseSeasonTable } from "../../../server/fantasy/league-tables";
+import { YahooResponseError } from "../../../server/fantasy/yahoo-shapes";
 
 const verifiedClient = {
   rpc: async () => ({ data: true, error: null }),
@@ -120,6 +121,36 @@ describe("the request context, end to end", () => {
       status: 200,
       durationMs: expect.any(Number),
       yahooCalls: 2,
+    });
+  });
+
+  it("puts the error code and the failed response paths on a failed request's line", async () => {
+    const logger = recordingLogger();
+    const dependencies = buildTestDependencies({
+      logger,
+      createSupabaseClient: () => verifiedClient,
+      createOwnerStorage: () => ({ ownsLeague: async () => true }) as unknown as OwnerScopedStorage,
+      createFantasyDataSource: () => ({
+        listLeagues: async () => [],
+        getSeason: async () => {
+          throw new YahooResponseError(["league.0.name: Required"]);
+        },
+        getWeek: async () => {
+          throw new YahooResponseError(["league.0.name: Required"]);
+        },
+      }),
+    });
+    const app = createApp(dependencies);
+    app.use(createAppErrorHandler(dependencies));
+
+    const response = await request(app).get("/api/leagues/466.l.12345/season");
+
+    expect(response.status).toBe(503);
+    const [line] = logger.lines.filter((entry) => entry.message === "request");
+    expect(line?.fields).toMatchObject({
+      status: 503,
+      code: "YAHOO_UNAVAILABLE",
+      problems: ["league.0.name: Required"],
     });
   });
 

@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import type { Provider, Session, SupabaseClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../middleware/error-handler";
-import { AppError, UnauthorizedError, ValidationError } from "../../../shared/api/errors";
+import { UnauthorizedError, ValidationError } from "../../../shared/api/errors";
 import type { HostedAuthConfig } from "../../config/config";
 import {
   applyAuthNoStore,
@@ -12,6 +12,7 @@ import {
 } from "../auth/supabase-auth";
 import type { ServerDependencies } from "../dependencies";
 import { createRequestContext, type RequestContext } from "../request-context";
+import { failureLogFields } from "../failure-log-fields";
 import { syncLeagues } from "../../services/leagues-service";
 
 // Yahoo access tokens last one hour; the Supabase session doesn't report the
@@ -38,9 +39,10 @@ async function syncLeaguesAfterSignIn(
   try {
     await syncLeagues(context.storage, createFantasyDataSource(context.yahooClient));
   } catch (error) {
-    context.logger.warn("League sync at sign-in failed; retried on first request", {
-      code: error instanceof AppError ? error.code : "UNEXPECTED",
-    });
+    context.logger.warn(
+      "League sync at sign-in failed; retried on first request",
+      failureLogFields(error)
+    );
   }
 }
 

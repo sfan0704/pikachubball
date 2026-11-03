@@ -1,5 +1,6 @@
 import type { Request } from "express";
 import { UnauthorizedError } from "../../shared/api/errors";
+import type { FailureLogFields } from "./failure-log-fields";
 import type { YahooSessionIdentity } from "./auth/supabase-auth";
 import type { YahooApiClient } from "../fantasy/yahoo/yahoo-api-client";
 import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
@@ -13,6 +14,8 @@ export interface RequestScope {
   readonly logger: Logger;
   /** Yahoo HTTP attempts made for this request; logged when it finishes. */
   readonly yahooCalls: { count: number };
+  /** Why the request failed, set by the error handler; logged when it finishes. */
+  readonly failure: { fields?: FailureLogFields };
 }
 
 /** Everything a signed-in request needs, built once by the auth middleware and passed explicitly. */

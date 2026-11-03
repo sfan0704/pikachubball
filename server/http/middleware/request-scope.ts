@@ -13,7 +13,8 @@ export interface RequestScopeDependencies {
 /**
  * Gives every request an id (returned in X-Request-Id), a logger that carries
  * it, and a Yahoo call counter, then writes one structured line when the
- * response finishes: id, method, route pattern, status, duration and Yahoo calls.
+ * response finishes: id, method, route pattern, status, duration, Yahoo calls
+ * and, for a failed request, its error code and the response paths that failed.
  * It logs the route pattern, never the URL or any body, so ids and tokens stay out.
  */
 export function createRequestScope({ logger, clock }: RequestScopeDependencies) {
@@ -23,6 +24,7 @@ export function createRequestScope({ logger, clock }: RequestScopeDependencies) 
       requestId,
       logger: logger.child({ requestId }),
       yahooCalls: { count: 0 },
+      failure: {},
     };
     req.scope = scope;
     res.setHeader("X-Request-Id", requestId);
@@ -39,6 +41,7 @@ export function createRequestScope({ logger, clock }: RequestScopeDependencies) 
         status: res.statusCode,
         durationMs: clock.now() - start,
         yahooCalls: scope.yahooCalls.count,
+        ...scope.failure.fields,
       });
     });
 
