@@ -30,6 +30,12 @@ const gameSchema = z.object({
   is_offseason: yahooFlag,
 });
 
+/** A week number, or undefined when Yahoo leaves it out or empty (never read as week 0). */
+const yahooWeek = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  yahooInteger.optional()
+);
+
 const teamSchema = z.object({
   team: fragments(z.object({ team_key: z.string().regex(/^\d+\.l\.\d+\.t\.\d+$/) })),
 });
@@ -41,8 +47,9 @@ const leagueSchema = z.object({
       name: z.string().min(1),
       draft_status: z.string(),
       start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      current_week: yahooInteger,
-      end_week: yahooInteger,
+      // Some older leagues come without week numbers; then only the flags say whether it finished.
+      current_week: yahooWeek,
+      end_week: yahooWeek,
       // Yahoo sends the flag only for a finished league.
       is_finished: yahooFlag.optional(),
     })
@@ -76,14 +83,18 @@ const leaguesSchema = userGamesSchema(
 type Game = z.infer<typeof gameSchema>;
 type League = z.infer<typeof leagueSchema>["league"];
 
+function pastEndWeek({ current_week, end_week }: League): boolean {
+  return current_week !== undefined && end_week !== undefined && current_week > end_week;
+}
+
 /**
  * Finished: Yahoo marks the league or its game over, or the current week is
- * past the end week. Preseason: not drafted yet, not started, or the game is
+ * past the end week (when Yahoo gives both). Preseason: not drafted yet, not started, or the game is
  * between seasons. Yahoo's own `current_date` stays at the start date until
  * the season begins, so it can't tell whether a league has started.
  */
 function statusOf(game: Game, league: League, today: string): LeagueStatus {
-  if (league.is_finished || game.is_game_over || league.current_week > league.end_week) {
+  if (league.is_finished || game.is_game_over || pastEndWeek(league)) {
     return "finished";
   }
   if (league.draft_status === "predraft" || league.start_date > today || game.is_offseason) {
