@@ -22,6 +22,7 @@ import { AppError } from "../../../../shared/api/errors";
 import type { Logger } from "../../../../server/utils/logger";
 import type { OwnerScopedStorage } from "../../../../server/storage/yahoo-token-storage";
 import type { DiscoveredLeague } from "../../../../server/fantasy/user-leagues";
+import { YahooResponseError } from "../../../../server/fantasy/yahoo-shapes";
 
 const errorHandler = createErrorHandler({ logger: silentLogger, exposeErrorDetails: false });
 const auth = buildTestConfig().auth;
@@ -314,6 +315,34 @@ describe("Supabase Yahoo auth boundary", () => {
     expect(replaceUserLeagues).not.toHaveBeenCalled();
     expect(logger.lines).toEqual([
       expect.objectContaining({ level: "warn", fields: { code: "YAHOO_UNAVAILABLE" } }),
+    ]);
+  });
+
+  it("logs which response paths failed when the league sync can't read Yahoo's answer", async () => {
+    const logger = recordingLogger();
+    const { controller } = buildController(
+      fakeClient({
+        exchangeCodeForSession: vi
+          .fn()
+          .mockResolvedValue({ data: { session: yahooSession() }, error: null }),
+      }),
+      {
+        replaceUserLeagues: vi.fn(),
+        listLeagues: vi
+          .fn()
+          .mockRejectedValue(new YahooResponseError(["fantasy_content.users.0.user: Required"])),
+      }
+    );
+
+    await request(serve("/callback", controller.completeYahooLogin, logger)).get(
+      "/callback?code=one-time-code"
+    );
+
+    expect(logger.lines).toEqual([
+      expect.objectContaining({
+        level: "warn",
+        fields: { code: "YAHOO_UNAVAILABLE", problems: ["fantasy_content.users.0.user: Required"] },
+      }),
     ]);
   });
 

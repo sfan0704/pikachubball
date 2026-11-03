@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AppError, type ErrorBody, type ErrorCode } from "../../../shared/api/errors";
 import type { Logger } from "../../utils/logger";
+import { failureLogFields } from "../failure-log-fields";
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   UNAUTHORIZED: 401,
@@ -46,7 +47,8 @@ export interface ErrorHandlerOptions {
 
 /**
  * Builds the global error handler. Every error becomes one response body,
- * `{ code, message, requestId }`, with the status mapped from its code.
+ * `{ code, message, requestId }`, with the status mapped from its code. An
+ * app error's code and problem paths also go on the request's log line.
  */
 export function createErrorHandler({ logger, exposeErrorDetails }: ErrorHandlerOptions) {
   return function errorHandler(
@@ -67,6 +69,9 @@ export function createErrorHandler({ logger, exposeErrorDetails }: ErrorHandlerO
     }
 
     if (err instanceof AppError) {
+      if (req.scope) {
+        req.scope.failure.fields = failureLogFields(err);
+      }
       const retryAfter = (err.details as { retryAfterSeconds?: unknown } | undefined)
         ?.retryAfterSeconds;
       if (typeof retryAfter === "number") {

@@ -9,6 +9,7 @@ export function buildRequestScope(overrides: Partial<RequestScope> = {}): Reques
     requestId: "req-test-1",
     logger: silentLogger,
     yahooCalls: { count: 0 },
+    failure: {},
     ...overrides,
   };
 }
