@@ -94,6 +94,18 @@ describe("parseUserLeagues", () => {
     expect(oneLeague({}, GAME, "2026-10-20")[0]?.status).toBe("active");
   });
 
+  it.each([
+    ["leaves out the week numbers", { current_week: undefined, end_week: undefined }],
+    ["sends empty week numbers", { current_week: "", end_week: "" }],
+  ])("lists a league when Yahoo %s, with its status from the flags", (_case, weeks) => {
+    expect(oneLeague(weeks)[0]?.status).toBe("active");
+    expect(oneLeague({ ...weeks, is_finished: 1 })[0]?.status).toBe("finished");
+  });
+
+  it("refuses a week number that isn't a number", () => {
+    expect(() => oneLeague({ current_week: "week three" })).toThrow(YahooResponseError);
+  });
+
   it("returns no leagues for a user with no NBA teams", () => {
     expect(
       parseUserLeagues(userGames("teams", []), userGames("leagues", []), "2026-10-10")
