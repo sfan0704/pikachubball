@@ -19,9 +19,19 @@ For research that checks weekly numbers against Yahoo's official totals (FAN-91)
 
 That's about 45 read-only calls. A call Yahoo refuses doesn't stop the capture: `probes.json` lists every call with `ok` or Yahoo's status. Files go to `tests/backend/fixtures/yahoo/captured-week/`, replacing any earlier week capture. Pick a week where both teams benched someone and made a midweek add or drop, if there is one.
 
+## Record everything the daily-stats research needs
+
+The daily-stats research tickets (FAN-91 to FAN-96) need live Yahoo answers that a cloud session can't get. One command records all of their API calls in one sign-in, and each ticket's folder lists the website pages to save by hand.
+
+1. Run `npm run capture:yahoo-research` and sign in as above. It uses your newest NBA league and your team in it; pass a league key to choose another (`npm run capture:yahoo-research -- 466.l.12345`). It picks three sample players from yesterday's roster (a healthy one, an injured one if there is one, and one more); to choose them, add `--players=466.p.1,466.p.2,466.p.3`.
+2. It makes about 100 read-only calls and takes a few minutes. A call Yahoo refuses doesn't stop it: some research calls are expected to fail (for example projected stats, FAN-94), and the status and Yahoo's answer are recorded either way. Run it while an NBA game is live if you can: FAN-92 wants a live roster.
+3. The output goes to `yahoo-research/`, one folder per ticket, replacing any earlier run. Each folder has a `README.md` listing every call with its HTTP status and file, and each file holds the request, the status and the scrubbed response. FAN-91's folder has the finished-week capture (the same files as `capture:yahoo-week`, with `probes.json` as its index).
+4. Do the browser checklist in the `README.md` of FAN-92, FAN-93, FAN-94 and FAN-95, saving each page into that folder's `browser/` folder under the name the checklist gives. The URLs are already filled in for your league. For a HAR: in Chrome, open DevTools → Network, tick Preserve log, load the page, then right-click the request list → Export HAR (sanitized), which leaves out cookies and sign-in headers.
+5. Zip the `yahoo-research` folder and attach it in the project chat. Don't commit it: `.gitignore` keeps it out, because the website pages hold your league's names and the repository is public.
+
 ## Check
 
-- Skim the captured files for your Yahoo nickname, team names, league name and email. The script already checks for these, so none should appear.
+- Skim the captured files (fixtures only; the research folder is shared privately) for your Yahoo nickname, team names, league name and email. The script already checks for these, so none should appear.
 - Commit the files in a pull request for the issue that needs them.
 
 The scripts only make read-only GET calls, and never write or print the token.

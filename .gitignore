@@ -6,6 +6,8 @@ server/public
 vite.config.mts.*
 *.tar.gz
 scripts/yahoo-api-responses/
+# Research captures hold league names and website pages; they are shared privately, never committed.
+/yahoo-research/
 
 # Environment files (contain secrets)
 .env
