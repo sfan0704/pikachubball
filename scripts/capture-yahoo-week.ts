@@ -76,6 +76,10 @@ function matchupOf(scoreboard: unknown, team: string, week: number): Matchup {
   throw new Error(`Week ${week}'s scoreboard has no matchup for ${team}`);
 }
 
+function teamKeysIn(response: unknown): string[] {
+  return [...JSON.stringify(response).matchAll(/"team_key":"([^"]+)"/g)].map((m) => m[1] ?? "");
+}
+
 function playerKeysIn(response: unknown): Set<string> {
   const text = JSON.stringify(response);
   return new Set([...text.matchAll(/"player_key":"([^"]+)"/g)].map((m) => m[1] ?? ""));
@@ -136,14 +140,8 @@ async function runProbes(paths: string[][], token: string, files: Map<string, un
 async function record(token: string, chosenLeague?: string, chosenWeek?: number) {
   const userTeams = await fetchJson(USER_TEAMS_PATH, token);
   const league = chosenLeague ?? leaguesOf(userTeams)[0];
-  const text = JSON.stringify(userTeams);
-  const team =
-    league &&
-    firstMatch(
-      text,
-      new RegExp(`"team_key":"(${league.replaceAll(".", "\\.")}\\.t\\.\\d+)"`),
-      "team"
-    );
+  // Filtering parsed keys, not building a pattern from the league argument.
+  const team = league && teamKeysIn(userTeams).find((key) => key.startsWith(`${league}.t.`));
   if (!league || !team) {
     throw new Error("Yahoo lists no NBA team for this account in that league");
   }
