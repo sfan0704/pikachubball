@@ -7,6 +7,14 @@
 const OPAQUE_ID_KEYS = new Set(["guid", "manager_id"]);
 // The chat identifiers lead to the league's group chat.
 const DROPPED_KEYS = new Set(["email", "nickname", "sendbird_channel_url", "iris_group_chat_id"]);
+// Transactions and ownership name teams under their own keys, outside the team resource.
+const TEAM_NAME_KEYS = new Set([
+  "source_team_name",
+  "destination_team_name",
+  "trader_team_name",
+  "tradee_team_name",
+  "owner_team_name",
+]);
 // Every link goes: some carry the league's invitation key, others identify people.
 const URL = /^https?:\/\//;
 
@@ -54,6 +62,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** The placeholder for a personal string, or undefined when the string can stay. */
+function scrubString(
+  key: string,
+  value: string,
+  label: string | undefined,
+  names: Pseudonyms
+): string | undefined {
+  if (OPAQUE_ID_KEYS.has(key)) {
+    return names.of(key, value);
+  }
+  if (TEAM_NAME_KEYS.has(key)) {
+    return names.of("Team", value);
+  }
+  if (URL.test(value)) {
+    names.drop(value);
+    return "https://example.invalid/scrubbed";
+  }
+  return key === "name" && label ? names.of(label, value) : undefined;
+}
+
 function scrubRecord(
   record: Record<string, unknown>,
   label: string | undefined,
@@ -61,17 +89,11 @@ function scrubRecord(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record)) {
+    const replaced = typeof value === "string" ? scrubString(key, value, label, names) : undefined;
     if (DROPPED_KEYS.has(key)) {
       out[key] = names.drop(value);
-    } else if (OPAQUE_ID_KEYS.has(key) && typeof value === "string") {
-      out[key] = names.of(key, value);
-    } else if (typeof value === "string" && URL.test(value)) {
-      names.drop(value);
-      out[key] = "https://example.invalid/scrubbed";
-    } else if (key === "name" && label && typeof value === "string") {
-      out[key] = names.of(label, value);
     } else {
-      out[key] = scrubValue(value, names);
+      out[key] = replaced ?? scrubValue(value, names);
     }
   }
   return out;

@@ -43,6 +43,26 @@ describe("YahooScrubber", () => {
     expect(scrubbed.fantasy_content.game.name).toBe("Basketball");
   });
 
+  it("names a transaction's teams with the same placeholders as the team resource", () => {
+    const scrubber = new YahooScrubber();
+    const team = JSON.stringify(scrubber.scrub(response));
+    const move = JSON.stringify(
+      scrubber.scrub({
+        transaction_data: {
+          source_type: "team",
+          source_team_key: "466.l.1.t.2",
+          source_team_name: "Real Team Name",
+          destination_team_name: "Other Real Team",
+        },
+      })
+    );
+
+    expect(move).not.toContain("Real Team Name");
+    expect(move).not.toContain("Other Real Team");
+    expect(move).toContain('"source_team_name":"Team-1"');
+    expect(team).toContain('"name":"Team-1"');
+  });
+
   it("gives the same identifier the same placeholder", () => {
     const twice = new YahooScrubber().scrub({
       a: { guid: "X" },
