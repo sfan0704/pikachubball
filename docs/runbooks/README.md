@@ -11,4 +11,4 @@ Step-by-step procedures for operating the app. Each one says when to use it, wha
 | [Release and scheduled jobs](release.md) | Releasing to production, or setting up the release workflows |
 | [Production reset](production-reset.md) | Production's database must start over from the migrations (irreversible) |
 | [Season rollover check](season-rollover-check.md) | A new fantasy season opens on Yahoo |
-| [Yahoo fixture capture](yahoo-fixture-capture.md) | Recording real Yahoo responses as test fixtures |
+| [Yahoo fixture capture](yahoo-fixture-capture.md) | Recording real Yahoo responses as test fixtures, or for the daily-stats research |

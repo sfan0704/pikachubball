@@ -65,18 +65,29 @@ export async function accessToken(): Promise<string> {
   return signIn(app.clientId, app.clientSecret);
 }
 
-/** The outcome of one read-only call: the JSON body, or Yahoo's status when it refused. */
-export type Probe = { ok: true; body: unknown } | { ok: false; status: number };
+/** The outcome of one read-only call: Yahoo's status and body, whether or not it refused. */
+export interface Probe {
+  ok: boolean;
+  status: number;
+  body: unknown;
+}
 
 /** GETs one Fantasy API path as JSON, reporting a refusal instead of throwing. */
 export async function probe(path: string, token: string): Promise<Probe> {
   const response = await fetch(`${BASE_URL}${path}?format=json`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!response.ok) {
-    return { ok: false, status: response.status };
+  const text = await response.text();
+  return { ok: response.ok, status: response.status, body: parsedOrText(text) };
+}
+
+// A refusal can come back as XML or HTML even when JSON was asked for; that text is the evidence.
+function parsedOrText(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
   }
-  return { ok: true, body: await response.json() };
 }
 
 /** GETs one Fantasy API path as JSON, failing the capture if Yahoo refuses it. */
