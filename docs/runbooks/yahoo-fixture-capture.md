@@ -29,6 +29,10 @@ The daily-stats research tickets (FAN-91 to FAN-96) need live Yahoo answers that
 4. Do the browser checklist in the `README.md` of FAN-92, FAN-93, FAN-94 and FAN-95, saving each page into that folder's `browser/` folder under the name the checklist gives. The URLs are already filled in for your league. For a HAR: in Chrome, open DevTools → Network, tick Preserve log, load the page, then right-click the request list → Export HAR (sanitized), which leaves out cookies and sign-in headers.
 5. Zip the `yahoo-research` folder and attach it in the project chat. Don't commit it: `.gitignore` keeps it out, because the website pages hold your league's names and the repository is public.
 
+## Record live game logs (FAN-92)
+
+Yahoo's player game log carries the NBA schedule and game state. To see how it shows a live game, run `npm run capture:yahoo-game-log` while NBA games are live, signing in as above. It reads the game logs of your league's rostered players (two calls of 25 players), waits 2 minutes and reads them again (`--rounds=<n>` and `--minutes=<n>` change that; pass a league key to choose another league). Run it once more on a Monday to see how far ahead the log reaches. The files go to `yahoo-research/FAN-92-game-log/`, with a `README.md` listing each call's time and status, checked with the same leak check as the research capture. Zip the folder and attach it to FAN-92; don't commit it.
+
 ## Check
 
 - Skim the captured files (fixtures only; the research folder is shared privately) for your Yahoo nickname, team names, league name and email. The script already checks for these, so none should appear.
