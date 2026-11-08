@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { YahooScrubber } from "../../../../server/dev/scrub-yahoo";
+import { checkLeaks } from "../../../../scripts/yahoo-research/leaks";
 import { browserSteps } from "../../../../scripts/yahoo-research/browser";
 import {
   currentWeek,
@@ -124,5 +126,27 @@ describe("discovery", () => {
 
     expect(samplePlayers(roster)).toEqual(["466.p.2", "466.p.1", "466.p.3"]);
     expect(() => samplePlayers({ players: { 0: player("466.p.1") } })).toThrow("--players");
+  });
+});
+
+describe("checkLeaks", () => {
+  const scrubbed = (): YahooScrubber => {
+    const scrubber = new YahooScrubber();
+    scrubber.scrub({ team: [[{ team_key: "466.l.1.t.2" }, { name: "Jalen" }]] });
+    return scrubber;
+  };
+  const file = (body: unknown): Map<string, string> =>
+    new Map([["FAN-95/01-pool.json", JSON.stringify(body)]]);
+
+  it("lets a removed name through when it is only a public player or NBA team name", () => {
+    const pool = { player: [{ name: { full: "Jalen Brunson", first: "Jalen" } }] };
+
+    expect(() => checkLeaks(scrubbed(), file(pool))).not.toThrow();
+  });
+
+  it("fails on a removed name left in any other field, naming the file and key", () => {
+    expect(() => checkLeaks(scrubbed(), file({ team_name: "Jalen" }))).toThrow(
+      "FAN-95/01-pool.json: team_name"
+    );
   });
 });
