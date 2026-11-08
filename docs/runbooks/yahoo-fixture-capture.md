@@ -17,7 +17,7 @@ For research that checks weekly numbers against Yahoo's official totals (FAN-91)
 - for your team and that week's opponent: week totals, the roster with week stats, each day's roster with that day's stats, each day's team totals, and the team's adds and drops;
 - for players who joined or left either roster during the week: their stats for each day and the week.
 
-That's about 45 read-only calls. A call Yahoo refuses doesn't stop the capture: `probes.json` lists every call with `ok` or Yahoo's status. Files go to `tests/backend/fixtures/yahoo/captured-week/`, replacing any earlier week capture. Pick a week where both teams benched someone and made a midweek add or drop, if there is one.
+That's about 45 read-only calls. A call Yahoo refuses doesn't stop the capture: `probes.json` lists every call with `ok` or Yahoo's status. Files go to `yahoo-research/week-<n>/`, replacing any earlier capture of that week. Like the research capture, it's gitignored and checked with the same leak check, which lets public NBA names through: zip it and attach it in the project chat instead of committing it. Pick a week where both teams benched someone and made a midweek add or drop, if there is one.
 
 ## Record everything the daily-stats research needs
 
