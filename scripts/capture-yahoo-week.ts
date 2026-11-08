@@ -5,10 +5,25 @@
 // Defaults: your newest NBA league and the last finished week. Sign-in works as
 // in capture-yahoo.ts. Every call is a read-only GET; a call Yahoo refuses is
 // listed in probes.json with its status instead of stopping the capture.
-import { accessToken, LEAGUE_KEY, writeScrubbed } from "./yahoo-capture-client";
+// Output goes to yahoo-research/week-<n>/, which is gitignored like the research
+// capture: it is shared privately, and it uses the same leak check, which lets
+// public NBA names through (a team name can also be a player's name).
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { YahooScrubber } from "../server/dev/scrub-yahoo";
+import { accessToken, LEAGUE_KEY } from "./yahoo-capture-client";
+import { checkLeaks } from "./yahoo-research/leaks";
 import { recordWeek } from "./yahoo-research/week";
 
-const OUTPUT_DIR = "tests/backend/fixtures/yahoo/captured-week";
+/** Scrubs every file with one set of placeholders and fails before writing if a personal value is left. */
+function scrubbed(files: Map<string, unknown>): Map<string, string> {
+  const scrubber = new YahooScrubber();
+  const texts = new Map(
+    [...files].map(([file, raw]) => [file, `${JSON.stringify(scrubber.scrub(raw), null, 2)}\n`])
+  );
+  checkLeaks(scrubber, texts);
+  return texts;
+}
 
 async function main(): Promise<void> {
   const [chosenLeague, chosenWeek] = process.argv.slice(2);
@@ -23,7 +38,18 @@ async function main(): Promise<void> {
     chosenLeague,
     chosenWeek ? Number(chosenWeek) : undefined
   );
-  await writeScrubbed(OUTPUT_DIR, files);
+  const texts = scrubbed(files);
+  const probes = files.get("probes.json");
+  const week = typeof probes === "object" && probes !== null && "week" in probes ? probes.week : "";
+  const outputDir = join("yahoo-research", `week-${String(week)}`);
+  await rm(outputDir, { recursive: true, force: true });
+  await mkdir(outputDir, { recursive: true });
+  for (const [file, text] of texts) {
+    await writeFile(join(outputDir, file), text);
+  }
+  console.log(
+    `Wrote ${texts.size} files to ${outputDir}/. Zip it and attach it in the project chat.`
+  );
 }
 
 main().catch((error: unknown) => {
