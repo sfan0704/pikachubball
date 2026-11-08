@@ -101,4 +101,12 @@ describe("YahooScrubber", () => {
     expect(scrubber.leaksIn(JSON.stringify(scrubbed))).toEqual([]);
     expect(scrubber.leaksIn("week won by Real Team Name")).toEqual(["Real Team Name"]);
   });
+
+  it("counts a field leak only when a removed value is a whole field value", () => {
+    const scrubber = new YahooScrubber();
+    scrubber.scrub({ team: [[{ team_key: "466.l.1.t.2" }, { name: "Lakers" }]] });
+
+    expect(scrubber.fieldLeaksIn(JSON.stringify({ team: "Los Angeles Lakers" }))).toEqual([]);
+    expect(scrubber.fieldLeaksIn(JSON.stringify({ team_name: "Lakers" }))).toEqual(["Lakers"]);
+  });
 });

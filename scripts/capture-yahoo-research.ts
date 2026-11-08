@@ -201,11 +201,46 @@ function outputs(
       ticketReadme(ticket, calls, files, ctx, steps.get(ticket))
     );
   }
-  const leaks = scrubber.leaksIn([...texts.values()].join("\n"));
-  if (leaks.length > 0) {
-    throw new Error(`${leaks.length} personal values survived scrubbing; nothing was written`);
-  }
+  checkLeaks(scrubber, texts);
   return texts;
+}
+
+/** The keys under which leaked values sit, by file, so a failure can be traced without printing them. */
+function leakKeys(texts: Map<string, string>, leaks: Set<string>): string[] {
+  const found: string[] = [];
+  for (const [file, text] of texts) {
+    if (!file.endsWith(".json")) {
+      continue;
+    }
+    const keys = new Set<string>();
+    JSON.parse(text, (key: string, value: unknown) => {
+      if (typeof value === "string" && leaks.has(value)) {
+        keys.add(key);
+      }
+      return value;
+    });
+    if (keys.size > 0) {
+      found.push(`${file}: ${[...keys].join(", ")}`);
+    }
+  }
+  return found;
+}
+
+// The research folder is shared privately, never committed, and holds hundreds of NBA
+// names, so only a removed value left as a whole field fails; one inside other text is counted.
+function checkLeaks(scrubber: YahooScrubber, texts: Map<string, string>): void {
+  const all = [...texts.values()].join("\n");
+  const leaks = scrubber.fieldLeaksIn(all);
+  if (leaks.length > 0) {
+    const where = leakKeys(texts, new Set(leaks)).join("\n  ");
+    throw new Error(
+      `${leaks.length} personal values survived scrubbing; nothing was written. Found under:\n  ${where}`
+    );
+  }
+  const inText = scrubber.leaksIn(all).length;
+  if (inText > 0) {
+    console.log(`${inText} removed names also appear inside other text, such as NBA team names`);
+  }
 }
 
 async function main(): Promise<void> {

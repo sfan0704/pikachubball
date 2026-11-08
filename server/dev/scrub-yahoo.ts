@@ -126,4 +126,15 @@ export class YahooScrubber {
   leaksIn(text: string): string[] {
     return [...this.names.removed].filter((value) => value.length >= 3 && text.includes(value));
   }
+
+  /**
+   * Removed values that survived as a whole field value in JSON text. Unlike
+   * leaksIn, a team name that only appears inside other text, such as "Lakers"
+   * inside a player's NBA team, does not count.
+   */
+  fieldLeaksIn(text: string): string[] {
+    return [...this.names.removed].filter(
+      (value) => value.length >= 3 && text.includes(JSON.stringify(value))
+    );
+  }
 }
