@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { YahooScrubber } from "../../../../server/dev/scrub-yahoo";
 import { checkLeaks } from "../../../../scripts/yahoo-research/leaks";
 import { browserSteps } from "../../../../scripts/yahoo-research/browser";
+import { gameLogCalls, gameLogReadme } from "../../../../scripts/yahoo-research/game-log";
 import {
   currentWeek,
   datesBetween,
@@ -148,5 +149,28 @@ describe("checkLeaks", () => {
     expect(() => checkLeaks(scrubbed(), file({ team_name: "Jalen" }))).toThrow(
       "FAN-95/01-pool.json: team_name"
     );
+  });
+});
+
+describe("gameLogCalls", () => {
+  it("reads two pages of rostered players' game logs, one file per page and round", () => {
+    const calls = gameLogCalls("466.l.123", 2);
+    expect(calls).toEqual([
+      {
+        file: "round-2-rostered-start-0.json",
+        path: "/league/466.l.123/players;status=T;start=0;count=25;out=game_log",
+      },
+      {
+        file: "round-2-rostered-start-25.json",
+        path: "/league/466.l.123/players;status=T;start=25;count=25;out=game_log",
+      },
+    ]);
+  });
+
+  it("lists each call's time and status in the README", () => {
+    const readme = gameLogReadme("466.l.123", [
+      { file: "a.json", path: "/x", status: 200, at: "2026-11-09T01:00:00.000Z" },
+    ]);
+    expect(readme).toContain("| 2026-11-09T01:00:00.000Z | 200 | `a.json` | `/x` |");
   });
 });
