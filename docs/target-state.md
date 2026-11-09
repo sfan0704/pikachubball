@@ -369,7 +369,7 @@ erDiagram
 
 ### Caching
 
-- **Browser:** TanStack Query holds each league and scope for the session, so moving between views and weeks doesn't call Yahoo again. A refresh button fetches again. Each response carries its fetch time, shown as "updated N min ago". Daily-stats datasets have their own freshness: 2 minutes while a shown game is live, up to 6 hours for period averages, and the session for settled days and past weeks ([per-dataset table](reference/daily-stats-retrieval.md#datasets)). Nothing from Yahoo is written to browser storage.
+- **Browser:** TanStack Query holds each league and scope for the session, so moving between views and weeks doesn't call Yahoo again. A refresh button fetches again. Each response carries its fetch time, shown as "updated N min ago". Daily-stats datasets follow one [freshness policy](reference/daily-stats-retrieval.md#freshness-policy) in `shared/domain`: four classes (Live, 2 minutes and polled only while a shown game is live; Recent, 10 minutes; Daily, 6 hours; Settled, the whole visit), applied by the query-key factory so no screen sets its own timer. Nothing from Yahoo is written to browser storage.
 - **Server:** none.
 - **CDN:** caches only the built static assets, never `/api`.
 
@@ -384,9 +384,9 @@ erDiagram
 | Matchup Week, first visit on the last day of the week | 21 |
 | Players, first page / each further page | 4 to 6 / 2 |
 | League team popover, first / later | 4 / 3 |
-| Live Matchup while a shown game is in progress | About 2.2 a minute |
+| Live Matchup while a shown game is in progress | About 3 a minute |
 
-With 14 users, a typical day is about 2,300 calls for the shared Yahoo app, and a game night with everyone watching live for 3 hours about 6,100, at most about 1,850 in one hour. The [call budgets](reference/daily-stats-retrieval.md#call-budgets) show how each figure is reached.
+With 14 users, a typical day is about 3,000 calls for the shared Yahoo app, and a game night with everyone watching live for 3 hours about 8,100, at most about 2,500 in one hour. The [call budgets](reference/daily-stats-retrieval.md#call-budgets) show how each figure is reached.
 
 ### Daily stats
 
@@ -425,7 +425,7 @@ flowchart LR
 - **`DailyStatsSource`** in `server/fantasy` is the only code that knows these Yahoo shapes. Its resources batch player keys by 25, memoize identical calls within a request, and turn Yahoo's values into the tagged stat values below.
 - **Missing is not zero, in five ways.** A stat value is a number, no game (Yahoo `-`), did not play (`0/0` on a team game day, or GP 0), not yet played (`""`) or unavailable. Each shows differently and none counts as 0.
 - **Counted totals** are the sum of a player's starting-slot days (Yahoo's `is_starting_position`), recomputing FG% and FT% from summed makes and attempts. They reconcile exactly with Yahoo's daily and weekly team totals (FAN-91).
-- **Live state.** While any game shown on Matchup is live and the tab is visible, the client refetches today's two team days and the game logs every 2 minutes and the week table every 6. It stops when no shown game is live, doubles the interval on `YAHOO_RATE_LIMITED`, and shows each section's age.
+- **Freshness is central.** One policy in `shared/domain` puts each dataset in a class (Live, Recent, Daily, Settled) and returns its fresh time and poll interval; the query-key factory applies it, and one shared label shows each section's age. One "games live now" signal from the game logs turns polling on and off for every Live dataset (2 minutes, tab visible), and `YAHOO_RATE_LIMITED` doubles the interval. The server only stamps fetch times.
 - **Partial data.** Each dataset loads and fails on its own; a failed section keeps what it showed, labelled with its age, and offers a retry.
 - **Only the OAuth token.** No Yahoo website routes or cookies. Injury status and notes are today's values and are never shown against a past date.
 - **Projections slot.** `ProjectionSource` is an interface with no implementation. `GET /api/me` lists the wired features (`projections: false`), and the client offers Next 7 projected only when it is true. Turning it on is its own ticket after FAN-94.
@@ -579,6 +579,7 @@ flowchart LR
 | Daily-stats endpoints | One endpoint per Yahoo dataset, combined in the browser | One endpoint per screen: fewer requests, but each screen would refetch data another already has |
 | Week view counted totals | Seven dated team-day calls per team, summed in `shared/domain` | The one-call week roster: not yet checked on a week with bench games; storing finished days: waits on the API agreement |
 | Live refresh | Each viewer polls every 2 minutes while a shown game is live | One shared poll per league: fewer calls, but needs stored, shared data and a server-only database role |
+| Data freshness | One policy in `shared/domain` with four classes, applied by the client's query-key factory; the server only stamps fetch times | A timer per dataset or per screen: hard to keep consistent; a server cache: needs storage; HTTP cache headers: API responses are private and the browser cache can't be labelled or tested |
 | Next 7 projected | Left out; a `ProjectionSource` slot, off by default (FAN-94, FAN-99) | Building the website-cookie reader now, before the cookie durability check |
 | Stored data scope | Per user | Shared per league: fewer calls, but needs a database role only the server holds, since users can write their own rows |
 | Code style | Pure functions for domain logic, small classes for adapters, constructor injection wired by hand | Class-heavy domain models, or a dependency-injection library |

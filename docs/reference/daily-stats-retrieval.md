@@ -15,26 +15,47 @@ Inputs: the Linear page "Daily stats data reference (source of truth)" (final fo
 
 ## Datasets
 
-`L` league key, `T` team key, `P` player key, `W` week, `D` date (US Eastern). "Session" means kept in browser memory until reload or sign-out.
+`L` league key, `T` team key, `P` player key, `W` week, `D` date (US Eastern). The freshness classes are defined in [Freshness policy](#freshness-policy).
 
-| # | Dataset | Yahoo call | Calls | Used by | Fresh for |
+| # | Dataset | Yahoo call | Calls | Used by | Freshness class |
 |---|---|---|---|---|---|
-| D1 | Week table: every team's totals, pairings, games left | `/league/{L};out=settings/scoreboard;week={W}` (the existing scope call; it gains `remaining_games`, `live_games`, `completed_games`) | 1 | Matchup grid, score, games left, opponent picker; League week ranks | Current week: 2 min while a game is live, 10 min otherwise. Past week: session |
-| D2 | Team day: one team's roster on a date with each player's slot and stats that date | `/team/{T}/roster;date={D}/players/stats;type=date;date={D}` | 1 per team per date | Matchup Today, Yesterday and Week player cards | Today: 2 min while live. Yesterday and the day before: 30 min (stat corrections). Older: session |
-| D3 | Game logs: each player's NBA games (date, opponent, home/away, tip-off, live quarter/clock/score, final, minutes) | `/league/{L}/players;player_keys={P1..P25};out=game_log` (multi-key form **untested**; fallback below) | 1 per 25 players | Matchup game status, did-not-play, counted games; player detail | 2 min while live, 30 min otherwise |
-| D4 | Player period totals with GP and makes/attempts | `/players;player_keys={P1..P25}/stats;type={season,lastweek,lastmonth}` (game context, no `/league` prefix) | 1 per 25 players per period | Matchup vs season average; Players averages; League popover per-game PTS/REB/AST | 6 h (Yahoo's periods end yesterday) |
-| D5 | Player list page: ownership, waiver date, rostered % and trend, positions, NBA team, injury status | `/league/{L}/players;status={A,T,W}[;position={pos}][;search={text}];sort={AR,OR};start={N};count=25;out=ownership,percent_owned` | 1 per page | Players lists, search and position filter | 10 min |
-| D6 | League schedule: every NBA team's games, past and about 8 days ahead | `/league/{L}/players;status=T;start={N};count=25;out=game_log`, paged until all 30 NBA teams are covered | 2 to 4 expected, at most 9 | Players tonight, tomorrow, back-to-back filters and games this week | 6 h |
-| D7 | Transactions for a team | `/league/{L}/transactions;types=add,drop,trade;team_key={T}` (`trade` with `team_key` **untested**; fallback is the whole feed, `;start={N};count=25`, about 7 pages) | 1 | Matchup added/dropped labels; League popover latest acquisition | 10 min |
-| D8 | Draft results | `/league/{L}/draftresults` | 1 | League popover draft label | Session |
-| D9 | Current roster for a team | `/team/{T}/roster` (existing) | 1 | League popover roster | 10 min |
-| D10 | Scoring weeks | `/game/{G}/game_weeks` | 1 | Week picker, games this week | Session |
+| D1 | Week table: every team's totals, pairings, games left | `/league/{L};out=settings/scoreboard;week={W}` (the existing scope call; it gains `remaining_games`, `live_games`, `completed_games`) | 1 | Matchup grid, score, games left, opponent picker; League week ranks | Current week: Live. Past week: Settled |
+| D2 | Team day: one team's roster on a date with each player's slot and stats that date | `/team/{T}/roster;date={D}/players/stats;type=date;date={D}` | 1 per team per date | Matchup Today, Yesterday and Week player cards | Today: Live. Yesterday and the day before: Recent (stat corrections). Older: Settled |
+| D3 | Game logs: each player's NBA games (date, opponent, home/away, tip-off, live quarter/clock/score, final, minutes) | `/league/{L}/players;player_keys={P1..P25};out=game_log` (multi-key form **untested**; fallback below) | 1 per 25 players | Matchup game status, did-not-play, counted games; player detail | Live |
+| D4 | Player period totals with GP and makes/attempts | `/players;player_keys={P1..P25}/stats;type={season,lastweek,lastmonth}` (game context, no `/league` prefix) | 1 per 25 players per period | Matchup vs season average; Players averages; League popover per-game PTS/REB/AST | Daily (Yahoo's periods end yesterday) |
+| D5 | Player list page: ownership, waiver date, rostered % and trend, positions, NBA team, injury status | `/league/{L}/players;status={A,T,W}[;position={pos}][;search={text}];sort={AR,OR};start={N};count=25;out=ownership,percent_owned` | 1 per page | Players lists, search and position filter | Recent |
+| D6 | League schedule: every NBA team's games, past and about 8 days ahead | `/league/{L}/players;status=T;start={N};count=25;out=game_log`, paged until all 30 NBA teams are covered | 2 to 4 expected, at most 9 | Players tonight, tomorrow, back-to-back filters and games this week | Daily |
+| D7 | Transactions for a team | `/league/{L}/transactions;types=add,drop,trade;team_key={T}` (`trade` with `team_key` **untested**; fallback is the whole feed, `;start={N};count=25`, about 7 pages) | 1 | Matchup added/dropped labels; League popover latest acquisition | Recent |
+| D8 | Draft results | `/league/{L}/draftresults` | 1 | League popover draft label | Settled |
+| D9 | Current roster for a team | `/team/{T}/roster` (existing) | 1 | League popover roster | Recent |
+| D10 | Scoring weeks | `/game/{G}/game_weeks` | 1 | Week picker, games this week | Settled |
 
 **Fallback for D3.** If the multi-key `out=game_log` form fails in the first live ticket, use the tested `status=T` pages (D6's call): 9 calls cover every rostered player in the league, which includes both Matchup teams. Dropped contributors in the Week view are no longer rostered; their days come from D2, where `0`/`0/0` on a game day already says the team played.
 
 **Week view.** Seven D2 calls per team (one per elapsed date), not the one-call week roster: that shortcut was not checked on a week with bench games. Counted totals are the sum of starting-slot days, which reconciled exactly with Yahoo's daily and weekly team totals in FAN-91.
 
 **Games left.** `remaining_games` follows the lineup as currently set (Howard's Sabonis test), so D1 is refetched whenever the user comes back to the tab, not only on a timer.
+
+## Freshness policy
+
+Freshness is managed in one place: a policy in `shared/domain` that the browser applies to every dataset. No screen, hook or endpoint sets its own timer.
+
+| Class | Fresh for | Polls | Datasets |
+|---|---|---|---|
+| Live | 2 minutes | Every 2 minutes, only while a shown game is live and the tab is visible | D1 current week, D2 today, D3 |
+| Recent | 10 minutes | No | D2 yesterday and the day before, D5, D7, D9 |
+| Daily | 6 hours | No | D4, D6 |
+| Settled | The whole visit | No | D1 past weeks, D2 older days, D8, D10 |
+
+- **One table, one function.** The class of each dataset is a single table in `shared/domain`. A pure function takes the dataset (with its date or week), the current time and whether any shown game is live, and returns how long the data stays fresh and whether to poll. Changing a timer is a one-line change, tested with a fixed clock. Live data counts as Recent when no shown game is live.
+- **One live signal.** "Games live now" is derived from the game logs (D3) of the players on screen (`is_game_live`, or a tip-off that has passed without a final). It switches polling on and off for every Live dataset at once, and turns polling back on at the next shown tip-off.
+- **Applied by the query-key factory.** The factory that builds every TanStack Query key also attaches the policy's fresh time and poll interval, so no component sets them. Stale data refetches when it is next shown or the tab regains focus.
+- **One freshness label.** A shared component reads each query's last success time and error state and shows "updated N min ago", or a stale label after a failed refresh. The Matchup header shows the oldest age among its sections.
+- **Backoff in the same place.** A `YAHOO_RATE_LIMITED` response doubles the poll interval (2, 4, 8 minutes, at most 10) until a poll succeeds. `YAHOO_UNAVAILABLE` keeps the interval and marks the data stale.
+- **The server stays out of it.** It only stamps each response with its fetch time. It keeps no cache and sets no cache headers; API responses stay private and uncacheable.
+- **Corrections.** Yahoo corrects stats overnight, which is why yesterday and the day before are Recent rather than Settled.
+
+Not chosen: a server-side cache (needs stored, shared data and the agreement check) and HTTP cache headers (API responses are private, and the browser's HTTP cache can't be inspected, labelled or tested).
 
 ## Consolidations and what each saves
 
@@ -69,26 +90,24 @@ Counted per viewer, first attempts only. The request policy allows up to 3 attem
 | League, rankings | D1 or season table **1** |
 | League, first team popover | D9 1 + D4 1 + D7 1 + D8 1 = **4**; later popovers **3** |
 
-**Warm navigation:** 0 calls for anything still fresh in the table above. Switching between Today, Yesterday and Week, between categories, opponents or sort orders, or back to a screen already open costs nothing.
+**Warm navigation:** 0 calls for anything still fresh under the [freshness policy](#freshness-policy). Switching between Today, Yesterday and Week, between categories, opponents or sort orders, or back to a screen already open costs nothing.
 
-**Live refresh:** while any game shown on the Matchup screen is live and the tab is visible, every 2 minutes: D2 today for both teams (2) and D3 (2), plus D1 every 6 minutes. About **2.2 calls a minute** per viewer. Polling stops when no shown game is live and restarts at the next shown tip-off (`start_time`). Hidden tabs don't poll; returning to the tab refetches what is stale.
+**Live refresh:** while any game shown on the Matchup screen is live and the tab is visible, every 2 minutes: D1 (1), D2 today for both teams (2) and D3 (2). About **3 calls a minute** per viewer. Polling stops when no shown game is live and restarts at the next shown tip-off (`start_time`). Hidden tabs don't poll; returning to the tab refetches what is stale.
 
 **League totals for 14 users:**
 
 | Day | Assumption | Calls |
 |---|---|---|
-| Typical | Each user: one Matchup visit, one Week look, a few Players pages, one popover (about 35 calls) and 60 minutes of live viewing (about 130) | About **2,300** |
-| Busy game night | Every user watches live for 3 hours | About **6,100**; at most about **1,850 in one hour** (14 × 2.2 × 60) |
+| Typical | Each user: one Matchup visit, one Week look, a few Players pages, one popover (about 35 calls) and 60 minutes of live viewing (about 180) | About **3,000** |
+| Busy game night | Every user watches live for 3 hours | About **8,100**; at most about **2,500 in one hour** (14 × 3 × 60) |
 
-Yahoo publishes no rate limit for the Fantasy API. A third-party listing claims 2,000 requests an hour per user (unverified); our worst hour is about 130 per user. The only measured block was the website's HTTP 999 after about 390 page loads in 5 minutes, which doesn't apply to API calls.
+Yahoo publishes no rate limit for the Fantasy API. A third-party listing claims 2,000 requests an hour per user (unverified); our worst hour is about 180 per user. The only measured block was the website's HTTP 999 after about 390 page loads in 5 minutes, which doesn't apply to API calls.
 
 ## Live state and freshness
 
 - **Game windows.** D3 tells each shown player's game state: scheduled (tip-off from `start_time`), live (`is_game_live=1`, quarter, clock and score parsed from `status`), final (`W`/`L` and score). Unknown live texts (halftime, overtime, delays) are shown as Yahoo wrote them.
-- **Backoff.** A `YAHOO_RATE_LIMITED` response doubles the poll interval (2, 4, 8 minutes, at most 10) until a poll succeeds. `YAHOO_UNAVAILABLE` keeps the interval and marks the data stale.
 - **Partial failures.** Each dataset loads and fails on its own. The totals grid (D1) can show while player cards (D2) retry; a failed section shows its error with a retry button, and values already on screen stay, labelled with their age.
-- **Observable freshness.** Every response carries its fetch time. Each section shows "updated N min ago" and turns to a stale label after a failed refresh. The Matchup header shows the oldest age among its sections.
-- **Corrections.** Yahoo corrects stats overnight. Yesterday and the day before refetch after 30 minutes; anything older is treated as settled for the session.
+- **Timers, backoff and labels** follow the [freshness policy](#freshness-policy).
 
 ## Access and identity
 

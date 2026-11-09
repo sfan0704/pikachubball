@@ -2,7 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
-- 2026-11-09 · Daily stats: Matchup, Players and League read live from the Yahoo Fantasy API through one endpoint per dataset, combined in the browser; per-viewer live polling; no stored Yahoo data; projections slot off by default · FAN-97 (PR pending)
+- 2026-11-09 · Daily stats: Matchup, Players and League read live from the Yahoo Fantasy API through one endpoint per dataset, combined in the browser; per-viewer live polling; no stored Yahoo data; one freshness policy (Live, Recent, Daily, Settled) applied by the client; projections slot off by default · FAN-97 (PR pending)
 - 2026-11-03 · A failed request's log line carries its error code and, for an unreadable Yahoo response, the failing schema paths (no values) · FAN-86 (PR pending)
 - 2026-10-21 · Every deploy checks the Yahoo sign-in provider and the Vercel variable scopes after its smoke check, with the database password and Vercel token it already holds; Auth's site URL and redirect allowlist stay a manual check (no Supabase access token) · CAR-100 (PR pending)
 - 2026-10-20 · Optional read-only Vercel metadata acquisition checks project/team identity and saves only variable names and scopes, without decryption or deployment authority · #115
