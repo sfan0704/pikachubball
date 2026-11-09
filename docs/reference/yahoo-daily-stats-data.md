@@ -2,6 +2,8 @@
 
 What Yahoo's Fantasy API can supply for the [Daily Stats Experience brief](https://linear.app/shihhao-fan/document/daily-stats-experience-product-brief-9be81bb274cd), at what cost, and what it can't. Written for FAN-87, as of 2026-11-03.
 
+> Superseded for planning by the Linear page "Daily stats data reference (source of truth)" and the [daily stats retrieval plan](daily-stats-retrieval.md) (FAN-97). Later research found Yahoo does return schedule and live game state (`out=game_log`), so the gaps below about schedule and game state no longer hold.
+
 ## How sure each answer is
 
 Each finding carries one of three kinds of evidence:

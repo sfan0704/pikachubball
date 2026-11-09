@@ -1,12 +1,12 @@
 # Pikachu Basketball target state
 
-**As of 2026-11-03.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-11-09.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
 ## Overview
 
-A single Vercel project serves the React app and an Express API from one origin. Supabase provides Yahoo sign-in and a small Postgres database whose access rules keep each user's data private. Yahoo's Fantasy API is the only source of fantasy data and is read live; the database holds only what Yahoo can't return on demand. The server returns one table of team stats per league and scope, and the client computes every view from it. GitHub holds everything that defines the system, and nothing reaches production without passing its checks.
+A single Vercel project serves the React app and an Express API from one origin. Supabase provides Yahoo sign-in and a small Postgres database whose access rules keep each user's data private. Yahoo's Fantasy API is the only source of fantasy data and is read live; the database holds only what Yahoo can't return on demand. The server returns one table of team stats per league and scope, plus the [daily-stats datasets](#daily-stats) (a team's day, game logs, player stats and lists), and the client computes every view from them. GitHub holds everything that defines the system, and nothing reaches production without passing its checks.
 
 ```mermaid
 flowchart LR
@@ -25,9 +25,11 @@ flowchart LR
 - Rankings for the season or any week, with a category heatmap.
 - The current matchup, and the selected team compared against every other team.
 - The selected team's roster, with the date it applies to.
+- Daily stats (FAN-88 mockup): **Matchup** for Today, Yesterday and the Week with per-player cards, live game state and comparison with season averages; **Players** with owned, available and waiver lists, Season, Last 7 and Last 30 averages, and tonight, tomorrow and back-to-back filters; **League** with category ranks for the season or a week and a team popover with roster, draft price and latest acquisition.
+- A "Fantasy data provided by Yahoo Fantasy" line on every screen.
 - Phone and desktop layouts, light and dark themes.
 
-Supported leagues are Yahoo head-to-head category leagues using the standard nine categories: FG%, FT%, 3PM, PTS, REB, AST, STL, BLK and TO. Other scoring formats show an "unsupported scoring" message instead of guessed rankings. All Yahoo access is read-only. Chat, AI assistance, NBA scheduling and draft tools are out of scope.
+Supported leagues are Yahoo head-to-head category leagues using the standard nine categories: FG%, FT%, 3PM, PTS, REB, AST, STL, BLK and TO. Other scoring formats show an "unsupported scoring" message instead of guessed rankings. All Yahoo access is read-only. NBA schedules and game state are shown only as Yahoo returns them. Next 7 projected is out of scope until FAN-94 is decided; the design keeps a [slot for it](#daily-stats) that is off by default. Chat, AI assistance and draft tools are out of scope.
 
 ### Principles
 
@@ -35,7 +37,7 @@ Supported leagues are Yahoo head-to-head category leagues using the standard nin
 2. **Only checked changes reach production.** Every change goes through a pull request with passing checks, and every deploy is verified.
 3. **Environments stay apart.** Each has its own database, users, keys and secrets. The few shared items are named, justified and guarded.
 4. **Yahoo is the source of truth.** Fantasy data is read live. The app stores only tokens, each user's leagues and their preferences.
-5. **Yahoo's format stops at the boundary.** Everything behind `FantasyDataSource` works with typed, validated data.
+5. **Yahoo's format stops at the boundary.** Everything behind `FantasyDataSource` and `DailyStatsSource` works with typed, validated data.
 6. **Pure core, thin edges.** Fantasy logic is pure functions; I/O sits in small adapters that are passed in, never reached for.
 7. **Stay small.** Free plans, one serverless function, one small database, no background jobs in the app. Add infrastructure only for a measured need.
 
@@ -194,7 +196,7 @@ flowchart TD
 
 ### Client
 
-- **Routes.** `/auth` for sign-in and the league view for everything else. The URL holds the selected league, team and scope, so refresh, back and shared links work; the saved preference only chooses where a new visit starts.
+- **Routes.** `/auth` for sign-in and the league view for everything else. The URL holds the selected league, team and scope, and for daily stats the screen (Matchup, Players, League) and the Matchup day (Today, Yesterday or Week), so refresh, back and shared links work; the saved preference only chooses where a new visit starts.
 - **Data access.** One typed API module makes every request and checks responses against `shared/api`. Hooks (`useMe`, `useLeagues`, `useLeagueScope`, `useRoster`) wrap it; components never fetch. Views derive their data from the team table with `shared/domain` functions inside memoized hooks.
 - **Components.** `pages/` compose features; `features/` render one part of the product from prepared data; `ui/` holds the shared primitives. Components contain no fantasy maths.
 - **Every data view distinguishes its states:** loading (a skeleton); no leagues; preseason, with no stats yet; unsupported scoring; partial data; each error in the Errors table; and loaded, with an "updated N min ago" label and a refresh button. Nothing incomplete or old is presented as complete and current.
@@ -202,9 +204,9 @@ flowchart TD
 
 | State | Owner |
 |---|---|
-| Data from the API | TanStack Query, with keys from one factory that mirrors the API (`me`, `leagues`, league + scope, roster) |
+| Data from the API | TanStack Query, with keys from one factory that mirrors the API (`me`, `leagues`, league + scope, roster, and one key per daily-stats dataset) |
 | Selected league, team and scope | The URL |
-| Sorting, chosen opponent, open panels | Local component state |
+| Sorting, chosen opponent, open panels, daily-stats filters | Local component state |
 | Preferences that follow the user | The server, through the API |
 
 ### Code quality and design
@@ -243,6 +245,7 @@ flowchart TD
 | Interface | Implementation | In tests |
 |---|---|---|
 | `FantasyDataSource` | Yahoo data source | Replays recorded Yahoo responses |
+| `DailyStatsSource` | Yahoo daily-stats resources | Replays recorded Yahoo responses; a fixture source in local, CI and review until the Yahoo source is wired |
 | Repositories (connections, leagues, preferences) | Supabase, as the signed-in user | The throwaway database |
 | `TokenCipher` | AES-256-GCM | Fixed test key |
 | `Clock` | System clock | Fixed clock |
@@ -332,6 +335,7 @@ Yahoo data is grouped by how often it changes. Data that changes about once a se
 | Current week table | While NBA games are live or being finalized | `/league/{key};out=settings,scoreboard` | When the current week is viewed |
 | Past week table | Never, once stat corrections settle | `/league/{key};out=settings/scoreboard;week={n}` | When that week is viewed |
 | Roster | Trades and injury news, a few times a week | `/team/{key}/roster` | When the roster view is opened |
+| Daily stats | From every 2 minutes during games to once a season | Ten datasets, D1 to D10, in the [retrieval plan](reference/daily-stats-retrieval.md#datasets) | When a daily-stats screen needs them |
 
 - **One call per response.** Settings and stats arrive together, so a response never mixes data from different moments, and the current week and season status come with the stats.
 - **Access before Yahoo.** A league that isn't in the user's stored leagues is refused without calling Yahoo.
@@ -365,7 +369,7 @@ erDiagram
 
 ### Caching
 
-- **Browser:** TanStack Query holds each league and scope for the session, so moving between views and weeks doesn't call Yahoo again. A refresh button fetches again. Each response carries its fetch time, shown as "updated N min ago".
+- **Browser:** TanStack Query holds each league and scope for the session, so moving between views and weeks doesn't call Yahoo again. A refresh button fetches again. Each response carries its fetch time, shown as "updated N min ago". Daily-stats datasets have their own freshness: 2 minutes while a shown game is live, up to 6 hours for period averages, and the session for settled days and past weeks ([per-dataset table](reference/daily-stats-retrieval.md#datasets)). Nothing from Yahoo is written to browser storage.
 - **Server:** none.
 - **CDN:** caches only the built static assets, never `/api`.
 
@@ -376,21 +380,77 @@ erDiagram
 | Open rankings, or switch to a week not yet viewed | 1 |
 | Current matchup and comparison against every team | 0: computed from the same table |
 | A scope already viewed this session | 0 |
+| Matchup Today, first visit | 7 |
+| Matchup Week, first visit on the last day of the week | 21 |
+| Players, first page / each further page | 4 to 6 / 2 |
+| League team popover, first / later | 4 / 3 |
+| Live Matchup while a shown game is in progress | About 2.2 a minute |
 
-With 14 users at about 30 views a day, that is under 1,000 calls a day for the shared Yahoo app.
+With 14 users, a typical day is about 2,300 calls for the shared Yahoo app, and a game night with everyone watching live for 3 hours about 6,100, at most about 1,850 in one hour. The [call budgets](reference/daily-stats-retrieval.md#call-budgets) show how each figure is reached.
+
+### Daily stats
+
+The Matchup, Players and League screens follow the same shape as the rankings: the server checks access, makes the Yahoo calls, validates and normalizes, and returns domain data; the client computes every view with `shared/domain` functions. The [retrieval plan](reference/daily-stats-retrieval.md) holds the per-dataset calls, freshness and budgets.
+
+```mermaid
+flowchart LR
+    subgraph Client["client/"]
+        MS["Matchup"]
+        PS["Players"]
+        LS["League"]
+        H["Hooks + API module<br>TanStack Query keys,<br>live polling"]
+    end
+    subgraph Shared["shared/"]
+        DOM["domain<br>counted totals, averages,<br>game state, ranks"]
+        CON["api<br>zod contracts,<br>capabilities"]
+    end
+    subgraph Server["server/"]
+        R["http<br>routes, access checks"]
+        SV["services<br>one per endpoint"]
+        DSS["fantasy: DailyStatsSource<br>resources, parsers,<br>25-key batching"]
+        PJ["fantasy: ProjectionSource<br>interface only, not wired"]
+    end
+    Y["Yahoo Fantasy API<br>user's OAuth token"]
+    MS & PS & LS --> H
+    MS & PS & LS --> DOM
+    H --> CON
+    H -->|"/api"| R
+    R --> SV --> DSS --> Y
+    SV -.-> PJ
+    DSS --> DOM
+    CON --> DOM
+```
+
+- **Datasets, not views.** Each endpoint returns one Yahoo dataset in domain form: a team's roster and stats for one date, game logs for up to 25 players per Yahoo call, period totals for a list of players, a page of the player list, the league's NBA schedule, a team's transactions, the draft results, the scoring weeks. Screens combine them in the browser, so one dataset serves every screen that needs it.
+- **`DailyStatsSource`** in `server/fantasy` is the only code that knows these Yahoo shapes. Its resources batch player keys by 25, memoize identical calls within a request, and turn Yahoo's values into the tagged stat values below.
+- **Missing is not zero, in five ways.** A stat value is a number, no game (Yahoo `-`), did not play (`0/0` on a team game day, or GP 0), not yet played (`""`) or unavailable. Each shows differently and none counts as 0.
+- **Counted totals** are the sum of a player's starting-slot days (Yahoo's `is_starting_position`), recomputing FG% and FT% from summed makes and attempts. They reconcile exactly with Yahoo's daily and weekly team totals (FAN-91).
+- **Live state.** While any game shown on Matchup is live and the tab is visible, the client refetches today's two team days and the game logs every 2 minutes and the week table every 6. It stops when no shown game is live, doubles the interval on `YAHOO_RATE_LIMITED`, and shows each section's age.
+- **Partial data.** Each dataset loads and fails on its own; a failed section keeps what it showed, labelled with its age, and offers a retry.
+- **Only the OAuth token.** No Yahoo website routes or cookies. Injury status and notes are today's values and are never shown against a past date.
+- **Projections slot.** `ProjectionSource` is an interface with no implementation. `GET /api/me` lists the wired features (`projections: false`), and the client offers Next 7 projected only when it is true. Turning it on is its own ticket after FAN-94.
+- **Static first.** The `shared/api` contracts are the boundary between screens and Yahoo. A fixture `DailyStatsSource`, wired only in local, CI and review like the Yahoo stand-in, lets the screens be finished before any Yahoo adapter; production reports the daily-stats screens unavailable through the same feature list until the Yahoo source is wired.
 
 ## API
 
 | Endpoint | Returns |
 |---|---|
 | `GET /api/auth/yahoo`, `GET /api/auth/callback`, `POST /api/auth/logout` | Sign-in and sign-out |
-| `GET /api/me` | The user, whether their Yahoo connection works, and their preferences |
+| `GET /api/me` | The user, whether their Yahoo connection works, their preferences, and which features the server has wired (daily stats, projections) |
 | `DELETE /api/me/yahoo` | Disconnects Yahoo and deletes stored tokens and leagues |
 | `DELETE /api/me` | Deletes the account and everything stored for it |
 | `GET /api/leagues` | The user's leagues and teams, optionally refreshed from Yahoo |
 | `PUT /api/me/preferences` | Saves the selected league, team and display choices |
 | `GET /api/leagues/:key/:scope` | The team table for `season`, `current` or a week number, with settings, teams, matchup pairings and fetch time |
 | `GET /api/leagues/:key/teams/:team/roster` | One team's roster |
+| `GET /api/leagues/:key/teams/:team/days/:date` | One team's roster on a date, each player's slot and stats that date |
+| `GET /api/leagues/:key/games?players=` | Game logs for the listed players: date, opponent, home or away, tip-off, live or final state, minutes |
+| `GET /api/leagues/:key/player-stats/:period?players=` | Season, last-7-day or last-30-day totals with GP and makes and attempts |
+| `GET /api/leagues/:key/players` | One page of 25 owned, available or waiver players, with ownership, rostered % and trend; optional position, search and sort |
+| `GET /api/leagues/:key/schedule` | Every NBA team's games from today to about 8 days ahead |
+| `GET /api/leagues/:key/teams/:team/transactions` | One team's successful adds, drops and trades |
+| `GET /api/leagues/:key/draft` | Draft results |
+| `GET /api/leagues/:key/weeks` | The season's scoring weeks |
 | `GET /api/health` | Deployment health |
 
 - **Contracts.** Each endpoint has one zod schema in `shared/api` for its input and its output, checked by the server and by the client's API module.
@@ -513,8 +573,13 @@ flowchart LR
 
 | Area | Chosen | Not chosen |
 |---|---|---|
-| Fantasy data | Read live from Yahoo; cached only in the browser for the session | Server snapshots with expiry rules: fewer Yahoo calls and data during outages, but a table, expiry, locking and stale handling to build and test |
+| Fantasy data | Read live from Yahoo; cached only in the browser for the session. Daily stats too (FAN-97): the budgets fit without storage, and nothing depends on what Yahoo's API agreement allows us to store | Server snapshots with expiry rules: fewer Yahoo calls and data during outages, but a table, expiry, locking and stale handling to build and test |
 | Where views are computed | On the client, from one team table per scope | A server endpoint per view, each with its own Yahoo calls |
+| Daily-stats data source | Yahoo Fantasy API only, OAuth token only; schedule and live game state from `out=game_log` (FAN-92) | BALLDONTLIE or ESPN for schedule and live state: kept as documented fallbacks, not needed; Yahoo website pages: need a session cookie |
+| Daily-stats endpoints | One endpoint per Yahoo dataset, combined in the browser | One endpoint per screen: fewer requests, but each screen would refetch data another already has |
+| Week view counted totals | Seven dated team-day calls per team, summed in `shared/domain` | The one-call week roster: not yet checked on a week with bench games; storing finished days: waits on the API agreement |
+| Live refresh | Each viewer polls every 2 minutes while a shown game is live | One shared poll per league: fewer calls, but needs stored, shared data and a server-only database role |
+| Next 7 projected | Left out; a `ProjectionSource` slot, off by default (FAN-94, FAN-99) | Building the website-cookie reader now, before the cookie durability check |
 | Stored data scope | Per user | Shared per league: fewer calls, but needs a database role only the server holds, since users can write their own rows |
 | Code style | Pure functions for domain logic, small classes for adapters, constructor injection wired by hand | Class-heavy domain models, or a dependency-injection library |
 | Protecting `main` | Pull requests with required checks, squash only | Leave unprotected |
@@ -530,7 +595,8 @@ flowchart LR
 
 ### When to revisit
 
-- **Yahoo rate-limit errors, league views regularly slower than 2 seconds, or Yahoo outages on game nights** call for a server cache. It would store closed weeks first, since they stop changing once Yahoo's stat corrections settle, and keep data per user.
+- **Yahoo rate-limit errors, league views regularly slower than 2 seconds, or Yahoo outages on game nights** call for a server cache. It would store closed weeks and settled daily-stats days first, since they stop changing once Yahoo's stat corrections settle, and keep data per user. Before storing anything, check what Yahoo's API Access and Use Agreement allows (the [clauses to check](reference/daily-stats-retrieval.md#storage-and-yahoos-agreement)).
+- **FAN-94 is decided** and the FAN-99 cookie check passes: wire `ProjectionSource` in its own ticket.
 - Card Benefits needs its Supabase projects back.
 - The app becomes commercial (Vercel Hobby is non-commercial only) or grows well past the invited group.
 - Background jobs become necessary.
