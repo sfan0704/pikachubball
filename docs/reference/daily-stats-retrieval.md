@@ -53,6 +53,7 @@ Freshness is managed in one place: a policy in `shared/domain` that the browser 
 - **One freshness label.** A shared component reads each query's last success time and error state and shows "updated N min ago", or a stale label after a failed refresh. The Matchup header shows the oldest age among its sections.
 - **Backoff in the same place.** A `YAHOO_RATE_LIMITED` response doubles the poll interval (2, 4, 8 minutes, at most 10) until a poll succeeds. `YAHOO_UNAVAILABLE` keeps the interval and marks the data stale.
 - **The server stays out of it.** It only stamps each response with its fetch time. It keeps no cache and sets no cache headers; API responses stay private and uncacheable.
+- **No background work, no shared writes.** Polling runs only in open browser tabs. The server keeps nothing between requests and writes nothing for daily stats, so it scales to any number of instances without coordination. **Accepted trade-off** (Howard, 2026-11-10): viewers of the same game each make their own Yahoo calls, up to about 2,500 an hour on a busy night. If Yahoo starts rate-limiting, a shared cache is the fix, and it would then need a guard against instances writing the same data at once.
 - **Corrections.** Yahoo corrects stats overnight, which is why yesterday and the day before are Recent rather than Settled.
 
 Not chosen: a server-side cache (needs stored, shared data and the agreement check) and HTTP cache headers (API responses are private, and the browser's HTTP cache can't be inspected, labelled or tested).
