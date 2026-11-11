@@ -87,6 +87,15 @@ export function freshnessClass(dataset: DailyDataset, today: string): FreshnessC
   }
 }
 
+/**
+ * Whether a dataset is fetched again whenever the user comes back to the tab,
+ * fresh or not. The current week's games left follow the lineup as set now,
+ * which the user may have just changed in Yahoo.
+ */
+export function followsLineup(dataset: DailyDataset): boolean {
+  return dataset.kind === "weekTable" && dataset.scope === "current";
+}
+
 /** The timers a dataset gets now. Live data counts as Recent while no shown game is live. */
 export function freshnessOf(dataset: DailyDataset, today: string, gamesLive: boolean): ClassTimers {
   const policyClass = freshnessClass(dataset, today);

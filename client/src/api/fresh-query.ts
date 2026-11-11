@@ -1,5 +1,11 @@
 import { hashKey, queryOptions, skipToken, type Query, type QueryKey } from "@tanstack/react-query";
-import { backedOffInterval, freshnessOf, nbaDateOf, type DailyDataset } from "@shared/domain";
+import {
+  backedOffInterval,
+  followsLineup,
+  freshnessOf,
+  nbaDateOf,
+  type DailyDataset,
+} from "@shared/domain";
 import type { Freshness } from "./freshness";
 
 /** A query that is ready to run: the dataset it reads, for the policy, and how to fetch it. */
@@ -23,14 +29,15 @@ function timerOptions<T>(freshness: Freshness, request: FreshRequest<T>) {
         : backedOffInterval(pollEvery, freshness.backoff.streak(query.queryHash)),
     refetchIntervalInBackground: false,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: followsLineup(request.dataset) ? "always" : true,
   } as const;
 }
 
 /**
  * The query factory for datasets: the key plus the freshness policy's fresh
  * time and poll interval, so no hook or component sets its own. Stale data
- * refetches when it is shown again or the tab regains focus; polls stop while
+ * refetches when it is shown again or the tab regains focus, and data that
+ * follows the lineup refetches on focus even when fresh; polls stop while
  * the tab is hidden. A null request waits until its inputs are chosen.
  */
 export function freshQuery<T>(
