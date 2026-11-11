@@ -37,3 +37,8 @@ export const queryKeys = {
   draft: (leagueKey: string) => [...league(leagueKey), "draft"] as const,
   weeks: (leagueKey: string) => [...league(leagueKey), "weeks"] as const,
 };
+
+/** Whether a key is a game-log key from `queryKeys.gameLogs`, which the live signal reads. */
+export function isGameLogsKey(key: readonly unknown[]): boolean {
+  return key.length === 4 && key[0] === "leagues" && key[2] === "games";
+}

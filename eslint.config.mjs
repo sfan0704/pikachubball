@@ -233,6 +233,23 @@ export default [
     },
   },
 
+  // Freshness is central: only the API module's query factory sets query timers.
+  {
+    files: ["client/src/**/*.{ts,tsx}"],
+    ignores: ["client/src/api/**", "client/src/lib/queryClient.ts", "**/*.test.*"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Property[key.name=/^(staleTime|refetchInterval|refetchIntervalInBackground|refetchOnMount|refetchOnWindowFocus)$/]",
+          message:
+            "Query timers come from the freshness policy (shared/domain/freshness.ts) through the API module's freshQuery.",
+        },
+      ],
+    },
+  },
+
   // Size, complexity and promise rules, for all source code.
   {
     files: ["client/src/**/*.{ts,tsx}", "server/**/*.ts", "shared/**/*.ts"],

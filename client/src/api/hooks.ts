@@ -1,4 +1,4 @@
-import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MeResponse } from "@shared/api/account";
 import type { LeagueScope } from "@shared/api/league-scope";
 import {
@@ -10,6 +10,8 @@ import {
   getRoster,
   savePreferences,
 } from "./endpoints";
+import { freshQuery } from "./fresh-query";
+import { useFreshness } from "./freshness";
 import { queryKeys } from "./query-keys";
 
 /** The signed-in user, their Yahoo connection and saved choices. */
@@ -25,26 +27,38 @@ export function useLeagues() {
   });
 }
 
-/** The team table for a league and scope; waits until both are chosen. */
-export function useLeagueScope(leagueKey: string | null, scope: LeagueScope | null) {
-  return useQuery({
-    queryKey: queryKeys.leagueScope(leagueKey ?? "", scope ?? "season"),
-    queryFn:
-      leagueKey !== null && scope !== null
-        ? ({ signal }) => getLeagueScope(leagueKey, scope, signal)
-        : skipToken,
-  });
+/** D1's class follows the scope: earlier weeks no longer change. */
+function weekTableScope(scope: LeagueScope): "season" | "current" | "past" {
+  return typeof scope === "number" ? "past" : scope;
 }
 
-/** One team's roster; waits until the league and team are chosen. */
+/** D1, the team table for a league and scope; waits until both are chosen. */
+export function useLeagueScope(leagueKey: string | null, scope: LeagueScope | null) {
+  return useQuery(
+    freshQuery(
+      useFreshness(),
+      queryKeys.leagueScope(leagueKey ?? "", scope ?? "season"),
+      leagueKey !== null && scope !== null
+        ? {
+            dataset: { kind: "weekTable", scope: weekTableScope(scope) },
+            fetch: (signal) => getLeagueScope(leagueKey, scope, signal),
+          }
+        : null
+    )
+  );
+}
+
+/** D9, one team's roster; waits until the league and team are chosen. */
 export function useRoster(leagueKey: string | null, teamKey: string | null) {
-  return useQuery({
-    queryKey: queryKeys.roster(leagueKey ?? "", teamKey ?? ""),
-    queryFn:
+  return useQuery(
+    freshQuery(
+      useFreshness(),
+      queryKeys.roster(leagueKey ?? "", teamKey ?? ""),
       leagueKey !== null && teamKey !== null
-        ? ({ signal }) => getRoster(leagueKey, teamKey, signal)
-        : skipToken,
-  });
+        ? { dataset: { kind: "roster" }, fetch: (signal) => getRoster(leagueKey, teamKey, signal) }
+        : null
+    )
+  );
 }
 
 /** Saves the user's choices and keeps the cached user in step with what is stored. */

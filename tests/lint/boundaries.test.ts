@@ -145,4 +145,13 @@ describe("promises and size limits where the target layout applies", () => {
       )
     ).toContain("@typescript-eslint/no-non-null-assertion");
   });
+
+  it("lets only the API module set query timers", async () => {
+    const code = "export const options = { staleTime: 1000, refetchInterval: 5000 };\n";
+    expect(await errorsFor("client/src/features/daily-stats/MatchupScreen.tsx", code)).toEqual([
+      "no-restricted-syntax",
+      "no-restricted-syntax",
+    ]);
+    expect(await errorsFor("client/src/api/fresh-query.ts", code)).toEqual([]);
+  });
 });
