@@ -150,7 +150,8 @@ describe("LeaguePage", () => {
     expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/matchup/today`);
 
     await userEvent.click(screen.getByRole("link", { name: "Week" }));
-    expect(await screen.findByTestId("matchup-week")).toHaveTextContent(/^Week 5: /);
+    expect(await screen.findByLabelText("Week")).toHaveValue("5");
+    expect(await screen.findByTestId(`column-${MY_TEAM}`)).toHaveTextContent("A. Knoll");
 
     await userEvent.click(within(nav).getByRole("link", { name: "Players" }));
     expect(await screen.findByTestId("players-list")).toBeInTheDocument();

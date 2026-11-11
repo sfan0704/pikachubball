@@ -15,6 +15,7 @@ import {
   usePlayerStats,
   useSchedule,
   useTeamDay,
+  useTeamDays,
   useTransactions,
   useWeeks,
 } from "../../../client/src/api/daily-stats-hooks";
@@ -33,6 +34,7 @@ async function answer(url: string): Promise<object> {
   const path = decodeURIComponent(pathname).replace(`/api/leagues/${LEAGUE}`, "");
   const players = searchParams.get("players")?.split(",") ?? [];
   const routes: Record<string, () => Promise<object>> = {
+    [`/teams/${TEAM}/days/2026-11-10`]: () => source.getTeamDay(LEAGUE, TEAM, "2026-11-10"),
     [`/teams/${TEAM}/days/2026-11-11`]: () => source.getTeamDay(LEAGUE, TEAM, "2026-11-11"),
     "/games": () => source.getGameLogs(LEAGUE, players),
     "/player-stats/last30": () => source.getPlayerStats(LEAGUE, "last30", players),
@@ -104,6 +106,38 @@ describe("daily-stats hooks", () => {
       `/api/leagues/${LEAGUE}/draft`,
       `/api/leagues/${LEAGUE}/weeks`,
     ]);
+  });
+
+  it("keep a team's loaded days when one date fails, under that date's error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.endsWith("/days/2026-11-09")
+          ? jsonResponse({ code: "YAHOO_UNAVAILABLE", message: "x", requestId: "r" }, 503)
+          : jsonResponse(await answer(url))
+      )
+    );
+    const dates = ["2026-11-09", "2026-11-10", "2026-11-11"];
+    const { result } = renderHook(() => useTeamDays(LEAGUE, TEAM, dates), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    expect(result.current.data?.map((day) => day.date)).toEqual(["2026-11-10", "2026-11-11"]);
+    expect(result.current.error).not.toBeNull();
+  });
+
+  it("give no days when every date fails, so the section shows only the error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({ code: "YAHOO_UNAVAILABLE", message: "x", requestId: "r" }, 503)
+      )
+    );
+    const { result } = renderHook(() => useTeamDays(LEAGUE, TEAM, ["2026-11-10", "2026-11-11"]), {
+      wrapper: wrapper(),
+    });
+
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+    expect(result.current.data).toBeUndefined();
   });
 
   it("wait until their inputs are chosen", () => {

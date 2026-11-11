@@ -1,13 +1,6 @@
 import { useState } from "react";
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
-import {
-  CATEGORIES,
-  closestLostCategory,
-  compareTotals,
-  opponentOf,
-  type CategoryKey,
-  type TeamTable,
-} from "@shared/domain";
+import { CATEGORIES, closestLostCategory, compareTotals, type CategoryKey } from "@shared/domain";
 import { useLeagueScope } from "@/api/hooks";
 import { useGameLogs, usePlayerStats, useTeamDay } from "@/api/daily-stats-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +8,7 @@ import { CATEGORY_LABELS } from "@/features/league/categories";
 import { DatasetState } from "./DatasetState";
 import { FreshnessLine } from "./FreshnessLine";
 import { MatchupHeader } from "./MatchupHeader";
-import { playerCards } from "./matchup-board";
+import { playerCards, shownOpponent } from "./matchup-board";
 import { PlayerColumns, PlayerColumnView } from "./PlayerColumns";
 import { TotalsGrid } from "./TotalsGrid";
 
@@ -31,16 +24,6 @@ interface MatchupDayBoardProps {
   onPickLeague: () => void;
   /** Opens the shared player detail. */
   onOpenPlayer: (player: DailyPlayer) => void;
-}
-
-/** The opponent shown: the one the user picked, else Yahoo's, else the first other team on a bye. */
-function shownOpponent(table: TeamTable | undefined, teamKey: string, picked: string | null) {
-  if (!table) {
-    return { opponentKey: picked, realOpponentKey: null };
-  }
-  const realOpponentKey = opponentOf(table, teamKey);
-  const fallback = table.teams.find((team) => team.teamKey !== teamKey)?.teamKey ?? null;
-  return { opponentKey: picked ?? realOpponentKey ?? fallback, realOpponentKey };
 }
 
 /** Every player on either roster, for one game-log and one season-stats request. */

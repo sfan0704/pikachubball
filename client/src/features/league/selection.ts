@@ -8,7 +8,7 @@ export interface Selection {
   readonly leagueKey: string;
   readonly teamKey: string;
   readonly screen: Screen;
-  /** The League screen's period; other screens use the current week. */
+  /** The League screen's period, or the week Matchup Week shows; other screens use the current week. */
   readonly scope: LeagueScope;
   /** The Matchup day; other screens keep today. */
   readonly day: MatchupDay;
@@ -21,29 +21,39 @@ const PATH = /^\/leagues\/([^/]+)\/teams\/([^/]+)\/(.+?)\/?$/;
 
 /**
  * The URL that holds a selection, so refresh, back and shared links all work:
- * `…/matchup/<day>`, `…/players`, or `…/<scope>` for League, as before daily stats.
+ * `…/matchup/<day>` (`…/matchup/week/<n>` for a past week), `…/players`, or
+ * `…/<scope>` for League, as before daily stats.
  */
 export function selectionPath({ leagueKey, teamKey, screen, scope, day }: Selection): string {
   const base = `/leagues/${encodeURIComponent(leagueKey)}/teams/${encodeURIComponent(teamKey)}`;
   if (screen === "matchup") {
-    return `${base}/matchup/${day}`;
+    const week = day === "week" && typeof scope === "number" ? `/${scope}` : "";
+    return `${base}/matchup/${day}${week}`;
   }
   return screen === "players" ? `${base}/players` : `${base}/${scope}`;
 }
 
 type ScreenPart = Pick<Selection, "screen" | "scope" | "day">;
 
-/** The screen, scope and day that the rest of the path names, or null. */
-function parseScreen(rest: string): ScreenPart | null {
-  const [first, second, ...extra] = rest.split("/");
-  if (extra.length > 0) {
+/** `<day>`, or `week/<n>` for one scoring week. */
+function parseMatchup(day: string | undefined, week: string | undefined): ScreenPart | null {
+  const found = MATCHUP_DAYS.find((candidate) => candidate === day);
+  if (!found || (week !== undefined && found !== "week")) {
     return null;
   }
+  const scope = week === undefined ? "current" : leagueScopeSchema.safeParse(week).data;
+  return typeof scope === "number" || scope === "current"
+    ? { screen: "matchup", scope, day: found }
+    : null;
+}
+
+/** The screen, scope and day that the rest of the path names, or null. */
+function parseScreen(rest: string): ScreenPart | null {
+  const [first, second, third, ...extra] = rest.split("/");
   if (first === "matchup") {
-    const day = MATCHUP_DAYS.find((candidate) => candidate === second);
-    return day ? { screen: "matchup", scope: "current", day } : null;
+    return extra.length > 0 ? null : parseMatchup(second, third);
   }
-  if (second !== undefined) {
+  if (second !== undefined || third !== undefined) {
     return null;
   }
   if (first === "players") {

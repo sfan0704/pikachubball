@@ -27,13 +27,11 @@ import {
   allPlayers,
   droppedPlayer,
   rosterPlayer,
-  slotOf,
+  slotOn,
+  swapDate,
   type FixturePlayer,
 } from "./fixture-players";
 import { playerPage, scoringWeeks, snakeDraft, teamMoves } from "./fixture-league-data";
-
-/** How many days ago each team swapped its dropped player for its slot-10 player. */
-const SWAP_DAYS_AGO = 2;
 
 function gameOf(league: string): string {
   return league.slice(0, league.indexOf("."));
@@ -77,7 +75,7 @@ export class FixtureDailyStatsSource implements DailyStatsSource {
   async getTeamDay(leagueKey: string, teamKey: string, date: string): Promise<TeamDay> {
     const team = teamNumber(teamKey);
     const today = this.today();
-    const swapped = date >= addDays(today, -SWAP_DAYS_AGO);
+    const swapped = date >= swapDate(today);
     const players = Array.from({ length: ROSTER_SIZE }, (_, index) => {
       const slot = index + 1;
       const player =
@@ -85,7 +83,11 @@ export class FixtureDailyStatsSource implements DailyStatsSource {
           ? droppedPlayer(gameOf(leagueKey), team)
           : rosterPlayer(gameOf(leagueKey), team, slot);
       const game = fixtureGame(player.player.nbaTeam, date, today);
-      return { player: player.player, ...slotOf(slot), line: lineOn(player, date, game, today) };
+      return {
+        player: player.player,
+        ...slotOn(slot, date, today),
+        line: lineOn(player, date, game, today),
+      };
     });
     return { teamKey, date, players };
   }

@@ -4,6 +4,8 @@
  * they cover every player state the daily-stats screens show.
  */
 import type { DailyPlayer } from "../../../shared/api/daily-stats-values";
+import { addDays, mondayOf } from "../../../shared/domain";
+import { fixtureGame } from "./fixture-games";
 
 /** The fixture league has 14 teams, like the recorded league. */
 export const FIXTURE_TEAM_COUNT = 14;
@@ -34,7 +36,7 @@ interface SlotTemplate {
   readonly injury?: DailyPlayer["injuryToday"];
 }
 
-/** Slot 10 is the player each team added two days ago; slot 11 came off waivers. */
+/** Slot 10 is the player each team added on the swap date; slot 11 came off waivers. */
 export const ADDED_SLOT = 10;
 export const CLAIMED_SLOT = 11;
 const DROPPED_OFFSET = 50;
@@ -129,7 +131,7 @@ export function rosterPlayer(game: string, team: number, slot: number): FixtureP
   return build(game, 10000 + team * 100 + slot, name, template);
 }
 
-/** The player team `team` dropped two days ago for its slot-10 player; now on waivers. */
+/** The player team `team` dropped on the swap date for its slot-10 player; now on waivers. */
 export function droppedPlayer(game: string, team: number): FixturePlayer {
   const name = `Quinn ${LAST_NAMES[team - 1]}`;
   return build(game, 10000 + team * 100 + DROPPED_OFFSET, name, {
@@ -151,10 +153,52 @@ export function freeAgents(game: string): FixturePlayer[] {
   });
 }
 
+function slotNamed(name: string): { slot: string; isStartingSlot: boolean } {
+  return { slot: name, isStartingSlot: name !== "BN" && name !== "IL" };
+}
+
 /** The slot templates' names and whether each counts. */
 export function slotOf(slot: number): { slot: string; isStartingSlot: boolean } {
-  const name = SLOTS[slot - 1].slot;
-  return { slot: name, isStartingSlot: name !== "BN" && name !== "IL" };
+  return slotNamed(SLOTS[slot - 1].slot);
+}
+
+/** Slot 11 starts in slot 9's Util spot on its team's first game of each week, so both are partly benched. */
+const SPOT_STARTER = CLAIMED_SLOT;
+const SPOT_BENCHED = 9;
+
+/** Whether `date` is the first date of its scoring week on which the spot starter's team plays. */
+function isSpotStart(date: string, today: string): boolean {
+  const nbaTeam = SLOTS[SPOT_STARTER - 1].nbaTeam;
+  if (fixtureGame(nbaTeam, date, today) === null) {
+    return false;
+  }
+  for (let day = mondayOf(date); day < date; day = addDays(day, 1)) {
+    if (fixtureGame(nbaTeam, day, today) !== null) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** The slot a roster slot's player holds on `date`: the template's, except on spot starts. */
+export function slotOn(
+  slot: number,
+  date: string,
+  today: string
+): { slot: string; isStartingSlot: boolean } {
+  if ((slot === SPOT_STARTER || slot === SPOT_BENCHED) && isSpotStart(date, today)) {
+    return slotNamed(slot === SPOT_STARTER ? SLOTS[SPOT_BENCHED - 1].slot : "BN");
+  }
+  return slotOf(slot);
+}
+
+/**
+ * When each team swapped its dropped player for its slot-10 player: the
+ * Saturday before the scoring week that holds today, so a Week view always
+ * shows the move mid-week, whatever day today is.
+ */
+export function swapDate(today: string): string {
+  return addDays(mondayOf(today), -2);
 }
 
 /** Roster slots per team. */

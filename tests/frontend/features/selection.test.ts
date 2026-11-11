@@ -60,10 +60,23 @@ describe("selection paths", () => {
       selection({ screen: "matchup", day: "week" }),
       "/leagues/466.l.1/teams/466.l.1.t.3/matchup/week",
     ],
+    [
+      selection({ screen: "matchup", day: "week", scope: 4 }),
+      "/leagues/466.l.1/teams/466.l.1.t.3/matchup/week/4",
+    ],
     [selection({ screen: "players" }), "/leagues/466.l.1/teams/466.l.1.t.3/players"],
   ])("round-trips %o through its URL", (chosen, path) => {
     expect(selectionPath(chosen)).toBe(path);
     expect(parseSelectionPath(path)).toEqual(chosen);
+  });
+
+  it("keeps Matchup's day without a week number unless it shows a past week", () => {
+    expect(selectionPath(selection({ screen: "matchup", day: "today", scope: 4 }))).toBe(
+      "/leagues/466.l.1/teams/466.l.1.t.3/matchup/today"
+    );
+    expect(selectionPath(selection({ screen: "matchup", day: "week", scope: "season" }))).toBe(
+      "/leagues/466.l.1/teams/466.l.1.t.3/matchup/week"
+    );
   });
 
   it("ignores the query string", () => {
@@ -85,6 +98,10 @@ describe("selection paths", () => {
     "/leagues/a/teams/b/matchup",
     "/leagues/a/teams/b/matchup/tomorrow",
     "/leagues/a/teams/b/matchup/today/extra",
+    "/leagues/a/teams/b/matchup/today/4",
+    "/leagues/a/teams/b/matchup/week/season",
+    "/leagues/a/teams/b/matchup/week/0",
+    "/leagues/a/teams/b/matchup/week/4/extra",
     "/leagues/a/teams/b/players/1",
     "/leagues/a/teams/b/season/1",
   ])("does not read %s as a selection", (path) => {

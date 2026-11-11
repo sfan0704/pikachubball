@@ -1,10 +1,16 @@
 import type { ReactNode } from "react";
-import type { UseQueryResult } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorScreen } from "@/features/league/ErrorScreen";
 
+/** What a section needs from its dataset: one query, or several read as one. */
+export interface DatasetQuery<T> {
+  readonly data: T | undefined;
+  readonly error: Error | null;
+  readonly refetch: () => Promise<unknown>;
+}
+
 interface DatasetStateProps<T> {
-  query: UseQueryResult<T>;
+  query: DatasetQuery<T>;
   onPickLeague: () => void;
   children: (data: T) => ReactNode;
 }
