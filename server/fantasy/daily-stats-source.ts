@@ -22,7 +22,7 @@ export type GameLogs = Dataset<GameLogsResponse>;
 export type PlayerStats = Dataset<PlayerStatsResponse>;
 /** D5: one page of the league's player pool. */
 export type PlayerPage = Dataset<PlayerListResponse>;
-/** D6: every NBA team's games from today to about 8 days ahead. */
+/** D6: every NBA team's games from yesterday (US Eastern) to about 8 days ahead. */
 export type Schedule = Dataset<ScheduleResponse>;
 /** D7: one team's successful moves, newest first. */
 export type Transactions = Dataset<TransactionsResponse>;

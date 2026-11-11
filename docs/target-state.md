@@ -447,7 +447,7 @@ flowchart LR
 | `GET /api/leagues/:key/games?players=` | Game logs for the listed players: date, opponent, home or away, tip-off, live or final state, minutes and the player's line in each game |
 | `GET /api/leagues/:key/player-stats/:period?players=` | Season, last-7-day or last-30-day totals with GP and makes and attempts |
 | `GET /api/leagues/:key/players` | One page of 25 owned, available or waiver players, with ownership, rostered % and trend; optional position, search and sort |
-| `GET /api/leagues/:key/schedule` | Every NBA team's games from today to about 8 days ahead |
+| `GET /api/leagues/:key/schedule` | Every NBA team's games from yesterday (US Eastern) to about 8 days ahead |
 | `GET /api/leagues/:key/teams/:team/transactions` | One team's successful adds, drops and trades |
 | `GET /api/leagues/:key/draft` | Draft results |
 | `GET /api/leagues/:key/weeks` | The season's scoring weeks |

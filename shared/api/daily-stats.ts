@@ -172,7 +172,7 @@ export const playerListResponseSchema = z.object({
 
 export type PlayerListResponse = z.infer<typeof playerListResponseSchema>;
 
-/** The body of `GET /api/leagues/:key/schedule`: every NBA team's games from today to about 8 days ahead. */
+/** The body of `GET /api/leagues/:key/schedule`: every NBA team's games from yesterday (US Eastern) to about 8 days ahead. A team no league member rosters may be missing. */
 export const scheduleResponseSchema = z.object({
   fetchedAt: fetchedAtSchema,
   teams: z.array(z.object({ nbaTeam: nbaTeamSchema, games: z.array(nbaGameSchema) })),
