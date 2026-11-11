@@ -2,12 +2,14 @@ import { z } from "zod";
 import type { GameLogsResponse } from "../../../shared/api/daily-stats";
 import {
   missing,
+  missingLine,
   type CountValue,
   type GameState,
   type LiveProgress,
+  type StatLine,
 } from "../../../shared/domain";
 import { fragments, indexed, leagueSection, parseYahoo } from "../yahoo-shapes";
-import { yahooMinutesValue } from "./stat-value-parsers";
+import { yahooDateLine, yahooMinutesValue } from "./stat-value-parsers";
 
 /*
  * Yahoo's `out=game_log` lists each player's team games, past and about 8 days
@@ -16,7 +18,7 @@ import { yahooMinutesValue } from "./stat-value-parsers";
  * takes either body.
  */
 
-/** One player's games as D3 sends them, with the player's minutes in each. */
+/** One player's games as D3 sends them, with the player's minutes and line in each. */
 export type GameLogPlayer = GameLogsResponse["players"][number];
 
 type GameLogGame = GameLogPlayer["games"][number];
@@ -122,14 +124,28 @@ function minutesIn(entry: GameLogEntry, state: PlayedGameState): CountValue | nu
   return missing(state.kind === "final" ? "didNotPlay" : "notYetPlayed");
 }
 
+/**
+ * The player's nine categories in the game. Without minutes the line has the
+ * same gap as the minutes (not yet played, or did not play), whatever Yahoo
+ * wrote in the other stats; with minutes, the stats are read as a date's line.
+ */
+function lineIn(entry: GameLogEntry, minutes: CountValue): StatLine | null {
+  if (minutes.kind !== "value") {
+    return missingLine(minutes.kind);
+  }
+  const parsed = yahooDateLine.safeParse(entry.stats);
+  return parsed.success ? parsed.data : null;
+}
+
 const gameLogGameSchema = gameLogEntrySchema.transform(({ game_log_stats: entry }, context) => {
   const [{ game }] = entry.games;
   const state = gameState(game);
   const minutes = minutesIn(entry, state);
-  if (minutes === null) {
+  const line = minutes === null ? null : lineIn(entry, minutes);
+  if (minutes === null || line === null) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "unreadable minutes",
+      message: minutes === null ? "unreadable minutes" : "unreadable stats",
       path: ["stats"],
     });
     return z.NEVER;
@@ -142,6 +158,7 @@ const gameLogGameSchema = gameLogEntrySchema.transform(({ game_log_stats: entry 
     isHome: !away,
     state,
     minutes,
+    line,
   };
   return result;
 });
