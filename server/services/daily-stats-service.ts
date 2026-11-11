@@ -49,7 +49,7 @@ export function listPlayers(access: DailyStatsAccess, key: string, query: Player
   return readInLeague(access, key, (source) => source.listPlayers(key, query));
 }
 
-/** D6: every NBA team's games from today on. */
+/** D6: every NBA team's games from yesterday (US Eastern) on. */
 export function getSchedule(access: DailyStatsAccess, key: string) {
   return readInLeague(access, key, (source) => source.getSchedule(key));
 }

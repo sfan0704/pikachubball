@@ -129,7 +129,7 @@ export function usePlayerList(leagueKey: string | null, query: PlayerListQuery) 
   );
 }
 
-/** D6: every NBA team's games from today on. */
+/** D6: every NBA team's games from yesterday (US Eastern) on. */
 export function useSchedule(leagueKey: string | null) {
   return useQuery(
     freshQuery(

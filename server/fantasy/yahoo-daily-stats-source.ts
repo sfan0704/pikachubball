@@ -14,7 +14,9 @@ import type {
 import type { DailyStatsRequests } from "./yahoo/daily-stats-requests";
 import { parseDraft } from "./yahoo/draft-parser";
 import { parseTransactions } from "./yahoo/transactions-parser";
+import { parseGameLogPlayers } from "./yahoo/game-log-parser";
 import { readPlayerPeriodTotals } from "./yahoo/player-period-totals";
+import { readSchedule } from "./yahoo/schedule-reader";
 import { checkDate, checkLeagueKey, checkPlayerKeys, checkTeamKey } from "./yahoo/daily-stats-keys";
 import { parseTeamDay } from "./yahoo/team-day-parser";
 import { parseWeeks } from "./yahoo/weeks-parser";
@@ -43,9 +45,24 @@ export class YahooDailyStatsSource implements DailyStatsSource {
     return parseTeamDay(body, teamKey, date);
   }
 
+  /** D3: one `out=game_log` call per 25 players; every listed player must come back. */
   async getGameLogs(leagueKey: string, playerKeys: readonly string[]): Promise<GameLogs> {
-    checkPlayerKeys(leagueKey, playerKeys);
-    return notConnected("game logs");
+    const keys = checkPlayerKeys(leagueKey, playerKeys);
+    const bodies = await this.requests.getForPlayers(
+      "game logs",
+      keys,
+      (chunk) => `/league/${leagueKey}/players;player_keys=${chunk.join(",")};out=game_log`
+    );
+    const byKey = new Map(bodies.flatMap(parseGameLogPlayers).map((p) => [p.playerKey, p]));
+    return {
+      players: keys.map((key) => {
+        const player = byKey.get(key);
+        if (player === undefined) {
+          throw new NotFoundError("Player game log");
+        }
+        return player;
+      }),
+    };
   }
 
   async getPlayerStats(
@@ -61,9 +78,9 @@ export class YahooDailyStatsSource implements DailyStatsSource {
     return notConnected("player list");
   }
 
+  /** D6: rostered players' game logs, page by page until every NBA team is covered. */
   async getSchedule(leagueKey: string): Promise<Schedule> {
-    checkLeagueKey(leagueKey);
-    return notConnected("schedule");
+    return readSchedule(this.requests, checkLeagueKey(leagueKey));
   }
 
   async getTransactions(leagueKey: string, teamKey: string): Promise<Transactions> {
