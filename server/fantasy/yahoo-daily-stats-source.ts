@@ -15,22 +15,17 @@ import type { DailyStatsRequests } from "./yahoo/daily-stats-requests";
 import { parseDraft } from "./yahoo/draft-parser";
 import { parseTransactions } from "./yahoo/transactions-parser";
 import { parseGameLogPlayers } from "./yahoo/game-log-parser";
+import { parsePlayerPage, playerListPath } from "./yahoo/player-list-parser";
 import { readPlayerPeriodTotals } from "./yahoo/player-period-totals";
 import { readSchedule } from "./yahoo/schedule-reader";
 import { checkDate, checkLeagueKey, checkPlayerKeys, checkTeamKey } from "./yahoo/daily-stats-keys";
 import { parseTeamDay } from "./yahoo/team-day-parser";
 import { parseWeeks } from "./yahoo/weeks-parser";
 
-/** A dataset whose Yahoo resource isn't connected yet answers NOT_FOUND, like an unwired source. */
-function notConnected(dataset: string): never {
-  throw new NotFoundError(`Daily stats ${dataset}`);
-}
-
 /**
  * The daily-stats source that reads Yahoo live through one request's calls.
- * Every method checks its keys before any call. Each dataset is connected by
- * its own ticket (FAN-111 to FAN-118); until then it answers NOT_FOUND, and
- * production keeps its screens off through the feature list.
+ * Every method checks its keys before any call. Production keeps the screens
+ * off through the feature list until they are switched on (FAN-116, FAN-119).
  */
 export class YahooDailyStatsSource implements DailyStatsSource {
   constructor(private readonly requests: DailyStatsRequests) {}
@@ -73,9 +68,11 @@ export class YahooDailyStatsSource implements DailyStatsSource {
     return readPlayerPeriodTotals(this.requests, period, checkPlayerKeys(leagueKey, playerKeys));
   }
 
-  async listPlayers(leagueKey: string, _query: PlayerListQuery): Promise<PlayerPage> {
+  /** D5: one call per page of 25. */
+  async listPlayers(leagueKey: string, query: PlayerListQuery): Promise<PlayerPage> {
     checkLeagueKey(leagueKey);
-    return notConnected("player list");
+    const body = await this.requests.get("playerList", playerListPath(leagueKey, query));
+    return parsePlayerPage(body, query.start);
   }
 
   /** D6: rostered players' game logs, page by page until every NBA team is covered. */
