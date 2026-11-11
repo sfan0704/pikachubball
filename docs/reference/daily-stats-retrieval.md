@@ -1,6 +1,6 @@
 # Daily stats retrieval plan
 
-How the Matchup, Players and League screens get their data from Yahoo: the datasets, the call for each, how calls are batched and reused, how fresh each must be, and what it all costs. Written for FAN-97, as of 2026-11-10 (FAN-102 call tests added). The agreed architecture is in [the target state](../target-state.md#daily-stats); this page holds the detail behind it.
+How the Matchup, Players and League screens get their data from Yahoo: the datasets, the call for each, how calls are batched and reused, how fresh each must be, and what it all costs. Written for FAN-97, as of 2026-11-11 (FAN-102 call tests added; D7, D8 and D9 connected in FAN-115). The agreed architecture is in [the target state](../target-state.md#daily-stats); this page holds the detail behind it.
 
 Inputs: the Linear page "Daily stats data reference (source of truth)" (final for FAN-89, 2026-11-09), the FAN-88 mockup decisions and research FAN-91 to FAN-96. Every call below was tested in our league; D3's multi-key form and D7's `team_key` form were tested on 2026-11-10 (FAN-102). Next 7 projected (FAN-94) is not part of this plan; see [Projections slot](#projections-slot).
 
@@ -26,8 +26,8 @@ Inputs: the Linear page "Daily stats data reference (source of truth)" (final fo
 | D5 | Player list page: ownership, waiver date, rostered % and trend, positions, NBA team, injury status | `/league/{L}/players;status={A,T,W}[;position={pos}][;search={text}];sort={AR,OR};start={N};count=25;out=ownership,percent_owned` | 1 per page | Players lists, search and position filter | Recent |
 | D6 | League schedule: every NBA team's games, past and about 8 days ahead | `/league/{L}/players;status=T;start={N};count=25;out=game_log`, paged until all 30 NBA teams are covered | 2 to 4 expected, at most 9 | Players tonight, tomorrow, back-to-back filters and games this week | Daily |
 | D7 | Transactions for a team | `/league/{L}/transactions;types=add,drop,trade;team_key={T}` (tested 2026-11-10: returns the team's adds, drops and trades, as trader or tradee, and nothing else; matches the whole feed for that team) | 1 | Matchup added/dropped labels; League popover latest acquisition | Recent |
-| D8 | Draft results | `/league/{L}/draftresults` | 1 | League popover draft label | Settled |
-| D9 | Current roster for a team | `/team/{T}/roster` (existing) | 1 | League popover roster | Recent |
+| D8 | Draft results | `/league/{L}/draftresults` (an auction is told by its picks carrying a cost; snake picks have none) | 1 | League popover draft label | Settled |
+| D9 | Current roster for a team | Served by D2 for today, which the popover reads (FAN-106), so it is not a separate call | 1 | League popover roster | Today's D2 class |
 | D10 | Scoring weeks | `/game/{G}/game_weeks` | 1 | Week picker, games this week | Settled |
 
 **Fallback for D3.** Not needed: the multi-key form worked (FAN-102). Kept in case Yahoo changes it: the `status=T` pages (D6's call): 9 calls cover every rostered player in the league, which includes both Matchup teams. Dropped contributors in the Week view are no longer rostered; their days come from D2, where `0`/`0/0` on a game day already says the team played.
@@ -43,7 +43,7 @@ Freshness is managed in one place: a policy in `shared/domain` that the browser 
 | Class | Fresh for | Polls | Datasets |
 |---|---|---|---|
 | Live | 2 minutes | Every 2 minutes, only while a shown game is live and the tab is visible | D1 current week and season to date, D2 today, D3 |
-| Recent | 10 minutes | No | D2 yesterday, the day before and future dates (lineups can still change), D5, D7, D9 |
+| Recent | 10 minutes | No | D2 yesterday, the day before and future dates (lineups can still change), D5, D7 |
 | Daily | 6 hours | No | D4, D6 |
 | Settled | The whole visit | No | D1 past weeks, D2 older days, D8, D10 |
 
