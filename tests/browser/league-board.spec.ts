@@ -40,10 +40,11 @@ test("switches the period and keeps Yahoo's season record beside each team", asy
 test("every tile selects its ranking without scrolling sideways", async ({ page }) => {
   await signIn(page);
 
-  for (const label of TILES) {
-    const tile = page.getByRole("group", { name: "Rank by" }).getByRole("button", {
-      name: new RegExp(`^${label.replace("%", "\\%")}`),
-    });
+  const tiles = page.getByRole("group", { name: "Rank by" }).getByRole("button");
+  await expect(tiles).toHaveCount(TILES.length);
+  for (const [index, label] of TILES.entries()) {
+    const tile = tiles.nth(index);
+    await expect(tile).toContainText(label);
     await tile.click();
     await expect(tile).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("board-title")).toHaveText(label);
