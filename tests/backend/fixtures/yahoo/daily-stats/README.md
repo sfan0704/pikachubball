@@ -20,7 +20,15 @@ Recorded by `npm run capture:yahoo-live-calls` in league 478.l.14822, scrubbed o
 - GET `/league/478.l.14822/transactions;types=add,drop,trade;team_key=478.l.14822.t.10` (with `?format=json`)
 - 2026-11-11T01:02:15.792Z: HTTP 200; 10 transactions (add/drop 6, add 3, drop 1); 0 without 478.l.14822.t.10
 
-# Acquisition recordings (FAN-96, used by FAN-115)
+## D4 player period totals, 3 players (FAN-93)
+
+Recorded by the FAN-93 capture on 2026-11-07 (US Eastern), game context with no `/league` prefix. Each is the `response` of the capture's file of the same period. Yahoo sends field goals and free throws as attempts then makes (stat ids 3/4 and 6/7) here, not the league's combined stat.
+
+- Files: `d4-players-season.json`, `d4-players-lastweek.json`, `d4-players-lastmonth.json`
+- GET `/players;player_keys=478.p.10454,478.p.6417,478.p.6165/stats;type={season,lastweek,lastmonth}` (with `?format=json`)
+- HTTP 200 each; GP season 9/8/9, last week 4/3/4, last month 9/8/9
+
+## Acquisition recordings (FAN-96, used by FAN-115)
 
 Recorded on 2026-11-07 by the FAN-98 research capture in the same league, already scrubbed. Each file is Yahoo's response body.
 
