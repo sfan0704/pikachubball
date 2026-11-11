@@ -14,29 +14,46 @@ import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
 import { systemClock, type Clock } from "../utils/clock";
 import { createLogger } from "../utils/logger";
 import { FixtureDailyStatsSource } from "../fantasy/fixture/fixture-daily-stats-source";
-import type { DailyStatsSource } from "../fantasy/daily-stats-source";
+import { YahooDailyStatsSource } from "../fantasy/yahoo-daily-stats-source";
+import { DailyStatsRequests } from "../fantasy/yahoo/daily-stats-requests";
+import type { YahooClientProvider } from "./request-context";
+import type { Logger } from "../utils/logger";
 import type { ProjectionSource } from "../fantasy/projection-source";
 import type { Features } from "../../shared/api/account";
 
+/** What the Yahoo daily-stats source gets from each request. */
+interface DailyStatsRequestScope {
+  readonly yahooClient: YahooClientProvider;
+  readonly logger: Logger;
+}
+
+/**
+ * Which daily-stats screens production shows. Each turns on only once every
+ * dataset it reads is connected to Yahoo (FAN-116, FAN-119).
+ */
+const YAHOO_DAILY_STATS_SCREENS = { matchupAndLeague: false, players: false } as const;
+
 /**
  * Daily stats run on the fixture source wherever the Yahoo stand-in is in use
- * (local, CI, review) and nowhere else, so production reports them unavailable
- * until the Yahoo source is wired.
+ * (local, CI, review), with every screen on. Everywhere else they read Yahoo,
+ * and production shows only the screens whose datasets are connected.
  */
 function dailyStatsWiring(config: AppConfig, clock: Clock) {
-  const source: DailyStatsSource | null = config.localStack
-    ? new FixtureDailyStatsSource(clock)
-    : null;
   const projectionSource: ProjectionSource | null = null;
-  const features: Features = {
-    matchupAndLeague: source !== null,
-    players: source !== null,
-    projections: projectionSource !== null,
-  };
+  const projections = projectionSource !== null;
+  if (config.localStack) {
+    const fixture = new FixtureDailyStatsSource(clock);
+    return {
+      createDailyStatsSource: () => fixture,
+      projectionSource,
+      features: { matchupAndLeague: true, players: true, projections } satisfies Features,
+    };
+  }
   return {
-    createDailyStatsSource: source === null ? null : () => source,
+    createDailyStatsSource: ({ yahooClient, logger }: DailyStatsRequestScope) =>
+      new YahooDailyStatsSource(new DailyStatsRequests(yahooClient, logger, clock)),
     projectionSource,
-    features,
+    features: { ...YAHOO_DAILY_STATS_SCREENS, projections } satisfies Features,
   };
 }
 
