@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { TeamDayResponse, WeeksResponse } from "@shared/api/daily-stats";
+import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import { addDays, nbaDateOf } from "@shared/domain";
 import { useTeamDay, useWeeks } from "@/api/daily-stats-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +9,8 @@ import { selectionPath, type Selection } from "@/features/league/selection";
 import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
 import { LinkBar } from "./LinkBar";
+import { PlayerDetailSheet } from "./PlayerDetailSheet";
+import { PlayerButton } from "./PlayerButton";
 
 interface MatchupScreenProps {
   selection: Selection;
@@ -23,7 +27,14 @@ function formatDate(date: string): string {
   });
 }
 
-function TeamDayList({ day }: { day: TeamDayResponse }) {
+interface TeamDayListProps {
+  day: TeamDayResponse;
+  /** Injury tags are today's status, so they show only on today's list. */
+  isToday: boolean;
+  onOpenPlayer: (player: DailyPlayer) => void;
+}
+
+function TeamDayList({ day, isToday, onOpenPlayer }: TeamDayListProps) {
   return (
     <ul className="space-y-2" data-testid="matchup-roster">
       {day.players.map(({ player, slot, isStartingSlot }) => (
@@ -31,12 +42,7 @@ function TeamDayList({ day }: { day: TeamDayResponse }) {
           key={player.playerKey}
           className="flex items-center justify-between gap-3 rounded-lg border p-3"
         >
-          <div className="min-w-0">
-            <p className="text-sm font-medium">{player.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {player.positions.join(", ")} · {player.nbaTeam}
-            </p>
-          </div>
+          <PlayerButton player={player} showInjury={isToday} onOpen={onOpenPlayer} />
           <span className="text-xs text-muted-foreground">
             {slot}
             {isStartingSlot ? "" : " (not counted)"}
@@ -65,6 +71,7 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
   const date = day === "week" ? null : day === "today" ? today : addDays(today, -1);
   const teamDay = useTeamDay(leagueKey, teamKey, date);
   const weeks = useWeeks(day === "week" ? leagueKey : null);
+  const [openPlayer, setOpenPlayer] = useState<DailyPlayer | null>(null);
   return (
     <div className="space-y-4">
       <LinkBar
@@ -88,11 +95,20 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
             </DatasetState>
           ) : (
             <DatasetState query={teamDay} onPickLeague={onPickLeague}>
-              {(data) => <TeamDayList day={data} />}
+              {(data) => (
+                <TeamDayList day={data} isToday={date === today} onOpenPlayer={setOpenPlayer} />
+              )}
             </DatasetState>
           )}
         </CardContent>
       </Card>
+      <PlayerDetailSheet
+        leagueKey={leagueKey}
+        player={openPlayer}
+        viewDate={date ?? today}
+        onClose={() => setOpenPlayer(null)}
+        onPickLeague={onPickLeague}
+      />
     </div>
   );
 }

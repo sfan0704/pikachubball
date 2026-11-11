@@ -109,7 +109,7 @@ export const teamDayResponseSchema = z.object({
 
 export type TeamDayResponse = z.infer<typeof teamDayResponseSchema>;
 
-/** The body of `GET /api/leagues/:key/games`: each player's team games and the player's minutes in each. */
+/** The body of `GET /api/leagues/:key/games`: each player's team games, with the player's minutes and line in each. */
 export const gameLogsResponseSchema = z.object({
   fetchedAt: fetchedAtSchema,
   players: z.array(
@@ -117,7 +117,7 @@ export const gameLogsResponseSchema = z.object({
       playerKey: playerKeySchema,
       nbaTeam: nbaTeamSchema,
       /** Every game of the player's team this season and about 8 days ahead; no entry means no game. */
-      games: z.array(nbaGameSchema.extend({ minutes: minutesSchema })),
+      games: z.array(nbaGameSchema.extend({ minutes: minutesSchema, line: statLineSchema })),
     })
   ),
 });

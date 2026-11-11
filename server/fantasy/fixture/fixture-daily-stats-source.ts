@@ -100,6 +100,7 @@ export class FixtureDailyStatsSource implements DailyStatsSource {
         games: fixtureGames(player.player.nbaTeam, from, to, today).map((game) => ({
           ...game,
           minutes: minutesIn(player, game, today),
+          line: lineOn(player, game.date, game, today),
         })),
       })),
     };

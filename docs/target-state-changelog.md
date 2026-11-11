@@ -2,6 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-11-11 · Game logs (D3) carry the player's line in each game, so the shared player detail shows today, yesterday and the week for rostered and available players alike · FAN-105 (PR pending)
 - 2026-11-11 · Daily-stats URLs (`matchup/<day>`, `players`, League keeps `<scope>`) and the three feature switches in `GET /api/me` · FAN-103 (PR pending)
 - 2026-11-09 · Daily stats: Matchup, Players and League read live from the Yahoo Fantasy API through one endpoint per dataset, combined in the browser; per-viewer live polling; no stored Yahoo data; one freshness policy (Live, Recent, Daily, Settled) applied by the client; projections slot off by default · #154 (FAN-97)
 - 2026-11-03 · A failed request's log line carries its error code and, for an unreadable Yahoo response, the failing schema paths (no values) · FAN-86 (PR pending)
