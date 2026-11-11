@@ -26,7 +26,7 @@ test("signs in with a seeded manager and shows the league rankings", async ({ pa
 test("opens on Matchup and keeps the screen and day through refresh and back", async ({ page }) => {
   const base = `/leagues/${LEAGUE}/teams/${MY_TEAM}`;
   await signIn(page, "a", "Matchup");
-  await expect(page.getByTestId("matchup-roster").getByRole("listitem")).toHaveCount(13);
+  await expect(page.getByTestId("player-columns").getByRole("listitem")).toHaveCount(26);
 
   const days = page.getByRole("navigation", { name: "Day" });
   await days.getByRole("link", { name: "Yesterday" }).click();
@@ -36,7 +36,7 @@ test("opens on Matchup and keeps the screen and day through refresh and back", a
     "aria-current",
     "page"
   );
-  await expect(page.getByTestId("matchup-roster")).toBeVisible();
+  await expect(page.getByTestId("player-columns")).toBeVisible();
 
   await days.getByRole("link", { name: "Week" }).click();
   await expect(page.getByTestId("matchup-week")).toContainText("Week 5");
