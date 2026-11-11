@@ -1,7 +1,9 @@
 import type { PlayerListQuery, PlayerListResponse } from "@shared/api/daily-stats";
 import { usePlayerList } from "@/api/daily-stats-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
+import { FreshnessLabel } from "./FreshnessLabel";
 
 const FIRST_PAGE: PlayerListQuery = { status: "available", sort: "actualRank", start: 0 };
 
@@ -29,10 +31,12 @@ export function PlayersScreen({
   onPickLeague: () => void;
 }) {
   const page = usePlayerList(leagueKey, FIRST_PAGE);
+  const now = useNow();
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="space-y-1">
         <CardTitle>Available players</CardTitle>
+        <FreshnessLabel sources={[page]} now={now} />
       </CardHeader>
       <CardContent>
         <DatasetState query={page} onPickLeague={onPickLeague}>

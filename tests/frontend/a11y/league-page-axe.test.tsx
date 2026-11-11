@@ -7,6 +7,7 @@ import axe from "axe-core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -78,13 +79,15 @@ describe("the league page has no structural accessibility violations", () => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       const { container } = render(
         <QueryClientProvider client={client}>
-          <AuthProvider>
-            <Router
-              hook={memoryLocation({ path: `/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/1` }).hook}
-            >
-              <LeaguePage />
-            </Router>
-          </AuthProvider>
+          <FreshnessProvider>
+            <AuthProvider>
+              <Router
+                hook={memoryLocation({ path: `/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/1` }).hook}
+              >
+                <LeaguePage />
+              </Router>
+            </AuthProvider>
+          </FreshnessProvider>
         </QueryClientProvider>
       );
       await screen.findByRole("tab", { name: "rankings" });

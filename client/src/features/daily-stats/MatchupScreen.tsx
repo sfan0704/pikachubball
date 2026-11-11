@@ -6,6 +6,7 @@ import { DAY_LABELS, MATCHUP_DAYS } from "@/features/league/screens";
 import { selectionPath, type Selection } from "@/features/league/selection";
 import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
+import { FreshnessLabel } from "./FreshnessLabel";
 import { LinkBar } from "./LinkBar";
 
 interface MatchupScreenProps {
@@ -58,9 +59,10 @@ function WeekRange({ weeks, today }: { weeks: WeeksResponse["weeks"]; today: str
   );
 }
 
-/** Matchup: the day bar, then the user's team on the chosen day. */
+/** Matchup: the day bar, then the user's team on the chosen day, labelled with its oldest section's age. */
 export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
-  const today = nbaDateOf(useNow());
+  const now = useNow();
+  const today = nbaDateOf(now);
   const { leagueKey, teamKey, day } = selection;
   const date = day === "week" ? null : day === "today" ? today : addDays(today, -1);
   const teamDay = useTeamDay(leagueKey, teamKey, date);
@@ -78,8 +80,9 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
         }))}
       />
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-1">
           <CardTitle>{date === null ? "This week" : formatDate(date)}</CardTitle>
+          <FreshnessLabel sources={[teamDay, weeks]} now={now} />
         </CardHeader>
         <CardContent>
           {date === null ? (

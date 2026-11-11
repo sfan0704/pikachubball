@@ -42,14 +42,14 @@ Freshness is managed in one place: a policy in `shared/domain` that the browser 
 
 | Class | Fresh for | Polls | Datasets |
 |---|---|---|---|
-| Live | 2 minutes | Every 2 minutes, only while a shown game is live and the tab is visible | D1 current week, D2 today, D3 |
-| Recent | 10 minutes | No | D2 yesterday and the day before, D5, D7, D9 |
+| Live | 2 minutes | Every 2 minutes, only while a shown game is live and the tab is visible | D1 current week and season to date, D2 today, D3 |
+| Recent | 10 minutes | No | D2 yesterday, the day before and future dates (lineups can still change), D5, D7, D9 |
 | Daily | 6 hours | No | D4, D6 |
 | Settled | The whole visit | No | D1 past weeks, D2 older days, D8, D10 |
 
 - **One table, one function.** The class of each dataset is a single table in `shared/domain`. A pure function takes the dataset (with its date or week), the current time and whether any shown game is live, and returns how long the data stays fresh and whether to poll. Changing a timer is a one-line change, tested with a fixed clock. Live data counts as Recent when no shown game is live.
-- **One live signal.** "Games live now" is derived from the game logs (D3) of the players on screen (`is_game_live`, or a tip-off that has passed without a final). It switches polling on and off for every Live dataset at once, and turns polling back on at the next shown tip-off.
-- **Applied by the query-key factory.** The factory that builds every TanStack Query key also attaches the policy's fresh time and poll interval, so no component sets them. Stale data refetches when it is next shown or the tab regains focus.
+- **One live signal.** "Games live now" is derived from the game logs (D3) of the players on screen (`is_game_live`, or a tip-off that has passed without a final, for at most 4 hours so a postponed game can't keep it on). It switches polling on and off for every Live dataset at once, and turns polling back on at the next shown tip-off.
+- **Applied by the query-key factory.** The factory that builds every TanStack Query key also attaches the policy's fresh time and poll interval, so no component sets them (`freshQuery` in `client/src/api`, built in FAN-108; a lint rule rejects query timers anywhere else in the client). Stale data refetches when it is next shown or the tab regains focus.
 - **One freshness label.** A shared component reads each query's last success time and error state and shows "updated N min ago", or a stale label after a failed refresh. The Matchup header shows the oldest age among its sections.
 - **Backoff in the same place.** A `YAHOO_RATE_LIMITED` response doubles the poll interval (2, 4, 8 minutes, at most 10) until a poll succeeds. `YAHOO_UNAVAILABLE` keeps the interval and marks the data stale.
 - **The server stays out of it.** It only stamps each response with its fetch time. It keeps no cache and sets no cache headers; API responses stay private and uncacheable.
