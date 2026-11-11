@@ -109,3 +109,5 @@ export {
   isShootingCategory,
   orderForCategory,
 } from "./matchup-day";
+export type { ScheduleContext, ScheduledGame, TeamSchedule } from "./nba-schedule";
+export { localDateOf, scheduleByTeam, teamSchedule } from "./nba-schedule";

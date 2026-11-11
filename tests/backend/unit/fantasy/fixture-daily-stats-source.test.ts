@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appearance } from "../../../../shared/domain";
+import { addDays, appearance } from "../../../../shared/domain";
 import type { DailyStatsSource } from "../../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../../server/fantasy/fixture/fixture-daily-stats-source";
 import { fixedClock } from "../../../support/clock";
@@ -130,7 +130,9 @@ describe("the fixture daily-stats source", () => {
     expect(draft.picks[14]).toMatchObject({ pick: 15, round: 2, teamKey: `${LEAGUE}.t.14` });
     expect(weeks[4]).toEqual({ week: 5, start: "2026-11-09", end: "2026-11-15" });
     expect(schedule.teams).toHaveLength(8);
-    expect(schedule.teams.every((team) => team.games.every((game) => game.date >= TODAY))).toBe(
+    // Like Yahoo's schedule, it starts yesterday so every US time zone's tonight is in it.
+    const yesterday = addDays(TODAY, -1);
+    expect(schedule.teams.every((team) => team.games.every((game) => game.date >= yesterday))).toBe(
       true
     );
   });

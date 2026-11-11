@@ -16,6 +16,7 @@ import { parseDraft } from "./yahoo/draft-parser";
 import { parseTransactions } from "./yahoo/transactions-parser";
 import { parseGameLogPlayers } from "./yahoo/game-log-parser";
 import { readPlayerPeriodTotals } from "./yahoo/player-period-totals";
+import { readSchedule } from "./yahoo/schedule-reader";
 import { checkDate, checkLeagueKey, checkPlayerKeys, checkTeamKey } from "./yahoo/daily-stats-keys";
 import { parseTeamDay } from "./yahoo/team-day-parser";
 import { parseWeeks } from "./yahoo/weeks-parser";
@@ -77,9 +78,9 @@ export class YahooDailyStatsSource implements DailyStatsSource {
     return notConnected("player list");
   }
 
+  /** D6: rostered players' game logs, page by page until every NBA team is covered. */
   async getSchedule(leagueKey: string): Promise<Schedule> {
-    checkLeagueKey(leagueKey);
-    return notConnected("schedule");
+    return readSchedule(this.requests, checkLeagueKey(leagueKey));
   }
 
   async getTransactions(leagueKey: string, teamKey: string): Promise<Transactions> {
