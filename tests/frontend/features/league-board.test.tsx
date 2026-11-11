@@ -11,6 +11,7 @@ import { rankings } from "@shared/domain";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
 import { parseSeasonTable, parseWeekTable } from "../../../server/fantasy/league-tables";
+import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { LeagueBoard } from "../../../client/src/features/daily-stats/LeagueBoard";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
@@ -59,13 +60,15 @@ function renderBoard(table = SEASON) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <LeagueBoard
-        table={table}
-        leagueKey={LEAGUE}
-        myTeamKey={MINE}
-        periodLabel="Season to date"
-        onPickLeague={() => undefined}
-      />
+      <FreshnessProvider>
+        <LeagueBoard
+          table={table}
+          leagueKey={LEAGUE}
+          myTeamKey={MINE}
+          periodLabel="Season to date"
+          onPickLeague={() => undefined}
+        />
+      </FreshnessProvider>
     </QueryClientProvider>
   );
 }
