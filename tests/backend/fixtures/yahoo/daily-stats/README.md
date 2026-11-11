@@ -47,3 +47,15 @@ Recorded on 2026-11-07 by the FAN-98 research capture in the same league, alread
 - `d8-draft-results.json`: GET `/league/478.l.14822/draftresults`; 182 auction picks.
 - `d7-transactions-whole-league.json`: GET `/league/478.l.14822/transactions;types=add,drop,trade`; the whole season's 144 moves, one vetoed trade.
 - `fan96-rostered-players.json`: not a Yahoo body. Each team's rostered player keys, taken from that capture's `/league/478.l.14822/teams/roster` (201 players) so the 1 MB roster body isn't committed.
+
+## D5 player list (FAN-95)
+
+Recorded by `npm run capture:yahoo-research` on 2026-11-07 (US Eastern) in league 478.l.14822, week 3, scrubbed of team, manager and league names. Each file is Yahoo's response body. Only `d5-available` was recorded in D5's exact form; the others were recorded with `/ownership` or with no `out`, so the tests add the missing `ownership` and `percent_owned` blocks in the shape `d5-available` shows.
+
+| File | GET (with `?format=json`) | What it covers |
+|---|---|---|
+| `d5-available.json` | `/league/478.l.14822/players;status=A;start=0;count=25;out=ownership,percent_owned` | 25 rows: free agents, one waiver row (clears 2026-11-08), 12 NA, 5 O with reasons, 14 rows without a rostered % |
+| `d5-waivers-ownership-only.json` | `/league/478.l.14822/players;status=W/ownership` | 5 waiver rows, clearing 2026-11-08 or 2026-11-09 |
+| `d5-owned-last-page-ownership-only.json` | `/league/478.l.14822/players;status=T;start=200;count=25/ownership` | The last owned page: 1 row, team owner |
+| `d5-position-c-no-out.json` | `/league/478.l.14822/players;status=A;position=C` | 25 centres |
+| `d5-search-doncic.json` | `/league/478.l.14822/players;status=A;search=doncic` | An empty answer (`players: []`); Dončić is owned |

@@ -1,0 +1,52 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/league/478.l.14822/players;status=A;search=doncic",
+    "league": [
+      {
+        "league_key": "478.l.14822",
+        "league_id": "14822",
+        "name": "League-1",
+        "url": "https://example.invalid/scrubbed",
+        "recordbook_url": "https://example.invalid/scrubbed",
+        "logo_url": "https://example.invalid/scrubbed",
+        "draft_status": "postdraft",
+        "num_teams": 14,
+        "max_teams": "14",
+        "edit_key": "2026-11-07",
+        "weekly_deadline": "intraday",
+        "roster_type": "date",
+        "league_update_timestamp": "1794042101",
+        "scoring_type": "head",
+        "scoring_label": "H2H Cat",
+        "league_type": "private",
+        "renew": "466_29849",
+        "renewed": "",
+        "felo_tier": "silver",
+        "is_highscore": false,
+        "is_guillotine": "0",
+        "matchup_week": 3,
+        "iris_group_chat_id": "scrubbed",
+        "short_invitation_url": "https://example.invalid/scrubbed",
+        "allow_add_to_dl_extra_pos": 0,
+        "is_pro_league": "0",
+        "is_cash_league": "0",
+        "current_week": 3,
+        "start_week": "1",
+        "start_date": "2026-10-20",
+        "end_week": "21",
+        "end_date": "2027-03-28",
+        "current_date": "2026-11-07",
+        "is_plus_league": "0",
+        "game_code": "nba",
+        "season": "2026"
+      },
+      {
+        "players": []
+      }
+    ],
+    "time": "67.254066467285ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}
