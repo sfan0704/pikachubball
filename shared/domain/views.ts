@@ -6,7 +6,7 @@ import {
   rankSum,
 } from "./fantasy-rules";
 import { CATEGORIES, type CategoryKey } from "./stats";
-import type { MatchupPairing, TeamRow, TeamTable } from "./team-table";
+import type { MatchupPairing, TeamRow, TeamTable, TeamTotals } from "./team-table";
 
 /** One team's line in the rankings. */
 export interface RankedTeam {
@@ -147,11 +147,32 @@ function findTeam(table: TeamTable, teamKey: string): TeamRow | undefined {
   return table.teams.find((team) => team.teamKey === teamKey);
 }
 
+/** Two sets of totals compared category by category, from my side. */
+export interface TotalsComparison {
+  readonly categories: readonly CategoryComparison[];
+  readonly score: Score;
+}
+
 /**
- * Compares two teams' observed totals. FG% and FT% compare exact makes over
- * attempts, so equal rounded percentages don't hide a winner. Returns null if
- * either team isn't in the table.
+ * Compares my totals with theirs. FG% and FT% compare exact makes over
+ * attempts, so equal rounded percentages don't hide a winner.
  */
+export function compareTotals(mine: TeamTotals, theirs: TeamTotals): TotalsComparison {
+  const categories = CATEGORIES.map((key): CategoryComparison => {
+    const myValue = categoryValue(mine, key);
+    const theirValue = categoryValue(theirs, key);
+    return {
+      category: key,
+      mine: myValue,
+      theirs: theirValue,
+      difference: myValue === null || theirValue === null ? null : myValue - theirValue,
+      result: compareCategory(myValue, theirValue, key),
+    };
+  });
+  return { categories, score: tally(categories) };
+}
+
+/** Compares two teams' observed totals; null if either team isn't in the table. */
 export function headToHead(
   table: TeamTable,
   myTeamKey: string,
@@ -162,18 +183,7 @@ export function headToHead(
   if (!mine || !theirs) {
     return null;
   }
-  const categories = CATEGORIES.map((key): CategoryComparison => {
-    const myValue = categoryValue(mine.totals, key);
-    const theirValue = categoryValue(theirs.totals, key);
-    return {
-      category: key,
-      mine: myValue,
-      theirs: theirValue,
-      difference: myValue === null || theirValue === null ? null : myValue - theirValue,
-      result: compareCategory(myValue, theirValue, key),
-    };
-  });
-  return { myTeamKey, opponentTeamKey, categories, score: tally(categories) };
+  return { myTeamKey, opponentTeamKey, ...compareTotals(mine.totals, theirs.totals) };
 }
 
 /** My team compared against every other team, in table order. */

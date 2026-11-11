@@ -13,6 +13,7 @@ export type {
   LeagueSettings,
   TeamTotals,
   TeamRow,
+  WeekGames,
   MatchupPairing,
   Scope,
   TeamTable,
@@ -28,7 +29,15 @@ export {
   tableCompleteness,
 } from "./fantasy-rules";
 export type { CategoryRanks, ScoringSupport, TableCompleteness } from "./fantasy-rules";
-export { rankings, heatmap, headToHead, compareWithAll, opponentOf, officialResult } from "./views";
+export {
+  rankings,
+  heatmap,
+  compareTotals,
+  headToHead,
+  compareWithAll,
+  opponentOf,
+  officialResult,
+} from "./views";
 export type {
   RankedTeam,
   HeatmapCell,
@@ -38,4 +47,35 @@ export type {
   Score,
   HeadToHead,
   OfficialResult,
+  TotalsComparison,
 } from "./views";
+export type {
+  Appearance,
+  CountValue,
+  MakesAttempts,
+  Measured,
+  MissingKind,
+  MissingValue,
+  ShotValue,
+  StatLine,
+  StatValue,
+} from "./stat-value";
+export { appearance, measured, missing, missingLine } from "./stat-value";
+export type { GameState, LiveProgress } from "./game-state";
+export { isLive } from "./game-state";
+export type {
+  CategoryValues,
+  GamesLeft,
+  PeriodTotals,
+  PlayerDay,
+  VersusAverage,
+} from "./daily-stats";
+export {
+  averageThreshold,
+  countedGames,
+  countedTotals,
+  expectedOver,
+  gamesLeft,
+  perGameAverages,
+  versusAverage,
+} from "./daily-stats";

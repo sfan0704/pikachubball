@@ -42,6 +42,13 @@ const teamRowSchema = z.object({
   teamName: z.string(),
   managerName: z.string().nullable(),
   totals: teamTotalsSchema,
+  games: z
+    .object({
+      remaining: z.number().int().nonnegative(),
+      live: z.number().int().nonnegative(),
+      completed: z.number().int().nonnegative(),
+    })
+    .nullable(),
 });
 
 const matchupPairingSchema = z.object({

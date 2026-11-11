@@ -177,6 +177,8 @@ function toRow(team: YahooTeam): TeamRow {
     // Yahoo masks managers who hide their name.
     managerName: nickname && nickname !== "--hidden--" ? nickname : null,
     totals: toTotals(team),
+    // Parsing the week's team_remaining_games is FAN-111; until then the games are unknown.
+    games: null,
   };
 }
 

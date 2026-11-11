@@ -75,6 +75,7 @@ describe("season table from the standings response", () => {
         blk: 180,
         to: 556,
       },
+      games: null,
     });
   });
 

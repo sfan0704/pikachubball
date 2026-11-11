@@ -45,12 +45,21 @@ export interface TeamTotals {
   readonly to: number | null;
 }
 
+/** A team's games for a week, as Yahoo counts them for starting slots. */
+export interface WeekGames {
+  readonly remaining: number;
+  readonly live: number;
+  readonly completed: number;
+}
+
 /** One team's row in the table. */
 export interface TeamRow {
   readonly teamKey: string;
   readonly teamName: string;
   readonly managerName: string | null;
   readonly totals: TeamTotals;
+  /** The week's games for starting slots; null for the season, or when Yahoo's week table didn't say. */
+  readonly games: WeekGames | null;
 }
 
 /** Two teams playing each other in a week, with Yahoo's official result when it has one. */
