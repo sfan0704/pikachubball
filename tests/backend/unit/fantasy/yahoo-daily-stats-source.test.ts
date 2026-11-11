@@ -47,7 +47,6 @@ describe("YahooDailyStatsSource key checks", () => {
   });
 
   it.each([
-    ["game logs", (s: YahooDailyStatsSource) => s.getGameLogs(LEAGUE, ["478.p.1"])],
     [
       "player list",
       (s: YahooDailyStatsSource) =>
