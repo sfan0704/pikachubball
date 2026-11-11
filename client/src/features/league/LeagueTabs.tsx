@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import type { UserLeague } from "@shared/api/leagues";
+import type { TeamTable } from "@shared/domain";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccountControls } from "@/features/account/AccountControls";
@@ -10,6 +11,7 @@ import type { Selection } from "./selection";
 import { TableBoundary } from "./TableBoundary";
 import { useNow } from "./useNow";
 import { LeagueControls } from "./LeagueControls";
+import { optionFor, scopeOptions } from "./scope-options";
 import { LeagueHeader } from "./LeagueHeader";
 import type { Screen } from "./screens";
 import { ScreenNav } from "@/features/daily-stats/ScreenNav";
@@ -20,6 +22,9 @@ const MatchupScreen = lazy(() =>
 );
 const PlayersScreen = lazy(() =>
   import("@/features/daily-stats/PlayersScreen").then((m) => ({ default: m.PlayersScreen }))
+);
+const LeagueBoard = lazy(() =>
+  import("@/features/daily-stats/LeagueBoard").then((m) => ({ default: m.LeagueBoard }))
 );
 
 interface LeagueViewProps {
@@ -60,13 +65,52 @@ interface ViewTabsProps {
   selection: Selection;
   query: ReturnType<typeof useLeagueScope>;
   teamName: string | null;
+  /** True when Matchup and League are wired: rankings show as the League board. */
+  boardWired: boolean;
   onPickLeague: () => void;
 }
 
-function ViewTabs({ selection, query, teamName, onPickLeague }: ViewTabsProps) {
+/** The rankings tab: the League board when it is wired, else the rankings table. */
+function Rankings({
+  table,
+  selection,
+  boardWired,
+  onPickLeague,
+}: Pick<ViewTabsProps, "selection" | "boardWired" | "onPickLeague"> & { table: TeamTable }) {
+  if (!boardWired) {
+    return <RankingsView table={table} myTeamKey={selection.teamKey} />;
+  }
+  const period = optionFor(selection.scope, scopeOptions(table.settings.currentWeek));
+  return (
+    <Loading>
+      <LeagueBoard
+        table={table}
+        leagueKey={selection.leagueKey}
+        myTeamKey={selection.teamKey}
+        periodLabel={period.label}
+        onPickLeague={onPickLeague}
+      />
+    </Loading>
+  );
+}
+
+function ViewTabList() {
+  return (
+    <TabsList className="flex h-auto w-full flex-wrap justify-start" aria-label="Views">
+      {TABS.map((tab) => (
+        <TabsTrigger key={tab} value={tab} className="min-h-[44px] capitalize">
+          {tab}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  );
+}
+
+function ViewTabs({ selection, query, teamName, boardWired, onPickLeague }: ViewTabsProps) {
   const now = useNow();
   const actions = useAccountActions();
   const myTeamKey = selection.teamKey;
+  const rankingsProps = { selection, boardWired, onPickLeague };
   const tableTab = (render: Parameters<typeof TableBoundary>[0]["children"]) => (
     <TableBoundary query={query} now={now} onPickLeague={onPickLeague}>
       {render}
@@ -74,16 +118,10 @@ function ViewTabs({ selection, query, teamName, onPickLeague }: ViewTabsProps) {
   );
   return (
     <Tabs defaultValue="rankings" className="flex flex-col gap-4">
-      <TabsList className="flex h-auto w-full flex-wrap justify-start" aria-label="Views">
-        {TABS.map((tab) => (
-          <TabsTrigger key={tab} value={tab} className="min-h-[44px] capitalize">
-            {tab}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <ViewTabList />
       <TabsContent value="rankings">
         {tableTab((table) => (
-          <RankingsView table={table} myTeamKey={myTeamKey} />
+          <Rankings table={table} {...rankingsProps} />
         ))}
       </TabsContent>
       <TabsContent value="heatmap">
@@ -127,6 +165,7 @@ function ViewTabs({ selection, query, teamName, onPickLeague }: ViewTabsProps) {
 interface ScreenBodyProps extends Omit<LeagueViewProps, "league" | "screens"> {
   query: ReturnType<typeof useLeagueScope>;
   teamName: string | null;
+  boardWired: boolean;
 }
 
 /** The chosen screen: Matchup or Players, or League with its pickers and one tab per view. */
@@ -137,6 +176,7 @@ function ScreenBody({
   onPickLeague,
   query,
   teamName,
+  boardWired,
 }: ScreenBodyProps) {
   if (selection.screen === "matchup") {
     return (
@@ -164,6 +204,7 @@ function ScreenBody({
         selection={selection}
         query={query}
         teamName={teamName}
+        boardWired={boardWired}
         onPickLeague={onPickLeague}
       />
     </>
@@ -180,7 +221,13 @@ export function LeagueView({ league, screens, ...rest }: LeagueViewProps) {
     <div className="space-y-4 md:space-y-6">
       <LeagueHeader league={league} teamName={teamName} />
       {screens.length > 1 && <ScreenNav selection={selection} screens={screens} />}
-      <ScreenBody {...rest} query={query} teamName={teamName} />
+      <ScreenBody
+        {...rest}
+        query={query}
+        teamName={teamName}
+        // Matchup is listed exactly when the Matchup and League feature is wired.
+        boardWired={screens.includes("matchup")}
+      />
     </div>
   );
 }

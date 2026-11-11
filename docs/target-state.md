@@ -311,7 +311,7 @@ flowchart TD
 
 ### The team table
 
-Every view (season and weekly rankings, the heatmap, the current matchup and the comparison against every team) is computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; a week's table also has that week's matchup pairings.
+Every view (season and weekly rankings, the heatmap, the current matchup and the comparison against every team) is computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table.
 
 ### Fantasy rules
 
