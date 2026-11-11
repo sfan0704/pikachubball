@@ -1,17 +1,19 @@
 import { useState } from "react";
-import type { TeamDayResponse, WeeksResponse } from "@shared/api/daily-stats";
+import type { WeeksResponse } from "@shared/api/daily-stats";
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import { addDays, nbaDateOf } from "@shared/domain";
-import { useTeamDay, useWeeks } from "@/api/daily-stats-hooks";
+import { useWeeks } from "@/api/daily-stats-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DAY_LABELS, MATCHUP_DAYS } from "@/features/league/screens";
+import { DAY_LABELS, type MatchupDay } from "@/features/league/screens";
 import { selectionPath, type Selection } from "@/features/league/selection";
 import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
-import { FreshnessLabel } from "./FreshnessLabel";
 import { LinkBar } from "./LinkBar";
+import { MatchupDayBoard } from "./MatchupDayBoard";
 import { PlayerDetailSheet } from "./PlayerDetailSheet";
-import { PlayerButton } from "./PlayerButton";
+
+/** The day bar reads in time order. */
+const DAY_ORDER: readonly MatchupDay[] = ["yesterday", "today", "week"];
 
 interface MatchupScreenProps {
   selection: Selection;
@@ -28,32 +30,6 @@ function formatDate(date: string): string {
   });
 }
 
-interface TeamDayListProps {
-  day: TeamDayResponse;
-  /** Injury tags are today's status, so they show only on today's list. */
-  isToday: boolean;
-  onOpenPlayer: (player: DailyPlayer) => void;
-}
-
-function TeamDayList({ day, isToday, onOpenPlayer }: TeamDayListProps) {
-  return (
-    <ul className="space-y-2" data-testid="matchup-roster">
-      {day.players.map(({ player, slot, isStartingSlot }) => (
-        <li
-          key={player.playerKey}
-          className="flex items-center justify-between gap-3 rounded-lg border p-3"
-        >
-          <PlayerButton player={player} showInjury={isToday} onOpen={onOpenPlayer} />
-          <span className="text-xs text-muted-foreground">
-            {slot}
-            {isStartingSlot ? "" : " (not counted)"}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function WeekRange({ weeks, today }: { weeks: WeeksResponse["weeks"]; today: string }) {
   const week = weeks.find(({ start, end }) => start <= today && today <= end);
   return (
@@ -65,50 +41,53 @@ function WeekRange({ weeks, today }: { weeks: WeeksResponse["weeks"]; today: str
   );
 }
 
-/** Matchup: the day bar, then the user's team on the chosen day, labelled with its oldest section's age. */
+/** Matchup: the day bar, then the board for Today or Yesterday, or the week. */
 export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
   const now = useNow();
   const today = nbaDateOf(now);
   const { leagueKey, teamKey, day } = selection;
-  const date = day === "week" ? null : day === "today" ? today : addDays(today, -1);
-  const teamDay = useTeamDay(leagueKey, teamKey, date);
   const weeks = useWeeks(day === "week" ? leagueKey : null);
+  const date = day === "today" ? today : addDays(today, -1);
   const [openPlayer, setOpenPlayer] = useState<DailyPlayer | null>(null);
   return (
     <div className="space-y-4">
       <LinkBar
         label="Day"
         testId="matchup-days"
-        items={MATCHUP_DAYS.map((item) => ({
+        items={DAY_ORDER.map((item) => ({
           key: item,
           label: DAY_LABELS[item],
           href: selectionPath({ ...selection, day: item }),
           current: item === day,
         }))}
       />
-      <Card>
-        <CardHeader className="space-y-1">
-          <CardTitle>{date === null ? "This week" : formatDate(date)}</CardTitle>
-          <FreshnessLabel sources={[teamDay, weeks]} now={now} />
-        </CardHeader>
-        <CardContent>
-          {date === null ? (
+      {day === "week" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>This week</CardTitle>
+          </CardHeader>
+          <CardContent>
             <DatasetState query={weeks} onPickLeague={onPickLeague}>
               {(data) => <WeekRange weeks={data.weeks} today={today} />}
             </DatasetState>
-          ) : (
-            <DatasetState query={teamDay} onPickLeague={onPickLeague}>
-              {(data) => (
-                <TeamDayList day={data} isToday={date === today} onOpenPlayer={setOpenPlayer} />
-              )}
-            </DatasetState>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <MatchupDayBoard
+          leagueKey={leagueKey}
+          teamKey={teamKey}
+          date={date}
+          isToday={day === "today"}
+          dateLabel={day === "today" ? "Today" : formatDate(date)}
+          now={now}
+          onPickLeague={onPickLeague}
+          onOpenPlayer={setOpenPlayer}
+        />
+      )}
       <PlayerDetailSheet
         leagueKey={leagueKey}
         player={openPlayer}
-        viewDate={date ?? today}
+        viewDate={day === "week" ? today : date}
         onClose={() => setOpenPlayer(null)}
         onPickLeague={onPickLeague}
       />

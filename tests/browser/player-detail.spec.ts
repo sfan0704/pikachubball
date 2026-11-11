@@ -1,4 +1,5 @@
 import {
+  MY_TEAM,
   accessibilityViolations,
   openScreen,
   setScenario,
@@ -12,6 +13,8 @@ import type { Page } from "@playwright/test";
 test.beforeEach(async () => {
   await setScenario("ok");
 });
+
+const MY_COLUMN = `column-${MY_TEAM}`;
 
 /** Opens a player's detail from a list and waits for its stats. */
 async function openPlayer(page: Page, list: string, name: string) {
@@ -29,9 +32,9 @@ test("opens an injured player from Matchup with today's tag and every category",
 }) => {
   await signIn(page, "a", "Matchup");
 
-  const roster = page.getByTestId("matchup-roster");
+  const roster = page.getByTestId(MY_COLUMN);
   await expect(roster.getByRole("link", { name: /GTD, Ankle/ })).toBeVisible();
-  const sheet = await openPlayer(page, "matchup-roster", "Casey Knoll");
+  const sheet = await openPlayer(page, MY_COLUMN, "Casey Knoll");
   await expect(sheet.getByRole("rowheader")).toHaveCount(9);
   await expect(sheet.getByRole("link", { name: /GTD, Ankle/ })).toHaveAttribute(
     "href",
@@ -46,7 +49,7 @@ test("opens an injured player from Matchup with today's tag and every category",
 test("shows no game today for a player whose team is off", async ({ page }) => {
   await signIn(page, "a", "Matchup");
 
-  const sheet = await openPlayer(page, "matchup-roster", "Devon Knoll");
+  const sheet = await openPlayer(page, MY_COLUMN, "Devon Knoll");
   await expect(sheet.getByTestId("player-detail-status-today")).toHaveText("No game");
 });
 
@@ -57,10 +60,10 @@ test("never shows the injury tag on yesterday's view", async ({ page }) => {
     .getByRole("link", { name: "Yesterday" })
     .click();
 
-  const roster = page.getByTestId("matchup-roster");
+  const roster = page.getByTestId(MY_COLUMN);
   await expect(roster.getByRole("listitem")).toHaveCount(13);
   await expect(roster.getByTestId("injury-tag")).toHaveCount(0);
-  const sheet = await openPlayer(page, "matchup-roster", "Casey Knoll");
+  const sheet = await openPlayer(page, MY_COLUMN, "Casey Knoll");
   await expect(sheet.getByTestId("injury-tag")).toHaveCount(0);
 });
 
@@ -81,7 +84,7 @@ for (const theme of ["light", "dark"] as const) {
   }) => {
     await useTheme(page, theme);
     await signIn(page, "a", "Matchup");
-    await openPlayer(page, "matchup-roster", "Casey Knoll");
+    await openPlayer(page, MY_COLUMN, "Casey Knoll");
 
     expect(await accessibilityViolations(page)).toEqual([]);
   });
