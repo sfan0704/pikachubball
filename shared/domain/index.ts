@@ -101,3 +101,11 @@ export type {
   TeamMove,
 } from "./acquisition";
 export { latestAcquisition } from "./acquisition";
+export type { CategoryEntry, ColumnPlayer } from "./matchup-day";
+export {
+  categoryEntry,
+  closestLostCategory,
+  dayCallout,
+  isShootingCategory,
+  orderForCategory,
+} from "./matchup-day";

@@ -9,10 +9,25 @@ interface DatasetStateProps<T> {
   children: (data: T) => ReactNode;
 }
 
-/** One dataset's section: a skeleton while it loads, its error with a retry, then the data. */
+/**
+ * One dataset's section: a skeleton while it loads, its error with a retry,
+ * then the data. A failed refresh keeps the last values under its error.
+ */
 export function DatasetState<T>({ query, onPickLeague, children }: DatasetStateProps<T>) {
   if (query.data !== undefined) {
-    return <>{children(query.data)}</>;
+    return (
+      <>
+        {query.error && (
+          <ErrorScreen
+            inline
+            error={query.error}
+            onRetry={() => void query.refetch()}
+            onPickLeague={onPickLeague}
+          />
+        )}
+        {children(query.data)}
+      </>
+    );
   }
   if (query.error) {
     return (
@@ -24,8 +39,8 @@ export function DatasetState<T>({ query, onPickLeague, children }: DatasetStateP
     );
   }
   return (
-    <div className="space-y-2" role="status" aria-label="Loading">
-      <Skeleton className="h-8 w-48" />
+    <div className="min-w-0 space-y-2" role="status" aria-label="Loading">
+      <Skeleton className="h-8 w-48 max-w-full" />
       <Skeleton className="h-48 w-full" />
     </div>
   );
