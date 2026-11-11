@@ -33,6 +33,10 @@ The daily-stats research tickets (FAN-91 to FAN-96) need live Yahoo answers that
 
 Yahoo's player game log carries the NBA schedule and game state. To see how it shows a live game, run `npm run capture:yahoo-game-log` while NBA games are live, signing in as above. It reads the game logs of your league's rostered players (two calls of 25 players), waits 2 minutes and reads them again (`--rounds=<n>` and `--minutes=<n>` change that; pass a league key to choose another league). Run it once more on a Monday to see how far ahead the log reaches. The files go to `yahoo-research/FAN-92-game-log/`, with a `README.md` listing each call's time and status, checked with the same leak check as the research capture. Zip the folder and attach it to FAN-92; don't commit it.
 
+## Record the daily-stats game-log and transactions calls (FAN-102)
+
+`npm run capture:yahoo-live-calls` records, scrubbed, the two daily-stats calls parsers are tested against: game logs for 25 players by key (D3) and adds, drops and trades for one team (D7) in your newest league (pass a league key to choose another). Sign in as above, and run it while NBA games are live: it reads the rostered players' game logs first and puts players with a live game into the 25. For D7 it records the first team in the transactions feed that made a trade, and your own team; it stops if nobody has traded. The files go to `tests/backend/fixtures/yahoo/daily-stats/`, replacing any earlier capture, with a `README.md` giving each call's time, status and what came back. They're checked with the same leak check as the research capture (public NBA names pass) and are committed.
+
 ## Check
 
 - Skim the captured files (fixtures only; the research folder is shared privately) for your Yahoo nickname, team names, league name and email. The script already checks for these, so none should appear.
