@@ -141,14 +141,17 @@ export function droppedPlayer(game: string, team: number): FixturePlayer {
   });
 }
 
-/** The free agents; the last one hasn't played this season. */
+/** The free agents; the last one hasn't played this season and is inactive (NA). */
 export function freeAgents(game: string): FixturePlayer[] {
   return Array.from({ length: FREE_AGENT_COUNT }, (_, index) => {
     const number = FREE_AGENT_BASE + index + 1;
     return build(game, number, `${FIRST_NAMES[index % 13]} Rivers ${index + 1}`, {
       nbaTeam: NBA_TEAMS[index % NBA_TEAMS.length],
       positions: FREE_AGENT_POSITIONS[index % FREE_AGENT_POSITIONS.length],
-      role: index === FREE_AGENT_COUNT - 1 ? "out" : "plays",
+      // The last free agent hasn't played: Yahoo lists them as not active (NA).
+      ...(index === FREE_AGENT_COUNT - 1
+        ? { role: "out", injury: { designation: "NA", reason: null } }
+        : { role: "plays" }),
     });
   });
 }
