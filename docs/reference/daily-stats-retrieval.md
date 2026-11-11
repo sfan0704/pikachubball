@@ -1,8 +1,8 @@
 # Daily stats retrieval plan
 
-How the Matchup, Players and League screens get their data from Yahoo: the datasets, the call for each, how calls are batched and reused, how fresh each must be, and what it all costs. Written for FAN-97, as of 2026-11-09. The agreed architecture is in [the target state](../target-state.md#daily-stats); this page holds the detail behind it.
+How the Matchup, Players and League screens get their data from Yahoo: the datasets, the call for each, how calls are batched and reused, how fresh each must be, and what it all costs. Written for FAN-97, as of 2026-11-10 (FAN-102 call tests added). The agreed architecture is in [the target state](../target-state.md#daily-stats); this page holds the detail behind it.
 
-Inputs: the Linear page "Daily stats data reference (source of truth)" (final for FAN-89, 2026-11-09), the FAN-88 mockup decisions and research FAN-91 to FAN-96. Every call below was tested in our league unless marked **untested**. Next 7 projected (FAN-94) is not part of this plan; see [Projections slot](#projections-slot).
+Inputs: the Linear page "Daily stats data reference (source of truth)" (final for FAN-89, 2026-11-09), the FAN-88 mockup decisions and research FAN-91 to FAN-96. Every call below was tested in our league; D3's multi-key form and D7's `team_key` form were tested on 2026-11-10 (FAN-102). Next 7 projected (FAN-94) is not part of this plan; see [Projections slot](#projections-slot).
 
 ## Rules every dataset follows
 
@@ -21,16 +21,16 @@ Inputs: the Linear page "Daily stats data reference (source of truth)" (final fo
 |---|---|---|---|---|---|
 | D1 | Week table: every team's totals, pairings, games left | `/league/{L};out=settings/scoreboard;week={W}` (the existing scope call; it gains `remaining_games`, `live_games`, `completed_games`) | 1 | Matchup grid, score, games left, opponent picker; League week ranks | Current week: Live. Past week: Settled |
 | D2 | Team day: one team's roster on a date with each player's slot and stats that date | `/team/{T}/roster;date={D}/players/stats;type=date;date={D}` | 1 per team per date | Matchup Today, Yesterday and Week player cards | Today: Live. Yesterday and the day before: Recent (stat corrections). Older: Settled |
-| D3 | Game logs: each player's NBA games (date, opponent, home/away, tip-off, live quarter/clock/score, final, minutes) | `/league/{L}/players;player_keys={P1..P25};out=game_log` (multi-key form **untested**; fallback below) | 1 per 25 players | Matchup game status, did-not-play, counted games; player detail | Live |
+| D3 | Game logs: each player's NBA games (date, opponent, home/away, tip-off, live quarter/clock/score, final, minutes) | `/league/{L}/players;player_keys={P1..P25};out=game_log` (tested 2026-11-10 with 25 keys, 4 games live: every player came back with their log; about 350 KB a call) | 1 per 25 players | Matchup game status, did-not-play, counted games; player detail | Live |
 | D4 | Player period totals with GP and makes/attempts | `/players;player_keys={P1..P25}/stats;type={season,lastweek,lastmonth}` (game context, no `/league` prefix) | 1 per 25 players per period | Matchup vs season average; Players averages; League popover per-game PTS/REB/AST | Daily (Yahoo's periods end yesterday) |
 | D5 | Player list page: ownership, waiver date, rostered % and trend, positions, NBA team, injury status | `/league/{L}/players;status={A,T,W}[;position={pos}][;search={text}];sort={AR,OR};start={N};count=25;out=ownership,percent_owned` | 1 per page | Players lists, search and position filter | Recent |
 | D6 | League schedule: every NBA team's games, past and about 8 days ahead | `/league/{L}/players;status=T;start={N};count=25;out=game_log`, paged until all 30 NBA teams are covered | 2 to 4 expected, at most 9 | Players tonight, tomorrow, back-to-back filters and games this week | Daily |
-| D7 | Transactions for a team | `/league/{L}/transactions;types=add,drop,trade;team_key={T}` (`trade` with `team_key` **untested**; fallback is the whole feed, `;start={N};count=25`, about 7 pages) | 1 | Matchup added/dropped labels; League popover latest acquisition | Recent |
+| D7 | Transactions for a team | `/league/{L}/transactions;types=add,drop,trade;team_key={T}` (tested 2026-11-10: returns the team's adds, drops and trades, as trader or tradee, and nothing else; matches the whole feed for that team) | 1 | Matchup added/dropped labels; League popover latest acquisition | Recent |
 | D8 | Draft results | `/league/{L}/draftresults` | 1 | League popover draft label | Settled |
 | D9 | Current roster for a team | `/team/{T}/roster` (existing) | 1 | League popover roster | Recent |
 | D10 | Scoring weeks | `/game/{G}/game_weeks` | 1 | Week picker, games this week | Settled |
 
-**Fallback for D3.** If the multi-key `out=game_log` form fails in the first live ticket, use the tested `status=T` pages (D6's call): 9 calls cover every rostered player in the league, which includes both Matchup teams. Dropped contributors in the Week view are no longer rostered; their days come from D2, where `0`/`0/0` on a game day already says the team played.
+**Fallback for D3.** Not needed: the multi-key form worked (FAN-102). Kept in case Yahoo changes it: the `status=T` pages (D6's call): 9 calls cover every rostered player in the league, which includes both Matchup teams. Dropped contributors in the Week view are no longer rostered; their days come from D2, where `0`/`0/0` on a game day already says the team played.
 
 **Week view.** Seven D2 calls per team (one per elapsed date), not the one-call week roster: that shortcut was not checked on a week with bench games. Counted totals are the sum of starting-slot days, which reconciled exactly with Yahoo's daily and weekly team totals in FAN-91.
 
@@ -74,7 +74,7 @@ Not chosen: a server-side cache (needs stored, shared data and the agreement che
 
 ## Call budgets
 
-Counted per viewer, first attempts only. The request policy allows up to 3 attempts for timeouts and 5xx, so a failing minute can cost up to three times its count. A rostered team has about 15 players, so both Matchup teams together are about 30.
+Counted per viewer, first attempts only. FAN-102 confirmed D3 and D7 work in the planned forms, so neither needs its fallback's extra calls. A D3 call returns each player's whole season log plus about 8 days ahead, about 350 KB for 25 players, so live polling moves about 0.35 MB a minute per viewer between Yahoo and the server. The request policy allows up to 3 attempts for timeouts and 5xx, so a failing minute can cost up to three times its count. A rostered team has about 15 players, so both Matchup teams together are about 30.
 
 **Cold start** (nothing in the browser yet):
 
@@ -106,7 +106,7 @@ Yahoo publishes no rate limit for the Fantasy API. A third-party listing claims 
 
 ## Live state and freshness
 
-- **Game windows.** D3 tells each shown player's game state: scheduled (tip-off from `start_time`), live (`is_game_live=1`, quarter, clock and score parsed from `status`), final (`W`/`L` and score). Unknown live texts (halftime, overtime, delays) are shown as Yahoo wrote them.
+- **Game windows.** D3 tells each shown player's game state: scheduled (tip-off from `start_time`), live (`is_game_live` is the number `1` on the game; quarter, clock and score parsed from `status`, recorded as `Q1 1:17, 23-18`), final (`W`/`L` and score). Unknown live texts (halftime, overtime, delays) are shown as Yahoo wrote them.
 - **Partial failures.** Each dataset loads and fails on its own. The totals grid (D1) can show while player cards (D2) retry; a failed section shows its error with a retry button, and values already on screen stay, labelled with their age.
 - **Timers, backoff and labels** follow the [freshness policy](#freshness-policy).
 
@@ -137,4 +137,4 @@ Next 7 projected (FAN-94) stays out. It would need a website session cookie, ser
 
 ## Static screens before live data
 
-The `shared/api` contracts are the boundary. The first implementation ticket writes the contracts and the pure `shared/domain` functions, then builds the screens against fixtures that pass those contracts. A fixture `DailyStatsSource` serves them in local, CI and review only, wired in the same place as the Yahoo stand-in, so every interaction can be finished and reviewed signed-in before any Yahoo adapter exists. Production reports the daily-stats screens as not available through the same capability list as projections, so they stay hidden until the Yahoo source is wired. Later tickets add the Yahoo resources and parsers one dataset at a time, each tested against scrubbed recordings from FAN-98's capture.
+The `shared/api` contracts are the boundary. The first implementation ticket writes the contracts and the pure `shared/domain` functions, then builds the screens against fixtures that pass those contracts. A fixture `DailyStatsSource` serves them in local, CI and review only, wired in the same place as the Yahoo stand-in, so every interaction can be finished and reviewed signed-in before any Yahoo adapter exists. Production reports the daily-stats screens as not available through the same capability list as projections, so they stay hidden until the Yahoo source is wired. Later tickets add the Yahoo resources and parsers one dataset at a time, each tested against scrubbed recordings from FAN-98's capture. D3 and D7 recordings are committed in `tests/backend/fixtures/yahoo/daily-stats/` (FAN-102, `npm run capture:yahoo-live-calls`).
