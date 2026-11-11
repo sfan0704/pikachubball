@@ -43,14 +43,14 @@ describe("daily-stats wiring", () => {
       projections: false,
     });
     expect(dependencies.projectionSource).toBeNull();
-    const yahoo = replayYahoo({});
+    const yahoo = replayYahoo({ "/game/478/game_weeks": "daily-stats/fan-91-week-2/game-weeks" });
     const source = dependencies.createDailyStatsSource?.({
       yahooClient: async () => yahoo as unknown as YahooApiClient,
       logger: silentLogger,
     });
     expect(source).toBeInstanceOf(YahooDailyStatsSource);
-    await expect(source?.getWeeks("478.l.100000")).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(yahoo.calls).toEqual([]);
+    await expect(source?.getWeeks("478.l.100000")).resolves.toHaveProperty("weeks");
+    expect(yahoo.calls).toEqual(["/game/478/game_weeks"]);
     expect(constructed.count).toBe(0);
   });
 
