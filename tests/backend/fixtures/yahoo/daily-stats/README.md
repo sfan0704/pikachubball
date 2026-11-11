@@ -39,3 +39,11 @@ Recorded by the FAN-93 capture on 2026-11-07 (US Eastern), game context with no 
 - Files: `d4-players-season.json`, `d4-players-lastweek.json`, `d4-players-lastmonth.json`
 - GET `/players;player_keys=478.p.10454,478.p.6417,478.p.6165/stats;type={season,lastweek,lastmonth}` (with `?format=json`)
 - HTTP 200 each; GP season 9/8/9, last week 4/3/4, last month 9/8/9
+
+## Acquisition recordings (FAN-96, used by FAN-115)
+
+Recorded on 2026-11-07 by the FAN-98 research capture in the same league, already scrubbed. Each file is Yahoo's response body.
+
+- `d8-draft-results.json`: GET `/league/478.l.14822/draftresults`; 182 auction picks.
+- `d7-transactions-whole-league.json`: GET `/league/478.l.14822/transactions;types=add,drop,trade`; the whole season's 144 moves, one vetoed trade.
+- `fan96-rostered-players.json`: not a Yahoo body. Each team's rostered player keys, taken from that capture's `/league/478.l.14822/teams/roster` (201 players) so the 1 MB roster body isn't committed.

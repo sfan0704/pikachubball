@@ -54,8 +54,6 @@ describe("YahooDailyStatsSource key checks", () => {
         s.listPlayers(LEAGUE, { status: "available", sort: "actualRank", start: 0 }),
     ],
     ["schedule", (s: YahooDailyStatsSource) => s.getSchedule(LEAGUE)],
-    ["transactions", (s: YahooDailyStatsSource) => s.getTransactions(LEAGUE, `${LEAGUE}.t.1`)],
-    ["draft", (s: YahooDailyStatsSource) => s.getDraft(LEAGUE)],
   ])("answers %s NOT_FOUND until its dataset is connected", async (_dataset, read) => {
     const { yahoo, source } = sourceOver();
 
