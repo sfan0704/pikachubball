@@ -128,7 +128,7 @@ export class FixtureDailyStatsSource implements DailyStatsSource {
     return {
       teams: FIXTURE_NBA_TEAMS.map((nbaTeam) => ({
         nbaTeam,
-        games: fixtureGames(nbaTeam, today, addDays(today, LOG_DAYS_AHEAD), today),
+        games: fixtureGames(nbaTeam, addDays(today, -1), addDays(today, LOG_DAYS_AHEAD), today),
       })),
     };
   }
