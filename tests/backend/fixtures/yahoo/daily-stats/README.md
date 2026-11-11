@@ -31,3 +31,11 @@ Recorded in league 478.l.14822 (D3 and D7 by `npm run capture:yahoo-live-calls`,
 - File: `d1-week-3-midweek.json`
 - GET `/league/478.l.14822;out=settings,scoreboard` (with `?format=json`)
 - Recorded 2026-11-08 during week 3 with games live: each team's `team_remaining_games` has remaining, live and completed counts (t.10: 7, 1, 31).
+
+## D4 player period totals, 3 players (FAN-93)
+
+Recorded by the FAN-93 capture on 2026-11-07 (US Eastern), game context with no `/league` prefix. Each is the `response` of the capture's file of the same period. Yahoo sends field goals and free throws as attempts then makes (stat ids 3/4 and 6/7) here, not the league's combined stat.
+
+- Files: `d4-players-season.json`, `d4-players-lastweek.json`, `d4-players-lastmonth.json`
+- GET `/players;player_keys=478.p.10454,478.p.6417,478.p.6165/stats;type={season,lastweek,lastmonth}` (with `?format=json`)
+- HTTP 200 each; GP season 9/8/9, last week 4/3/4, last month 9/8/9
