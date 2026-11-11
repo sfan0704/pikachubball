@@ -27,7 +27,13 @@ describe("the league picker", () => {
 
     render(
       <LeagueControls
-        selection={{ leagueKey: "478.l.1", teamKey: "478.l.1.t.1", scope: "season" }}
+        selection={{
+          leagueKey: "478.l.1",
+          teamKey: "478.l.1.t.1",
+          screen: "league",
+          scope: "season",
+          day: "today",
+        }}
         leagues={leagues}
         table={undefined}
         onSelect={vi.fn()}

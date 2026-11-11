@@ -116,6 +116,7 @@ describe("GET /api/me", () => {
     expect(response.body).toEqual({
       user: { id: "user-1", displayName: null, email: null },
       yahoo: { connected: true },
+      features: { matchupAndLeague: false, players: false, projections: false },
       preferences: { selectedLeagueKey: "466.l.1", selectedTeamKey: null, display: {} },
     });
   });

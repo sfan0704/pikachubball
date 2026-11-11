@@ -11,11 +11,23 @@ import { TableBoundary } from "./TableBoundary";
 import { useNow } from "./useNow";
 import { LeagueControls } from "./LeagueControls";
 import { LeagueHeader } from "./LeagueHeader";
+import type { Screen } from "./screens";
+import { ScreenNav } from "@/features/daily-stats/ScreenNav";
+
+// The daily-stats screens load when first opened, like the views below.
+const MatchupScreen = lazy(() =>
+  import("@/features/daily-stats/MatchupScreen").then((m) => ({ default: m.MatchupScreen }))
+);
+const PlayersScreen = lazy(() =>
+  import("@/features/daily-stats/PlayersScreen").then((m) => ({ default: m.PlayersScreen }))
+);
 
 interface LeagueViewProps {
   selection: Selection;
   leagues: readonly UserLeague[];
   league: UserLeague;
+  /** The screens the server has wired; the navigation shows when there is more than one. */
+  screens: readonly Screen[];
   onSelect: (change: Partial<Selection>) => void;
   onPickLeague: () => void;
 }
@@ -112,20 +124,36 @@ function ViewTabs({ selection, query, teamName, onPickLeague }: ViewTabsProps) {
   );
 }
 
-/** The selected league: header, pickers and one tab per view, all fed by the one team table. */
-export function LeagueView({
+interface ScreenBodyProps extends Omit<LeagueViewProps, "league" | "screens"> {
+  query: ReturnType<typeof useLeagueScope>;
+  teamName: string | null;
+}
+
+/** The chosen screen: Matchup or Players, or League with its pickers and one tab per view. */
+function ScreenBody({
   selection,
   leagues,
-  league,
   onSelect,
   onPickLeague,
-}: LeagueViewProps) {
-  const query = useLeagueScope(selection.leagueKey, selection.scope);
-  const teamName =
-    query.data?.teams.find((team) => team.teamKey === selection.teamKey)?.teamName ?? null;
+  query,
+  teamName,
+}: ScreenBodyProps) {
+  if (selection.screen === "matchup") {
+    return (
+      <Loading>
+        <MatchupScreen selection={selection} onPickLeague={onPickLeague} />
+      </Loading>
+    );
+  }
+  if (selection.screen === "players") {
+    return (
+      <Loading>
+        <PlayersScreen leagueKey={selection.leagueKey} onPickLeague={onPickLeague} />
+      </Loading>
+    );
+  }
   return (
-    <div className="space-y-4 md:space-y-6">
-      <LeagueHeader league={league} teamName={teamName} />
+    <>
       <LeagueControls
         selection={selection}
         leagues={leagues}
@@ -138,6 +166,21 @@ export function LeagueView({
         teamName={teamName}
         onPickLeague={onPickLeague}
       />
+    </>
+  );
+}
+
+/** The selected league: header, the screen navigation, and the chosen screen. */
+export function LeagueView({ league, screens, ...rest }: LeagueViewProps) {
+  const { selection } = rest;
+  const query = useLeagueScope(selection.leagueKey, selection.scope);
+  const teamName =
+    query.data?.teams.find((team) => team.teamKey === selection.teamKey)?.teamName ?? null;
+  return (
+    <div className="space-y-4 md:space-y-6">
+      <LeagueHeader league={league} teamName={teamName} />
+      {screens.length > 1 && <ScreenNav selection={selection} screens={screens} />}
+      <ScreenBody {...rest} query={query} teamName={teamName} />
     </div>
   );
 }

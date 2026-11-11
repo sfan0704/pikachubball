@@ -10,7 +10,8 @@ import { getMe, savePreferences } from "../../services/me-service";
 export function createAccountController({
   revokeYahooGrant,
   createSupabaseClient,
-}: Pick<ServerDependencies, "revokeYahooGrant" | "createSupabaseClient">) {
+  features,
+}: Pick<ServerDependencies, "revokeYahooGrant" | "createSupabaseClient" | "features">) {
   const operationFor = (req: Request) => {
     const { storage, logger, user } = getRequestContext(req);
     return { dependencies: { storage, revokeYahooGrant, logger }, userId: user.userId };
@@ -19,7 +20,7 @@ export function createAccountController({
   return {
     /** `GET /api/me` */
     getMe: asyncHandler(async (req: Request, res: Response) => {
-      res.json(meResponseSchema.parse(await getMe(getRequestContext(req))));
+      res.json(meResponseSchema.parse(await getMe(getRequestContext(req), features)));
     }),
 
     /** `PUT /api/me/preferences` */

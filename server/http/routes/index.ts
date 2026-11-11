@@ -4,8 +4,10 @@ import { createRateLimiters } from "../middleware/rate-limiter";
 import { createSupabaseAuthController } from "../controllers/supabase-auth-controller";
 import { createAccountController } from "../controllers/account-controller";
 import { createLeagueController } from "../controllers/league-controller";
+import { createDailyStatsController } from "../controllers/daily-stats-controller";
 import type { ServerDependencies } from "../dependencies";
 import { registerAuthRoutes } from "./auth";
+import { registerDailyStatsRoutes } from "./daily-stats";
 import { registerDevRoutes } from "./dev";
 import { registerLeagueRoutes } from "./leagues";
 import { registerMeRoutes } from "./me";
@@ -38,6 +40,11 @@ export function registerRoutes(app: Express, dependencies: ServerDependencies): 
   registerMeRoutes(app, {
     requireAuth,
     controller: createAccountController(dependencies),
+  });
+  registerDailyStatsRoutes(app, {
+    requireAuth,
+    dataLimiter,
+    controller: createDailyStatsController(dependencies),
   });
   registerLeagueRoutes(app, {
     requireAuth,

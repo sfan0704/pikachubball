@@ -31,6 +31,7 @@ function stubApi() {
         return jsonResponse({
           user: { id: "u1", displayName: "Tester", email: null },
           yahoo: { connected: true },
+          features: { matchupAndLeague: false, players: false, projections: false },
           preferences: { selectedLeagueKey: null, selectedTeamKey: null, display: {} },
         });
       }

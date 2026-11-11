@@ -1,4 +1,14 @@
-import { LEAGUE, MY_TEAM, TABS, openTab, setScenario, signIn, expect, test } from "./support";
+import {
+  LEAGUE,
+  MY_TEAM,
+  TABS,
+  openScreen,
+  openTab,
+  setScenario,
+  signIn,
+  expect,
+  test,
+} from "./support";
 
 test.beforeEach(async () => {
   await setScenario("ok");
@@ -11,6 +21,46 @@ test("signs in with a seeded manager and shows the league rankings", async ({ pa
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
   await expect(page.getByTestId(`row-ranking-${MY_TEAM}`)).toContainText("(you)");
   await expect(page).toHaveURL(new RegExp(`/leagues/${LEAGUE}/teams/${MY_TEAM}/current$`));
+});
+
+test("opens on Matchup and keeps the screen and day through refresh and back", async ({ page }) => {
+  const base = `/leagues/${LEAGUE}/teams/${MY_TEAM}`;
+  await signIn(page, "a", "Matchup");
+  await expect(page.getByTestId("matchup-roster").getByRole("listitem")).toHaveCount(13);
+
+  const days = page.getByRole("navigation", { name: "Day" });
+  await days.getByRole("link", { name: "Yesterday" }).click();
+  await expect(page).toHaveURL(`${base}/matchup/yesterday`);
+  await page.reload();
+  await expect(days.getByRole("link", { name: "Yesterday" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await expect(page.getByTestId("matchup-roster")).toBeVisible();
+
+  await days.getByRole("link", { name: "Week" }).click();
+  await expect(page.getByTestId("matchup-week")).toContainText("Week 5");
+
+  await openScreen(page, "Players");
+  await expect(page).toHaveURL(`${base}/players`);
+  await expect(page.getByTestId("players-list").getByRole("listitem")).toHaveCount(25);
+  await page.reload();
+  await expect(page.getByTestId("players-list")).toBeVisible();
+
+  await openScreen(page, "League");
+  await expect(page).toHaveURL(`${base}/current`);
+  await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
+
+  await page.goBack();
+  await expect(page).toHaveURL(`${base}/players`);
+  await page.goBack();
+  await expect(page).toHaveURL(`${base}/matchup/week`);
+  await page.goBack();
+  await expect(page).toHaveURL(`${base}/matchup/yesterday`);
+  await expect(days.getByRole("link", { name: "Yesterday" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
 });
 
 test("keeps the selection in the URL: a deep link, another period, and back", async ({ page }) => {
@@ -106,5 +156,13 @@ test("never scrolls the page sideways; only the stat tables do", async ({ page }
       () => document.documentElement.scrollWidth - window.innerWidth
     );
     expect(overflow, `page overflows sideways on the ${tab} tab`).toBeLessThanOrEqual(0);
+  }
+  for (const screen of ["Matchup", "Players"] as const) {
+    await openScreen(page, screen);
+    await expect(page.getByRole("status", { name: "Loading" })).toHaveCount(0);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth
+    );
+    expect(overflow, `page overflows sideways on ${screen}`).toBeLessThanOrEqual(0);
   }
 });

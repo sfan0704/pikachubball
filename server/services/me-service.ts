@@ -1,8 +1,11 @@
-import type { MeResponse, Preferences } from "../../shared/api/account";
+import type { Features, MeResponse, Preferences } from "../../shared/api/account";
 import type { RequestContext } from "../http/request-context";
 
-/** The signed-in user, whether Yahoo is connected, and their saved choices. */
-export async function getMe({ user, storage }: RequestContext): Promise<MeResponse> {
+/** The signed-in user, whether Yahoo is connected, their saved choices and the wired features. */
+export async function getMe(
+  { user, storage }: RequestContext,
+  features: Features
+): Promise<MeResponse> {
   const [token, preferences] = await Promise.all([
     storage.getYahooToken(user.userId),
     storage.getPreferences(),
@@ -11,6 +14,7 @@ export async function getMe({ user, storage }: RequestContext): Promise<MeRespon
     user: { id: user.userId, displayName: user.displayName, email: user.email },
     yahoo: { connected: token !== undefined },
     preferences,
+    features,
   };
 }
 

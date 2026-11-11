@@ -79,3 +79,4 @@ export {
   perGameAverages,
   versusAverage,
 } from "./daily-stats";
+export { addDays, daysBetween, mondayOf, nbaDateOf } from "./nba-date";

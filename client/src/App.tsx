@@ -50,7 +50,10 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth">{user ? <Redirect to="/" /> : <AuthPage />}</Route>
-      <Route path="/leagues/:leagueKey/teams/:teamKey/:scope">
+      <Route path="/leagues/:leagueKey/teams/:teamKey/:screen">
+        <ProtectedRoute component={LeaguePage} />
+      </Route>
+      <Route path="/leagues/:leagueKey/teams/:teamKey/matchup/:day">
         <ProtectedRoute component={LeaguePage} />
       </Route>
       <Route path="/">

@@ -64,6 +64,9 @@ export function buildTestDependencies(
       throw new Error("createOwnerStorage was not provided by this test");
     },
     revokeYahooGrant: async () => false,
+    createDailyStatsSource: null,
+    projectionSource: null,
+    features: { matchupAndLeague: false, players: false, projections: false },
     createFantasyDataSource: () => {
       throw new Error("createFantasyDataSource was not provided by this test");
     },

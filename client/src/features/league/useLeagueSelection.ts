@@ -9,6 +9,9 @@ import {
   selectionPath,
   type Selection,
 } from "./selection";
+import { availableScreens, type Screen } from "./screens";
+
+const LEAGUE_ONLY: readonly Screen[] = ["league"];
 
 function loadStatus(
   me: { isError: boolean; isPending: boolean },
@@ -25,7 +28,7 @@ function loadStatus(
 }
 
 /**
- * The selected league, team and scope, held in the URL. A new visit is sent to
+ * The selected league, team, screen and scope or day, held in the URL. A new visit is sent to
  * the URL of the saved (or default) selection; choosing something navigates,
  * so back works, and saves the league and team as the next visit's start.
  */
@@ -36,13 +39,15 @@ export function useLeagueSelection() {
   const savePreferences = useSavePreferences();
 
   const preferences = me.data?.preferences;
+  const features = me.data?.features;
+  const screens = useMemo(() => (features ? availableScreens(features) : LEAGUE_ONLY), [features]);
   const leagueList = leagues.data?.leagues;
   const selection = useMemo(
     () =>
       preferences && leagueList
-        ? resolveSelection(parseSelectionPath(location), leagueList, preferences)
+        ? resolveSelection(parseSelectionPath(location), leagueList, preferences, screens)
         : null,
-    [location, preferences, leagueList]
+    [location, preferences, leagueList, screens]
   );
 
   // Make the URL say what is shown, replacing the entry so back doesn't bounce.
@@ -86,6 +91,7 @@ export function useLeagueSelection() {
     error: me.error ?? leagues.error,
     selection,
     leagues: leagueList ?? [],
+    screens,
     select,
     setScope,
   } as const;

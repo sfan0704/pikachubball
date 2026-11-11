@@ -1,6 +1,7 @@
 import {
   TABS,
   accessibilityViolations,
+  openScreen,
   openTab,
   setScenario,
   signIn,
@@ -26,6 +27,29 @@ for (const theme of ["light", "dark"] as const) {
         expect(await accessibilityViolations(page)).toEqual([]);
       });
     }
+
+    for (const day of ["Today", "Week"] as const) {
+      test(`Matchup ${day} has no WCAG 2.1 AA violations`, async ({ page }) => {
+        await useTheme(page, theme);
+        await signIn(page, "a", "Matchup");
+        await page
+          .getByRole("navigation", { name: "Day" })
+          .getByRole("link", { name: day })
+          .click();
+        await expect(page.getByRole("status", { name: "Loading" })).toHaveCount(0);
+
+        expect(await accessibilityViolations(page)).toEqual([]);
+      });
+    }
+
+    test("Players has no WCAG 2.1 AA violations", async ({ page }) => {
+      await useTheme(page, theme);
+      await signIn(page, "a", "Matchup");
+      await openScreen(page, "Players");
+      await expect(page.getByTestId("players-list")).toBeVisible();
+
+      expect(await accessibilityViolations(page)).toEqual([]);
+    });
   });
 }
 

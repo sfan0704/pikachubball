@@ -13,6 +13,21 @@ export const preferencesSchema = z
 
 export type Preferences = z.infer<typeof preferencesSchema>;
 
+/**
+ * What the server has wired. Each switch shows or hides its screens; all are
+ * off in production until the Yahoo daily-stats source is wired.
+ */
+export const featuresSchema = z.object({
+  /** The Matchup and League daily-stats screens. */
+  matchupAndLeague: z.boolean(),
+  /** The Players screen. */
+  players: z.boolean(),
+  /** "Next 7 projected"; off until a projection source exists. */
+  projections: z.boolean(),
+});
+
+export type Features = z.infer<typeof featuresSchema>;
+
 /** The body of `GET /api/me`. */
 export const meResponseSchema = z.object({
   user: z.object({
@@ -23,6 +38,7 @@ export const meResponseSchema = z.object({
   /** Whether Yahoo tokens are stored. A grant Yahoo later rejects shows up as YAHOO_RECONNECT_REQUIRED on data calls. */
   yahoo: z.object({ connected: z.boolean() }),
   preferences: preferencesSchema,
+  features: featuresSchema,
 });
 
 export type MeResponse = z.infer<typeof meResponseSchema>;

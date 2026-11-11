@@ -24,6 +24,7 @@ import { jsonResponse } from "../../support/fetch";
 const ME = {
   user: { id: "u1", displayName: "Test", email: null },
   yahoo: { connected: true },
+  features: { matchupAndLeague: false, players: false, projections: false },
   preferences: { selectedLeagueKey: null, selectedTeamKey: null, display: {} },
 };
 const LEAGUES = {
