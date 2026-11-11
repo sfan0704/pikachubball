@@ -1,4 +1,11 @@
-import type { LeagueCategory, LeagueSettings, TeamTable, TeamTotals } from "../../shared/domain";
+import {
+  measured,
+  type LeagueCategory,
+  type LeagueSettings,
+  type StatLine,
+  type TeamTable,
+  type TeamTotals,
+} from "../../shared/domain";
 
 const STANDARD_CATEGORIES: LeagueCategory[] = [
   { statId: "5", key: "fgPct", displayName: "FG%", direction: "higher" },
@@ -58,10 +65,27 @@ export function buildTeamTable(
       teamKey: `466.l.1.t.${index + 1}`,
       teamName: `Team ${index + 1}`,
       managerName: null,
+      games: null,
       totals: buildTeamTotals(teamTotals),
     })),
     pairings: [],
     fetchedAt: "2026-01-15T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** An ordinary measured stat line for one game; override only what a test cares about. */
+export function buildStatLine(overrides: Partial<StatLine> = {}): StatLine {
+  return {
+    fg: measured({ makes: 6, attempts: 13 }),
+    ft: measured({ makes: 3, attempts: 4 }),
+    tpm: measured(2),
+    pts: measured(17),
+    reb: measured(5),
+    ast: measured(4),
+    stl: measured(1),
+    blk: measured(0),
+    to: measured(2),
     ...overrides,
   };
 }

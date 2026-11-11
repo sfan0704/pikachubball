@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareTotals,
   compareWithAll,
   headToHead,
   heatmap,
@@ -8,7 +9,7 @@ import {
   rankings,
   type TeamTable,
 } from "../../../shared/domain";
-import { buildTeamTable } from "../../support/builders";
+import { buildTeamTable, buildTeamTotals } from "../../support/builders";
 import { defined } from "../../support/defined";
 
 function deepFreeze<T>(value: T): T {
@@ -110,6 +111,20 @@ describe("heatmap", () => {
     expect(rows[0].cells.blk).toEqual({ value: null, rank: null, percentile: null });
     expect(rows[2].cells.blk).toEqual({ value: 9, rank: 1, percentile: 100 });
     expect(rows[1].cells.blk).toEqual({ value: 5, rank: 2, percentile: 50 });
+  });
+});
+
+describe("compareTotals", () => {
+  it("scores two sets of counted totals, such as one day's, with turnovers inverted", () => {
+    const { categories, score } = compareTotals(
+      buildTeamTotals({ pts: 120, to: 10, reb: 40 }),
+      buildTeamTotals({ pts: 100, to: 12, reb: 40, ast: null })
+    );
+    expect(categories.find((c) => c.category === "pts")?.result).toBe("win");
+    expect(categories.find((c) => c.category === "to")?.result).toBe("win");
+    expect(categories.find((c) => c.category === "reb")?.result).toBe("tie");
+    expect(categories.find((c) => c.category === "ast")?.result).toBe("unavailable");
+    expect(score).toMatchObject({ wins: 2, ties: 6, unavailable: 1, complete: false });
   });
 });
 
