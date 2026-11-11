@@ -1,11 +1,6 @@
 import { useState } from "react";
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
-import {
-  CATEGORIES,
-  closestLostCategory,
-  compareTotals,
-  type CategoryKey,
-} from "@shared/domain";
+import { CATEGORIES, closestLostCategory, compareTotals, type CategoryKey } from "@shared/domain";
 import { useLeagueScope } from "@/api/hooks";
 import { useGameLogs, usePlayerStats, useTeamDay } from "@/api/daily-stats-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
