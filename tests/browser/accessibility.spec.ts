@@ -28,7 +28,7 @@ for (const theme of ["light", "dark"] as const) {
       });
     }
 
-    for (const day of ["Today", "Week"] as const) {
+    for (const day of ["Today", "Yesterday", "Week"] as const) {
       test(`Matchup ${day} has no WCAG 2.1 AA violations`, async ({ page }) => {
         await useTheme(page, theme);
         await signIn(page, "a", "Matchup");

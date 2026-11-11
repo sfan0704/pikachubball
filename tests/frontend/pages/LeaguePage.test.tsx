@@ -146,7 +146,7 @@ describe("LeaguePage", () => {
       "aria-current",
       "page"
     );
-    expect(await screen.findByTestId("matchup-roster")).toHaveTextContent("Avery Knoll");
+    expect(await screen.findByTestId(`column-${MY_TEAM}`)).toHaveTextContent("A. Knoll");
     expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/matchup/today`);
 
     await userEvent.click(screen.getByRole("link", { name: "Week" }));
