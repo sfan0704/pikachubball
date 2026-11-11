@@ -84,6 +84,7 @@ export { addDays, daysBetween, mondayOf, nbaDateOf } from "./nba-date";
 export type { ClassTimers, DailyDataset, FreshnessClass, LiveSignal } from "./freshness";
 export {
   backedOffInterval,
+  followsLineup,
   FRESHNESS_POLICY,
   freshnessClass,
   freshnessOf,

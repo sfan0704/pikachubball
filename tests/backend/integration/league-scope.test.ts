@@ -92,6 +92,8 @@ describe("GET /api/leagues/:key/:scope", () => {
     expect(current.body.scope).toEqual({ kind: "week", week: 8 });
     expect(past.body.scope).toEqual({ kind: "week", week: 1 });
     expect(past.body.pairings).toHaveLength(7);
+    expect(current.body.teams[0].games).toEqual({ remaining: 16, live: 0, completed: 6 });
+    expect(past.body.teams[0].games).toEqual({ remaining: 0, live: 0, completed: 36 });
     expect(resources.getCurrentWeekScoreboard).toHaveBeenCalledTimes(1);
     expect(resources.getPastWeekScoreboard).toHaveBeenCalledWith(LEAGUE, 1);
   });
