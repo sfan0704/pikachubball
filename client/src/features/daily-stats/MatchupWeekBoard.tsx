@@ -158,7 +158,8 @@ function CountedGrid({
 /**
  * Matchup over one scoring week: the score and grid from counted totals only
  * (starting-slot days on the roster), then each team's players' weeks side by
- * side. Each team's days load and fail on their own.
+ * side. Each team's days load and fail on their own, and a failed day shows its
+ * error above the days that loaded.
  */
 export function MatchupWeekBoard(props: MatchupWeekBoardProps) {
   const { teamKey, now, onPickLeague, isCurrentWeek } = props;

@@ -32,7 +32,11 @@ export function useTeamDay(leagueKey: string | null, teamKey: string | null, dat
 
 /** Several dates of D2 for one team, read as one section. */
 export interface TeamDays {
-  /** Every date's day in date order, once all have loaded. */
+  /**
+   * The dates that loaded, in date order, once none is still loading; a failed
+   * date is left out so the others still show under its error. Undefined while
+   * any date loads, or when every date failed.
+   */
   readonly data: TeamDayResponse[] | undefined;
   /** The first failure among the dates, if any. */
   readonly error: Error | null;
@@ -45,8 +49,9 @@ export interface TeamDays {
 function combineDays(results: UseQueryResult<TeamDayResponse>[]): TeamDays {
   const failed = results.filter((result) => result.error !== null);
   const loaded = results.flatMap((result) => (result.data === undefined ? [] : [result.data]));
+  const settled = loaded.length + failed.filter((result) => result.data === undefined).length;
   return {
-    data: results.length > 0 && loaded.length === results.length ? loaded : undefined,
+    data: loaded.length > 0 && settled === results.length ? loaded : undefined,
     error: failed[0]?.error ?? null,
     dataUpdatedAt: Math.min(...results.map((result) => result.dataUpdatedAt)),
     refetch: () => Promise.all(failed.map((result) => result.refetch())),
