@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { loadConfig } from "../../../server/config/config";
 import { createServerDependencies } from "../../../server/http/composition-root";
-import { buildTestConfig } from "../../support/dependencies";
+import { YahooDailyStatsSource } from "../../../server/fantasy/yahoo-daily-stats-source";
+import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
+import { buildTestConfig, silentLogger } from "../../support/dependencies";
+import { replayYahoo } from "../../support/yahoo-recordings";
 
 const constructed = vi.hoisted(() => ({ count: 0 }));
 
@@ -29,7 +32,7 @@ const PRODUCTION = {
 };
 
 describe("daily-stats wiring", () => {
-  it("turns every daily-stats switch off in production and never builds the fixture source", () => {
+  it("builds the Yahoo source in production, never the fixture, with every screen still off", async () => {
     constructed.count = 0;
 
     const dependencies = createServerDependencies(loadConfig(PRODUCTION));
@@ -39,8 +42,15 @@ describe("daily-stats wiring", () => {
       players: false,
       projections: false,
     });
-    expect(dependencies.createDailyStatsSource).toBeNull();
     expect(dependencies.projectionSource).toBeNull();
+    const yahoo = replayYahoo({});
+    const source = dependencies.createDailyStatsSource?.({
+      yahooClient: async () => yahoo as unknown as YahooApiClient,
+      logger: silentLogger,
+    });
+    expect(source).toBeInstanceOf(YahooDailyStatsSource);
+    await expect(source?.getWeeks("478.l.100000")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(yahoo.calls).toEqual([]);
     expect(constructed.count).toBe(0);
   });
 
@@ -55,8 +65,11 @@ describe("daily-stats wiring", () => {
       projections: false,
     });
     expect(constructed.count).toBe(1);
-    const source = dependencies.createDailyStatsSource?.(async () => {
-      throw new Error("the fixture source never calls Yahoo");
+    const source = dependencies.createDailyStatsSource?.({
+      yahooClient: async () => {
+        throw new Error("the fixture source never calls Yahoo");
+      },
+      logger: silentLogger,
     });
     await expect(source?.getWeeks("466.l.100000")).resolves.toHaveProperty("weeks");
   });
