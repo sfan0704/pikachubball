@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { WeeksResponse } from "@shared/api/daily-stats";
+import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import { addDays, nbaDateOf } from "@shared/domain";
 import { useWeeks } from "@/api/daily-stats-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +10,7 @@ import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
 import { LinkBar } from "./LinkBar";
 import { MatchupDayBoard } from "./MatchupDayBoard";
+import { PlayerDetailSheet } from "./PlayerDetailSheet";
 
 /** The day bar reads in time order. */
 const DAY_ORDER: readonly MatchupDay[] = ["yesterday", "today", "week"];
@@ -45,6 +48,7 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
   const { leagueKey, teamKey, day } = selection;
   const weeks = useWeeks(day === "week" ? leagueKey : null);
   const date = day === "today" ? today : addDays(today, -1);
+  const [openPlayer, setOpenPlayer] = useState<DailyPlayer | null>(null);
   return (
     <div className="space-y-4">
       <LinkBar
@@ -77,8 +81,16 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
           dateLabel={day === "today" ? "Today" : formatDate(date)}
           now={now}
           onPickLeague={onPickLeague}
+          onOpenPlayer={setOpenPlayer}
         />
       )}
+      <PlayerDetailSheet
+        leagueKey={leagueKey}
+        player={openPlayer}
+        viewDate={day === "week" ? today : date}
+        onClose={() => setOpenPlayer(null)}
+        onPickLeague={onPickLeague}
+      />
     </div>
   );
 }

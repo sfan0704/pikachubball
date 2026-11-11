@@ -43,6 +43,22 @@ describe("the fixture daily-stats source", () => {
     expect(today.map((game) => game?.state.kind)).toEqual(["live", "final", "scheduled"]);
   });
 
+  it("gives each game-log game the same line as the player's team day", async () => {
+    const day = await source.getTeamDay(LEAGUE, TEAM, TODAY);
+    const keys = day.players.map((entry) => entry.player.playerKey);
+    const { players } = await source.getGameLogs(LEAGUE, keys);
+
+    for (const entry of day.players) {
+      const log = players.find((player) => player.playerKey === entry.player.playerKey);
+      const game = log?.games.find((candidate) => candidate.date === TODAY);
+      if (game) {
+        expect(game.line).toEqual(entry.line);
+      } else {
+        expect(appearance(entry.line)).toBe("noGame");
+      }
+    }
+  });
+
   it("has an injured player today and one out on IL", async () => {
     const { players } = await source.getTeamDay(LEAGUE, TEAM, TODAY);
 

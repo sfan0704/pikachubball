@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import {
   CATEGORIES,
   closestLostCategory,
@@ -28,6 +29,8 @@ interface MatchupDayBoardProps {
   dateLabel: string;
   now: number;
   onPickLeague: () => void;
+  /** Opens the shared player detail. */
+  onOpenPlayer: (player: DailyPlayer) => void;
 }
 
 /** The opponent shown: the one the user picked, else Yahoo's, else the first other team on a bye. */
@@ -135,7 +138,7 @@ function WeekSummary({
  * Each dataset loads and fails on its own.
  */
 export function MatchupDayBoard(props: MatchupDayBoardProps) {
-  const { leagueKey, teamKey, date, isToday, now, onPickLeague } = props;
+  const { leagueKey, teamKey, date, isToday, now, onPickLeague, onOpenPlayer } = props;
   const board = useMatchupDay(leagueKey, teamKey, date);
   const { me, opponent, category } = board;
   return (
@@ -163,6 +166,7 @@ export function MatchupDayBoard(props: MatchupDayBoardProps) {
                 <PlayerColumnView
                   category={category}
                   isToday={isToday}
+                  onOpenPlayer={onOpenPlayer}
                   column={{
                     teamKey: mine.teamKey,
                     label: me?.teamName ?? "Your team",
@@ -176,6 +180,7 @@ export function MatchupDayBoard(props: MatchupDayBoardProps) {
                 <PlayerColumnView
                   category={category}
                   isToday={isToday}
+                  onOpenPlayer={onOpenPlayer}
                   column={{
                     teamKey: theirs.teamKey,
                     label: opponent?.teamName ?? "Opponent",
