@@ -25,9 +25,11 @@ import {
 import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { useLeagueScope, useRoster } from "../../../client/src/api/hooks";
 import { queryKeys } from "../../../client/src/api/query-keys";
+import { parseWeekTable } from "../../../server/fantasy/league-tables";
 import { missingLine } from "../../../shared/domain";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
+import { yahooRecording } from "../../support/yahoo-recordings";
 
 /** A game's state as the game-log contract carries it (no "noGame": a missing game has no entry). */
 type GameState = GameLogsResponse["players"][number]["games"][number]["state"];
@@ -281,6 +283,31 @@ describe("polling", () => {
     await advance(2 * MINUTE);
     expect(server.teamDayCalls()).toBe(3);
     expect(teamDay()?.error).toBeNull();
+  });
+
+  it("refetches the current week on every return to the tab, even while fresh, but not a past week", async () => {
+    const table = parseWeekTable(yahooRecording("league-week-1"), AT);
+    const fetchMock = vi.fn(async (_url: string) => jsonResponse(table));
+    vi.stubGlobal("fetch", fetchMock);
+    const { wrapper } = setup();
+    renderHook(
+      () => {
+        useLeagueScope(LEAGUE, "current");
+        useLeagueScope(LEAGUE, 3);
+      },
+      { wrapper }
+    );
+    await flush();
+    const callsFor = (scope: string) =>
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith(`/${scope}`)).length;
+    expect([callsFor("current"), callsFor("3")]).toEqual([1, 1]);
+
+    focusManager.setFocused(false);
+    await advance(MINUTE);
+    await act(async () => focusManager.setFocused(true));
+    await flush();
+
+    expect([callsFor("current"), callsFor("3")]).toEqual([2, 1]);
   });
 
   it("refetches stale data when the tab regains focus", async () => {
