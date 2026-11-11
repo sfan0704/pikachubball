@@ -19,3 +19,11 @@ Recorded by `npm run capture:yahoo-live-calls` in league 478.l.14822, scrubbed o
 - File: `d7-transactions-own-team.json`
 - GET `/league/478.l.14822/transactions;types=add,drop,trade;team_key=478.l.14822.t.10` (with `?format=json`)
 - 2026-11-11T01:02:15.792Z: HTTP 200; 10 transactions (add/drop 6, add 3, drop 1); 0 without 478.l.14822.t.10
+
+# Acquisition recordings (FAN-96, used by FAN-115)
+
+Recorded on 2026-11-07 by the FAN-98 research capture in the same league, already scrubbed. Each file is Yahoo's response body.
+
+- `d8-draft-results.json`: GET `/league/478.l.14822/draftresults`; 182 auction picks.
+- `d7-transactions-whole-league.json`: GET `/league/478.l.14822/transactions;types=add,drop,trade`; the whole season's 144 moves, one vetoed trade.
+- `fan96-rostered-players.json`: not a Yahoo body. Each team's rostered player keys, taken from that capture's `/league/478.l.14822/teams/roster` (201 players) so the 1 MB roster body isn't committed.

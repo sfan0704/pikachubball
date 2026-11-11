@@ -12,6 +12,8 @@ import type {
   Weeks,
 } from "./daily-stats-source";
 import type { DailyStatsRequests } from "./yahoo/daily-stats-requests";
+import { parseDraft } from "./yahoo/draft-parser";
+import { parseTransactions } from "./yahoo/transactions-parser";
 import { checkDate, checkLeagueKey, checkPlayerKeys, checkTeamKey } from "./yahoo/daily-stats-keys";
 
 /** A dataset whose Yahoo resource isn't connected yet answers NOT_FOUND, like an unwired source. */
@@ -60,12 +62,13 @@ export class YahooDailyStatsSource implements DailyStatsSource {
 
   async getTransactions(leagueKey: string, teamKey: string): Promise<Transactions> {
     checkTeamKey(leagueKey, teamKey);
-    return notConnected("transactions");
+    const path = `/league/${leagueKey}/transactions;types=add,drop,trade;team_key=${teamKey}`;
+    return parseTransactions(await this.requests.get("transactions", path), teamKey);
   }
 
   async getDraft(leagueKey: string): Promise<Draft> {
     checkLeagueKey(leagueKey);
-    return notConnected("draft");
+    return parseDraft(await this.requests.get("draft", `/league/${leagueKey}/draftresults`));
   }
 
   async getWeeks(leagueKey: string): Promise<Weeks> {
