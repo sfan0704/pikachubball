@@ -1,0 +1,821 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/players;player_keys=478.p.10454,478.p.6417,478.p.6165/stats;type=lastweek",
+    "players": {
+      "0": {
+        "player": [
+          [
+            {
+              "player_key": "478.p.10454"
+            },
+            {
+              "player_id": "10454"
+            },
+            {
+              "name": {
+                "full": "VJ Edgecombe",
+                "first": "VJ",
+                "last": "Edgecombe",
+                "ascii_first": "VJ",
+                "ascii_last": "Edgecombe"
+              }
+            },
+            {
+              "url": "https://example.invalid/scrubbed"
+            },
+            {
+              "editorial_player_key": "nba.p.10454"
+            },
+            {
+              "editorial_team_key": "nba.t.20"
+            },
+            {
+              "editorial_team_full_name": "Philadelphia 76ers"
+            },
+            {
+              "editorial_team_abbr": "PHI"
+            },
+            {
+              "editorial_team_url": "https://example.invalid/scrubbed"
+            },
+            {
+              "is_keeper": {
+                "status": false,
+                "cost": false,
+                "kept": false
+              }
+            },
+            {
+              "uniform_number": "77"
+            },
+            {
+              "display_position": "PG,SG"
+            },
+            {
+              "headshot": {
+                "url": "https://example.invalid/scrubbed",
+                "size": "small"
+              },
+              "image_url": "https://example.invalid/scrubbed"
+            },
+            {
+              "is_undroppable": "0"
+            },
+            {
+              "position_type": "P"
+            },
+            [],
+            {
+              "eligible_positions": [
+                {
+                  "position": "PG"
+                },
+                {
+                  "position": "SG"
+                }
+              ]
+            },
+            {
+              "eligible_positions_to_add": []
+            },
+            [],
+            [],
+            {
+              "has_player_notes": 1
+            },
+            {
+              "has_recent_player_notes": 1
+            },
+            {
+              "player_notes_last_timestamp": 1794022264
+            }
+          ],
+          {
+            "player_stats": {
+              "0": {
+                "coverage_type": "lastweek"
+              },
+              "stats": [
+                {
+                  "stat": {
+                    "stat_id": "0",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "1",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "2",
+                    "value": "137"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "3",
+                    "value": "49"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "4",
+                    "value": "26"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "5",
+                    "value": ".531"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "6",
+                    "value": "3"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "7",
+                    "value": "1"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "8",
+                    "value": ".333"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "9",
+                    "value": "16"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "10",
+                    "value": "8"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "11",
+                    "value": ".500"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "12",
+                    "value": "61"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "13",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "14",
+                    "value": "16"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "15",
+                    "value": "20"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "16",
+                    "value": "13"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "17",
+                    "value": "7"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "18",
+                    "value": "2"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "19",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "20",
+                    "value": "3.250"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "21",
+                    "value": "13"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "22",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "23",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "24",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "25",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "27",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "28",
+                    "value": "0"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "1": {
+        "player": [
+          [
+            {
+              "player_key": "478.p.6417"
+            },
+            {
+              "player_id": "6417"
+            },
+            {
+              "name": {
+                "full": "Immanuel Quickley",
+                "first": "Immanuel",
+                "last": "Quickley",
+                "ascii_first": "Immanuel",
+                "ascii_last": "Quickley"
+              }
+            },
+            {
+              "url": "https://example.invalid/scrubbed"
+            },
+            {
+              "status": "Q",
+              "status_full": "Questionable"
+            },
+            {
+              "injury_note": "Hamstring"
+            },
+            {
+              "editorial_player_key": "nba.p.6417"
+            },
+            {
+              "editorial_team_key": "nba.t.28"
+            },
+            {
+              "editorial_team_full_name": "Toronto Raptors"
+            },
+            {
+              "editorial_team_abbr": "TOR"
+            },
+            {
+              "editorial_team_url": "https://example.invalid/scrubbed"
+            },
+            {
+              "is_keeper": {
+                "status": false,
+                "cost": false,
+                "kept": false
+              }
+            },
+            {
+              "uniform_number": "5"
+            },
+            {
+              "display_position": "PG,SG"
+            },
+            {
+              "headshot": {
+                "url": "https://example.invalid/scrubbed",
+                "size": "small"
+              },
+              "image_url": "https://example.invalid/scrubbed"
+            },
+            {
+              "is_undroppable": "0"
+            },
+            {
+              "position_type": "P"
+            },
+            [],
+            {
+              "eligible_positions": [
+                {
+                  "position": "PG"
+                },
+                {
+                  "position": "SG"
+                }
+              ]
+            },
+            {
+              "eligible_positions_to_add": []
+            },
+            [],
+            [],
+            {
+              "has_player_notes": 1
+            },
+            [],
+            {
+              "player_notes_last_timestamp": 1794008466
+            }
+          ],
+          {
+            "player_stats": {
+              "0": {
+                "coverage_type": "lastweek"
+              },
+              "stats": [
+                {
+                  "stat": {
+                    "stat_id": "0",
+                    "value": "3"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "1",
+                    "value": "3"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "2",
+                    "value": "103"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "3",
+                    "value": "38"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "4",
+                    "value": "16"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "5",
+                    "value": ".421"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "6",
+                    "value": "15"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "7",
+                    "value": "14"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "8",
+                    "value": ".933"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "9",
+                    "value": "23"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "10",
+                    "value": "6"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "11",
+                    "value": ".261"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "12",
+                    "value": "52"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "13",
+                    "value": "1"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "14",
+                    "value": "10"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "15",
+                    "value": "11"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "16",
+                    "value": "16"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "17",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "18",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "19",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "20",
+                    "value": "4.000"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "21",
+                    "value": "5"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "22",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "23",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "24",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "25",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "27",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "28",
+                    "value": "0"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "2": {
+        "player": [
+          [
+            {
+              "player_key": "478.p.6165"
+            },
+            {
+              "player_id": "6165"
+            },
+            {
+              "name": {
+                "full": "RJ Barrett",
+                "first": "RJ",
+                "last": "Barrett",
+                "ascii_first": "RJ",
+                "ascii_last": "Barrett"
+              }
+            },
+            {
+              "url": "https://example.invalid/scrubbed"
+            },
+            {
+              "editorial_player_key": "nba.p.6165"
+            },
+            {
+              "editorial_team_key": "nba.t.28"
+            },
+            {
+              "editorial_team_full_name": "Toronto Raptors"
+            },
+            {
+              "editorial_team_abbr": "TOR"
+            },
+            {
+              "editorial_team_url": "https://example.invalid/scrubbed"
+            },
+            {
+              "is_keeper": {
+                "status": false,
+                "cost": false,
+                "kept": false
+              }
+            },
+            {
+              "uniform_number": "9"
+            },
+            {
+              "display_position": "SG,SF,PF"
+            },
+            {
+              "headshot": {
+                "url": "https://example.invalid/scrubbed",
+                "size": "small"
+              },
+              "image_url": "https://example.invalid/scrubbed"
+            },
+            {
+              "is_undroppable": "0"
+            },
+            {
+              "position_type": "P"
+            },
+            [],
+            {
+              "eligible_positions": [
+                {
+                  "position": "PF"
+                },
+                {
+                  "position": "SF"
+                },
+                {
+                  "position": "SG"
+                }
+              ]
+            },
+            {
+              "eligible_positions_to_add": []
+            },
+            [],
+            [],
+            {
+              "has_player_notes": 1
+            },
+            {
+              "has_recent_player_notes": 1
+            },
+            {
+              "player_notes_last_timestamp": 1794054626
+            }
+          ],
+          {
+            "player_stats": {
+              "0": {
+                "coverage_type": "lastweek"
+              },
+              "stats": [
+                {
+                  "stat": {
+                    "stat_id": "0",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "1",
+                    "value": "4"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "2",
+                    "value": "139"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "3",
+                    "value": "75"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "4",
+                    "value": "35"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "5",
+                    "value": ".467"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "6",
+                    "value": "27"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "7",
+                    "value": "18"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "8",
+                    "value": ".667"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "9",
+                    "value": "26"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "10",
+                    "value": "9"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "11",
+                    "value": ".346"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "12",
+                    "value": "97"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "13",
+                    "value": "10"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "14",
+                    "value": "18"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "15",
+                    "value": "28"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "16",
+                    "value": "15"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "17",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "18",
+                    "value": "2"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "19",
+                    "value": "9"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "20",
+                    "value": "1.667"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "21",
+                    "value": "14"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "22",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "23",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "24",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "25",
+                    "value": "0"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "27",
+                    "value": "1"
+                  }
+                },
+                {
+                  "stat": {
+                    "stat_id": "28",
+                    "value": "0"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "count": 3
+    },
+    "time": "62.610149383545ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}

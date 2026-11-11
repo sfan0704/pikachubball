@@ -12,6 +12,7 @@ import type {
   Weeks,
 } from "./daily-stats-source";
 import type { DailyStatsRequests } from "./yahoo/daily-stats-requests";
+import { readPlayerPeriodTotals } from "./yahoo/player-period-totals";
 import { checkDate, checkLeagueKey, checkPlayerKeys, checkTeamKey } from "./yahoo/daily-stats-keys";
 import { parseTeamDay } from "./yahoo/team-day-parser";
 import { parseWeeks } from "./yahoo/weeks-parser";
@@ -47,11 +48,10 @@ export class YahooDailyStatsSource implements DailyStatsSource {
 
   async getPlayerStats(
     leagueKey: string,
-    _period: StatPeriod,
+    period: StatPeriod,
     playerKeys: readonly string[]
   ): Promise<PlayerStats> {
-    checkPlayerKeys(leagueKey, playerKeys);
-    return notConnected("player totals");
+    return readPlayerPeriodTotals(this.requests, period, checkPlayerKeys(leagueKey, playerKeys));
   }
 
   async listPlayers(leagueKey: string, _query: PlayerListQuery): Promise<PlayerPage> {
