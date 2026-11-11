@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import {
   categoryEntry,
   dayCallout,
@@ -8,6 +9,7 @@ import {
 } from "@shared/domain";
 import { CATEGORY_LABELS } from "@/features/league/categories";
 import { cn } from "@/lib/utils";
+import { InjuryTag } from "./InjuryTag";
 import {
   averageText,
   cardMeta,
@@ -29,6 +31,8 @@ interface PlayerColumnProps {
   category: CategoryKey;
   /** Whether the rows are today's: injury tags and "Out" describe today only. */
   isToday: boolean;
+  /** Opens the shared player detail. */
+  onOpenPlayer: (player: DailyPlayer) => void;
 }
 
 const CALLOUT_TEXT: Readonly<Record<VersusAverage, string>> = {
@@ -45,14 +49,36 @@ const CALLOUT_NAME: Readonly<Record<VersusAverage, string>> = {
   unavailable: "",
 };
 
+/** The card's player name, which opens the shared player detail. */
+function CardName({
+  player,
+  onOpenPlayer,
+}: {
+  player: DailyPlayer;
+  onOpenPlayer: (player: DailyPlayer) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenPlayer(player)}
+      aria-label={`${player.name}: open player detail`}
+      className="truncate rounded-md text-left text-xs font-bold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {shortName(player.name)}
+    </button>
+  );
+}
+
 function PlayerCard({
   row,
   category,
   isToday,
+  onOpenPlayer,
 }: {
   row: PlayerCardRow;
   category: CategoryKey;
   isToday: boolean;
+  onOpenPlayer: (player: DailyPlayer) => void;
 }) {
   const entry = categoryEntry(row.line, category);
   const value = entryText(entry, isOutToday(row.player, isToday));
@@ -63,7 +89,6 @@ function PlayerCard({
     row.isStartingSlot,
     row.game?.state.kind === "live"
   );
-  const injury = isToday ? row.player.injuryToday : null;
   const meta = cardMeta(row);
   return (
     <li
@@ -75,12 +100,8 @@ function PlayerCard({
       aria-label={`${row.player.name}, ${CATEGORY_LABELS[category]} ${value}${CALLOUT_NAME[callout]}, ${meta}`}
     >
       <span className="flex min-w-0 items-center gap-1">
-        <span className="truncate text-xs font-bold">{shortName(row.player.name)}</span>
-        {injury && (
-          <span className="shrink-0 rounded-md border border-red-700/40 px-1 text-[0.625rem] font-bold text-red-700 dark:border-red-400/40 dark:text-red-400">
-            {injury.designation}
-          </span>
-        )}
+        <CardName player={row.player} onOpenPlayer={onOpenPlayer} />
+        {isToday && <InjuryTag player={row.player} compact />}
       </span>
       <span
         className={cn(
@@ -104,12 +125,18 @@ function PlayerCard({
 }
 
 /** One team's column: counted players, then bench and IL set apart. */
-export function PlayerColumnView({ column, category, isToday }: PlayerColumnProps) {
+export function PlayerColumnView({ column, category, isToday, onOpenPlayer }: PlayerColumnProps) {
   const ordered = orderForCategory(column.rows, category);
   const counted = ordered.filter((row) => row.isStartingSlot);
   const bench = ordered.filter((row) => !row.isStartingSlot);
   const card = (row: PlayerCardRow) => (
-    <PlayerCard key={row.player.playerKey} row={row} category={category} isToday={isToday} />
+    <PlayerCard
+      key={row.player.playerKey}
+      row={row}
+      category={category}
+      isToday={isToday}
+      onOpenPlayer={onOpenPlayer}
+    />
   );
   return (
     <section

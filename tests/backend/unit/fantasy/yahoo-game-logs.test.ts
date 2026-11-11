@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { liveSignal } from "../../../../shared/domain";
+import { liveSignal, measured, missingLine } from "../../../../shared/domain";
 import { YahooDailyStatsSource } from "../../../../server/fantasy/yahoo-daily-stats-source";
 import { DailyStatsRequests } from "../../../../server/fantasy/yahoo/daily-stats-requests";
 import {
@@ -98,6 +98,7 @@ describe("Yahoo game logs (D3) on the FAN-102 recording", () => {
       // From start_time; Yahoo's "3:00 pm" is the account's time zone and is never read.
       state: { kind: "scheduled", tipOff: "2026-11-15T23:00:00.000Z" },
       minutes: { kind: "notYetPlayed" },
+      line: missingLine("notYetPlayed"),
     });
     expect(gameOn(knicks, "2026-11-10")).toEqual({
       gameId: "2026111018",
@@ -110,6 +111,17 @@ describe("Yahoo game logs (D3) on the FAN-102 recording", () => {
         progress: { kind: "clock", period: 1, clock: "1:17", ownScore: 23, opponentScore: 18 },
       },
       minutes: { kind: "value", value: 7 + 55 / 60 },
+      line: {
+        fg: measured({ makes: 2, attempts: 4 }),
+        ft: measured({ makes: 1, attempts: 2 }),
+        tpm: measured(0),
+        pts: measured(5),
+        reb: measured(5),
+        ast: measured(1),
+        stl: measured(0),
+        blk: measured(1),
+        to: measured(2),
+      },
     });
     expect(gameOn(bucks, "2026-11-10")?.state).toMatchObject({
       progress: { ownScore: 18, opponentScore: 23 },
@@ -127,6 +139,17 @@ describe("Yahoo game logs (D3) on the FAN-102 recording", () => {
         opponentScore: 97,
       },
       minutes: { kind: "value", value: 34 },
+      line: {
+        fg: measured({ makes: 11, attempts: 21 }),
+        ft: measured({ makes: 5, attempts: 5 }),
+        tpm: measured(2),
+        pts: measured(29),
+        reb: measured(13),
+        ast: measured(3),
+        stl: measured(2),
+        blk: measured(0),
+        to: measured(0),
+      },
     });
   });
 
@@ -139,6 +162,10 @@ describe("Yahoo game logs (D3) on the FAN-102 recording", () => {
       (game) => game.state.kind === "final" && game.minutes.kind === "didNotPlay"
     );
     expect(satOut).toHaveLength(23);
+    // A sat-out final's line is "did not play" in every category, never a line of zeros.
+    expect(new Set(satOut.map((game) => JSON.stringify(game.line)))).toEqual(
+      new Set([JSON.stringify(missingLine("didNotPlay"))])
+    );
     // 478.p.3704's 5:00 pm game has `-` stats at capture time: still to come, not "no game".
     expect(gameOn(logs.players[4], "2026-11-10")).toMatchObject({
       state: { kind: "scheduled" },

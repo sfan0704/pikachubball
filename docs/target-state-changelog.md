@@ -2,6 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-11-11 · Game logs (D3) carry the player's line in each game, so the shared player detail shows today, yesterday and the week for rostered and available players alike · FAN-105 (PR pending)
 - 2026-11-11 · The freshness policy times every dataset query, including the team table (current week and season Live, earlier weeks Settled) and rosters (Recent); a lint rule keeps query timers in the API module · FAN-108 (PR pending)
 - 2026-11-11 · The season team table carries each team's official W–L–T from Yahoo's standings, for the League board · FAN-106 (PR pending)
 - 2026-11-11 · The league schedule (D6) starts yesterday (US Eastern), so tonight in every US time zone is in it; tonight, tomorrow, back-to-back and games left this week are pure functions in shared/domain · FAN-118

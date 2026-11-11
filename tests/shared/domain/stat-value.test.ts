@@ -5,6 +5,7 @@ import {
   measured,
   missing,
   missingLine,
+  sumLines,
   type GameState,
   type MissingKind,
 } from "../../../shared/domain";
@@ -81,5 +82,35 @@ describe("game state", () => {
         progress: { kind: "text", text: "Halftime" },
       })
     ).toBe(true);
+  });
+});
+
+describe("sumLines", () => {
+  it("adds counts and makes/attempts, so percentages come from the sums", () => {
+    const total = sumLines([
+      buildStatLine({ fg: measured({ makes: 6, attempts: 13 }), pts: measured(17) }),
+      missingLine("noGame"),
+      buildStatLine({ fg: measured({ makes: 3, attempts: 7 }), pts: measured(0) }),
+    ]);
+
+    expect(total.fg).toEqual(measured({ makes: 9, attempts: 20 }));
+    expect(total.pts).toEqual(measured(17));
+  });
+
+  it("makes a field unavailable when any game's value is unavailable", () => {
+    const total = sumLines([buildStatLine(), missingLine("unavailable")]);
+
+    expect(total.reb).toEqual(missing("unavailable"));
+    expect(total.ft).toEqual(missing("unavailable"));
+  });
+
+  it("keeps a week without a measured game missing, never 0", () => {
+    expect(sumLines([])).toEqual(missingLine("noGame"));
+    expect(sumLines([missingLine("noGame"), missingLine("notYetPlayed")])).toEqual(
+      missingLine("notYetPlayed")
+    );
+    expect(sumLines([missingLine("notYetPlayed"), missingLine("didNotPlay")])).toEqual(
+      missingLine("didNotPlay")
+    );
   });
 });

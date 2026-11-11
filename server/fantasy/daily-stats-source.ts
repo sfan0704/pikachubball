@@ -16,7 +16,7 @@ type Dataset<T extends { fetchedAt: string }> = Omit<T, "fetchedAt">;
 
 /** D2: one team's roster on a date, with each player's slot and line. */
 export type TeamDay = Dataset<TeamDayResponse>;
-/** D3: each listed player's team games, with the player's minutes. */
+/** D3: each listed player's team games, with the player's minutes and line. */
 export type GameLogs = Dataset<GameLogsResponse>;
 /** D4: each listed player's totals for a period. */
 export type PlayerStats = Dataset<PlayerStatsResponse>;

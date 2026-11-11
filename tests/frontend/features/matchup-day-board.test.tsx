@@ -52,7 +52,12 @@ function Board({
   return (
     <PlayerColumns>
       {columns.map((column) => (
-        <PlayerColumnView key={column.teamKey} column={column} {...rest} />
+        <PlayerColumnView
+          key={column.teamKey}
+          column={column}
+          onOpenPlayer={() => undefined}
+          {...rest}
+        />
       ))}
     </PlayerColumns>
   );

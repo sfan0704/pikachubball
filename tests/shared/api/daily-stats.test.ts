@@ -120,7 +120,7 @@ describe("daily-stats response schemas", () => {
     ).toBe(false);
   });
 
-  it("accepts game logs in every game state, with minutes tagged like stats", () => {
+  it("accepts game logs in every game state, with minutes and lines tagged like stats", () => {
     const body = {
       fetchedAt: FETCHED_AT,
       players: [
@@ -132,6 +132,7 @@ describe("daily-stats response schemas", () => {
               ...game,
               state: { kind: "scheduled", tipOff: TIP_OFF },
               minutes: missing("notYetPlayed"),
+              line: missingLine("notYetPlayed"),
             },
             {
               ...game,
@@ -147,6 +148,7 @@ describe("daily-stats response schemas", () => {
                 },
               },
               minutes: measured(24),
+              line: buildStatLine(),
             },
             {
               ...game,
@@ -156,6 +158,7 @@ describe("daily-stats response schemas", () => {
                 progress: { kind: "text", text: "Halftime" },
               },
               minutes: measured(18),
+              line: buildStatLine(),
             },
             {
               ...game,
@@ -167,6 +170,7 @@ describe("daily-stats response schemas", () => {
                 opponentScore: 107,
               },
               minutes: missing("didNotPlay"),
+              line: missingLine("didNotPlay"),
             },
           ],
         },
@@ -182,7 +186,14 @@ describe("daily-stats response schemas", () => {
         {
           playerKey: "478.p.1",
           nbaTeam: "PHI",
-          games: [{ ...game, state: { kind: "noGame" }, minutes: missing("noGame") }],
+          games: [
+            {
+              ...game,
+              state: { kind: "noGame" },
+              minutes: missing("noGame"),
+              line: missingLine("noGame"),
+            },
+          ],
         },
       ],
     };

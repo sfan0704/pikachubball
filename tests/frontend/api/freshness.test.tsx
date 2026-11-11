@@ -26,6 +26,7 @@ import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { useLeagueScope, useRoster } from "../../../client/src/api/hooks";
 import { queryKeys } from "../../../client/src/api/query-keys";
 import { parseWeekTable } from "../../../server/fantasy/league-tables";
+import { missingLine } from "../../../shared/domain";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
 import { yahooRecording } from "../../support/yahoo-recordings";
@@ -58,6 +59,7 @@ function gameLogs(state: GameState): GameLogsResponse {
             isHome: true,
             state,
             minutes: { kind: "notYetPlayed" },
+            line: missingLine("notYetPlayed"),
           },
         ],
       },

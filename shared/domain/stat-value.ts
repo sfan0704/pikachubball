@@ -92,3 +92,58 @@ export function appearance(line: StatLine): Appearance {
   const first = values[0].kind as MissingKind;
   return values.every((value) => value.kind === first) ? first : "unavailable";
 }
+
+/** Which missing kind a sum of missing values reads as: a sat-out game outranks one still to come. */
+const MISSING_ORDER: readonly MissingKind[] = [
+  "unavailable",
+  "didNotPlay",
+  "notYetPlayed",
+  "noGame",
+];
+
+function sumValues<T>(values: readonly StatValue<T>[], add: (a: T, b: T) => T): StatValue<T> {
+  const kinds = new Set(values.map((value) => value.kind));
+  if (kinds.has("unavailable")) {
+    return missing("unavailable");
+  }
+  const measuredValues = values.flatMap((value) => (value.kind === "value" ? [value.value] : []));
+  if (measuredValues.length > 0) {
+    return measured(measuredValues.reduce(add));
+  }
+  return missing(MISSING_ORDER.find((kind) => kinds.has(kind)) ?? "noGame");
+}
+
+const addCounts = (a: number, b: number) => a + b;
+const addShots = (a: MakesAttempts, b: MakesAttempts): MakesAttempts => ({
+  makes: a.makes + b.makes,
+  attempts: a.attempts + b.attempts,
+});
+
+/**
+ * One player's lines added up, for example the games of a week. Makes and
+ * attempts are summed, so percentages come from the sums. An unavailable value
+ * makes that field unavailable; with nothing measured, the field stays missing
+ * (no lines at all is no game), never 0.
+ */
+export function sumLines(lines: readonly StatLine[]): StatLine {
+  const counts = Object.fromEntries(
+    COUNT_FIELDS.map((field) => [
+      field,
+      sumValues(
+        lines.map((line) => line[field]),
+        addCounts
+      ),
+    ])
+  ) as Pick<StatLine, CountField>;
+  return {
+    ...counts,
+    fg: sumValues(
+      lines.map((line) => line.fg),
+      addShots
+    ),
+    ft: sumValues(
+      lines.map((line) => line.ft),
+      addShots
+    ),
+  };
+}
