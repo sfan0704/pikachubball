@@ -54,10 +54,31 @@ function standIn(): string {
   return `http://127.0.0.1:${port}`;
 }
 
-/** Signs in as a seeded manager through the local-only shortcut and lands on the league page. */
-export async function signIn(page: Page, user: "a" | "b" = "a"): Promise<void> {
+/** The daily-stats screens, as the screen navigation names them. */
+export type ScreenName = "Matchup" | "Players" | "League";
+
+/** Opens a screen from the screen navigation. */
+export async function openScreen(page: Page, screen: ScreenName): Promise<void> {
+  const nav = page.getByRole("navigation", { name: "Screens" });
+  await nav.getByRole("link", { name: screen }).click();
+  await expect(nav.getByRole("link", { name: screen })).toHaveAttribute("aria-current", "page");
+}
+
+/**
+ * Signs in as a seeded manager through the local-only shortcut. A new visit
+ * opens on Matchup; most flows then go to the League screen and its rankings.
+ */
+export async function signIn(
+  page: Page,
+  user: "a" | "b" = "a",
+  screen: ScreenName = "League"
+): Promise<void> {
   await page.goto(`/api/dev/login?user=${user}`);
   await expect(page.getByRole("heading", { name: "Test League" })).toBeVisible();
+  await expect(page).toHaveURL(/\/matchup\/today$/);
+  if (screen !== "Matchup") {
+    await openScreen(page, screen);
+  }
 }
 
 /** Tells the Yahoo stand-in how to answer from now on. */

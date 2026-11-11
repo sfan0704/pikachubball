@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-11-09.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-11-11.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -196,7 +196,7 @@ flowchart TD
 
 ### Client
 
-- **Routes.** `/auth` for sign-in and the league view for everything else. The URL holds the selected league, team and scope, and for daily stats the screen (Matchup, Players, League) and the Matchup day (Today, Yesterday or Week), so refresh, back and shared links work; the saved preference only chooses where a new visit starts.
+- **Routes.** `/auth` for sign-in and the league view for everything else. The URL holds the selected league, team and scope, and for daily stats the screen (Matchup, Players, League) and the Matchup day (Today, Yesterday or Week), so refresh, back and shared links work; the saved preference only chooses where a new visit starts. Under `/leagues/:league/teams/:team`, Matchup is `matchup/today`, `matchup/yesterday` or `matchup/week`, Players is `players`, and League keeps its scope (`season`, `current` or a week). A new visit opens on Matchup when it is wired; a link to a screen that isn't wired opens the opening screen instead.
 - **Data access.** One typed API module makes every request and checks responses against `shared/api`. Hooks (`useMe`, `useLeagues`, `useLeagueScope`, `useRoster`) wrap it; components never fetch. Views derive their data from the team table with `shared/domain` functions inside memoized hooks.
 - **Components.** `pages/` compose features; `features/` render one part of the product from prepared data; `ui/` holds the shared primitives. Components contain no fantasy maths.
 - **Every data view distinguishes its states:** loading (a skeleton); no leagues; preseason, with no stats yet; unsupported scoring; partial data; each error in the Errors table; and loaded, with an "updated N min ago" label and a refresh button. Nothing incomplete or old is presented as complete and current.
@@ -428,7 +428,7 @@ flowchart LR
 - **Freshness is central.** One policy in `shared/domain` puts each dataset in a class (Live, Recent, Daily, Settled) and returns its fresh time and poll interval; the query-key factory applies it, and one shared label shows each section's age. One "games live now" signal from the game logs turns polling on and off for every Live dataset (2 minutes, tab visible), and `YAHOO_RATE_LIMITED` doubles the interval. The server only stamps fetch times.
 - **Partial data.** Each dataset loads and fails on its own; a failed section keeps what it showed, labelled with its age, and offers a retry.
 - **Only the OAuth token.** No Yahoo website routes or cookies. Injury status and notes are today's values and are never shown against a past date.
-- **Projections slot.** `ProjectionSource` is an interface with no implementation. `GET /api/me` lists the wired features (`projections: false`), and the client offers Next 7 projected only when it is true. Turning it on is its own ticket after FAN-94.
+- **Projections slot.** `ProjectionSource` is an interface with no implementation. `GET /api/me` lists the wired features as separate switches (`matchupAndLeague`, `players`, `projections`; projections `false`), and the client offers Next 7 projected only when it is true. Turning it on is its own ticket after FAN-94.
 - **Static first.** The `shared/api` contracts are the boundary between screens and Yahoo. A fixture `DailyStatsSource`, wired only in local, CI and review like the Yahoo stand-in, lets the screens be finished before any Yahoo adapter; production reports the daily-stats screens unavailable through the same feature list until the Yahoo source is wired.
 
 ## API

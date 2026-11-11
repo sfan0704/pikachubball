@@ -41,7 +41,7 @@ function ConnectYahoo() {
 function Body() {
   const league = useLeagueSelection();
   const me = useMe();
-  const { status, selection, leagues, select } = league;
+  const { status, selection, leagues, screens, select } = league;
   const pickLeague = () => {
     const fallback = pickDefaultLeague(leagues);
     if (fallback) {
@@ -67,6 +67,7 @@ function Body() {
       selection={selection}
       leagues={leagues}
       league={current}
+      screens={screens}
       onSelect={select}
       onPickLeague={pickLeague}
     />
