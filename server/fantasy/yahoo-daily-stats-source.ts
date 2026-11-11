@@ -12,6 +12,7 @@ import type {
   Weeks,
 } from "./daily-stats-source";
 import type { DailyStatsRequests } from "./yahoo/daily-stats-requests";
+import { readPlayerPeriodTotals } from "./yahoo/player-period-totals";
 import { checkDate, checkLeagueKey, checkPlayerKeys, checkTeamKey } from "./yahoo/daily-stats-keys";
 
 /** A dataset whose Yahoo resource isn't connected yet answers NOT_FOUND, like an unwired source. */
@@ -41,11 +42,10 @@ export class YahooDailyStatsSource implements DailyStatsSource {
 
   async getPlayerStats(
     leagueKey: string,
-    _period: StatPeriod,
+    period: StatPeriod,
     playerKeys: readonly string[]
   ): Promise<PlayerStats> {
-    checkPlayerKeys(leagueKey, playerKeys);
-    return notConnected("player totals");
+    return readPlayerPeriodTotals(this.requests, period, checkPlayerKeys(leagueKey, playerKeys));
   }
 
   async listPlayers(leagueKey: string, _query: PlayerListQuery): Promise<PlayerPage> {

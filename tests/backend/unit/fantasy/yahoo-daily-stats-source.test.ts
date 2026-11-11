@@ -49,7 +49,6 @@ describe("YahooDailyStatsSource key checks", () => {
   it.each([
     ["team day", (s: YahooDailyStatsSource) => s.getTeamDay(LEAGUE, `${LEAGUE}.t.1`, "2026-11-10")],
     ["game logs", (s: YahooDailyStatsSource) => s.getGameLogs(LEAGUE, ["478.p.1"])],
-    ["player totals", (s: YahooDailyStatsSource) => s.getPlayerStats(LEAGUE, "last7", ["478.p.1"])],
     [
       "player list",
       (s: YahooDailyStatsSource) =>
