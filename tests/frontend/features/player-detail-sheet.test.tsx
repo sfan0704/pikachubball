@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DailyPlayer } from "../../../shared/api/daily-stats-values";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
+import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { PlayerDetailSheet } from "../../../client/src/features/daily-stats/PlayerDetailSheet";
 import { PlayerButton } from "../../../client/src/features/daily-stats/PlayerButton";
 import { fixedClock } from "../../support/clock";
@@ -44,13 +45,15 @@ function renderSheet(player: DailyPlayer | null, viewDate = TODAY) {
   const onClose = vi.fn();
   render(
     <QueryClientProvider client={client}>
-      <PlayerDetailSheet
-        leagueKey={LEAGUE}
-        player={player}
-        viewDate={viewDate}
-        onClose={onClose}
-        onPickLeague={vi.fn()}
-      />
+      <FreshnessProvider>
+        <PlayerDetailSheet
+          leagueKey={LEAGUE}
+          player={player}
+          viewDate={viewDate}
+          onClose={onClose}
+          onPickLeague={vi.fn()}
+        />
+      </FreshnessProvider>
     </QueryClientProvider>
   );
   return { onClose };

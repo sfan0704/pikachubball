@@ -6,6 +6,7 @@ import { usePlayerList } from "@/api/daily-stats-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
+import { FreshnessLabel } from "./FreshnessLabel";
 import { PlayerButton } from "./PlayerButton";
 import { PlayerDetailSheet } from "./PlayerDetailSheet";
 
@@ -38,12 +39,14 @@ export function PlayersScreen({
   onPickLeague: () => void;
 }) {
   const page = usePlayerList(leagueKey, FIRST_PAGE);
-  const today = nbaDateOf(useNow());
+  const now = useNow();
+  const today = nbaDateOf(now);
   const [openPlayer, setOpenPlayer] = useState<DailyPlayer | null>(null);
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="space-y-1">
         <CardTitle>Available players</CardTitle>
+        <FreshnessLabel sources={[page]} now={now} />
       </CardHeader>
       <CardContent>
         <DatasetState query={page} onPickLeague={onPickLeague}>

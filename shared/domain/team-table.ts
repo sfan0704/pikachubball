@@ -52,6 +52,13 @@ export interface WeekGames {
   readonly completed: number;
 }
 
+/** A team's season head-to-head record, as Yahoo's standings give it. */
+export interface TeamRecord {
+  readonly wins: number;
+  readonly losses: number;
+  readonly ties: number;
+}
+
 /** One team's row in the table. */
 export interface TeamRow {
   readonly teamKey: string;
@@ -60,6 +67,8 @@ export interface TeamRow {
   readonly totals: TeamTotals;
   /** The week's games for starting slots; null for the season, or when Yahoo's week table didn't say. */
   readonly games: WeekGames | null;
+  /** Yahoo's official season record; null in week tables, which don't carry the standings. */
+  readonly record: TeamRecord | null;
 }
 
 /** Two teams playing each other in a week, with Yahoo's official result when it has one. */

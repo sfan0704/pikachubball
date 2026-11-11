@@ -84,6 +84,12 @@ const teamSchema = z.object({
   team_stats: z.object({
     stats: z.array(z.object({ stat: z.object({ stat_id: statId, value: z.unknown() }) })),
   }),
+  // Only the standings carry the season record.
+  team_standings: z
+    .object({
+      outcome_totals: z.object({ wins: yahooInteger, losses: yahooInteger, ties: yahooInteger }),
+    })
+    .optional(),
 });
 type YahooTeam = z.infer<typeof teamSchema>;
 
@@ -179,6 +185,7 @@ function toRow(team: YahooTeam): TeamRow {
     totals: toTotals(team),
     // Parsing the week's team_remaining_games is FAN-111; until then the games are unknown.
     games: null,
+    record: team.team_standings?.outcome_totals ?? null,
   };
 }
 

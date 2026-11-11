@@ -4,6 +4,7 @@
 import React from "react";
 import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -33,14 +34,16 @@ function panel() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <Router hook={memoryLocation({ path: "/" }).hook}>
-        <RosterPanel
-          leagueKey="466.l.1"
-          teamKey="466.l.1.t.3"
-          teamName="My Team"
-          onPickLeague={vi.fn()}
-        />
-      </Router>
+      <FreshnessProvider>
+        <Router hook={memoryLocation({ path: "/" }).hook}>
+          <RosterPanel
+            leagueKey="466.l.1"
+            teamKey="466.l.1.t.3"
+            teamName="My Team"
+            onPickLeague={vi.fn()}
+          />
+        </Router>
+      </FreshnessProvider>
     </QueryClientProvider>
   );
 }

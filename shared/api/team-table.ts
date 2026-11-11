@@ -49,6 +49,13 @@ const teamRowSchema = z.object({
       completed: z.number().int().nonnegative(),
     })
     .nullable(),
+  record: z
+    .object({
+      wins: z.number().int().nonnegative(),
+      losses: z.number().int().nonnegative(),
+      ties: z.number().int().nonnegative(),
+    })
+    .nullable(),
 });
 
 const matchupPairingSchema = z.object({

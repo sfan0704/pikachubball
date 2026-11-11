@@ -76,7 +76,21 @@ describe("season table from the standings response", () => {
         to: 556,
       },
       games: null,
+      record: { wins: 36, losses: 27, ties: 0 },
     });
+  });
+
+  it("leaves the record unknown when a team has no standings entry", () => {
+    const response = fixture("league-season");
+    const team = firstSeasonTeam(response);
+    team.splice(
+      team.findIndex((fragment: object) => "team_standings" in fragment),
+      1
+    );
+
+    const parsed = parseSeasonTable(response, FETCHED_AT);
+
+    expect(parsed.teams.filter((row) => row.record === null)).toHaveLength(1);
   });
 
   it("matches the shared API schema and feeds the domain maths", () => {
@@ -93,6 +107,7 @@ describe("week table from the scoreboard response", () => {
 
     expect(table.scope).toEqual({ kind: "week", week: 1 });
     expect(table.teams).toHaveLength(14);
+    expect(table.teams.every((team) => team.record === null)).toBe(true);
     expect(table.pairings).toHaveLength(7);
     expect(table.pairings[0]).toEqual({
       teamKeys: expect.any(Array),

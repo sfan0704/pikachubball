@@ -4,6 +4,7 @@
 import React from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
@@ -59,7 +60,9 @@ function stubServer() {
 function wrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    <QueryClientProvider client={client}>
+      <FreshnessProvider>{children}</FreshnessProvider>
+    </QueryClientProvider>
   );
 }
 

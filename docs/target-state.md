@@ -204,7 +204,7 @@ flowchart TD
 
 | State | Owner |
 |---|---|
-| Data from the API | TanStack Query, with keys from one factory that mirrors the API (`me`, `leagues`, league + scope, roster, and one key per daily-stats dataset) |
+| Data from the API | TanStack Query, with keys from one factory that mirrors the API (`me`, `leagues`, league + scope, roster, and one key per daily-stats dataset). Dataset queries (league + scope, roster and the daily-stats datasets) get their timers from `freshQuery` in the API module; a lint rule keeps timers out of everything else |
 | Selected league, team and scope | The URL |
 | Sorting, chosen opponent, open panels, daily-stats filters | Local component state |
 | Preferences that follow the user | The server, through the API |
@@ -311,7 +311,7 @@ flowchart TD
 
 ### The team table
 
-Every view (season and weekly rankings, the heatmap, the current matchup and the comparison against every team) is computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; a week's table also has that week's matchup pairings.
+Every view (season and weekly rankings, the heatmap, the current matchup and the comparison against every team) is computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table.
 
 ### Fantasy rules
 
@@ -369,7 +369,7 @@ erDiagram
 
 ### Caching
 
-- **Browser:** TanStack Query holds each league and scope for the session, so moving between views and weeks doesn't call Yahoo again. A refresh button fetches again. Each response carries its fetch time, shown as "updated N min ago". Daily-stats datasets follow one [freshness policy](reference/daily-stats-retrieval.md#freshness-policy) in `shared/domain`: four classes (Live, 2 minutes and polled only while a shown game is live; Recent, 10 minutes; Daily, 6 hours; Settled, the whole visit), applied by the query-key factory so no screen sets its own timer. Nothing from Yahoo is written to browser storage.
+- **Browser:** TanStack Query holds each dataset as long as the freshness policy says it stays fresh, so moving between views and weeks doesn't call Yahoo again. A refresh button fetches again. Each response carries its fetch time, shown as "updated N min ago". Daily-stats datasets follow one [freshness policy](reference/daily-stats-retrieval.md#freshness-policy) in `shared/domain`: four classes (Live, 2 minutes and polled only while a shown game is live; Recent, 10 minutes; Daily, 6 hours; Settled, the whole visit), applied by the query-key factory so no screen sets its own timer. The policy also times the team table (current week and season Live, earlier weeks Settled) and rosters (Recent). Nothing from Yahoo is written to browser storage.
 - **Server:** none.
 - **CDN:** caches only the built static assets, never `/api`.
 

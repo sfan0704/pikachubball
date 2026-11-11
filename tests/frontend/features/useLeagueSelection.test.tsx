@@ -4,6 +4,7 @@
 import React from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -69,7 +70,9 @@ function setup(
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>
-      <Router hook={location.hook}>{children}</Router>
+      <FreshnessProvider>
+        <Router hook={location.hook}>{children}</Router>
+      </FreshnessProvider>
     </QueryClientProvider>
   );
   return { ...renderHook(() => useLeagueSelection(), { wrapper }), location, saved };
@@ -199,7 +202,9 @@ describe("useLeagueSelection", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={client}>
-        <Router hook={memoryLocation({ path: "/" }).hook}>{children}</Router>
+        <FreshnessProvider>
+          <Router hook={memoryLocation({ path: "/" }).hook}>{children}</Router>
+        </FreshnessProvider>
       </QueryClientProvider>
     );
     const { result } = renderHook(() => useLeagueSelection(), { wrapper });
@@ -215,7 +220,9 @@ describe("useLeagueSelection", () => {
         <QueryClientProvider
           client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
         >
-          <Router hook={memoryLocation({ path: "/" }).hook}>{children}</Router>
+          <FreshnessProvider>
+            <Router hook={memoryLocation({ path: "/" }).hook}>{children}</Router>
+          </FreshnessProvider>
         </QueryClientProvider>
       ),
     });
