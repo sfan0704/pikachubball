@@ -47,7 +47,6 @@ describe("YahooDailyStatsSource key checks", () => {
   });
 
   it.each([
-    ["team day", (s: YahooDailyStatsSource) => s.getTeamDay(LEAGUE, `${LEAGUE}.t.1`, "2026-11-10")],
     ["game logs", (s: YahooDailyStatsSource) => s.getGameLogs(LEAGUE, ["478.p.1"])],
     ["player totals", (s: YahooDailyStatsSource) => s.getPlayerStats(LEAGUE, "last7", ["478.p.1"])],
     [
@@ -56,7 +55,6 @@ describe("YahooDailyStatsSource key checks", () => {
         s.listPlayers(LEAGUE, { status: "available", sort: "actualRank", start: 0 }),
     ],
     ["schedule", (s: YahooDailyStatsSource) => s.getSchedule(LEAGUE)],
-    ["weeks", (s: YahooDailyStatsSource) => s.getWeeks(LEAGUE)],
   ])("answers %s NOT_FOUND until its dataset is connected", async (_dataset, read) => {
     const { yahoo, source } = sourceOver();
 

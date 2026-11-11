@@ -1,0 +1,1245 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/team/478.l.100000.t.9/roster;date=2026-10-30/players/stats;type=date;date=2026-10-30",
+    "team": [
+      [
+        { "team_key": "478.l.100000.t.9" },
+        { "team_id": "9" },
+        { "name": "Team-22" },
+        [],
+        { "url": "https://example.invalid/scrubbed" },
+        {
+          "team_logos": [
+            { "team_logo": { "size": "large", "url": "https://example.invalid/scrubbed" } }
+          ]
+        },
+        { "previous_season_team_rank": 1 },
+        [],
+        { "waiver_priority": 14 },
+        { "faab_balance": "80" },
+        { "number_of_moves": 6 },
+        { "number_of_trades": 0 },
+        { "roster_adds": { "coverage_type": "week", "coverage_value": 3, "value": "1" } },
+        [],
+        { "league_scoring_type": "head" },
+        [],
+        [],
+        { "has_draft_grade": 0 },
+        { "auction_budget_total": "200" },
+        { "auction_budget_spent": 200 },
+        [],
+        [],
+        [],
+        {
+          "managers": [
+            {
+              "manager": {
+                "manager_id": "manager_id-23",
+                "nickname": "scrubbed",
+                "guid": "guid-4",
+                "email": "scrubbed",
+                "image_url": "https://example.invalid/scrubbed",
+                "felo_score": "752",
+                "felo_tier": "gold"
+              }
+            }
+          ]
+        }
+      ],
+      {
+        "roster": {
+          "0": {
+            "players": {
+              "0": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6418" },
+                    { "player_id": "6418" },
+                    {
+                      "name": {
+                        "full": "Payton Pritchard",
+                        "first": "Payton",
+                        "last": "Pritchard",
+                        "ascii_first": "Payton",
+                        "ascii_last": "Pritchard"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6418" },
+                    { "editorial_team_key": "nba.t.2" },
+                    { "editorial_team_full_name": "Boston Celtics" },
+                    { "editorial_team_abbr": "BOS" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "11" },
+                    { "display_position": "PG" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PG" },
+                        { "position": "G" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "SG" },
+                        { "position": "SF" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794061112 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "PG" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "9/17" } },
+                        { "stat": { "stat_id": "5", "value": ".529" } },
+                        { "stat": { "stat_id": "9007006", "value": "9/9" } },
+                        { "stat": { "stat_id": "8", "value": "1.000" } },
+                        { "stat": { "stat_id": "10", "value": "3" } },
+                        { "stat": { "stat_id": "12", "value": "30" } },
+                        { "stat": { "stat_id": "15", "value": "3" } },
+                        { "stat": { "stat_id": "16", "value": "3" } },
+                        { "stat": { "stat_id": "17", "value": "2" } },
+                        { "stat": { "stat_id": "18", "value": "0" } },
+                        { "stat": { "stat_id": "19", "value": "3" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "1": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6776" },
+                    { "player_id": "6776" },
+                    {
+                      "name": {
+                        "full": "Quenton Jackson",
+                        "first": "Quenton",
+                        "last": "Jackson",
+                        "ascii_first": "Quenton",
+                        "ascii_last": "Jackson"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6776" },
+                    { "editorial_team_key": "nba.t.11" },
+                    { "editorial_team_full_name": "Indiana Pacers" },
+                    { "editorial_team_abbr": "IND" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "29" },
+                    { "display_position": "PG,SG" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "SF" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    [],
+                    { "player_notes_last_timestamp": 1793893407 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "SG" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "9/13" } },
+                        { "stat": { "stat_id": "5", "value": ".692" } },
+                        { "stat": { "stat_id": "9007006", "value": "4/4" } },
+                        { "stat": { "stat_id": "8", "value": "1.000" } },
+                        { "stat": { "stat_id": "10", "value": "2" } },
+                        { "stat": { "stat_id": "12", "value": "24" } },
+                        { "stat": { "stat_id": "15", "value": "4" } },
+                        { "stat": { "stat_id": "16", "value": "1" } },
+                        { "stat": { "stat_id": "17", "value": "2" } },
+                        { "stat": { "stat_id": "18", "value": "0" } },
+                        { "stat": { "stat_id": "19", "value": "1" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "2": {
+                "player": [
+                  [
+                    { "player_key": "478.p.5660" },
+                    { "player_id": "5660" },
+                    {
+                      "name": {
+                        "full": "Dejounte Murray",
+                        "first": "Dejounte",
+                        "last": "Murray",
+                        "ascii_first": "Dejounte",
+                        "ascii_last": "Murray"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.5660" },
+                    { "editorial_team_key": "nba.t.3" },
+                    { "editorial_team_full_name": "New Orleans Pelicans" },
+                    { "editorial_team_abbr": "NOP" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "5" },
+                    { "display_position": "PG,SG" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "SF" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    [],
+                    { "player_notes_last_timestamp": 1793896288 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "G" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "-/-" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "-/-" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "-" } },
+                        { "stat": { "stat_id": "12", "value": "-" } },
+                        { "stat": { "stat_id": "15", "value": "-" } },
+                        { "stat": { "stat_id": "16", "value": "-" } },
+                        { "stat": { "stat_id": "17", "value": "-" } },
+                        { "stat": { "stat_id": "18", "value": "-" } },
+                        { "stat": { "stat_id": "19", "value": "-" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "3": {
+                "player": [
+                  [
+                    { "player_key": "478.p.4614" },
+                    { "player_id": "4614" },
+                    {
+                      "name": {
+                        "full": "DeMar DeRozan",
+                        "first": "DeMar",
+                        "last": "DeRozan",
+                        "ascii_first": "DeMar",
+                        "ascii_last": "DeRozan"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.4614" },
+                    { "editorial_team_key": "nba.t.7" },
+                    { "editorial_team_full_name": "Denver Nuggets" },
+                    { "editorial_team_abbr": "DEN" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "10" },
+                    { "display_position": "SF,PF" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "SF" },
+                    {
+                      "eligible_positions": [
+                        { "position": "SF" },
+                        { "position": "PF" },
+                        { "position": "F" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794085708 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "SF" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "1/5" } },
+                        { "stat": { "stat_id": "5", "value": ".200" } },
+                        { "stat": { "stat_id": "9007006", "value": "1/2" } },
+                        { "stat": { "stat_id": "8", "value": ".500" } },
+                        { "stat": { "stat_id": "10", "value": "0" } },
+                        { "stat": { "stat_id": "12", "value": "3" } },
+                        { "stat": { "stat_id": "15", "value": "1" } },
+                        { "stat": { "stat_id": "16", "value": "5" } },
+                        { "stat": { "stat_id": "17", "value": "2" } },
+                        { "stat": { "stat_id": "18", "value": "0" } },
+                        { "stat": { "stat_id": "19", "value": "1" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "4": {
+                "player": [
+                  [
+                    { "player_key": "478.p.5432" },
+                    { "player_id": "5432" },
+                    {
+                      "name": {
+                        "full": "Karl-Anthony Towns",
+                        "first": "Karl-Anthony",
+                        "last": "Towns",
+                        "ascii_first": "Karl-Anthony",
+                        "ascii_last": "Towns"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.5432" },
+                    { "editorial_team_key": "nba.t.18" },
+                    { "editorial_team_full_name": "New York Knicks" },
+                    { "editorial_team_abbr": "NYK" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "32" },
+                    { "display_position": "PF,C" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PF" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PF" },
+                        { "position": "F" },
+                        { "position": "C" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "SF" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    [],
+                    { "player_notes_last_timestamp": 1793850119 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "PF" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "8/15" } },
+                        { "stat": { "stat_id": "5", "value": ".533" } },
+                        { "stat": { "stat_id": "9007006", "value": "3/3" } },
+                        { "stat": { "stat_id": "8", "value": "1.000" } },
+                        { "stat": { "stat_id": "10", "value": "3" } },
+                        { "stat": { "stat_id": "12", "value": "22" } },
+                        { "stat": { "stat_id": "15", "value": "12" } },
+                        { "stat": { "stat_id": "16", "value": "3" } },
+                        { "stat": { "stat_id": "17", "value": "0" } },
+                        { "stat": { "stat_id": "18", "value": "1" } },
+                        { "stat": { "stat_id": "19", "value": "2" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "5": {
+                "player": [
+                  [
+                    { "player_key": "478.p.10280" },
+                    { "player_id": "10280" },
+                    {
+                      "name": {
+                        "full": "Terrence Shannon Jr.",
+                        "first": "Terrence",
+                        "last": "Shannon Jr.",
+                        "ascii_first": "Terrence",
+                        "ascii_last": "Shannon Jr."
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.10280" },
+                    { "editorial_team_key": "nba.t.16" },
+                    { "editorial_team_full_name": "Minnesota Timberwolves" },
+                    { "editorial_team_abbr": "MIN" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "4" },
+                    { "display_position": "SG,SF" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "SG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "SF" },
+                        { "position": "F" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794093693 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "F" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "3/6" } },
+                        { "stat": { "stat_id": "5", "value": ".500" } },
+                        { "stat": { "stat_id": "9007006", "value": "3/4" } },
+                        { "stat": { "stat_id": "8", "value": ".750" } },
+                        { "stat": { "stat_id": "10", "value": "2" } },
+                        { "stat": { "stat_id": "12", "value": "11" } },
+                        { "stat": { "stat_id": "15", "value": "3" } },
+                        { "stat": { "stat_id": "16", "value": "2" } },
+                        { "stat": { "stat_id": "17", "value": "0" } },
+                        { "stat": { "stat_id": "18", "value": "0" } },
+                        { "stat": { "stat_id": "19", "value": "0" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "6": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6398" },
+                    { "player_id": "6398" },
+                    {
+                      "name": {
+                        "full": "Onyeka Okongwu",
+                        "first": "Onyeka",
+                        "last": "Okongwu",
+                        "ascii_first": "Onyeka",
+                        "ascii_last": "Okongwu"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6398" },
+                    { "editorial_team_key": "nba.t.1" },
+                    { "editorial_team_full_name": "Atlanta Hawks" },
+                    { "editorial_team_abbr": "ATL" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "17" },
+                    { "display_position": "C" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "C" },
+                    {
+                      "eligible_positions": [
+                        { "position": "C" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "SF" },
+                        { "position": "PF" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794023685 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "C" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "-/-" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "-/-" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "-" } },
+                        { "stat": { "stat_id": "12", "value": "-" } },
+                        { "stat": { "stat_id": "15", "value": "-" } },
+                        { "stat": { "stat_id": "16", "value": "-" } },
+                        { "stat": { "stat_id": "17", "value": "-" } },
+                        { "stat": { "stat_id": "18", "value": "-" } },
+                        { "stat": { "stat_id": "19", "value": "-" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "7": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6513" },
+                    { "player_id": "6513" },
+                    {
+                      "name": {
+                        "full": "Jalen Green",
+                        "first": "Jalen",
+                        "last": "Green",
+                        "ascii_first": "Jalen",
+                        "ascii_last": "Green"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6513" },
+                    { "editorial_team_key": "nba.t.21" },
+                    { "editorial_team_full_name": "Phoenix Suns" },
+                    { "editorial_team_abbr": "PHX" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "4" },
+                    { "display_position": "SG,SF" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "SG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "SF" },
+                        { "position": "F" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    [],
+                    { "player_notes_last_timestamp": 1793896103 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "FC" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "1/6" } },
+                        { "stat": { "stat_id": "5", "value": ".167" } },
+                        { "stat": { "stat_id": "9007006", "value": "0/0" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "0" } },
+                        { "stat": { "stat_id": "12", "value": "2" } },
+                        { "stat": { "stat_id": "15", "value": "2" } },
+                        { "stat": { "stat_id": "16", "value": "2" } },
+                        { "stat": { "stat_id": "17", "value": "0" } },
+                        { "stat": { "stat_id": "18", "value": "0" } },
+                        { "stat": { "stat_id": "19", "value": "2" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "8": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6175" },
+                    { "player_id": "6175" },
+                    {
+                      "name": {
+                        "full": "Tyler Herro",
+                        "first": "Tyler",
+                        "last": "Herro",
+                        "ascii_first": "Tyler",
+                        "ascii_last": "Herro"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6175" },
+                    { "editorial_team_key": "nba.t.15" },
+                    { "editorial_team_full_name": "Milwaukee Bucks" },
+                    { "editorial_team_abbr": "MIL" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "11" },
+                    { "display_position": "PG,SG" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "SF" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794055761 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "Util" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "-/-" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "-/-" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "-" } },
+                        { "stat": { "stat_id": "12", "value": "-" } },
+                        { "stat": { "stat_id": "15", "value": "-" } },
+                        { "stat": { "stat_id": "16", "value": "-" } },
+                        { "stat": { "stat_id": "17", "value": "-" } },
+                        { "stat": { "stat_id": "18", "value": "-" } },
+                        { "stat": { "stat_id": "19", "value": "-" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "9": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6571" },
+                    { "player_id": "6571" },
+                    {
+                      "name": {
+                        "full": "Day'Ron Sharpe",
+                        "first": "Day'Ron",
+                        "last": "Sharpe",
+                        "ascii_first": "Day'Ron",
+                        "ascii_last": "Sharpe"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6571" },
+                    { "editorial_team_key": "nba.t.17" },
+                    { "editorial_team_full_name": "Brooklyn Nets" },
+                    { "editorial_team_abbr": "BKN" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "20" },
+                    { "display_position": "C" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "C" },
+                    {
+                      "eligible_positions": [
+                        { "position": "C" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "SF" },
+                        { "position": "PF" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    [],
+                    { "player_notes_last_timestamp": 1793637086 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "Util" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "1/4" } },
+                        { "stat": { "stat_id": "5", "value": ".250" } },
+                        { "stat": { "stat_id": "9007006", "value": "1/2" } },
+                        { "stat": { "stat_id": "8", "value": ".500" } },
+                        { "stat": { "stat_id": "10", "value": "0" } },
+                        { "stat": { "stat_id": "12", "value": "3" } },
+                        { "stat": { "stat_id": "15", "value": "7" } },
+                        { "stat": { "stat_id": "16", "value": "1" } },
+                        { "stat": { "stat_id": "17", "value": "1" } },
+                        { "stat": { "stat_id": "18", "value": "2" } },
+                        { "stat": { "stat_id": "19", "value": "2" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "10": {
+                "player": [
+                  [
+                    { "player_key": "478.p.5826" },
+                    { "player_id": "5826" },
+                    {
+                      "name": {
+                        "full": "Donovan Mitchell",
+                        "first": "Donovan",
+                        "last": "Mitchell",
+                        "ascii_first": "Donovan",
+                        "ascii_last": "Mitchell"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.5826" },
+                    { "editorial_team_key": "nba.t.5" },
+                    { "editorial_team_full_name": "Cleveland Cavaliers" },
+                    { "editorial_team_abbr": "CLE" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "45" },
+                    { "display_position": "PG,SG" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "SF" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794022211 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "BN" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "-/-" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "-/-" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "-" } },
+                        { "stat": { "stat_id": "12", "value": "-" } },
+                        { "stat": { "stat_id": "15", "value": "-" } },
+                        { "stat": { "stat_id": "16", "value": "-" } },
+                        { "stat": { "stat_id": "17", "value": "-" } },
+                        { "stat": { "stat_id": "18", "value": "-" } },
+                        { "stat": { "stat_id": "19", "value": "-" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "11": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6403" },
+                    { "player_id": "6403" },
+                    {
+                      "name": {
+                        "full": "Devin Vassell",
+                        "first": "Devin",
+                        "last": "Vassell",
+                        "ascii_first": "Devin",
+                        "ascii_last": "Vassell"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6403" },
+                    { "editorial_team_key": "nba.t.24" },
+                    { "editorial_team_full_name": "San Antonio Spurs" },
+                    { "editorial_team_abbr": "SAS" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "24" },
+                    { "display_position": "SG,SF" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "SG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "SF" },
+                        { "position": "F" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "PF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794053625 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "BN" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "-/-" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "-/-" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "-" } },
+                        { "stat": { "stat_id": "12", "value": "-" } },
+                        { "stat": { "stat_id": "15", "value": "-" } },
+                        { "stat": { "stat_id": "16", "value": "-" } },
+                        { "stat": { "stat_id": "17", "value": "-" } },
+                        { "stat": { "stat_id": "18", "value": "-" } },
+                        { "stat": { "stat_id": "19", "value": "-" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "12": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6412" },
+                    { "player_id": "6412" },
+                    {
+                      "name": {
+                        "full": "Precious Achiuwa",
+                        "first": "Precious",
+                        "last": "Achiuwa",
+                        "ascii_first": "Precious",
+                        "ascii_last": "Achiuwa"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6412" },
+                    { "editorial_team_key": "nba.t.23" },
+                    { "editorial_team_full_name": "Sacramento Kings" },
+                    { "editorial_team_abbr": "SAC" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "9" },
+                    { "display_position": "PF,C" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PF" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PF" },
+                        { "position": "F" },
+                        { "position": "C" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "SF" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    [],
+                    { "player_notes_last_timestamp": 1793826750 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "BN" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "-/-" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "-/-" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "-" } },
+                        { "stat": { "stat_id": "12", "value": "-" } },
+                        { "stat": { "stat_id": "15", "value": "-" } },
+                        { "stat": { "stat_id": "16", "value": "-" } },
+                        { "stat": { "stat_id": "17", "value": "-" } },
+                        { "stat": { "stat_id": "18", "value": "-" } },
+                        { "stat": { "stat_id": "19", "value": "-" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "13": {
+                "player": [
+                  [
+                    { "player_key": "478.p.5602" },
+                    { "player_id": "5602" },
+                    {
+                      "name": {
+                        "full": "Jaylen Brown",
+                        "first": "Jaylen",
+                        "last": "Brown",
+                        "ascii_first": "Jaylen",
+                        "ascii_last": "Brown"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.5602" },
+                    { "editorial_team_key": "nba.t.20" },
+                    { "editorial_team_full_name": "Philadelphia 76ers" },
+                    { "editorial_team_abbr": "PHI" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "7" },
+                    { "display_position": "SG,SF,PF" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "SG" },
+                    {
+                      "eligible_positions": [
+                        { "position": "SG" },
+                        { "position": "G" },
+                        { "position": "SF" },
+                        { "position": "PF" },
+                        { "position": "F" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    { "eligible_positions_to_add": [{ "position": "PG" }, { "position": "C" }] },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    { "has_recent_player_notes": 1 },
+                    { "player_notes_last_timestamp": 1794022301 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "IL" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "0/0" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "0/0" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "0" } },
+                        { "stat": { "stat_id": "12", "value": "0" } },
+                        { "stat": { "stat_id": "15", "value": "0" } },
+                        { "stat": { "stat_id": "16", "value": "0" } },
+                        { "stat": { "stat_id": "17", "value": "0" } },
+                        { "stat": { "stat_id": "18", "value": "0" } },
+                        { "stat": { "stat_id": "19", "value": "0" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "14": {
+                "player": [
+                  [
+                    { "player_key": "478.p.6572" },
+                    { "player_id": "6572" },
+                    {
+                      "name": {
+                        "full": "Santi Aldama",
+                        "first": "Santi",
+                        "last": "Aldama",
+                        "ascii_first": "Santi",
+                        "ascii_last": "Aldama"
+                      }
+                    },
+                    { "url": "https://example.invalid/scrubbed" },
+                    { "editorial_player_key": "nba.p.6572" },
+                    { "editorial_team_key": "nba.t.6" },
+                    { "editorial_team_full_name": "Dallas Mavericks" },
+                    { "editorial_team_abbr": "DAL" },
+                    { "editorial_team_url": "https://example.invalid/scrubbed" },
+                    { "is_keeper": { "status": false, "cost": false, "kept": false } },
+                    { "uniform_number": "34" },
+                    { "display_position": "PF" },
+                    {
+                      "headshot": { "url": "https://example.invalid/scrubbed", "size": "small" },
+                      "image_url": "https://example.invalid/scrubbed"
+                    },
+                    { "is_undroppable": "0" },
+                    { "position_type": "P" },
+                    { "primary_position": "PF" },
+                    {
+                      "eligible_positions": [
+                        { "position": "PF" },
+                        { "position": "F" },
+                        { "position": "FC" },
+                        { "position": "Util" }
+                      ]
+                    },
+                    {
+                      "eligible_positions_to_add": [
+                        { "position": "PG" },
+                        { "position": "SG" },
+                        { "position": "SF" },
+                        { "position": "C" }
+                      ]
+                    },
+                    [],
+                    [],
+                    { "has_player_notes": 1 },
+                    [],
+                    { "player_notes_last_timestamp": 1794006629 }
+                  ],
+                  {
+                    "selected_position": [
+                      { "coverage_type": "date", "date": "2026-10-30" },
+                      { "position": "IL" },
+                      { "is_flex": 0 }
+                    ]
+                  },
+                  {
+                    "player_stats": {
+                      "0": { "coverage_type": "date", "date": "2026-10-30" },
+                      "stats": [
+                        { "stat": { "stat_id": "9004003", "value": "0/0" } },
+                        { "stat": { "stat_id": "5", "value": "-" } },
+                        { "stat": { "stat_id": "9007006", "value": "0/0" } },
+                        { "stat": { "stat_id": "8", "value": "-" } },
+                        { "stat": { "stat_id": "10", "value": "0" } },
+                        { "stat": { "stat_id": "12", "value": "0" } },
+                        { "stat": { "stat_id": "15", "value": "0" } },
+                        { "stat": { "stat_id": "16", "value": "0" } },
+                        { "stat": { "stat_id": "17", "value": "0" } },
+                        { "stat": { "stat_id": "18", "value": "0" } },
+                        { "stat": { "stat_id": "19", "value": "0" } }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "count": 15
+            }
+          },
+          "coverage_type": "date",
+          "date": "2026-10-30",
+          "is_prescoring": 0,
+          "is_editable": 0
+        }
+      }
+    ],
+    "time": "96.944808959961ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}
