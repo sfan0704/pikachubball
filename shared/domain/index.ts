@@ -12,6 +12,7 @@ export type {
   LeagueCategory,
   LeagueSettings,
   TeamTotals,
+  TeamRecord,
   TeamRow,
   WeekGames,
   MatchupPairing,
@@ -90,3 +91,12 @@ export {
   MAX_POLL_INTERVAL_MS,
   UNCONFIRMED_LIVE_WINDOW_MS,
 } from "./freshness";
+export type {
+  Acquisition,
+  DraftPick,
+  DraftResults,
+  MovePlace,
+  PlayerMove,
+  TeamMove,
+} from "./acquisition";
+export { latestAcquisition } from "./acquisition";

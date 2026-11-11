@@ -66,6 +66,7 @@ export function buildTeamTable(
       teamName: `Team ${index + 1}`,
       managerName: null,
       games: null,
+      record: null,
       totals: buildTeamTotals(teamTotals),
     })),
     pairings: [],
