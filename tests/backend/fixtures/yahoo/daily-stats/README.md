@@ -1,6 +1,6 @@
-# Daily-stats call recordings (FAN-102)
+# Daily-stats call recordings
 
-Recorded by `npm run capture:yahoo-live-calls` in league 478.l.14822, scrubbed of team, manager and league names. Each file is Yahoo's response body.
+Recorded in league 478.l.14822 (D3 and D7 by `npm run capture:yahoo-live-calls`, FAN-102), scrubbed of team, manager and league names. Each file is Yahoo's response body.
 
 ## D3 game logs, 25 players by key
 
@@ -19,3 +19,15 @@ Recorded by `npm run capture:yahoo-live-calls` in league 478.l.14822, scrubbed o
 - File: `d7-transactions-own-team.json`
 - GET `/league/478.l.14822/transactions;types=add,drop,trade;team_key=478.l.14822.t.10` (with `?format=json`)
 - 2026-11-11T01:02:15.792Z: HTTP 200; 10 transactions (add/drop 6, add 3, drop 1); 0 without 478.l.14822.t.10
+
+## D1 week table, a finished week (FAN-91 capture)
+
+- File: `d1-week-2-final.json`
+- GET `/league/478.l.14822;out=settings/scoreboard;week=2` (with `?format=json`)
+- Recorded 2026-11-08 by `npm run capture:yahoo-week`, after week 2 ended: every team has 0 remaining and 0 live; completed games run 39 to 45 (44 for t.10, 41 for t.9).
+
+## D1 week table, the current week in progress (FAN-91 capture)
+
+- File: `d1-week-3-midweek.json`
+- GET `/league/478.l.14822;out=settings,scoreboard` (with `?format=json`)
+- Recorded 2026-11-08 during week 3 with games live: each team's `team_remaining_games` has remaining, live and completed counts (t.10: 7, 1, 31).

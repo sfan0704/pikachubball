@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   backedOffInterval,
+  followsLineup,
   FRESHNESS_POLICY,
   freshnessClass,
   freshnessOf,
@@ -66,6 +67,13 @@ describe("freshness policy table", () => {
     expect(freshnessClass({ kind: "weekTable", scope: "current" }, TODAY)).toBe("live");
     expect(freshnessClass({ kind: "weekTable", scope: "season" }, TODAY)).toBe("live");
     expect(freshnessClass({ kind: "weekTable", scope: "past" }, TODAY)).toBe("settled");
+  });
+
+  it("refetches only the current week on every return to the tab, because games left follow the lineup", () => {
+    expect(followsLineup({ kind: "weekTable", scope: "current" })).toBe(true);
+    expect(followsLineup({ kind: "weekTable", scope: "season" })).toBe(false);
+    expect(followsLineup({ kind: "weekTable", scope: "past" })).toBe(false);
+    expect(followsLineup({ kind: "roster" })).toBe(false);
   });
 
   it("times a team day by how long ago it was (D2)", () => {

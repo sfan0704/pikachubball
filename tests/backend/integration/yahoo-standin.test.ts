@@ -91,6 +91,9 @@ describe("the Yahoo stand-in, through the real transport", () => {
 
     expect(season.teams).toHaveLength(14);
     expect(current.scope).toEqual({ kind: "week", week: 8 });
+    // The review environment shows games left from the recorded week table (D1).
+    expect(current.teams.every((team) => team.games !== null)).toBe(true);
+    expect(season.teams.every((team) => team.games === null)).toBe(true);
     expect(week3.scope).toEqual({ kind: "week", week: 3 });
     expect(week3.pairings).toHaveLength(7);
     expect(roster).toHaveLength(15);

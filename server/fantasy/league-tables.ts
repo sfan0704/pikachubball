@@ -8,6 +8,7 @@ import type {
   TeamRow,
   TeamTable,
   TeamTotals,
+  WeekGames,
 } from "../../shared/domain";
 import {
   fragments,
@@ -45,6 +46,17 @@ const COUNTING_STATS = {
 } as const;
 
 const statId = z.coerce.string();
+
+const gameCount = yahooInteger.pipe(z.number().nonnegative());
+
+/** A week's games for starting slots; Yahoo sends it with each team in a scoreboard. */
+const remainingGamesSchema = z.object({
+  total: z.object({
+    remaining_games: gameCount,
+    live_games: gameCount,
+    completed_games: gameCount,
+  }),
+});
 
 const leagueMetaSchema = z.object({
   league_key: z.string().min(1),
@@ -90,6 +102,8 @@ const teamSchema = z.object({
       outcome_totals: z.object({ wins: yahooInteger, losses: yahooInteger, ties: yahooInteger }),
     })
     .optional(),
+  // Only the scoreboard carries the week's games; the standings never do.
+  team_remaining_games: remainingGamesSchema.optional(),
 });
 type YahooTeam = z.infer<typeof teamSchema>;
 
@@ -175,7 +189,19 @@ function toTotals(team: YahooTeam): TeamTotals {
   };
 }
 
-function toRow(team: YahooTeam): TeamRow {
+/** The week's games, or null when Yahoo's table didn't say. */
+function toWeekGames(team: YahooTeam): WeekGames | null {
+  const games = team.team_remaining_games?.total;
+  return games
+    ? {
+        remaining: games.remaining_games,
+        live: games.live_games,
+        completed: games.completed_games,
+      }
+    : null;
+}
+
+function toRow(team: YahooTeam, scope: Scope): TeamRow {
   const nickname = team.managers?.[0]?.manager.nickname;
   return {
     teamKey: team.team_key,
@@ -183,8 +209,7 @@ function toRow(team: YahooTeam): TeamRow {
     // Yahoo masks managers who hide their name.
     managerName: nickname && nickname !== "--hidden--" ? nickname : null,
     totals: toTotals(team),
-    // Parsing the week's team_remaining_games is FAN-111; until then the games are unknown.
-    games: null,
+    games: scope.kind === "week" ? toWeekGames(team) : null,
     record: team.team_standings?.outcome_totals ?? null,
   };
 }
@@ -196,7 +221,7 @@ function build(
   pairings: readonly MatchupPairing[],
   fetchedAt: string
 ): TeamTable {
-  return { scope, settings, teams: teams.map(toRow), pairings, fetchedAt };
+  return { scope, settings, teams: teams.map((team) => toRow(team, scope)), pairings, fetchedAt };
 }
 
 /** The season table from a `/league/{key};out=settings,standings` response. */
