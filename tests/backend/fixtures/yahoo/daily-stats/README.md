@@ -59,3 +59,11 @@ Recorded by `npm run capture:yahoo-research` on 2026-11-07 (US Eastern) in leagu
 | `d5-owned-last-page-ownership-only.json` | `/league/478.l.14822/players;status=T;start=200;count=25/ownership` | The last owned page: 1 row, team owner |
 | `d5-position-c-no-out.json` | `/league/478.l.14822/players;status=A;position=C` | 25 centres |
 | `d5-search-doncic.json` | `/league/478.l.14822/players;status=A;search=doncic` | An empty answer (`players: []`); Dončić is owned |
+
+## D6 league schedule, rostered players' game logs (FAN-92)
+
+Recorded by `npm run capture:yahoo-game-log` on 2026-11-08 (league date 2026-11-08) while PHI at CHI was live, scrubbed the same way. Saved here as the bare response bodies.
+
+- Files: `d6-status-t-start-0.json`, `d6-status-t-start-25.json`
+- GET `/league/478.l.14822/players;status=T;start={0,25};count=25;out=game_log` (with `?format=json`)
+- 2026-11-08T21:54:18Z: HTTP 200 each; 25 players each, 25 NBA teams between them (no CHA, LAL, MEM, OKC or ORL); game logs from 2026-10-20 to 2026-11-16

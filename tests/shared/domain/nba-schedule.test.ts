@@ -7,11 +7,11 @@ const LOS_ANGELES = "America/Los_Angeles";
 
 /** Lakers-style schedule: Tuesday 10:30 pm Eastern (7:30 pm Pacific), Wednesday 7:30 pm Eastern, Saturday. */
 const GAMES: ScheduledGame[] = [
-  { date: "2026-11-09", tipOff: "2026-11-10T00:00:00Z" },
-  { date: "2026-11-10", tipOff: "2026-11-11T03:30:00Z" },
-  { date: "2026-11-11", tipOff: "2026-11-12T00:30:00Z" },
-  { date: "2026-11-14", tipOff: "2026-11-15T01:00:00Z" },
-  { date: "2026-11-16", tipOff: "2026-11-17T00:30:00Z" },
+  { date: "2026-11-09", state: { tipOff: "2026-11-10T00:00:00Z" } },
+  { date: "2026-11-10", state: { tipOff: "2026-11-11T03:30:00Z" } },
+  { date: "2026-11-11", state: { tipOff: "2026-11-12T00:30:00Z" } },
+  { date: "2026-11-14", state: { tipOff: "2026-11-15T01:00:00Z" } },
+  { date: "2026-11-16", state: { tipOff: "2026-11-17T00:30:00Z" } },
 ];
 
 function at(iso: string, timeZone: string) {

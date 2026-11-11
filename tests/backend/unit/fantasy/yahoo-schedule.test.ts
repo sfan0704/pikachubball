@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { YahooDailyStatsSource } from "../../../../server/fantasy/yahoo-daily-stats-source";
 import { DailyStatsRequests } from "../../../../server/fantasy/yahoo/daily-stats-requests";
 import { MAX_SCHEDULE_PAGES } from "../../../../server/fantasy/yahoo/schedule-reader";
+import { scheduleByTeam } from "../../../../shared/domain";
 import { fixedClock } from "../../../support/clock";
 import { silentLogger } from "../../../support/dependencies";
 import { replayYahoo, yahooRecording } from "../../../support/yahoo-recordings";
@@ -101,5 +102,72 @@ describe("Yahoo league schedule (D6)", () => {
       code: "VALIDATION_ERROR",
     });
     expect(yahoo.calls).toHaveLength(0);
+  });
+});
+
+/** The FAN-92 status=T pages: 50 rostered players on 25 NBA teams, league date 2026-11-08, PHI at CHI live. */
+const FAN_92_PAGES = ["daily-stats/d6-status-t-start-0", "daily-stats/d6-status-t-start-25"];
+/** The five teams the FAN-92 pages have no player for; a short third page supplies them. */
+const FAN_92_MISSING = ["CHA", "LAL", "MEM", "OKC", "ORL"];
+
+function fan92Source() {
+  const yahoo = replayYahoo({
+    [pagePath(0)]: FAN_92_PAGES[0],
+    [pagePath(25)]: FAN_92_PAGES[1],
+    [pagePath(50)]: page({ teams: FAN_92_MISSING, size: FAN_92_MISSING.length }),
+  });
+  const source = new YahooDailyStatsSource(
+    new DailyStatsRequests(async () => yahoo, silentLogger, fixedClock())
+  );
+  return { yahoo, source };
+}
+
+describe("Yahoo league schedule (D6) on the FAN-92 pages", () => {
+  it("covers all 30 teams in 3 calls, from yesterday to about 8 days ahead", async () => {
+    const { yahoo, source } = fan92Source();
+    const { teams } = await source.getSchedule(LEAGUE);
+
+    expect(yahoo.calls).toEqual([pagePath(0), pagePath(25), pagePath(50)]);
+    expect(teams).toHaveLength(30);
+    const recorded = teams.filter((team) => !FAN_92_MISSING.includes(team.nbaTeam));
+    expect(recorded).toHaveLength(25);
+    for (const team of recorded) {
+      expect(team.games[0].date >= "2026-11-07").toBe(true);
+      // Every team has games still to come after the league date.
+      expect((team.games.at(-1)?.date ?? "") > "2026-11-08").toBe(true);
+    }
+    const lastDates = recorded.map((team) => team.games.at(-1)?.date ?? "");
+    expect(lastDates.reduce((a, b) => (a > b ? a : b))).toBe("2026-11-16");
+  });
+
+  it("carries the live PHI at CHI game from each team's side", async () => {
+    const { teams } = await fan92Source().source.getSchedule(LEAGUE);
+    const onDate = (nbaTeam: string) =>
+      teams.find((team) => team.nbaTeam === nbaTeam)?.games.find((g) => g.date === "2026-11-08");
+
+    expect(onDate("PHI")).toMatchObject({ opponent: "CHI", isHome: false });
+    expect(onDate("PHI")?.state).toMatchObject({
+      kind: "live",
+      progress: { period: 3, clock: "7:48", ownScore: 77, opponentScore: 70 },
+    });
+    expect(onDate("CHI")).toMatchObject({ opponent: "PHI", isHome: true });
+  });
+
+  it("turns CHI's Friday–Saturday back-to-back over at each viewer's own midnight", async () => {
+    const { teams } = await fan92Source().source.getSchedule(LEAGUE);
+    const week = { start: "2026-11-10", end: "2026-11-16" };
+    const chicago = (iso: string, timeZone: string) =>
+      scheduleByTeam(teams, { now: Date.parse(iso), timeZone, week }).get("CHI");
+
+    // CHI tips off at 8 pm Eastern (5 pm Pacific) on 2026-11-13 and 2026-11-14.
+    expect(chicago("2026-11-14T04:59:00Z", "America/New_York")?.backToBack).toBe(true);
+    expect(chicago("2026-11-14T05:01:00Z", "America/New_York")).toMatchObject({
+      tonight: true,
+      tomorrow: false,
+      backToBack: false,
+    });
+    expect(chicago("2026-11-14T07:59:00Z", "America/Los_Angeles")?.backToBack).toBe(true);
+    expect(chicago("2026-11-14T08:01:00Z", "America/Los_Angeles")?.backToBack).toBe(false);
+    expect(chicago("2026-11-10T15:00:00Z", "America/New_York")?.gamesLeftThisWeek).toBe(3);
   });
 });

@@ -6,10 +6,10 @@
  */
 import { addDays, nbaDateOf } from "./nba-date";
 
-/** One game of a team: its US Eastern date and tip-off instant (ISO 8601). */
+/** One game of a team: its US Eastern date and its state's tip-off instant (ISO 8601), as D6 sends it. */
 export interface ScheduledGame {
   readonly date: string;
-  readonly tipOff: string;
+  readonly state: { readonly tipOff: string };
 }
 
 /** The days the filters look at: now in the display time zone, and the current scoring week. */
@@ -50,7 +50,7 @@ export function teamSchedule(
   const today = localDateOf(context.now, context.timeZone);
   const tomorrow = addDays(today, 1);
   const localDates = new Set(
-    games.map((game) => localDateOf(Date.parse(game.tipOff), context.timeZone))
+    games.map((game) => localDateOf(Date.parse(game.state.tipOff), context.timeZone))
   );
   const nbaToday = nbaDateOf(context.now);
   const from = nbaToday > context.week.start ? nbaToday : context.week.start;
