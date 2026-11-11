@@ -1,13 +1,15 @@
 import type { WeeksResponse } from "@shared/api/daily-stats";
 import { addDays, nbaDateOf } from "@shared/domain";
+import { useLocation } from "wouter";
 import { useWeeks } from "@/api/daily-stats-hooks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DAY_LABELS, type MatchupDay } from "@/features/league/screens";
 import { selectionPath, type Selection } from "@/features/league/selection";
 import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
 import { LinkBar } from "./LinkBar";
 import { MatchupDayBoard } from "./MatchupDayBoard";
+import { MatchupWeekBoard } from "./MatchupWeekBoard";
+import { weekFor, weekLabel, type ScoringWeek } from "./week-board";
 
 /** The day bar reads in time order. */
 const DAY_ORDER: readonly MatchupDay[] = ["yesterday", "today", "week"];
@@ -27,14 +29,94 @@ function formatDate(date: string): string {
   });
 }
 
-function WeekRange({ weeks, today }: { weeks: WeeksResponse["weeks"]; today: string }) {
-  const week = weeks.find(({ start, end }) => start <= today && today <= end);
+interface WeekViewProps {
+  selection: Selection;
+  weeks: WeeksResponse["weeks"];
+  today: string;
+  now: number;
+  onPickLeague: () => void;
+}
+
+/** The week picker: weeks that have started, newest first. Each choice is a URL. */
+function WeekPicker({
+  selection,
+  weeks,
+  shown,
+  current,
+  today,
+}: {
+  selection: Selection;
+  weeks: WeeksResponse["weeks"];
+  shown: ScoringWeek | undefined;
+  current: ScoringWeek | undefined;
+  today: string;
+}) {
+  const [, navigate] = useLocation();
+  const started = weeks.filter((week) => week.start <= today).reverse();
+  const pick = (value: string) => {
+    const week = Number(value);
+    navigate(selectionPath({ ...selection, scope: week === current?.week ? "current" : week }));
+  };
   return (
-    <p data-testid="matchup-week">
-      {week
-        ? `Week ${week.week}: ${formatDate(week.start)} to ${formatDate(week.end)}`
-        : "Today isn't in a scoring week."}
-    </p>
+    <div className="flex items-center justify-end">
+      <label htmlFor="matchup-week" className="sr-only">
+        Week
+      </label>
+      <select
+        id="matchup-week"
+        value={shown?.week ?? ""}
+        onChange={(event) => pick(event.target.value)}
+        className="min-h-[44px] max-w-full rounded-[10px] border bg-background px-2 text-sm font-semibold"
+      >
+        {shown === undefined && <option value="">Pick a week</option>}
+        {started.map((week) => (
+          <option key={week.week} value={week.week}>
+            {weekLabel(week)}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** The Week view: the picker, then the chosen week's board, or why there is none. */
+function WeekView({ selection, weeks, today, now, onPickLeague }: WeekViewProps) {
+  const current = weekFor(weeks, "current", today);
+  const shown = weekFor(weeks, selection.scope, today);
+  const missing =
+    shown === undefined
+      ? selection.scope === "current"
+        ? "Today isn't in a scoring week."
+        : "This league has no such week."
+      : shown.start > today
+        ? `Week ${shown.week} hasn't started.`
+        : null;
+  return (
+    <>
+      <WeekPicker
+        selection={selection}
+        weeks={weeks}
+        shown={missing === null ? shown : undefined}
+        current={current}
+        today={today}
+      />
+      {missing !== null || shown === undefined ? (
+        <p className="text-sm text-muted-foreground" role="status" data-testid="matchup-week">
+          {missing}
+        </p>
+      ) : (
+        <MatchupWeekBoard
+          key={shown.week}
+          leagueKey={selection.leagueKey}
+          teamKey={selection.teamKey}
+          week={shown}
+          isCurrentWeek={shown.week === current?.week}
+          today={today}
+          now={now}
+          onPickLeague={onPickLeague}
+        />
+      )}
+    </>
   );
 }
 
@@ -58,16 +140,17 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
         }))}
       />
       {day === "week" ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>This week</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DatasetState query={weeks} onPickLeague={onPickLeague}>
-              {(data) => <WeekRange weeks={data.weeks} today={today} />}
-            </DatasetState>
-          </CardContent>
-        </Card>
+        <DatasetState query={weeks} onPickLeague={onPickLeague}>
+          {(data) => (
+            <WeekView
+              selection={selection}
+              weeks={data.weeks}
+              today={today}
+              now={now}
+              onPickLeague={onPickLeague}
+            />
+          )}
+        </DatasetState>
       ) : (
         <MatchupDayBoard
           leagueKey={leagueKey}

@@ -39,7 +39,7 @@ test("opens on Matchup and keeps the screen and day through refresh and back", a
   await expect(page.getByTestId("player-columns")).toBeVisible();
 
   await days.getByRole("link", { name: "Week" }).click();
-  await expect(page.getByTestId("matchup-week")).toContainText("Week 5");
+  await expect(page.getByLabel("Week")).toHaveValue("5");
 
   await openScreen(page, "Players");
   await expect(page).toHaveURL(`${base}/players`);

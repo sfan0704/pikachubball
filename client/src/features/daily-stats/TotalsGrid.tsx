@@ -49,7 +49,15 @@ function totalText(totals: TeamTotals, key: CategoryKey): string {
   return isShootingCategory(key) ? percentText(value) : String(value);
 }
 
-function TeamRow({ team, selected }: { team: TotalsGridTeam; selected: CategoryKey }) {
+function TeamRow({
+  team,
+  side,
+  selected,
+}: {
+  team: TotalsGridTeam;
+  side: "mine" | "theirs";
+  selected: CategoryKey;
+}) {
   return (
     <>
       <span className="truncate text-xs font-semibold" title={team.label}>
@@ -58,6 +66,7 @@ function TeamRow({ team, selected }: { team: TotalsGridTeam; selected: CategoryK
       {CATEGORIES.map((key) => (
         <span
           key={key}
+          data-testid={`grid-${side}-${key}`}
           className={cn(
             "rounded-md py-1.5 text-center text-xs tabular-nums",
             key === selected && "bg-muted font-semibold"
@@ -100,8 +109,8 @@ export function TotalsGrid({ mine, theirs, comparison, selected, onSelect }: Tot
           {CATEGORY_LABELS[category]}
         </button>
       ))}
-      <TeamRow team={mine} selected={selected} />
-      <TeamRow team={theirs} selected={selected} />
+      <TeamRow team={mine} side="mine" selected={selected} />
+      <TeamRow team={theirs} side="theirs" selected={selected} />
     </div>
   );
 }

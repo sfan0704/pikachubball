@@ -11,12 +11,14 @@ import type {
 import type { DailyPlayer, NbaGame } from "@shared/api/daily-stats-values";
 import {
   isShootingCategory,
+  opponentOf,
   perGameAverages,
   type CategoryEntry,
   type CategoryKey,
   type CategoryValues,
   type GameState,
   type StatLine,
+  type TeamTable,
 } from "@shared/domain";
 
 /** One player card: who, where they sat, their line, and what is known about their game and average. */
@@ -61,6 +63,20 @@ export function playerCards(
     game: gameOn(logs, player.playerKey, day.date),
     average: averageOf(season, player.playerKey),
   }));
+}
+
+/** The opponent shown: the one the user picked, else Yahoo's, else the first other team on a bye. */
+export function shownOpponent(
+  table: TeamTable | undefined,
+  teamKey: string,
+  picked: string | null
+) {
+  if (!table) {
+    return { opponentKey: picked, realOpponentKey: null };
+  }
+  const realOpponentKey = opponentOf(table, teamKey);
+  const fallback = table.teams.find((team) => team.teamKey !== teamKey)?.teamKey ?? null;
+  return { opponentKey: picked ?? realOpponentKey ?? fallback, realOpponentKey };
 }
 
 /** "A. Knoll": a player's first initial and the rest of the name, so two columns fit a phone. */

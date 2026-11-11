@@ -57,6 +57,9 @@ function Router() {
       <Route path="/leagues/:leagueKey/teams/:teamKey/matchup/:day">
         <ProtectedRoute component={LeaguePage} />
       </Route>
+      <Route path="/leagues/:leagueKey/teams/:teamKey/matchup/week/:week">
+        <ProtectedRoute component={LeaguePage} />
+      </Route>
       <Route path="/">
         <ProtectedRoute component={LeaguePage} />
       </Route>

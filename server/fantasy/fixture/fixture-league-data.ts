@@ -14,6 +14,7 @@ import {
   droppedPlayer,
   isOnWaivers,
   rosterPlayer,
+  swapDate,
   teamOf,
   type FixturePlayer,
 } from "./fixture-players";
@@ -89,7 +90,7 @@ export function playerPage(league: string, query: PlayerListQuery, today: string
   };
 }
 
-/** The team's two moves: an add/drop two days ago and a waiver claim before that. */
+/** The team's two moves: an add/drop on the swap date and a waiver claim four days before. */
 export function teamMoves(league: string, team: number, today: string): Transactions {
   const game = league.slice(0, league.indexOf("."));
   const teamKey = `${league}.t.${team}`;
@@ -99,7 +100,7 @@ export function teamMoves(league: string, team: number, today: string): Transact
       {
         transactionKey: `${league}.tr.${team * 10 + 2}`,
         kind: "addDrop",
-        at: `${addDays(today, -2)}T18:00:00.000Z`,
+        at: `${swapDate(today)}T18:00:00.000Z`,
         waiverBid: null,
         players: [
           {
@@ -119,7 +120,7 @@ export function teamMoves(league: string, team: number, today: string): Transact
       {
         transactionKey: `${league}.tr.${team * 10 + 1}`,
         kind: "add",
-        at: `${addDays(today, -6)}T09:00:00.000Z`,
+        at: `${addDays(swapDate(today), -4)}T09:00:00.000Z`,
         waiverBid: 4,
         players: [
           {

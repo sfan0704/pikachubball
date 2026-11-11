@@ -52,9 +52,9 @@ describe("the fixture daily-stats source", () => {
     ]);
   });
 
-  it("swaps the dropped player for the added one two days ago", async () => {
-    const before = await source.getTeamDay(LEAGUE, TEAM, "2026-11-08");
-    const after = await source.getTeamDay(LEAGUE, TEAM, "2026-11-09");
+  it("swaps the dropped player for the added one on the Saturday before this week", async () => {
+    const before = await source.getTeamDay(LEAGUE, TEAM, "2026-11-06");
+    const after = await source.getTeamDay(LEAGUE, TEAM, "2026-11-07");
     const { transactions } = await source.getTransactions(LEAGUE, TEAM);
 
     const [addDrop] = transactions;
@@ -63,6 +63,24 @@ describe("the fixture daily-stats source", () => {
     expect(before.players.map((entry) => entry.player.playerKey)).toContain(dropped);
     expect(after.players.map((entry) => entry.player.playerKey)).toContain(added);
     expect(after.players.map((entry) => entry.player.playerKey)).not.toContain(dropped);
+    expect(addDrop.at).toBe("2026-11-07T18:00:00.000Z");
+  });
+
+  it("starts slot 11 in slot 9's spot on its team's first game of the week only", async () => {
+    const slotsOn = async (date: string) =>
+      (await source.getTeamDay(LEAGUE, TEAM, date)).players
+        .filter((entry) => ["466.p.11109", "466.p.11111"].includes(entry.player.playerKey))
+        .map((entry) => [entry.slot, entry.isStartingSlot]);
+
+    // Monday Nov 9 is GSW's first game of the week; Wednesday is its next.
+    expect(await slotsOn("2026-11-09")).toEqual([
+      ["BN", false],
+      ["Util", true],
+    ]);
+    expect(await slotsOn(TODAY)).toEqual([
+      ["Util", true],
+      ["BN", false],
+    ]);
   });
 
   it("lists dropped players on waivers until tomorrow", async () => {

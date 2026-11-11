@@ -109,3 +109,11 @@ export {
   isShootingCategory,
   orderForCategory,
 } from "./matchup-day";
+export type { WeekBounds, WeekGroup, WeekPlayer } from "./matchup-week";
+export {
+  countedGamesLabel,
+  elapsedDates,
+  orderWeekPlayers,
+  weekPlayers,
+  weekValue,
+} from "./matchup-week";
