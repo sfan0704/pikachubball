@@ -1,0 +1,3229 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/league/478.l.14822/players;status=A;start=0;count=25;out=ownership,percent_owned",
+    "league": [
+      {
+        "league_key": "478.l.14822",
+        "league_id": "14822",
+        "name": "League-1",
+        "url": "https://example.invalid/scrubbed",
+        "recordbook_url": "https://example.invalid/scrubbed",
+        "logo_url": "https://example.invalid/scrubbed",
+        "draft_status": "postdraft",
+        "num_teams": 14,
+        "max_teams": "14",
+        "edit_key": "2026-11-07",
+        "weekly_deadline": "intraday",
+        "roster_type": "date",
+        "league_update_timestamp": "1794042101",
+        "scoring_type": "head",
+        "scoring_label": "H2H Cat",
+        "league_type": "private",
+        "renew": "466_29849",
+        "renewed": "",
+        "felo_tier": "silver",
+        "is_highscore": false,
+        "is_guillotine": "0",
+        "matchup_week": 3,
+        "iris_group_chat_id": "scrubbed",
+        "short_invitation_url": "https://example.invalid/scrubbed",
+        "allow_add_to_dl_extra_pos": 0,
+        "is_pro_league": "0",
+        "is_cash_league": "0",
+        "current_week": 3,
+        "start_week": "1",
+        "start_date": "2026-10-20",
+        "end_week": "21",
+        "end_date": "2027-03-28",
+        "current_date": "2026-11-07",
+        "is_plus_league": "0",
+        "game_code": "nba",
+        "season": "2026"
+      },
+      {
+        "players": {
+          "0": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4245"
+                },
+                {
+                  "player_id": "4245"
+                },
+                {
+                  "name": {
+                    "full": "Al Horford",
+                    "first": "Al",
+                    "last": "Horford",
+                    "ascii_first": "Al",
+                    "ascii_last": "Horford"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.4245"
+                },
+                {
+                  "editorial_team_key": "nba.t.9"
+                },
+                {
+                  "editorial_team_full_name": "Golden State Warriors"
+                },
+                {
+                  "editorial_team_abbr": "GSW"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "20"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793840457
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "1": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4246"
+                },
+                {
+                  "player_id": "4246"
+                },
+                {
+                  "name": {
+                    "full": "Mike Conley",
+                    "first": "Mike",
+                    "last": "Conley",
+                    "ascii_first": "Mike",
+                    "ascii_last": "Conley"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.4246"
+                },
+                {
+                  "editorial_team_key": "nba.t.2"
+                },
+                {
+                  "editorial_team_full_name": "Boston Celtics"
+                },
+                {
+                  "editorial_team_abbr": "BOS"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "45"
+                },
+                {
+                  "display_position": "PG"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PG"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "G"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793726207
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "2": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4247"
+                },
+                {
+                  "player_id": "4247"
+                },
+                {
+                  "name": {
+                    "full": "Jeff Green",
+                    "first": "Jeff",
+                    "last": "Green",
+                    "ascii_first": "Jeff",
+                    "ascii_last": "Green"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4247"
+                },
+                {
+                  "editorial_team_key": "nba.t.10"
+                },
+                {
+                  "editorial_team_full_name": "Houston Rockets"
+                },
+                {
+                  "editorial_team_abbr": "HOU"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "32"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "3": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4390"
+                },
+                {
+                  "player_id": "4390"
+                },
+                {
+                  "name": {
+                    "full": "Russell Westbrook",
+                    "first": "Russell",
+                    "last": "Westbrook",
+                    "ascii_first": "Russell",
+                    "ascii_last": "Westbrook"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4390"
+                },
+                {
+                  "editorial_team_key": "nba.t.23"
+                },
+                {
+                  "editorial_team_full_name": "Sacramento Kings"
+                },
+                {
+                  "editorial_team_abbr": "SAC"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "18"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PG"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "G"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "4": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4391"
+                },
+                {
+                  "player_id": "4391"
+                },
+                {
+                  "name": {
+                    "full": "Kevin Love",
+                    "first": "Kevin",
+                    "last": "Love",
+                    "ascii_first": "Kevin",
+                    "ascii_last": "Love"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4391"
+                },
+                {
+                  "editorial_team_key": "nba.t.26"
+                },
+                {
+                  "editorial_team_full_name": "Utah Jazz"
+                },
+                {
+                  "editorial_team_abbr": "UTA"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "42"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "5": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4469"
+                },
+                {
+                  "player_id": "4469"
+                },
+                {
+                  "name": {
+                    "full": "Eric Gordon",
+                    "first": "Eric",
+                    "last": "Gordon",
+                    "ascii_first": "Eric",
+                    "ascii_last": "Gordon"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4469"
+                },
+                {
+                  "editorial_team_key": "nba.t.29"
+                },
+                {
+                  "editorial_team_full_name": "Memphis Grizzlies"
+                },
+                {
+                  "editorial_team_abbr": "MEM"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "23"
+                },
+                {
+                  "display_position": "SG,SF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "SG"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "G"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "6": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4487"
+                },
+                {
+                  "player_id": "4487"
+                },
+                {
+                  "name": {
+                    "full": "Nicolas Batum",
+                    "first": "Nicolas",
+                    "last": "Batum",
+                    "ascii_first": "Nicolas",
+                    "ascii_last": "Batum"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4487"
+                },
+                {
+                  "editorial_team_key": "nba.t.12"
+                },
+                {
+                  "editorial_team_full_name": "LA Clippers"
+                },
+                {
+                  "editorial_team_abbr": "LAC"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "33"
+                },
+                {
+                  "display_position": "SF,PF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "SF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "7": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4497"
+                },
+                {
+                  "player_id": "4497"
+                },
+                {
+                  "name": {
+                    "full": "DeAndre Jordan",
+                    "first": "DeAndre",
+                    "last": "Jordan",
+                    "ascii_first": "DeAndre",
+                    "ascii_last": "Jordan"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.4497"
+                },
+                {
+                  "editorial_team_key": "nba.t.3"
+                },
+                {
+                  "editorial_team_full_name": "New Orleans Pelicans"
+                },
+                {
+                  "editorial_team_abbr": "NOP"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "6"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793317267
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "-1"
+                  }
+                ]
+              }
+            ]
+          },
+          "8": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4621"
+                },
+                {
+                  "player_id": "4621"
+                },
+                {
+                  "name": {
+                    "full": "James Johnson",
+                    "first": "James",
+                    "last": "Johnson",
+                    "ascii_first": "James",
+                    "ascii_last": "Johnson"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4621"
+                },
+                {
+                  "editorial_team_key": "nba.t.11"
+                },
+                {
+                  "editorial_team_full_name": "Indiana Pacers"
+                },
+                {
+                  "editorial_team_abbr": "IND"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "16"
+                },
+                {
+                  "display_position": "PF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "9": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4631"
+                },
+                {
+                  "player_id": "4631"
+                },
+                {
+                  "name": {
+                    "full": "Taj Gibson",
+                    "first": "Taj",
+                    "last": "Gibson",
+                    "ascii_first": "Taj",
+                    "ascii_last": "Gibson"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4631"
+                },
+                {
+                  "editorial_team_key": "nba.t.29"
+                },
+                {
+                  "editorial_team_full_name": "Memphis Grizzlies"
+                },
+                {
+                  "editorial_team_abbr": "MEM"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "67"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "10": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4682"
+                },
+                {
+                  "player_id": "4682"
+                },
+                {
+                  "name": {
+                    "full": "Garrett Temple",
+                    "first": "Garrett",
+                    "last": "Temple",
+                    "ascii_first": "Garrett",
+                    "ascii_last": "Temple"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4682"
+                },
+                {
+                  "editorial_team_key": "nba.t.28"
+                },
+                {
+                  "editorial_team_full_name": "Toronto Raptors"
+                },
+                {
+                  "editorial_team_abbr": "TOR"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "17"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PG"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "G"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "11": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4886"
+                },
+                {
+                  "player_id": "4886"
+                },
+                {
+                  "name": {
+                    "full": "Jonas Valančiūnas",
+                    "first": "Jonas",
+                    "last": "Valančiūnas",
+                    "ascii_first": "Jonas",
+                    "ascii_last": "Valančiūnas"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4886"
+                },
+                {
+                  "editorial_team_key": "nba.t.7"
+                },
+                {
+                  "editorial_team_full_name": "Denver Nuggets"
+                },
+                {
+                  "editorial_team_abbr": "DEN"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "17"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "12": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4888"
+                },
+                {
+                  "player_id": "4888"
+                },
+                {
+                  "name": {
+                    "full": "Bismack Biyombo",
+                    "first": "Bismack",
+                    "last": "Biyombo",
+                    "ascii_first": "Bismack",
+                    "ascii_last": "Biyombo"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.4888"
+                },
+                {
+                  "editorial_team_key": "nba.t.24"
+                },
+                {
+                  "editorial_team_full_name": "San Antonio Spurs"
+                },
+                {
+                  "editorial_team_abbr": "SAS"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "18"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "13": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4897"
+                },
+                {
+                  "player_id": "4897"
+                },
+                {
+                  "name": {
+                    "full": "Nikola Vučević",
+                    "first": "Nikola",
+                    "last": "Vučević",
+                    "ascii_first": "Nikola",
+                    "ascii_last": "Vučević"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.4897"
+                },
+                {
+                  "editorial_team_key": "nba.t.19"
+                },
+                {
+                  "editorial_team_full_name": "Orlando Magic"
+                },
+                {
+                  "editorial_team_abbr": "ORL"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "9"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793966213
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "delta": "-2"
+                  }
+                ]
+              }
+            ]
+          },
+          "14": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4901"
+                },
+                {
+                  "player_id": "4901"
+                },
+                {
+                  "name": {
+                    "full": "Tobias Harris",
+                    "first": "Tobias",
+                    "last": "Harris",
+                    "ascii_first": "Tobias",
+                    "ascii_last": "Harris"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "O",
+                  "status_full": "Out (short-term injury)"
+                },
+                {
+                  "injury_note": "Calf"
+                },
+                {
+                  "editorial_player_key": "nba.p.4901"
+                },
+                {
+                  "editorial_team_key": "nba.t.24"
+                },
+                {
+                  "editorial_team_full_name": "San Antonio Spurs"
+                },
+                {
+                  "editorial_team_abbr": "SAS"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "23"
+                },
+                {
+                  "display_position": "PF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    },
+                    {
+                      "position": "IL"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793488011
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 14
+                  },
+                  {
+                    "delta": "-1"
+                  }
+                ]
+              }
+            ]
+          },
+          "15": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4912"
+                },
+                {
+                  "player_id": "4912"
+                },
+                {
+                  "name": {
+                    "full": "Jimmy Butler III",
+                    "first": "Jimmy",
+                    "last": "Butler III",
+                    "ascii_first": "Jimmy",
+                    "ascii_last": "Butler III"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "O",
+                  "status_full": "Out (short-term injury)"
+                },
+                {
+                  "injury_note": "Knee"
+                },
+                {
+                  "editorial_player_key": "nba.p.4912"
+                },
+                {
+                  "editorial_team_key": "nba.t.9"
+                },
+                {
+                  "editorial_team_full_name": "Golden State Warriors"
+                },
+                {
+                  "editorial_team_abbr": "GSW"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "10"
+                },
+                {
+                  "display_position": "SF,PF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "SF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    },
+                    {
+                      "position": "IL"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 50
+                  },
+                  {
+                    "delta": "-1"
+                  }
+                ]
+              }
+            ]
+          },
+          "16": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5009"
+                },
+                {
+                  "player_id": "5009"
+                },
+                {
+                  "name": {
+                    "full": "Bradley Beal",
+                    "first": "Bradley",
+                    "last": "Beal",
+                    "ascii_first": "Bradley",
+                    "ascii_last": "Beal"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "O",
+                  "status_full": "Out (short-term injury)"
+                },
+                {
+                  "injury_note": "Knee"
+                },
+                {
+                  "editorial_player_key": "nba.p.5009"
+                },
+                {
+                  "editorial_team_key": "nba.t.12"
+                },
+                {
+                  "editorial_team_full_name": "LA Clippers"
+                },
+                {
+                  "editorial_team_abbr": "LAC"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "3"
+                },
+                {
+                  "display_position": "SG,SF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "SG"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "G"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    },
+                    {
+                      "position": "IL"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "delta": "-1"
+                  }
+                ]
+              }
+            ]
+          },
+          "17": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5013"
+                },
+                {
+                  "player_id": "5013"
+                },
+                {
+                  "name": {
+                    "full": "Harrison Barnes",
+                    "first": "Harrison",
+                    "last": "Barnes",
+                    "ascii_first": "Harrison",
+                    "ascii_last": "Barnes"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.5013"
+                },
+                {
+                  "editorial_team_key": "nba.t.24"
+                },
+                {
+                  "editorial_team_full_name": "San Antonio Spurs"
+                },
+                {
+                  "editorial_team_abbr": "SAS"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "40"
+                },
+                {
+                  "display_position": "PF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793905433
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 1
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "18": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5015"
+                },
+                {
+                  "player_id": "5015"
+                },
+                {
+                  "name": {
+                    "full": "Andre Drummond",
+                    "first": "Andre",
+                    "last": "Drummond",
+                    "ascii_first": "Andre",
+                    "ascii_last": "Drummond"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.5015"
+                },
+                {
+                  "editorial_team_key": "nba.t.18"
+                },
+                {
+                  "editorial_team_full_name": "New York Knicks"
+                },
+                {
+                  "editorial_team_abbr": "NYK"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "0"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793895913
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 11
+                  },
+                  {
+                    "delta": "-2"
+                  }
+                ]
+              }
+            ]
+          },
+          "19": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5073"
+                },
+                {
+                  "player_id": "5073"
+                },
+                {
+                  "name": {
+                    "full": "Khris Middleton",
+                    "first": "Khris",
+                    "last": "Middleton",
+                    "ascii_first": "Khris",
+                    "ascii_last": "Middleton"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.5073"
+                },
+                {
+                  "editorial_team_key": "nba.t.27"
+                },
+                {
+                  "editorial_team_full_name": "Washington Wizards"
+                },
+                {
+                  "editorial_team_abbr": "WAS"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "22"
+                },
+                {
+                  "display_position": "SF,PF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "SF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793252201
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 1
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "20": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5159"
+                },
+                {
+                  "player_id": "5159"
+                },
+                {
+                  "name": {
+                    "full": "Kentavious Caldwell-Pope",
+                    "first": "Kentavious",
+                    "last": "Caldwell-Pope",
+                    "ascii_first": "Kentavious",
+                    "ascii_last": "Caldwell-Pope"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "editorial_player_key": "nba.p.5159"
+                },
+                {
+                  "editorial_team_key": "nba.t.20"
+                },
+                {
+                  "editorial_team_full_name": "Philadelphia 76ers"
+                },
+                {
+                  "editorial_team_abbr": "PHI"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "1"
+                },
+                {
+                  "display_position": "SG,SF"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "SG"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "G"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793891674
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "delta": "-2"
+                  }
+                ]
+              }
+            ]
+          },
+          "21": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5163"
+                },
+                {
+                  "player_id": "5163"
+                },
+                {
+                  "name": {
+                    "full": "Steven Adams",
+                    "first": "Steven",
+                    "last": "Adams",
+                    "ascii_first": "Steven",
+                    "ascii_last": "Adams"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "O",
+                  "status_full": "Out (short-term injury)"
+                },
+                {
+                  "injury_note": "Calf"
+                },
+                {
+                  "editorial_player_key": "nba.p.5163"
+                },
+                {
+                  "editorial_team_key": "nba.t.10"
+                },
+                {
+                  "editorial_team_full_name": "Houston Rockets"
+                },
+                {
+                  "editorial_team_abbr": "HOU"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "12"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    },
+                    {
+                      "position": "IL"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793838062
+                }
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 1
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "22": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5164"
+                },
+                {
+                  "player_id": "5164"
+                },
+                {
+                  "name": {
+                    "full": "Kelly Olynyk",
+                    "first": "Kelly",
+                    "last": "Olynyk",
+                    "ascii_first": "Kelly",
+                    "ascii_last": "Olynyk"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.5164"
+                },
+                {
+                  "editorial_team_key": "nba.t.24"
+                },
+                {
+                  "editorial_team_full_name": "San Antonio Spurs"
+                },
+                {
+                  "editorial_team_abbr": "SAS"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "8"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PF"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "F"
+                    },
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "23": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5187"
+                },
+                {
+                  "player_id": "5187"
+                },
+                {
+                  "name": {
+                    "full": "Dennis Schröder",
+                    "first": "Dennis",
+                    "last": "Schröder",
+                    "ascii_first": "Dennis",
+                    "ascii_last": "Schröder"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "O",
+                  "status_full": "Out (short-term injury)"
+                },
+                {
+                  "injury_note": "Thigh"
+                },
+                {
+                  "editorial_player_key": "nba.p.5187"
+                },
+                {
+                  "editorial_team_key": "nba.t.30"
+                },
+                {
+                  "editorial_team_full_name": "Charlotte Hornets"
+                },
+                {
+                  "editorial_team_abbr": "CHA"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "17"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "PG"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "G"
+                    },
+                    {
+                      "position": "Util"
+                    },
+                    {
+                      "position": "IL"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    },
+                    {
+                      "position": "C"
+                    }
+                  ]
+                },
+                [],
+                [],
+                {
+                  "has_player_notes": 1
+                },
+                [],
+                {
+                  "player_notes_last_timestamp": 1793990944
+                }
+              ],
+              {
+                "ownership": {
+                  "waiver_date": "2026-11-08",
+                  "display_date": "2026-11-08",
+                  "ownership_type": "waivers"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "value": 10
+                  },
+                  {
+                    "delta": "-15"
+                  }
+                ]
+              }
+            ]
+          },
+          "24": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5192"
+                },
+                {
+                  "player_id": "5192"
+                },
+                {
+                  "name": {
+                    "full": "Mason Plumlee",
+                    "first": "Mason",
+                    "last": "Plumlee",
+                    "ascii_first": "Mason",
+                    "ascii_last": "Plumlee"
+                  }
+                },
+                {
+                  "url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "status": "NA",
+                  "status_full": "Not Active"
+                },
+                {
+                  "editorial_player_key": "nba.p.5192"
+                },
+                {
+                  "editorial_team_key": "nba.t.24"
+                },
+                {
+                  "editorial_team_full_name": "San Antonio Spurs"
+                },
+                {
+                  "editorial_team_abbr": "SAS"
+                },
+                {
+                  "editorial_team_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_keeper": {
+                    "status": false,
+                    "cost": false,
+                    "kept": false
+                  }
+                },
+                {
+                  "uniform_number": "45"
+                },
+                {
+                  "display_position": "C"
+                },
+                {
+                  "headshot": {
+                    "url": "https://example.invalid/scrubbed",
+                    "size": "small"
+                  },
+                  "image_url": "https://example.invalid/scrubbed"
+                },
+                {
+                  "is_undroppable": "0"
+                },
+                {
+                  "position_type": "P"
+                },
+                {
+                  "primary_position": "C"
+                },
+                {
+                  "eligible_positions": [
+                    {
+                      "position": "C"
+                    },
+                    {
+                      "position": "FC"
+                    },
+                    {
+                      "position": "Util"
+                    }
+                  ]
+                },
+                {
+                  "eligible_positions_to_add": [
+                    {
+                      "position": "PG"
+                    },
+                    {
+                      "position": "SG"
+                    },
+                    {
+                      "position": "SF"
+                    },
+                    {
+                      "position": "PF"
+                    }
+                  ]
+                },
+                [],
+                [],
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "freeagents"
+                }
+              },
+              {
+                "percent_owned": [
+                  {
+                    "coverage_type": "week",
+                    "week": 3
+                  },
+                  {
+                    "delta": "0"
+                  }
+                ]
+              }
+            ]
+          },
+          "count": 25
+        }
+      }
+    ],
+    "time": "61.860799789429ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}

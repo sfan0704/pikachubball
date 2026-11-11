@@ -39,23 +39,15 @@ describe("YahooDailyStatsSource key checks", () => {
       (s: YahooDailyStatsSource) => s.getPlayerStats(LEAGUE, "season", ["478.p.1;out=x"]),
     ],
     ["no players", (s: YahooDailyStatsSource) => s.getGameLogs(LEAGUE, [])],
+    [
+      "a player list in a malformed league",
+      (s: YahooDailyStatsSource) =>
+        s.listPlayers("478.l.x", { status: "available", sort: "actualRank", start: 0 }),
+    ],
   ])("rejects %s with VALIDATION_ERROR and no Yahoo call", async (_case, read) => {
     const { yahoo, source } = sourceOver();
 
     await expect(read(source)).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
-    expect(yahoo.calls).toEqual([]);
-  });
-
-  it.each([
-    [
-      "player list",
-      (s: YahooDailyStatsSource) =>
-        s.listPlayers(LEAGUE, { status: "available", sort: "actualRank", start: 0 }),
-    ],
-  ])("answers %s NOT_FOUND until its dataset is connected", async (_dataset, read) => {
-    const { yahoo, source } = sourceOver();
-
-    await expect(read(source)).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(yahoo.calls).toEqual([]);
   });
 });
