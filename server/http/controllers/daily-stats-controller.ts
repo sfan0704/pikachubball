@@ -32,8 +32,8 @@ export function createDailyStatsController({
     if (createDailyStatsSource === null) {
       throw new NotFoundError("Daily stats");
     }
-    const { storage, clock, yahooClient } = getRequestContext(req);
-    return { storage, clock, source: createDailyStatsSource(yahooClient) };
+    const { storage, clock, yahooClient, logger } = getRequestContext(req);
+    return { storage, clock, source: createDailyStatsSource({ yahooClient, logger }) };
   };
 
   /** Runs one use case and sends its result, checked against the endpoint's response schema. */

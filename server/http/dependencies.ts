@@ -29,10 +29,11 @@ export interface ServerDependencies {
   /** A fantasy data source that reads through the request's one Yahoo client. */
   createFantasyDataSource(yahooClient: YahooClientProvider): FantasyDataSource;
   /**
-   * The daily-stats source for one request, or null where none is wired:
-   * production has none until the Yahoo source exists, so its endpoints answer NOT_FOUND.
+   * The daily-stats source for one request, reading through the request's Yahoo
+   * client and logging on its logger; null where none is wired, so the endpoints answer NOT_FOUND.
    */
-  readonly createDailyStatsSource: ((yahooClient: YahooClientProvider) => DailyStatsSource) | null;
+  readonly createDailyStatsSource:
+    ((request: { yahooClient: YahooClientProvider; logger: Logger }) => DailyStatsSource) | null;
   /** Where projections come from; null until FAN-94 picks a source. */
   readonly projectionSource: ProjectionSource | null;
   /** Which screens the server has wired, reported by `GET /api/me`. */
