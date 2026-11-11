@@ -60,11 +60,7 @@ function useTeamSchedules(leagueKey: string, now: number): ReadonlyMap<string, T
       return new Map();
     }
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const teams = schedule.data.teams.map(({ nbaTeam, games }) => ({
-      nbaTeam,
-      games: games.map((game) => ({ date: game.date, tipOff: game.state.tipOff })),
-    }));
-    return scheduleByTeam(teams, { now, timeZone, week });
+    return scheduleByTeam(schedule.data.teams, { now, timeZone, week });
   }, [schedule.data, weeks.data, now]);
 }
 
