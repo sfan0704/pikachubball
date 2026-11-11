@@ -154,6 +154,16 @@ describe("loadConfig", () => {
         )
       ).toThrow(/only be set with LOCAL_STACK=true/);
     });
+
+    it("serves daily stats from the fixture unless the load test asks for the stand-in", () => {
+      expect(loadConfig(minimalEnvironment()).localDailyStats).toBeNull();
+      expect(loadConfig(local()).localDailyStats).toBe("fixture");
+      expect(loadConfig(local({ LOCAL_DAILY_STATS: "standin" })).localDailyStats).toBe("standin");
+      expect(() => loadConfig(local({ LOCAL_DAILY_STATS: "yahoo" }))).toThrow(/LOCAL_DAILY_STATS/);
+      expect(() => loadConfig(minimalEnvironment({ LOCAL_DAILY_STATS: "standin" }))).toThrow(
+        /LOCAL_DAILY_STATS can only be set with LOCAL_STACK=true/
+      );
+    });
   });
 
   describe("origins", () => {

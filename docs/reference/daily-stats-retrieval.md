@@ -82,18 +82,18 @@ Counted per viewer, first attempts only. FAN-102 confirmed D3 and D7 work in the
 |---|---|
 | Matchup, Today | D1 1 + D2 2 + D3 2 + D4 season 2 = **7** |
 | Then Yesterday | D2 2 = **2** |
-| Then Week, on the last day of the week | D2 10 more (14 in all) + D7 2 = **12** |
-| Matchup Week, straight to it on the last day | 1 + 14 + 2 + 2 + 2 = **21** |
-| A past week | Same as above, **21**, then free for the session |
+| Then Week, on the last day of the week | D10 1 + D2 12 more (14 in all) = **13** |
+| Matchup Week, straight to it on the last day | D10 1 + D1 1 + D2 14 = **16** |
+| A past week | Same as above, **16**, then free for the session |
 | Players, first page | D5 1 + D4 1 + D6 2 to 4 = **4 to 6** |
 | Players, each further page, search or position change | D5 1 + D4 1 = **2** |
 | Players, switch period | D4 1 per loaded page |
 | League, rankings | D1 or season table **1** |
-| League, first team popover | D9 1 + D4 1 + D7 1 + D8 1 = **4**; later popovers **3** |
+| League, first team popover | D2 today 1 + D4 1 + D7 1 + D8 1 = **4**; later popovers **3**, and 2 for a team already on the Matchup screen |
 
 **Warm navigation:** 0 calls for anything still fresh under the [freshness policy](#freshness-policy). Switching between Today, Yesterday and Week, between categories, opponents or sort orders, or back to a screen already open costs nothing.
 
-**Live refresh:** while any game shown on the Matchup screen is live and the tab is visible, every 2 minutes: D1 (1), D2 today for both teams (2) and D3 (2). About **3 calls a minute** per viewer. Polling stops when no shown game is live and restarts at the next shown tip-off (`start_time`). Hidden tabs don't poll; returning to the tab refetches what is stale.
+**Live refresh:** while any game shown on the Matchup screen is live and the tab is visible, every 2 minutes: D1 (1), D2 today for both teams (2) and D3 (2), 5 calls. About **3 calls a minute** per viewer (2.5). Polling stops when no shown game is live and restarts at the next shown tip-off (`start_time`). Hidden tabs don't poll; returning to the tab refetches what is stale.
 
 **League totals for 14 users:**
 
@@ -137,4 +137,4 @@ Next 7 projected (FAN-94) stays out. It would need a website session cookie, ser
 
 ## Static screens before live data
 
-The `shared/api` contracts are the boundary. The first implementation ticket writes the contracts and the pure `shared/domain` functions, then builds the screens against fixtures that pass those contracts. A fixture `DailyStatsSource` serves them in local, CI and review only, wired in the same place as the Yahoo stand-in, so every interaction can be finished and reviewed signed-in before any Yahoo adapter exists. Production reports the daily-stats screens as not available through the same capability list as projections, so they stay hidden until the Yahoo source is wired. Later tickets add the Yahoo resources and parsers one dataset at a time, each tested against scrubbed recordings from FAN-98's capture. D3 and D7 recordings are committed in `tests/backend/fixtures/yahoo/daily-stats/` (FAN-102, `npm run capture:yahoo-live-calls`). The Yahoo source's shared pieces (FAN-107) are in `server/fantasy/yahoo/`: `DailyStatsRequests` (25-key batching, per-request memoization, one log line per call, error codes), the key checks and the stat value parsers. Hook-up tests replay recordings through `replayYahoo` in `tests/support/yahoo-recordings.ts` and assert its call count against [Call budgets](#call-budgets). Outside local, CI and review the composition root builds the Yahoo source, and production shows a screen only once its entry in the feature list is turned on.
+The `shared/api` contracts are the boundary. The first implementation ticket writes the contracts and the pure `shared/domain` functions, then builds the screens against fixtures that pass those contracts. A fixture `DailyStatsSource` serves them in local, CI and review only, wired in the same place as the Yahoo stand-in, so every interaction can be finished and reviewed signed-in before any Yahoo adapter exists. Production shows each daily-stats screen through the same feature list as projections only once its datasets are connected: Matchup and League since FAN-116, Players at FAN-119. Later tickets add the Yahoo resources and parsers one dataset at a time, each tested against scrubbed recordings from FAN-98's capture. D3 and D7 recordings are committed in `tests/backend/fixtures/yahoo/daily-stats/` (FAN-102, `npm run capture:yahoo-live-calls`). The Yahoo source's shared pieces (FAN-107) are in `server/fantasy/yahoo/`: `DailyStatsRequests` (25-key batching, per-request memoization, one log line per call, error codes), the key checks and the stat value parsers. Hook-up tests replay recordings through `replayYahoo` in `tests/support/yahoo-recordings.ts` and assert its call count against [Call budgets](#call-budgets). Before a release, `npm run load` makes each Matchup and League view's requests for 14 users at once through the Yahoo source against the stand-in and checks each against these budgets. Outside local, CI and review the composition root builds the Yahoo source, and production shows a screen only once its entry in the feature list is turned on.

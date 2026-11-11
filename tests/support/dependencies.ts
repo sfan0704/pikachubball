@@ -39,6 +39,7 @@ export function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       oauthBaseUrl: "https://api.login.yahoo.com",
     },
     localStack: false,
+    localDailyStats: null,
     ...overrides,
   };
 }

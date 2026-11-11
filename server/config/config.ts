@@ -43,6 +43,12 @@ export interface AppConfig {
    * stand-in. Never true in production, and only with loopback addresses.
    */
   readonly localStack: boolean;
+  /**
+   * Where daily stats come from in local mode: the fixture league (the default,
+   * for development and browser tests) or the Yahoo stand-in through the real
+   * Yahoo source (the load test, which counts Yahoo calls). Null outside it.
+   */
+  readonly localDailyStats: "fixture" | "standin" | null;
 }
 
 const hexKey = z
@@ -73,6 +79,7 @@ const environmentSchema = z.object({
     .string()
     .optional()
     .transform((value) => value === "true"),
+  LOCAL_DAILY_STATS: z.enum(["fixture", "standin"]).optional(),
   YAHOO_API_BASE_URL: optionalTrimmed,
   YAHOO_OAUTH_BASE_URL: optionalTrimmed,
   YAHOO_CLIENT_ID: optionalTrimmed,
@@ -117,6 +124,11 @@ function checkLocalStack(values: z.infer<typeof environmentSchema>, production: 
     YAHOO_API_BASE_URL: values.YAHOO_API_BASE_URL,
     YAHOO_OAUTH_BASE_URL: values.YAHOO_OAUTH_BASE_URL,
   };
+  if (!values.LOCAL_STACK && values.LOCAL_DAILY_STATS) {
+    throw new Error(
+      "Invalid configuration: LOCAL_DAILY_STATS can only be set with LOCAL_STACK=true"
+    );
+  }
   if (!values.LOCAL_STACK) {
     for (const [name, value] of Object.entries(overrides)) {
       if (value) {
@@ -150,6 +162,14 @@ function checkKeys(values: z.infer<typeof environmentSchema>, production: boolea
   if (production && !key.startsWith("sb_publishable_") && !key.startsWith("eyJ")) {
     throw new Error("Invalid configuration: SUPABASE_PUBLISHABLE_KEY has an unsupported format");
   }
+}
+
+/** Local mode's daily-stats source: the fixture unless the load test asks for the stand-in. */
+function localDailyStats(values: z.infer<typeof environmentSchema>): AppConfig["localDailyStats"] {
+  if (!values.LOCAL_STACK) {
+    return null;
+  }
+  return values.LOCAL_DAILY_STATS ?? "fixture";
 }
 
 /**
@@ -197,5 +217,6 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
       oauthBaseUrl: values.YAHOO_OAUTH_BASE_URL ?? YAHOO_OAUTH_BASE_URL,
     },
     localStack: values.LOCAL_STACK,
+    localDailyStats: localDailyStats(values),
   };
 }
