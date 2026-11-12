@@ -74,11 +74,12 @@ describe("the Players screen", () => {
 
     const rows = within(await list()).getAllByRole("listitem");
     expect(rows).toHaveLength(25);
-    expect(screen.getByTestId("players-range")).toHaveTextContent(
-      "Players 1–25 · Season average per game"
+    expect(screen.getByTestId("players-range")).toHaveTextContent("Players 1–25");
+    expect(screen.getByTestId("players-count")).toHaveTextContent(
+      "25 players · season avg per game"
     );
     // Each team's dropped player clears waivers tomorrow, Thursday.
-    expect(screen.getAllByText("Waivers until Thu").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Clears Thu").length).toBeGreaterThan(0);
     expect(screen.getAllByText("<1%").length).toBeGreaterThan(0);
     await waitFor(() =>
       expect(within(rows[0]).getByTestId("player-averages")).not.toHaveTextContent("—")
@@ -126,10 +127,15 @@ describe("the Players screen", () => {
       expect(screen.getByTestId("players-range")).toHaveTextContent("Players 26–44")
     );
 
-    await user.selectOptions(screen.getByLabelText("Position"), "G");
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.click(
+      within(screen.getByRole("group", { name: "Position" })).getByRole("button", { name: "G" })
+    );
     await waitFor(() =>
       expect(requests).toContain("/players?status=available&sort=actualRank&start=0&position=G")
     );
+    await user.click(screen.getByRole("button", { name: /^Show \d+ players?$/ }));
+    expect(screen.getByRole("button", { name: "Filters, 1 on" })).toBeInTheDocument();
     await user.type(screen.getByRole("searchbox", { name: "Search players" }), "Rivers 30");
     await waitFor(() =>
       expect(requests).toContain(
@@ -142,6 +148,7 @@ describe("the Players screen", () => {
     const user = userEvent.setup();
     renderScreen();
     await list();
+    await user.click(screen.getByRole("button", { name: "Filters" }));
     // The NBA team choices come from the schedule.
     await waitFor(() =>
       expect(within(screen.getByLabelText("NBA team")).getAllByRole("option")).toHaveLength(9)
@@ -149,6 +156,7 @@ describe("the Players screen", () => {
     const asked = [...requests];
 
     await user.selectOptions(screen.getByLabelText("NBA team"), "PHX");
+    await user.click(screen.getByRole("button", { name: /^Show \d+ players?$/ }));
     const phx = within(await list()).getAllByRole("listitem");
     expect(phx.every((row) => within(row).getByText(/· PHX$/))).toBe(true);
 
@@ -165,9 +173,49 @@ describe("the Players screen", () => {
     await list();
 
     await user.click(screen.getByRole("button", { name: "Last 7" }));
-    expect(screen.getByTestId("players-range")).toHaveTextContent("Last 7 days, average per game");
+    expect(screen.getByTestId("players-count")).toHaveTextContent("last 7 days per game");
     await waitFor(() =>
       expect(requests.some((request) => request.startsWith("/player-stats/last7?"))).toBe(true)
     );
+  });
+
+  it("badges the filters that are on and clears them without asking for anything", async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    await list();
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await waitFor(() =>
+      expect(within(screen.getByLabelText("NBA team")).getAllByRole("option")).toHaveLength(9)
+    );
+    const asked = [...requests];
+
+    await user.selectOptions(screen.getByLabelText("NBA team"), "DEN");
+    await user.selectOptions(screen.getByLabelText("Games left"), "1");
+    await user.click(screen.getByRole("button", { name: /^Show \d+ players?$/ }));
+    expect(screen.getByTestId("filters-badge")).toHaveTextContent("2");
+
+    await user.click(screen.getByRole("button", { name: "Filters, 2 on" }));
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.getByRole("button", { name: "Show 25 players" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show 25 players" }));
+    expect(screen.queryByTestId("filters-badge")).not.toBeInTheDocument();
+    expect(requests).toEqual(asked);
+  });
+
+  it("sorts the page by a category, highest first, without asking for anything", async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    const rows = within(await list()).getAllByRole("listitem");
+    await waitFor(() =>
+      expect(within(rows[0]).getByTestId("player-averages")).not.toHaveTextContent("—")
+    );
+    const asked = [...requests];
+
+    await user.selectOptions(screen.getByLabelText("Sort by"), "pts");
+    const points = within(await list())
+      .getAllByTestId("player-averages")
+      .map((cells) => Number(within(cells).getByText("PTS").nextSibling?.textContent));
+    expect(points).toEqual([...points].sort((a, b) => b - a));
+    expect(requests).toEqual(asked);
   });
 });

@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { POSITIONS, type PageFilters } from "./players-model";
 
@@ -27,7 +28,11 @@ export function SegmentBar<T extends string>({
   onChange,
 }: SegmentBarProps<T>) {
   return (
-    <div role="group" aria-label={label} className="flex w-full gap-1 rounded-[10px] bg-muted p-1">
+    <div
+      role="group"
+      aria-label={label}
+      className="flex w-full gap-0.5 rounded-[10px] bg-muted p-[3px] dark:bg-muted/70"
+    >
       {choices.map((choice) => (
         <button
           key={choice.value}
@@ -35,11 +40,11 @@ export function SegmentBar<T extends string>({
           aria-pressed={choice.value === value}
           onClick={() => onChange(choice.value)}
           className={cn(
-            "min-h-[44px] min-w-0 flex-1 rounded-md px-1 text-sm font-medium",
+            "min-h-[32px] min-w-0 flex-1 rounded-md px-1 text-xs font-semibold",
             "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
             choice.value === value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-background text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+              : "text-foreground/75 hover:text-foreground"
           )}
         >
           {choice.label}
@@ -50,7 +55,7 @@ export function SegmentBar<T extends string>({
 }
 
 const SELECT_CLASS =
-  "min-h-[44px] w-full min-w-0 rounded-[10px] border bg-background px-2 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
+  "min-h-[34px] w-full min-w-0 rounded-[10px] border border-input bg-background px-1.5 text-[0.8125rem] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
 
 interface LabelledSelectProps {
   label: string;
@@ -62,8 +67,8 @@ interface LabelledSelectProps {
 function LabelledSelect({ label, value, options, onChange }: LabelledSelectProps) {
   const id = useId();
   return (
-    <div className="min-w-0 space-y-1">
-      <label htmlFor={id} className="block text-xs text-muted-foreground">
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <label htmlFor={id} className="text-[0.625rem] font-bold text-muted-foreground">
         {label}
       </label>
       <select
@@ -84,53 +89,133 @@ function LabelledSelect({ label, value, options, onChange }: LabelledSelectProps
 
 const ANY = "";
 const GAMES_LEFT_CHOICES = [0, 1, 2, 3, 4];
+const SECTION_TITLE = "text-xs font-bold uppercase tracking-[0.5px] text-foreground/80";
+const SHEET_BUTTON =
+  "min-h-[44px] rounded-[10px] bg-background text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
+
+/** Clear every sheet filter, or close the sheet showing how many players are left. */
+function SheetActions({
+  showLabel,
+  onClear,
+  onDone,
+}: {
+  showLabel: string;
+  onClear: () => void;
+  onDone: () => void;
+}) {
+  return (
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={onClear}
+        className={cn(SHEET_BUTTON, "flex-1 border border-input text-foreground/80")}
+      >
+        Clear
+      </button>
+      <button
+        type="button"
+        onClick={onDone}
+        className={cn(SHEET_BUTTON, "flex-[2] border-2 border-foreground")}
+      >
+        {showLabel}
+      </button>
+    </div>
+  );
+}
+
+/** Position, as a segmented bar; Yahoo filters on it, composite G and F included. */
+function PositionSection({
+  position,
+  onPosition,
+}: {
+  position: string | null;
+  onPosition: (position: string | null) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className={SECTION_TITLE}>Position</span>
+      <SegmentBar
+        label="Position"
+        choices={[
+          { value: ANY, label: "All" },
+          ...POSITIONS.map((item) => ({ value: item, label: item })),
+        ]}
+        value={position ?? ANY}
+        onChange={(value) => onPosition(value === ANY ? null : value)}
+      />
+    </div>
+  );
+}
 
 interface PlayersFiltersProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   /** A position or composite slot Yahoo filters on, or null for every position. */
   position: string | null;
   onPosition: (position: string | null) => void;
   filters: PageFilters;
   onFilters: (filters: PageFilters) => void;
   nbaTeams: readonly string[];
+  /** "Nov 9–15": the scoring week games left counts in; null until the weeks arrive. */
+  weekText: string | null;
+  /** "Show 12 players": how many rows the filters leave on this page. */
+  showLabel: string;
+  onClear: () => void;
 }
 
-/** Position (Yahoo filters it), then NBA team and games left this week (filtered on the page). */
+/**
+ * The Filters sheet: position (Yahoo filters it), then NBA team and games left
+ * this week (filtered on the page). Choices apply as they change; the main
+ * button closes the sheet and says how many players are left.
+ */
 export function PlayersFilters({
+  open,
+  onOpenChange,
   position,
   onPosition,
   filters,
   onFilters,
   nbaTeams,
+  weekText,
+  showLabel,
+  onClear,
 }: PlayersFiltersProps) {
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <LabelledSelect
-        label="Position"
-        value={position ?? ANY}
-        options={[
-          { value: ANY, label: "All" },
-          ...POSITIONS.map((item) => ({ value: item, label: item })),
-        ]}
-        onChange={(value) => onPosition(value === ANY ? null : value)}
-      />
-      <LabelledSelect
-        label="NBA team"
-        value={filters.nbaTeam ?? ANY}
-        options={[
-          { value: ANY, label: "All" },
-          ...nbaTeams.map((team) => ({ value: team, label: team })),
-        ]}
-        onChange={(value) => onFilters({ ...filters, nbaTeam: value === ANY ? null : value })}
-      />
-      <LabelledSelect
-        label="Games left"
-        value={String(filters.minGamesLeft)}
-        options={GAMES_LEFT_CHOICES.map((count) => ({
-          value: String(count),
-          label: count === 0 ? "Any" : `${count}+`,
-        }))}
-        onChange={(value) => onFilters({ ...filters, minGamesLeft: Number(value) })}
-      />
-    </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        className="flex flex-col gap-[18px] px-4 pb-7 pt-3"
+        data-testid="players-filters"
+      >
+        <SheetTitle className="text-base font-bold">Filters</SheetTitle>
+        <SheetDescription className="sr-only">
+          Narrow the players list by position, NBA team and games left this week.
+        </SheetDescription>
+        <PositionSection position={position} onPosition={onPosition} />
+        <LabelledSelect
+          label="NBA team"
+          value={filters.nbaTeam ?? ANY}
+          options={[
+            { value: ANY, label: "All teams" },
+            ...nbaTeams.map((team) => ({ value: team, label: team })),
+          ]}
+          onChange={(value) => onFilters({ ...filters, nbaTeam: value === ANY ? null : value })}
+        />
+        <div className="flex flex-col gap-2">
+          <span className={SECTION_TITLE}>
+            Games this week{weekText === null ? "" : ` · ${weekText}`}
+          </span>
+          <LabelledSelect
+            label="Games left"
+            value={String(filters.minGamesLeft)}
+            options={GAMES_LEFT_CHOICES.map((count) => ({
+              value: String(count),
+              label: count === 0 ? "Any" : `${count} or more`,
+            }))}
+            onChange={(value) => onFilters({ ...filters, minGamesLeft: Number(value) })}
+          />
+        </div>
+        <SheetActions showLabel={showLabel} onClear={onClear} onDone={() => onOpenChange(false)} />
+      </SheetContent>
+    </Sheet>
   );
 }
