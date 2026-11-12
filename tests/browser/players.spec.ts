@@ -23,6 +23,23 @@ async function openPlayers(page: Page) {
   await expect(rows(page).first().getByTestId("player-averages")).not.toContainText("—");
 }
 
+/**
+ * Waits until the list shows at least one row and every row lists a position
+ * matching `position`. Polling rides out the unfiltered rows still on screen
+ * while the filtered page loads; matching single positions keeps a name like
+ * "Rivers 4C" from passing or failing the check.
+ */
+async function expectEveryRowPlays(page: Page, position: RegExp) {
+  await expect
+    .poll(async () => {
+      const lists = await rows(page).getByTestId("player-positions").allTextContents();
+      return (
+        lists.length > 0 && lists.every((list) => list.split(", ").some((p) => position.test(p)))
+      );
+    })
+    .toBe(true);
+}
+
 test("lists not-owned players with a waiver row, an inactive row and a <1% row", async ({
   page,
 }) => {
@@ -73,14 +90,9 @@ test("searches and filters by position, including a composite slot", async ({ pa
   await expect(rows(page)).toHaveCount(25);
 
   await page.getByLabel("Position").selectOption("G");
-  await expect(rows(page).first()).toBeVisible();
-  for (const meta of await rows(page).getByRole("button").allTextContents()) {
-    expect(meta).toMatch(/PG|SG/);
-  }
+  await expectEveryRowPlays(page, /^(PG|SG)$/);
   await page.getByLabel("Position").selectOption("C");
-  for (const meta of await rows(page).getByRole("button").allTextContents()) {
-    expect(meta).toMatch(/\bC\b/);
-  }
+  await expectEveryRowPlays(page, /^C$/);
 });
 
 test("filters by NBA team, tonight, tomorrow, back-to-back and games left", async ({ page }) => {
