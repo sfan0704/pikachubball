@@ -101,9 +101,22 @@ function teamIn(league: UserLeague, teamKey: string | null): string {
     : league.teamKey;
 }
 
-/** Where a visit to a league starts: the opening screen, the current week, today. */
+/** The period a screen opens on: League opens on the season totals, the others on the current week. */
+function openingScope(screen: Screen): LeagueScope {
+  return screen === "league" ? "season" : "current";
+}
+
+/** Where a visit to a league starts: the opening screen and its period, today. */
 function opening(screens: readonly Screen[]): ScreenPart {
-  return { screen: openingScreen(screens), scope: "current", day: "today" };
+  const screen = openingScreen(screens);
+  return { screen, scope: openingScope(screen), day: "today" };
+}
+
+/** The selection after opening another screen from the tab bar; League starts on the season totals. */
+export function openScreen(selection: Selection, screen: Screen): Selection {
+  return screen === "league"
+    ? { ...selection, screen, scope: openingScope(screen) }
+    : { ...selection, screen };
 }
 
 /**

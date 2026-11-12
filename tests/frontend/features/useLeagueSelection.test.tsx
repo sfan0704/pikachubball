@@ -134,7 +134,7 @@ describe("useLeagueSelection", () => {
 
     expect(result.current.selection?.screen).toBe("league");
     await waitFor(() =>
-      expect(location.history).toEqual(["/leagues/466.l.1/teams/466.l.1.t.3/current"])
+      expect(location.history).toEqual(["/leagues/466.l.1/teams/466.l.1.t.3/season"])
     );
   });
 
@@ -147,7 +147,7 @@ describe("useLeagueSelection", () => {
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     await waitFor(() =>
-      expect(location.history).toEqual(["/leagues/454.l.9/teams/454.l.9.t.2/current"])
+      expect(location.history).toEqual(["/leagues/454.l.9/teams/454.l.9.t.2/season"])
     );
   });
 

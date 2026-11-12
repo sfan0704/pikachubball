@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { SCREEN_LABELS, type Screen } from "@/features/league/screens";
-import { selectionPath, type Selection } from "@/features/league/selection";
+import { openScreen, selectionPath, type Selection } from "@/features/league/selection";
 import { cn } from "@/lib/utils";
 
 /** The tab icons, drawn as in the FAN-88 mockup. */
@@ -58,7 +58,7 @@ export function ScreenNav({
           return (
             <li key={screen}>
               <Link
-                href={selectionPath({ ...selection, screen })}
+                href={selectionPath(openScreen(selection, screen))}
                 aria-current={current ? "page" : undefined}
                 className={cn(
                   "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] font-semibold",

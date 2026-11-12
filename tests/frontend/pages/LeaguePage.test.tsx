@@ -154,20 +154,49 @@ describe("LeaguePage", () => {
 
     await userEvent.click(within(nav).getByRole("link", { name: "League" }));
     expect(await screen.findAllByTestId(/^row-ranking-/)).toHaveLength(14);
-    expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/current`);
+    expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
+    expect(screen.getByLabelText("Period")).toHaveValue("season");
   });
-  it("shows a deep link: the header with league, period and freshness, the pickers and the rankings", async () => {
+  it("shows a deep link: the header with league, period and freshness, the period row and the rankings", async () => {
     startBackend();
     renderPage(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
 
     expect(await screen.findByRole("heading", { name: "Test League" })).toBeInTheDocument();
     expect(await screen.findAllByTestId(/^row-ranking-/)).toHaveLength(14);
     const header = screen.getByTestId("app-header");
-    expect(within(header).getByTestId("header-context")).toHaveTextContent("Season to date");
+    expect(within(header).getByTestId("header-context")).toHaveTextContent("Season totals");
     expect(within(header).getByTestId("text-updated")).toBeInTheDocument();
     expect(within(header).getByRole("button", { name: "Refresh from Yahoo" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Time period")).toHaveValue("season");
-    expect(screen.getByLabelText("Viewing as")).toHaveValue(MY_TEAM);
+    expect(screen.getByLabelText("Period")).toHaveValue("season");
+    expect(screen.queryByLabelText("Viewing as")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Time period")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "How to read this" })).toBeInTheDocument();
+  });
+
+  it("names each week with its dates, the current one marked (now), newest first", async () => {
+    startBackend();
+    renderPage(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
+    await screen.findAllByTestId(/^row-ranking-/);
+
+    const options = await waitFor(() => {
+      const texts = within(screen.getByLabelText("Period"))
+        .getAllByRole("option")
+        .map((option) => option.textContent);
+      expect(texts[1]).toMatch(/ \(now\)$/);
+      return texts;
+    });
+    expect(options[0]).toBe("Season totals");
+    expect(options[1]).toMatch(/^Week \d+ · \w{3} \d+–(\w{3} )?\d+ \(now\)$/);
+    expect(options.at(-1)).toMatch(/^Week 1 · \w{3} \d+–(\w{3} )?\d+$/);
+  });
+
+  it("ranks against the user's team even when the link names another team", async () => {
+    startBackend();
+    renderPage(`/leagues/${LEAGUE_KEY}/teams/${LEAGUE_KEY}.t.3/season`);
+
+    const rows = await screen.findAllByTestId(/^row-ranking-/);
+    const mine = rows.find((row) => row.textContent?.includes("(you)"));
+    expect(mine).toHaveAttribute("data-testid", `row-ranking-${MY_TEAM}`);
   });
 
   it("starts a first visit from the stored league and puts it in the URL", async () => {
@@ -176,7 +205,7 @@ describe("LeaguePage", () => {
 
     await screen.findAllByTestId(/^row-ranking-/);
 
-    expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/current`);
+    expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
   });
 
   it("shows League as the board alone, with no view tabs", async () => {
@@ -193,7 +222,7 @@ describe("LeaguePage", () => {
     const location = renderPage(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
     await screen.findAllByTestId(/^row-ranking-/);
 
-    await userEvent.selectOptions(screen.getByLabelText("Time period"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("Period"), "1");
 
     await waitFor(() => expect(requests).toContain(`/api/leagues/${LEAGUE_KEY}/1`));
     expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/1`);
