@@ -32,7 +32,20 @@ export interface FantasyMembership {
   teamKey: string;
 }
 
+/** What a request's opening database call proves about the signed-in caller. */
+export interface RequestAccess {
+  /** The `sub` of the caller's Yahoo sign-in identity. */
+  readonly yahooGuid: string;
+  readonly displayName: string | null;
+}
+
 export interface OwnerScopedStorage extends YahooTokenStorage {
+  /**
+   * Opens a request in one round trip: confirms the signed session is still
+   * live and is a Yahoo sign-in, and reads ahead the league check and Yahoo
+   * tokens the request is likely to need. Throws when the session is not live.
+   */
+  openRequest(leagueKey: string | null): Promise<RequestAccess>;
   saveYahooConnection(connection: YahooConnectionInput): Promise<StoredYahooToken>;
   replaceFantasyMemberships(memberships: FantasyMembership[]): Promise<void>;
   ownsFantasyResource(leagueKey: string, teamKey?: string): Promise<boolean>;

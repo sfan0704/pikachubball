@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppConfig } from "../../server/config/config";
 import type { ServerDependencies } from "../../server/http/dependencies";
 import type { Logger } from "../../server/utils/logger";
+import type { RequestAccess } from "../../server/storage/yahoo-token-storage";
 import { fixedClock } from "./clock";
 
 /** A logger that records nothing and prints nothing. */
@@ -47,9 +48,20 @@ export function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
 export const anonymousSupabaseClient = {
   auth: {
     getClaims: async () => ({ data: null, error: new Error("no session") }),
-    getUser: async () => ({ data: { user: null }, error: new Error("no session") }),
   },
 } as unknown as SupabaseClient;
+
+/** A Supabase client whose signed claims name `user-1`; the session check is the storage's `openRequest`. */
+export const signedInSupabaseClient = {
+  auth: {
+    getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
+  },
+} as unknown as SupabaseClient;
+
+/** `openRequest` for a live Yahoo session, for owner-storage stand-ins. */
+export async function openedRequest(): Promise<RequestAccess> {
+  return { yahooGuid: "yahoo-guid-1", displayName: null };
+}
 
 /** Server dependencies for tests: anonymous by default, with a silent logger and a fixed clock. */
 export function buildTestDependencies(

@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { teamTableSchema } from "../../../shared/api/team-table";
 import { createApp } from "../../../server/http/app";
 import { createAppErrorHandler } from "../../../server/http/composition-root";
@@ -13,32 +12,13 @@ import {
   YahooUnavailableError,
 } from "../../../server/fantasy/yahoo/yahoo-request-policy";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
-import { buildTestDependencies } from "../../support/dependencies";
+import {
+  buildTestDependencies,
+  openedRequest,
+  signedInSupabaseClient,
+} from "../../support/dependencies";
 
 const LEAGUE = "466.l.100000";
-
-const verifiedClient = {
-  rpc: async () => ({ data: true, error: null }),
-  auth: {
-    getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
-    getUser: async () => ({
-      data: {
-        user: {
-          id: "user-1",
-          identities: [
-            {
-              provider: "custom:yahoo",
-              identity_data: { iss: "https://api.login.yahoo.com", sub: "yahoo-guid-1" },
-            },
-          ],
-          user_metadata: {},
-          app_metadata: {},
-        },
-      },
-      error: null,
-    }),
-  },
-} as unknown as SupabaseClient;
 
 function fixture(name: string): unknown {
   return JSON.parse(readFileSync(`tests/backend/fixtures/yahoo/${name}.json`, "utf8"));
@@ -54,9 +34,9 @@ function buildApp(options: { member?: boolean; resources?: Partial<LeagueResourc
     ...options.resources,
   };
   const ownsLeague = vi.fn().mockResolvedValue(options.member ?? true);
-  const storage = { ownsLeague } as unknown as OwnerScopedStorage;
+  const storage = { openRequest: openedRequest, ownsLeague } as unknown as OwnerScopedStorage;
   const dependencies = buildTestDependencies({
-    createSupabaseClient: () => verifiedClient,
+    createSupabaseClient: () => signedInSupabaseClient,
     createOwnerStorage: () => storage,
     createFantasyDataSource: () =>
       new YahooFantasyDataSource(resources, { now: () => Date.parse("2025-12-11T18:00:00Z") }),

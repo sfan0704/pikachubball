@@ -36,32 +36,23 @@ describe("Supabase auth middleware", () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it("builds the request context for a verified session", async () => {
-    const storage = { marker: "owner-storage" };
+  it("builds the request context from the signed claims and one database call", async () => {
+    const openRequest = vi.fn().mockResolvedValue({ yahooGuid: "yahoo-guid-1", displayName: "A" });
+    const storage = { openRequest };
     const createOwnerStorage = vi.fn().mockReturnValue(storage);
     const yahooClient = { marker: "yahoo-client" };
     const createYahooClient = vi.fn().mockResolvedValue(yahooClient);
     const clock = fixedClock();
+    const getUser = vi.fn();
+    const rpc = vi.fn();
     const verifiedClient = {
-      rpc: async () => ({ data: true, error: null }),
+      rpc,
       auth: {
-        getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
-        getUser: async () => ({
-          data: {
-            user: {
-              id: "user-1",
-              identities: [
-                {
-                  provider: "custom:yahoo",
-                  identity_data: { iss: "https://api.login.yahoo.com", sub: "yahoo-guid-1" },
-                },
-              ],
-              user_metadata: {},
-              app_metadata: {},
-            },
-          },
+        getClaims: async () => ({
+          data: { claims: { sub: "user-1", email: "a@example.test" } },
           error: null,
         }),
+        getUser,
       },
     };
     const middleware = createRequireAuth(
@@ -72,13 +63,23 @@ describe("Supabase auth middleware", () => {
         clock,
       })
     );
+    req.params = { key: "466.l.100000", team: "466.l.100000.t.11" };
 
     await middleware(req, res, next);
 
     expect(createOwnerStorage).toHaveBeenCalledWith(verifiedClient, "user-1");
+    expect(openRequest).toHaveBeenCalledExactlyOnceWith("466.l.100000");
+    // No auth-server lookup and no other database call: openRequest is the one round trip.
+    expect(getUser).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
     expect(req.context).toMatchObject({
       requestId: req.scope?.requestId,
-      user: { userId: "user-1", yahooGuid: "yahoo-guid-1" },
+      user: {
+        userId: "user-1",
+        yahooGuid: "yahoo-guid-1",
+        displayName: "A",
+        email: "a@example.test",
+      },
       storage,
       clock,
     });
@@ -88,6 +89,47 @@ describe("Supabase auth middleware", () => {
     await req.context?.yahooClient();
     await req.context?.yahooClient();
     expect(createYahooClient).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens a request with no league on routes that name none", async () => {
+    const openRequest = vi.fn().mockResolvedValue({ yahooGuid: "g", displayName: null });
+    const middleware = createRequireAuth(
+      buildTestDependencies({
+        createSupabaseClient: () =>
+          ({
+            auth: { getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }) },
+          }) as never,
+        createOwnerStorage: () => ({ openRequest }) as never,
+      })
+    );
+    req.params = {};
+
+    await middleware(req, res, next);
+
+    expect(openRequest).toHaveBeenCalledExactlyOnceWith(null);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("rejects a signed token whose session is no longer live", async () => {
+    const middleware = createRequireAuth(
+      buildTestDependencies({
+        createSupabaseClient: () =>
+          ({
+            auth: { getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }) },
+          }) as never,
+        createOwnerStorage: () =>
+          ({
+            openRequest: vi
+              .fn()
+              .mockRejectedValue(new Error("Supabase session is no longer active")),
+          }) as never,
+      })
+    );
+
+    await middleware(req, res, next);
+
+    expect(req.context).toBeUndefined();
+    expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
   it("fails closed when no Supabase session can be verified", async () => {

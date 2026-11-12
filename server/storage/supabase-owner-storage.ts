@@ -5,9 +5,11 @@ import {
   type UserLeagueInput,
 } from "../../shared/api/leagues";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import type {
   FantasyMembership,
   OwnerScopedStorage,
+  RequestAccess,
   StoredYahooToken,
   YahooConnectionInput,
   YahooTokenInput,
@@ -22,6 +24,31 @@ interface ConnectionRow {
   token_version: number;
 }
 
+const requestAccessSchema = z.discriminatedUnion("active", [
+  z.object({ active: z.literal(false) }),
+  z.object({
+    active: z.literal(true),
+    yahoo_guid: z.string().min(1).nullable(),
+    display_name: z.string().nullable(),
+    owns_league: z.boolean().nullable(),
+    connection: z
+      .object({
+        access_token_ciphertext: z.string(),
+        refresh_token_ciphertext: z.string(),
+        token_expires_at: z.number(),
+        token_version: z.number().int().positive(),
+      })
+      .nullable(),
+  }),
+]);
+
+/** What `openRequest` read ahead; each part is used at most as described where it is read. */
+interface ReadAhead {
+  league?: { leagueKey: string; owned: boolean };
+  /** Present until first read or any token write; null when Yahoo is not connected. */
+  connection?: ConnectionRow | null;
+}
+
 function storageFailure(operation: string, error: unknown): Error {
   const code =
     typeof error === "object" && error !== null && "code" in error ? String(error.code) : "unknown";
@@ -29,6 +56,8 @@ function storageFailure(operation: string, error: unknown): Error {
 }
 
 export class SupabaseOwnerStorage implements OwnerScopedStorage {
+  private readAhead: ReadAhead = {};
+
   constructor(
     private readonly client: SupabaseClient,
     private readonly ownerId: string,
@@ -52,8 +81,40 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
     };
   }
 
+  async openRequest(leagueKey: string | null): Promise<RequestAccess> {
+    const { data, error } = await this.client.rpc("load_request_access", {
+      p_league_key: leagueKey,
+    });
+    if (error) {
+      throw storageFailure("request access read", error);
+    }
+    const access = requestAccessSchema.parse(data);
+    if (!access.active) {
+      throw new Error("Supabase session is no longer active");
+    }
+    if (access.yahoo_guid === null) {
+      throw new Error("Authenticated session is not a Yahoo identity");
+    }
+    this.readAhead = {
+      league:
+        leagueKey !== null && access.owns_league !== null
+          ? { leagueKey, owned: access.owns_league }
+          : undefined,
+      connection: access.connection && { owner_id: this.ownerId, ...access.connection },
+    };
+    return { yahooGuid: access.yahoo_guid, displayName: access.display_name };
+  }
+
+  /** The tokens `openRequest` read, once; later reads go to the database so a refresh race sees the latest. */
+  private takeReadAheadConnection(): ConnectionRow | null | undefined {
+    const { connection } = this.readAhead;
+    delete this.readAhead.connection;
+    return connection;
+  }
+
   async saveYahooConnection(connection: YahooConnectionInput): Promise<StoredYahooToken> {
     this.assertOwner(connection.userId);
+    delete this.readAhead.connection;
     const accessCiphertext = this.cipher.encrypt(this.ownerId, "access", connection.accessToken);
     const refreshCiphertext = this.cipher.encrypt(this.ownerId, "refresh", connection.refreshToken);
     const { data, error } = await this.client.rpc("upsert_yahoo_connection", {
@@ -80,6 +141,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
     if (typeof expectedVersion !== "number" || !Number.isInteger(expectedVersion)) {
       throw new Error("Token rotation requires the version that was read");
     }
+    delete this.readAhead.connection;
     const { data, error } = await this.client.rpc("rotate_yahoo_tokens", {
       p_expected_version: expectedVersion,
       p_access_token_ciphertext: this.cipher.encrypt(this.ownerId, "access", token.accessToken),
@@ -98,6 +160,10 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
 
   async getYahooToken(userId: string): Promise<StoredYahooToken | undefined> {
     this.assertOwner(userId);
+    const readAhead = this.takeReadAheadConnection();
+    if (readAhead !== undefined) {
+      return readAhead ? this.decryptRow(readAhead) : undefined;
+    }
     const { data, error } = await this.client
       .from("yahoo_connections")
       .select(
@@ -113,6 +179,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
 
   async deleteYahooToken(userId: string): Promise<void> {
     this.assertOwner(userId);
+    delete this.readAhead.connection;
     const { error } = await this.client
       .from("yahoo_connections")
       .delete()
@@ -202,6 +269,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
   }
 
   async replaceUserLeagues(leagues: readonly UserLeagueInput[]): Promise<void> {
+    delete this.readAhead.league;
     const { error } = await this.client.rpc("replace_user_leagues", {
       p_leagues: leagues.map((league) => ({
         league_key: league.leagueKey,
@@ -217,6 +285,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
   }
 
   async disconnectYahoo(): Promise<void> {
+    this.readAhead = {};
     const { error } = await this.client.rpc("disconnect_yahoo");
     if (error) {
       throw storageFailure("disconnect", error);
@@ -224,6 +293,7 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
   }
 
   async deleteAccount(): Promise<void> {
+    this.readAhead = {};
     const { error } = await this.client.rpc("delete_my_account");
     if (error) {
       throw storageFailure("account deletion", error);
@@ -231,6 +301,9 @@ export class SupabaseOwnerStorage implements OwnerScopedStorage {
   }
 
   async ownsLeague(leagueKey: string): Promise<boolean> {
+    if (this.readAhead.league?.leagueKey === leagueKey) {
+      return this.readAhead.league.owned;
+    }
     const { data, error } = await this.client
       .from("user_leagues")
       .select("league_key")
