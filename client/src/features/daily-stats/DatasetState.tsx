@@ -12,6 +12,8 @@ export interface DatasetQuery<T> {
 interface DatasetStateProps<T> {
   query: DatasetQuery<T>;
   onPickLeague: () => void;
+  /** What shows while the dataset loads, when a section needs its own shape; a skeleton otherwise. */
+  loading?: ReactNode;
   children: (data: T) => ReactNode;
 }
 
@@ -19,7 +21,7 @@ interface DatasetStateProps<T> {
  * One dataset's section: a skeleton while it loads, its error with a retry,
  * then the data. A failed refresh keeps the last values under its error.
  */
-export function DatasetState<T>({ query, onPickLeague, children }: DatasetStateProps<T>) {
+export function DatasetState<T>({ query, onPickLeague, loading, children }: DatasetStateProps<T>) {
   if (query.data !== undefined) {
     return (
       <>
@@ -43,6 +45,9 @@ export function DatasetState<T>({ query, onPickLeague, children }: DatasetStateP
         onPickLeague={onPickLeague}
       />
     );
+  }
+  if (loading !== undefined) {
+    return loading;
   }
   return (
     <div className="min-w-0 space-y-2" role="status" aria-label="Loading">
