@@ -5,8 +5,10 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { NbaGame } from "@shared/api/daily-stats-values";
-import { compareTotals, measured, missingLine } from "@shared/domain";
+import { categoryEntry, compareTotals, measured, missingLine } from "@shared/domain";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
+import { YahooDailyStatsSource } from "../../../server/fantasy/yahoo-daily-stats-source";
+import { DailyStatsRequests } from "../../../server/fantasy/yahoo/daily-stats-requests";
 import { boardState, FreshnessLine } from "../../../client/src/features/daily-stats/FreshnessLine";
 import {
   averageText,
@@ -25,6 +27,8 @@ import {
 import { TotalsGrid } from "../../../client/src/features/daily-stats/TotalsGrid";
 import { buildStatLine, buildTeamTotals } from "../../support/builders";
 import { fixedClock } from "../../support/clock";
+import { silentLogger } from "../../support/dependencies";
+import { replayYahoo } from "../../support/yahoo-recordings";
 
 const LEAGUE = "466.l.100000";
 const TEAM = `${LEAGUE}.t.11`;
@@ -123,6 +127,84 @@ describe("Matchup board text", () => {
     const [first] = await todaysCards();
     expect(cardMeta({ ...first, game: undefined })).toBe(first.slot);
     expect(cardMeta({ ...first, game: null })).toBe(first.slot);
+  });
+});
+
+describe("Matchup cards before tip-off", () => {
+  // FAN-92's capture of a team day on 2026-11-07 before any game: Yahoo sent "-" for every stat.
+  const PRE_GAME_TEAM = "478.l.100000.t.10";
+  const PRE_GAME_DATE = "2026-11-07";
+  const PRE_GAME_AT = "2026-11-07T17:00:00.000Z";
+
+  async function preGameDay() {
+    const path = `/team/${PRE_GAME_TEAM}/roster;date=${PRE_GAME_DATE}/players/stats;type=date;date=${PRE_GAME_DATE}`;
+    const yahoo = replayYahoo({ [path]: "daily-stats/d2-team-day-before-tip-off" });
+    const requests = new DailyStatsRequests(
+      async () => yahoo,
+      silentLogger,
+      fixedClock(PRE_GAME_AT)
+    );
+    const day = await new YahooDailyStatsSource(requests).getTeamDay(
+      "478.l.100000",
+      PRE_GAME_TEAM,
+      PRE_GAME_DATE
+    );
+    return { ...day, fetchedAt: PRE_GAME_AT };
+  }
+
+  /** Game logs where every player's team plays that date, except the given players' teams. */
+  function logsWith(
+    day: Awaited<ReturnType<typeof preGameDay>>,
+    state: NbaGame["state"],
+    withoutGame: ReadonlySet<string> = new Set()
+  ) {
+    return {
+      fetchedAt: PRE_GAME_AT,
+      players: day.players.map(({ player }) => ({
+        playerKey: player.playerKey,
+        nbaTeam: player.nbaTeam,
+        games: withoutGame.has(player.playerKey)
+          ? []
+          : [
+              {
+                ...game(state),
+                date: PRE_GAME_DATE,
+                minutes: { kind: "notYetPlayed" as const },
+                line: missingLine("notYetPlayed"),
+              },
+            ],
+      })),
+    };
+  }
+
+  const pts = (cards: ReturnType<typeof playerCards>) =>
+    cards.map((card) => entryText(categoryEntry(card.line, "pts"), false));
+
+  it("shows a game still to come as –, not No game, while Yahoo sends - before tip-off", async () => {
+    const day = await preGameDay();
+    expect(day.players.length).toBeGreaterThan(0);
+    const scheduled = { kind: "scheduled", tipOff: "2026-11-08T00:00:00.000Z" } as const;
+    expect(pts(playerCards(day, logsWith(day, scheduled), undefined))).toEqual(
+      day.players.map(() => "–")
+    );
+  });
+
+  it("keeps No game for a player whose team has no game that date", async () => {
+    const day = await preGameDay();
+    const [idle] = day.players;
+    const scheduled = { kind: "scheduled", tipOff: "2026-11-08T00:00:00.000Z" } as const;
+    const cards = playerCards(
+      day,
+      logsWith(day, scheduled, new Set([idle.player.playerKey])),
+      undefined
+    );
+    expect(pts(cards)[0]).toBe("No game");
+    expect(pts(cards).slice(1)).toEqual(cards.slice(1).map(() => "–"));
+  });
+
+  it("keeps Yahoo's line while game logs are still loading", async () => {
+    const day = await preGameDay();
+    expect(pts(playerCards(day, undefined, undefined))).toEqual(day.players.map(() => "No game"));
   });
 });
 

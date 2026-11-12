@@ -67,3 +67,9 @@ Recorded by `npm run capture:yahoo-game-log` on 2026-11-08 (league date 2026-11-
 - Files: `d6-status-t-start-0.json`, `d6-status-t-start-25.json`
 - GET `/league/478.l.14822/players;status=T;start={0,25};count=25;out=game_log` (with `?format=json`)
 - 2026-11-08T21:54:18Z: HTTP 200 each; 25 players each, 25 NBA teams between them (no CHA, LAL, MEM, OKC or ORL); game logs from 2026-10-20 to 2026-11-16
+
+## D2 team day before tip-off (FAN-92 capture)
+
+- File: `d2-team-day-before-tip-off.json`
+- GET `/team/478.l.100000.t.10/roster;date=2026-11-07/players/stats;type=date;date=2026-11-07` (with `?format=json`, league renumbered)
+- Recorded 2026-11-07 (US Eastern) before any game tipped off: Yahoo sends `-` and `-/-` for every stat, the same marks as a day with no game.

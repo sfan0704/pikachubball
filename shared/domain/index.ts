@@ -61,7 +61,7 @@ export type {
   StatLine,
   StatValue,
 } from "./stat-value";
-export { appearance, measured, missing, missingLine, sumLines } from "./stat-value";
+export { appearance, lineWithGame, measured, missing, missingLine, sumLines } from "./stat-value";
 export type { GameState, LiveProgress } from "./game-state";
 export { isLive } from "./game-state";
 export type {

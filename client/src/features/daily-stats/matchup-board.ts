@@ -11,6 +11,7 @@ import type {
 import type { DailyPlayer, NbaGame } from "@shared/api/daily-stats-values";
 import {
   isShootingCategory,
+  lineWithGame,
   opponentOf,
   perGameAverages,
   type CategoryEntry,
@@ -49,20 +50,26 @@ function averageOf(season: PlayerStatsResponse | undefined, playerKey: string) {
   return perGameAverages(totals);
 }
 
-/** A team's roster on a date joined with its game logs and season averages, in roster order. */
+/**
+ * A team's roster on a date joined with its game logs and season averages, in
+ * roster order. A no-game line whose game is still to come reads as not yet played.
+ */
 export function playerCards(
   day: TeamDayResponse,
   logs: GameLogsResponse | undefined,
   season: PlayerStatsResponse | undefined
 ): PlayerCardRow[] {
-  return day.players.map(({ player, slot, isStartingSlot, line }) => ({
-    player,
-    slot,
-    isStartingSlot,
-    line,
-    game: gameOn(logs, player.playerKey, day.date),
-    average: averageOf(season, player.playerKey),
-  }));
+  return day.players.map(({ player, slot, isStartingSlot, line }) => {
+    const game = gameOn(logs, player.playerKey, day.date);
+    return {
+      player,
+      slot,
+      isStartingSlot,
+      line: lineWithGame(line, game?.state),
+      game,
+      average: averageOf(season, player.playerKey),
+    };
+  });
 }
 
 /** The opponent shown: the one the user picked, else Yahoo's, else the first other team on a bye. */

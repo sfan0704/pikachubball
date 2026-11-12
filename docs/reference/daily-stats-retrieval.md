@@ -10,7 +10,7 @@ Inputs: the Linear page "Daily stats data reference (source of truth)" (final fo
 - **Per user, never shared.** Each viewer's calls run with their own token and their results stay in their own browser. Nothing from Yahoo is stored on the server ([Storage](#storage-and-yahoos-agreement)).
 - **Batch by 25.** Player-key calls carry at most 25 keys (Yahoo caps lists at 25 rows). The Yahoo resource layer splits longer lists and runs the chunks in parallel.
 - **One Yahoo call per identical request.** Within one API request, the Yahoo client memoizes identical calls. Across requests, TanStack Query in the browser dedupes in-flight requests by key and serves fresh results from memory.
-- **Missing is not zero.** Each stat value is one of: a number, `no game` (Yahoo `-`), `did not play` (team played, player didn't), `not yet played` (Yahoo `""`) or `unavailable` (the call failed or the field is absent). The parsers produce these as a tagged union in `shared/domain`; nothing turns them into 0.
+- **Missing is not zero.** Each stat value is one of: a number, `no game` (Yahoo `-`), `did not play` (team played, player didn't), `not yet played` (Yahoo `""`; in date stats Yahoo also sends `-` before tip-off, so a `-` line whose game log has that date's game scheduled or live is not yet played) or `unavailable` (the call failed or the field is absent). The parsers produce these as a tagged union in `shared/domain`; nothing turns them into 0.
 - **Today's status only.** Injury `status` and `injury_note` are always today's values and are never shown against a past date.
 
 ## Datasets

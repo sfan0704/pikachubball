@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appearance,
   isLive,
+  lineWithGame,
   measured,
   missing,
   missingLine,
@@ -112,5 +113,35 @@ describe("sumLines", () => {
     expect(sumLines([missingLine("notYetPlayed"), missingLine("didNotPlay")])).toEqual(
       missingLine("didNotPlay")
     );
+  });
+});
+
+describe("lineWithGame", () => {
+  const tipOff = "2026-11-08T00:00:00.000Z";
+  const noGame = missingLine("noGame");
+
+  it("reads a no-game line as not yet played when the game is scheduled or live", () => {
+    expect(lineWithGame(noGame, { kind: "scheduled", tipOff })).toEqual(
+      missingLine("notYetPlayed")
+    );
+    const progress = { kind: "text", text: "Halftime" } as const;
+    expect(lineWithGame(noGame, { kind: "live", tipOff, progress })).toEqual(
+      missingLine("notYetPlayed")
+    );
+  });
+
+  it("keeps the line when there is no game, the game is over, or the game is unknown", () => {
+    const final = { kind: "final", tipOff, result: "W", ownScore: 1, opponentScore: 0 } as const;
+    for (const game of [null, undefined, { kind: "noGame" } as const, final]) {
+      expect(lineWithGame(noGame, game)).toBe(noGame);
+    }
+  });
+
+  it("never touches a line with a measured value or another missing kind", () => {
+    const scheduled = { kind: "scheduled", tipOff } as const;
+    const played = buildStatLine();
+    expect(lineWithGame(played, scheduled)).toBe(played);
+    const unavailable = missingLine("unavailable");
+    expect(lineWithGame(unavailable, scheduled)).toBe(unavailable);
   });
 });
