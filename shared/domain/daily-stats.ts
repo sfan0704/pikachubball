@@ -177,13 +177,17 @@ export function versusAverage(
   return difference > 0 === higherIsBetter ? "better" : "worse";
 }
 
-/** Games left and the week's total, shown as left/total (for example 25/36). */
-export interface GamesLeft {
-  readonly left: number;
+/** Games played and the week's total, shown as played/total (for example 19/41) as Yahoo does. */
+export interface GamesPlayed {
+  readonly played: number;
   readonly total: number;
 }
 
-/** Left is Yahoo's remaining games; the total adds the live and completed ones. */
-export function gamesLeft(games: WeekGames): GamesLeft {
-  return { left: games.remaining, total: games.remaining + games.live + games.completed };
+/**
+ * Played is Yahoo's completed games plus live ones, since a started game has
+ * counted; the total adds the remaining ones.
+ */
+export function gamesPlayed(games: WeekGames): GamesPlayed {
+  const played = games.completed + games.live;
+  return { played, total: played + games.remaining };
 }

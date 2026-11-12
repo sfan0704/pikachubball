@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { teamTableSchema } from "../../../../shared/api/team-table";
-import { gamesLeft, type TeamTable } from "../../../../shared/domain";
+import { gamesPlayed, type TeamTable } from "../../../../shared/domain";
 import { YahooFantasyDataSource } from "../../../../server/fantasy/fantasy-data-source";
 import { YahooLeagueResources } from "../../../../server/fantasy/league-resources";
 import { parseSeasonTable, parseWeekTable } from "../../../../server/fantasy/league-tables";
@@ -58,7 +58,10 @@ describe("D1 games left from the week table", () => {
     expect(gamesOf(table, 10)).toEqual({ remaining: 7, live: 1, completed: 31 });
     expect(gamesOf(table, 5)).toEqual({ remaining: 6, live: 1, completed: 30 });
     expect(gamesOf(table, 9)).toEqual({ remaining: 11, live: 2, completed: 31 });
-    expect(gamesLeft({ remaining: 7, live: 1, completed: 31 })).toEqual({ left: 7, total: 39 });
+    expect(gamesPlayed({ remaining: 7, live: 1, completed: 31 })).toEqual({
+      played: 32,
+      total: 39,
+    });
     expect(teamTableSchema.parse(table)).toEqual(table);
   });
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { gamesLeft, type Score, type TeamRow } from "@shared/domain";
+import { gamesPlayed, type Score, type TeamRow } from "@shared/domain";
 
 interface ScoreCardProps {
   me: TeamRow;
@@ -12,15 +12,15 @@ interface ScoreCardProps {
   onPickOpponent: (teamKey: string) => void;
 }
 
-/** One team's games left as "25/36", or "–" until Yahoo's week table carries the team's games. */
-function GamesLeftValue({ team }: { team: TeamRow }) {
+/** One team's games played as "19/41", or "–" until Yahoo's week table carries the team's games. */
+function GamesPlayedValue({ team }: { team: TeamRow }) {
   if (team.games === null) {
     return <b className="text-white">–</b>;
   }
-  const { left, total } = gamesLeft(team.games);
+  const { played, total } = gamesPlayed(team.games);
   return (
     <span>
-      <b className="text-white">{left}</b>/{total}
+      <b className="text-white">{played}</b>/{total}
     </span>
   );
 }
@@ -78,28 +78,28 @@ function OpponentPicker({
   );
 }
 
-/** Each team's games still to play this week, with an ⓘ that explains the numbers. */
-function GamesLeftLine({ me, opponent }: { me: TeamRow; opponent: TeamRow }) {
+/** Each team's games played this week, as Yahoo shows them, with an ⓘ that explains the numbers. */
+function GamesPlayedLine({ me, opponent }: { me: TeamRow; opponent: TeamRow }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <div
         className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[#374151] pt-1.5 text-[11px] text-[#E5E7EB]"
-        data-testid="games-left"
+        data-testid="games-played"
       >
-        <span>Games left</span>
+        <span>Games played</span>
         <span>
-          You <GamesLeftValue team={me} />
+          You <GamesPlayedValue team={me} />
         </span>
         <span className="flex min-w-0 max-w-[45%] gap-1">
           <span className="truncate">{opponent.teamName}</span>
-          <GamesLeftValue team={opponent} />
+          <GamesPlayedValue team={opponent} />
         </span>
         <button
           type="button"
-          aria-label="What games left means"
+          aria-label="What games played means"
           aria-expanded={open}
-          aria-controls="games-left-info"
+          aria-controls="games-played-info"
           onClick={() => setOpen((value) => !value)}
           className="ml-auto size-6 shrink-0 rounded-full border border-[#6B7280] text-[11px] font-bold text-[#E5E7EB] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white"
         >
@@ -108,12 +108,12 @@ function GamesLeftLine({ me, opponent }: { me: TeamRow; opponent: TeamRow }) {
       </div>
       {open && (
         <p
-          id="games-left-info"
+          id="games-played-info"
           className="rounded-[10px] bg-[#262A31] p-2 text-[11px] leading-[1.45] text-[#E5E7EB]"
-          data-testid="games-left-info"
+          data-testid="games-played-info"
         >
-          <b className="text-white">Games left</b> shows games still to play / all games this week
-          for each team. Only players in a starting slot count.
+          <b className="text-white">Games played</b> shows games already played (or under way) / all
+          games this week for each team, as Yahoo shows it. Only players in a starting slot count.
         </p>
       )}
     </>
@@ -122,7 +122,7 @@ function GamesLeftLine({ me, opponent }: { me: TeamRow; opponent: TeamRow }) {
 
 /**
  * The dark score card: my team, the week's score against the chosen team and
- * the opponent picker, then each team's games left.
+ * the opponent picker, then each team's games played.
  */
 export function ScoreCard({ me, opponent, ...rest }: ScoreCardProps) {
   return (
@@ -135,7 +135,7 @@ export function ScoreCard({ me, opponent, ...rest }: ScoreCardProps) {
         <ScoreLine score={rest.score} />
         <OpponentPicker opponent={opponent} {...rest} />
       </div>
-      <GamesLeftLine me={me} opponent={opponent} />
+      <GamesPlayedLine me={me} opponent={opponent} />
     </div>
   );
 }

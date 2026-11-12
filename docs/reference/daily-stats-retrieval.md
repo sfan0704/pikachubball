@@ -36,7 +36,7 @@ Inputs: the Linear page "Daily stats data reference (source of truth)" (final fo
 
 **Week requests (FAN-120).** Every API request pays the same sign-in and storage checks before its Yahoo calls, so the Week view asks for each team's days before today in one request, `GET /api/leagues/:key/teams/:team/days?from=&to=` (at most 14 dates, Yahoo's longest scoring week). The server makes the same D2 call per date, in parallel within the request. Today stays its own request, the one the Today view makes. On the last day of the week, Matchup Week from nothing is 6 API requests (D10, D1, and a range plus today for each team) instead of 16, for the same 16 Yahoo calls; coming from Today, it is 3 (D10 and the two ranges). A failed date fails its whole range; today still shows under the error.
 
-**Games left.** `remaining_games` follows the lineup as currently set (Howard's Sabonis test), so D1 is refetched whenever the user comes back to the tab, not only on a timer.
+**Games played (FAN-130).** The score card shows played/total like Yahoo's matchup page: played is `completed_games` plus `live_games`, the total adds `remaining_games`. `remaining_games` follows the lineup as currently set (Howard's Sabonis test), so D1 is refetched whenever the user comes back to the tab, not only on a timer.
 
 ## Freshness policy
 

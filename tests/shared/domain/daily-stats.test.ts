@@ -5,7 +5,7 @@ import {
   countedGames,
   countedTotals,
   expectedOver,
-  gamesLeft,
+  gamesPlayed,
   measured,
   missing,
   missingLine,
@@ -204,9 +204,19 @@ describe("versusAverage", () => {
   });
 });
 
-describe("gamesLeft", () => {
-  it("is remaining games over remaining, live and completed games", () => {
-    expect(gamesLeft({ remaining: 7, live: 1, completed: 31 })).toEqual({ left: 7, total: 39 });
-    expect(gamesLeft({ remaining: 0, live: 0, completed: 44 })).toEqual({ left: 0, total: 44 });
+describe("gamesPlayed", () => {
+  it("is completed and live games over all the week's games, as Yahoo shows it", () => {
+    expect(gamesPlayed({ remaining: 22, live: 0, completed: 19 })).toEqual({
+      played: 19,
+      total: 41,
+    });
+    expect(gamesPlayed({ remaining: 7, live: 1, completed: 31 })).toEqual({
+      played: 32,
+      total: 39,
+    });
+    expect(gamesPlayed({ remaining: 0, live: 0, completed: 44 })).toEqual({
+      played: 44,
+      total: 44,
+    });
   });
 });
