@@ -15,6 +15,7 @@ import {
   cardMeta,
   entryText,
   gameStateText,
+  orderHint,
   percentText,
   playerCards,
   shortName,
@@ -119,6 +120,13 @@ describe("Matchup board text", () => {
     expect(averageText("fgPct", shots, average)).toBe("5/10 · avg .450");
     expect(averageText("pts", { kind: "noGame" }, average)).toBe("avg 12.3");
     expect(averageText("pts", { kind: "noGame" }, null)).toBe("avg –");
+  });
+
+  it("says how each column is sorted: most first, fewest turnovers, most attempts", () => {
+    expect(orderHint("pts")).toBe("most first");
+    expect(orderHint("to")).toBe("fewest first");
+    expect(orderHint("fgPct")).toBe("most attempts first");
+    expect(orderHint("ftPct")).toBe("most attempts first");
   });
 
   it("shortens names and leaves the game out of the meta while it is unknown", async () => {

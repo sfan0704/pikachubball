@@ -116,3 +116,38 @@ test("a failed week table shows its error and retry while the rosters still load
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByTestId("totals-grid")).toBeVisible();
 });
+
+for (const day of ["Today", "Week"] as const) {
+  test(`${day}: the score card and day bar stay in view while the players scroll`, async ({
+    page,
+  }) => {
+    await signIn(page, "a", "Matchup");
+    const days = page.getByRole("navigation", { name: "Day" });
+    await days.getByRole("link", { name: day }).click();
+    await expect(page.getByTestId("totals-grid")).toBeVisible();
+    await expect(page.getByTestId(`column-${MY_TEAM}`)).toBeVisible();
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(page.getByTestId("totals-grid")).not.toBeInViewport();
+    await expect(page.getByTestId("matchup-header")).toBeInViewport();
+    await expect(days).toBeInViewport();
+    // The block sits under the app header, not behind it.
+    const header = await page.getByRole("banner").boundingBox();
+    const top = await page.getByTestId("matchup-top").boundingBox();
+    expect(top?.y).toBeGreaterThanOrEqual((header?.y ?? 0) + (header?.height ?? 0) - 1);
+    await expectNoHorizontalScroll(page);
+  });
+}
+
+test("the games-left ⓘ explains the numbers and closes again", async ({ page }) => {
+  await signIn(page, "a", "Matchup");
+  await expect(page.getByTestId("games-left")).toHaveText(/Games left\s*You \d+\/\d+/);
+  const info = page.getByRole("button", { name: "What games left means" });
+  await expect(page.getByTestId("games-left-info")).toHaveCount(0);
+
+  await info.click();
+  await expect(info).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByTestId("games-left-info")).toContainText("games still to play");
+  await info.click();
+  await expect(page.getByTestId("games-left-info")).toHaveCount(0);
+});
