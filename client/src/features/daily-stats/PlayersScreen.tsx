@@ -98,6 +98,8 @@ interface PlayerPageProps {
   filters: PageFilters;
   schedules: ReadonlyMap<string, TeamSchedule>;
   today: string;
+  sort: PlayerSort;
+  onSort: (sort: PlayerSort) => void;
   onOpenPlayer: (player: DailyPlayer) => void;
   onPage: (start: number) => void;
 }
@@ -179,11 +181,11 @@ function PlayerPage({
   filters,
   schedules,
   today,
+  sort,
+  onSort,
   onOpenPlayer,
   onPage,
 }: PlayerPageProps) {
-  // Sorting reorders the page shown, so it lives with the page and survives paging.
-  const [sort, setSort] = useState<PlayerSort>("rank");
   const keys = page.players.map(({ player }) => player.playerKey);
   const stats = usePlayerStats(leagueKey, period, keys);
   // The season's totals colour a shorter period; on Season this is the same request as above.
@@ -193,7 +195,7 @@ function PlayerPage({
   const rows = sortPlayers(filteredRows(page, schedules, filters), sort, totals);
   return (
     <div className="flex flex-col gap-2.5">
-      <CountAndSort count={rows.length} period={period} sort={sort} onSort={setSort} />
+      <CountAndSort count={rows.length} period={period} sort={sort} onSort={onSort} />
       {rows.length === 0 ? (
         <p className="rounded-[10px] bg-muted/60 px-2 py-1.5 text-[0.6875rem] text-muted-foreground">
           No players on this page match these filters.
@@ -341,18 +343,20 @@ function FiltersSheet({
   );
 }
 
-/** Players: owned or not-owned players of the league, searched, filtered and sorted, with a period's averages. */
-export function PlayersScreen({
-  leagueKey,
-  onPickLeague,
-}: {
+/** The league whose players are shown, and the way back to picking a league. */
+interface PlayersScreenProps {
   leagueKey: string;
   onPickLeague: () => void;
-}) {
+}
+
+/** Players: owned or not-owned players of the league, searched, filtered and sorted, with a period's averages. */
+export function PlayersScreen({ leagueKey, onPickLeague }: PlayersScreenProps) {
   const now = useNow();
   const list = usePlayerListQuery();
   const [period, setPeriod] = useState<StatPeriod>("season");
   const [filters, setFilters] = useState<PageFilters>(NO_FILTERS);
+  // The page unmounts while the next one loads, so the sort is kept here to survive paging.
+  const [sort, setSort] = useState<PlayerSort>("rank");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openPlayer, setOpenPlayer] = useState<DailyPlayer | null>(null);
   const page = usePlayerList(leagueKey, list.query);
@@ -378,6 +382,8 @@ export function PlayersScreen({
             filters={filters}
             schedules={schedules.byTeam}
             today={today}
+            sort={sort}
+            onSort={setSort}
             onOpenPlayer={setOpenPlayer}
             onPage={list.setStart}
           />

@@ -218,4 +218,23 @@ describe("the Players screen", () => {
     expect(points).toEqual([...points].sort((a, b) => b - a));
     expect(requests).toEqual(asked);
   });
+
+  it("keeps the chosen sort on a page that hasn't loaded yet", async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    await list();
+
+    await user.selectOptions(screen.getByLabelText("Sort by"), "pts");
+    await user.click(screen.getByRole("button", { name: "Next 25" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("players-range")).toHaveTextContent("Players 26–44")
+    );
+    expect(screen.getByLabelText("Sort by")).toHaveValue("pts");
+    await waitFor(() => {
+      const points = within(screen.getByTestId("players-list"))
+        .getAllByTestId("player-averages")
+        .map((cells) => Number(within(cells).getByText("PTS").nextSibling?.textContent));
+      expect(points).toEqual([...points].sort((a, b) => b - a));
+    });
+  });
 });
