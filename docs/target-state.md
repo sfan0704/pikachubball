@@ -306,7 +306,7 @@ flowchart TD
 - **Failures.** Yahoo timeouts, 429s, 403s, 5xx errors and malformed responses each produce the expected state and error code.
 - **Browser.** Playwright runs the main flows against the production build with the Yahoo stand-in, at 390 px and desktop widths, with automated accessibility checks (axe).
 - **No flaky tests.** A failing test is never retried automatically, skipped or quarantined; the test or the code is fixed.
-- **Before each release,** a load test of 14 simultaneous users against the Yahoo stand-in checks the speed target and the Yahoo call count per view.
+- **Before each release,** a load test of 14 simultaneous users against the Yahoo stand-in checks the speed target and the Yahoo call count per view. The daily-stats views read the stand-in through the real Yahoo source (`LOCAL_DAILY_STATS=standin`), which answers any team, date and player list from relabelled recordings, so their calls are counted against [Call budgets](reference/daily-stats-retrieval.md#call-budgets).
 
 ## Data and Yahoo integration
 
@@ -430,7 +430,7 @@ flowchart LR
 - **Partial data.** Each dataset loads and fails on its own; a failed section keeps what it showed, labelled with its age, and offers a retry.
 - **Only the OAuth token.** No Yahoo website routes or cookies. Injury status and notes are today's values and are never shown against a past date.
 - **Projections slot.** `ProjectionSource` is an interface with no implementation. `GET /api/me` lists the wired features as separate switches (`matchupAndLeague`, `players`, `projections`; projections `false`), and the client offers Next 7 projected only when it is true. Turning it on is its own ticket after FAN-94.
-- **Static first.** The `shared/api` contracts are the boundary between screens and Yahoo. A fixture `DailyStatsSource`, wired only in local, CI and review like the Yahoo stand-in, lets the screens be finished before any Yahoo adapter; production reports the daily-stats screens unavailable through the same feature list until the Yahoo source is wired.
+- **Static first.** The `shared/api` contracts are the boundary between screens and Yahoo. A fixture `DailyStatsSource`, wired only in local, CI and review like the Yahoo stand-in, lets the screens be finished before any Yahoo adapter; production shows a daily-stats screen through the same feature list only once every dataset it reads is connected to Yahoo. Matchup and League are on in production (FAN-116); Players stays off until FAN-119.
 
 ## API
 

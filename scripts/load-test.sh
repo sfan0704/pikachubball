@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds nothing: run `npm run build` first. Starts this workspace's local stack
-# with 14 seeded managers and the production build, runs the load test, and
+# with 14 seeded managers and the production build, daily stats read through
+# the Yahoo source from the stand-in so their calls count, runs the load test, and
 # stops only the processes it started.
 set -euo pipefail
 
@@ -19,7 +20,7 @@ stop_tree() {
   kill "$1" 2>/dev/null || true
 }
 
-PORT="$WORKSPACE_LOAD_PORT" STANDIN_PORT="$WORKSPACE_LOAD_STANDIN_PORT" SEED_COUNT=14 \
+LOCAL_DAILY_STATS=standin PORT="$WORKSPACE_LOAD_PORT" STANDIN_PORT="$WORKSPACE_LOAD_STANDIN_PORT" SEED_COUNT=14 \
   bash scripts/dev-local.sh --built > "$LOG" 2>&1 &
 STACK_PID=$!
 trap 'stop_tree $STACK_PID' EXIT

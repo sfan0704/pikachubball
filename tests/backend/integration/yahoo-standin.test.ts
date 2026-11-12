@@ -12,6 +12,9 @@ import {
 } from "../../../server/fantasy/yahoo/yahoo-request-policy";
 import { refreshAccessToken } from "../../../server/fantasy/yahoo/yahoo-auth";
 import type { YahooTokenStorage } from "../../../server/storage/yahoo-token-storage";
+import { YahooDailyStatsSource } from "../../../server/fantasy/yahoo-daily-stats-source";
+import { DailyStatsRequests } from "../../../server/fantasy/yahoo/daily-stats-requests";
+import { silentLogger } from "../../support/dependencies";
 
 const LEAGUE = "466.l.100000";
 let server: Server;
@@ -157,5 +160,45 @@ describe("the Yahoo stand-in, through the real transport", () => {
 
     expect(bad.status).toBe(400);
     expect(missing.status).toBe(404);
+  });
+});
+
+describe("the Yahoo stand-in's daily stats, for the load test's call counts", () => {
+  async function dailyStats() {
+    const { client: yahoo } = await client();
+    const requests = new DailyStatsRequests(async () => yahoo, silentLogger, { now: () => 0 });
+    return new YahooDailyStatsSource(requests);
+  }
+
+  async function calls(): Promise<number> {
+    const state = (await (await fetch(`${origin}/__state`)).json()) as { requests: string[] };
+    return state.requests.length;
+  }
+
+  it("serves a cold Matchup Today for any two teams through the real Yahoo source in 6 calls after the table", async () => {
+    const before = await calls();
+    const source = await dailyStats();
+
+    const mine = await source.getTeamDay(LEAGUE, `${LEAGUE}.t.11`, "2025-12-14");
+    const theirs = await source.getTeamDay(LEAGUE, `${LEAGUE}.t.3`, "2025-12-14");
+    const players = [...mine.players, ...theirs.players].map(({ player }) => player.playerKey);
+    const logs = await source.getGameLogs(LEAGUE, players);
+    const season = await source.getPlayerStats(LEAGUE, "season", players);
+
+    expect(mine.teamKey).toBe(`${LEAGUE}.t.11`);
+    expect(new Set(players).size).toBe(30);
+    expect(logs.players.map((player) => player.playerKey)).toEqual(players);
+    expect(season.players.map((player) => player.playerKey)).toEqual(players);
+    expect((await calls()) - before).toBe(6);
+  });
+
+  it("serves the weeks, a team's moves and the draft in this league's game", async () => {
+    const source = await dailyStats();
+
+    await expect(source.getWeeks(LEAGUE)).resolves.toHaveProperty("weeks");
+    await expect(source.getTransactions(LEAGUE, `${LEAGUE}.t.3`)).resolves.toHaveProperty(
+      "transactions"
+    );
+    await expect(source.getDraft(LEAGUE)).resolves.toHaveProperty("picks");
   });
 });

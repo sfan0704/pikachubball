@@ -7,6 +7,7 @@
 import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { join } from "node:path";
+import { DailyStatsRecordings } from "./yahoo-standin-daily-stats";
 
 /** How the stand-in answers Fantasy API requests. */
 export type Scenario = "ok" | "timeout" | "rate-limit" | "unavailable" | "unauthorized";
@@ -86,6 +87,7 @@ const FAILURES: Partial<Record<Scenario, [number, Json, Record<string, string>?]
 
 class StandIn {
   private readonly fixtures: Fixtures;
+  private readonly dailyStats: DailyStatsRecordings;
   private scenario: Scenario = "ok";
   private remaining: number | null = null;
   private tokenCounter = 0;
@@ -101,6 +103,7 @@ class StandIn {
       week: load("league-week-1"),
       roster: load("team-roster"),
     };
+    this.dailyStats = new DailyStatsRecordings(fixturesDir);
   }
 
   handle(req: IncomingMessage, res: ServerResponse): void {
@@ -141,7 +144,8 @@ class StandIn {
     if (failure) {
       return send(res, failure[0], failure[1], failure[2]);
     }
-    const body = recorded(path, this.fixtures);
+    const body =
+      recorded(path, this.fixtures) ?? this.dailyStats.body(path.replace(/^\/fantasy\/v2/, ""));
     send(res, body ? 200 : 404, body ?? { error: "not recorded", path });
   }
 

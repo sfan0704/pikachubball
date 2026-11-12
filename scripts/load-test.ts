@@ -2,6 +2,8 @@
 // stack and the Yahoo stand-in (never real Yahoo): `npm run load`.
 // Each phase starts with every user at once. It reports how long league views
 // take against the 2-second target and how many Yahoo calls each phase made.
+// The daily-stats phases make the requests the Matchup and League screens make
+// and hold each to its call budget (docs/reference/daily-stats-retrieval.md).
 import { SEED_LEAGUE_KEY, seedUsers, type SeedUser } from "../server/dev/seed-users";
 
 // scripts/load-test.sh passes this workspace's ports (scripts/workspace.mts).
@@ -9,6 +11,9 @@ const BASE = process.env.LOAD_BASE_URL ?? "";
 const STANDIN = process.env.LOAD_STANDIN_URL ?? "";
 const USERS = 14;
 const TARGET_MS = 2000;
+// A browser opens at most 6 connections to one host over HTTP/1.1, as the local
+// app serves, so each user has at most 6 requests in flight; Matchup Week asks for 16.
+const CONNECTIONS_PER_USER = 6;
 
 if (!/^http:\/\/(localhost|127\.0\.0\.1):/.test(BASE) || !/^http:\/\/127\.0\.0\.1:/.test(STANDIN)) {
   throw new Error("The load test only runs against a local app and the local Yahoo stand-in");
@@ -16,6 +21,8 @@ if (!/^http:\/\/(localhost|127\.0\.0\.1):/.test(BASE) || !/^http:\/\/127\.0\.0\.
 
 class Session {
   private readonly cookies = new Map<string, string>();
+  private inFlight = 0;
+  private readonly waiting: (() => void)[] = [];
 
   constructor(private readonly user: SeedUser) {}
 
@@ -36,14 +43,32 @@ class Session {
   /** A GET as the signed-in user; returns how long it took. */
   async get(path: string): Promise<number> {
     const started = performance.now();
-    const response = await fetch(`${BASE}${path}`, {
-      headers: { Cookie: [...this.cookies].map(([n, v]) => `${n}=${v}`).join("; ") },
-    });
-    await response.arrayBuffer();
-    if (!response.ok) {
-      throw new Error(`${path} answered ${response.status} for ${this.user.email}`);
-    }
+    await this.json(path);
     return performance.now() - started;
+  }
+
+  /** A GET as the signed-in user, on one of the user's connections; returns the body. */
+  async json(path: string): Promise<unknown> {
+    if (this.inFlight >= CONNECTIONS_PER_USER) {
+      await new Promise<void>((resolve) => this.waiting.push(resolve));
+    }
+    this.inFlight += 1;
+    try {
+      const response = await fetch(`${BASE}${path}`, {
+        headers: { Cookie: [...this.cookies].map(([n, v]) => `${n}=${v}`).join("; ") },
+      });
+      if (!response.ok) {
+        throw new Error(`${path} answered ${response.status} for ${this.user.email}`);
+      }
+      return await response.json();
+    } finally {
+      this.inFlight -= 1;
+      this.waiting.shift()?.();
+    }
+  }
+
+  get teamKey(): string {
+    return this.user.teamKey;
   }
 }
 
@@ -78,6 +103,115 @@ async function phase(
 }
 
 const table = (scope: string) => `/api/leagues/${SEED_LEAGUE_KEY}/${scope}`;
+const league = `/api/leagues/${SEED_LEAGUE_KEY}`;
+
+// The recorded current week is week 8, 2025-12-08 to 2025-12-14; "today" is its last day.
+const WEEK_DATES = Array.from({ length: 7 }, (_, i) => `2025-12-${String(8 + i).padStart(2, "0")}`);
+const TODAY = WEEK_DATES[6];
+
+/** The other team in a user's pairing of the current week. */
+async function opponentOf(session: Session): Promise<string> {
+  const current = (await session.json(table("current"))) as {
+    pairings: { teamKeys: [string, string] }[];
+  };
+  const pairing = current.pairings.find(({ teamKeys }) => teamKeys.includes(session.teamKey));
+  const opponent = pairing?.teamKeys.find((key) => key !== session.teamKey);
+  if (opponent === undefined) {
+    throw new Error(`${session.teamKey} has no opponent in the current week`);
+  }
+  return opponent;
+}
+
+/** A team's players on a day (D2), as the Matchup screen asks for them. */
+async function teamDay(session: Session, teamKey: string, date: string): Promise<string[]> {
+  const day = (await session.json(`${league}/teams/${teamKey}/days/${date}`)) as {
+    players: { player: { playerKey: string } }[];
+  };
+  return day.players.map(({ player }) => player.playerKey);
+}
+
+/** Matchup Today from nothing: D1, both teams' D2, then D3 and D4 season for their players. */
+async function matchupToday(session: Session, opponent: string): Promise<number> {
+  const started = performance.now();
+  const [, mine, theirs] = await Promise.all([
+    session.json(table("current")),
+    teamDay(session, session.teamKey, TODAY),
+    teamDay(session, opponent, TODAY),
+  ]);
+  const players = [...mine, ...theirs].join(",");
+  await Promise.all([
+    session.json(`${league}/games?players=${players}`),
+    session.json(`${league}/player-stats/season?players=${players}`),
+  ]);
+  return performance.now() - started;
+}
+
+/** Matchup Week straight from nothing on the week's last day: D10, D1 and both teams' seven days. */
+async function matchupWeek(session: Session, opponent: string): Promise<number> {
+  const started = performance.now();
+  await Promise.all([
+    session.json(`${league}/weeks`),
+    session.json(table("current")),
+    ...WEEK_DATES.flatMap((date) => [
+      teamDay(session, session.teamKey, date),
+      teamDay(session, opponent, date),
+    ]),
+  ]);
+  return performance.now() - started;
+}
+
+/** One live refresh (every 2 minutes while a shown game is live): D1, today's D2 for both teams, D3. */
+async function liveRefresh(session: Session, opponent: string): Promise<number> {
+  const started = performance.now();
+  const [, mine, theirs] = await Promise.all([
+    session.json(table("current")),
+    teamDay(session, session.teamKey, TODAY),
+    teamDay(session, opponent, TODAY),
+  ]);
+  await session.json(`${league}/games?players=${[...mine, ...theirs].join(",")}`);
+  return performance.now() - started;
+}
+
+/** The first League team popover, for a team not on the Matchup screen: D2 today, D4 season, D7, D8. */
+async function firstPopover(session: Session, teamKey: string): Promise<number> {
+  const started = performance.now();
+  const players = await teamDay(session, teamKey, TODAY);
+  await Promise.all([
+    session.json(`${league}/player-stats/season?players=${players.join(",")}`),
+    session.json(`${league}/teams/${teamKey}/transactions`),
+    session.json(`${league}/draft`),
+  ]);
+  return performance.now() - started;
+}
+
+/** Each user's Matchup and League visits, each phase held to its per-user call budget. */
+async function dailyStatsPhases(sessions: Session[]): Promise<PhaseResult[]> {
+  const opponents = new Map<Session, string>();
+  for (const session of sessions) {
+    opponents.set(session, await opponentOf(session));
+  }
+  const opponent = (session: Session) => opponents.get(session) ?? "";
+  // A team that is neither the user's nor their opponent's, so its day isn't loaded yet.
+  const stranger = (session: Session) =>
+    sessions
+      .map((other) => other.teamKey)
+      .find((key) => key !== session.teamKey && key !== opponent(session)) ?? "";
+  const n = sessions.length;
+  return [
+    await phase("Matchup Today, cold (7 each)", sessions, 7 * n, true, (s) =>
+      matchupToday(s, opponent(s))
+    ),
+    await phase("Matchup Week, last day, cold (16)", sessions, 16 * n, true, (s) =>
+      matchupWeek(s, opponent(s))
+    ),
+    await phase("live refresh, one 2-min tick (5)", sessions, 5 * n, false, (s) =>
+      liveRefresh(s, opponent(s))
+    ),
+    await phase("League, first team popover (4)", sessions, 4 * n, false, (s) =>
+      firstPopover(s, stranger(s))
+    ),
+  ];
+}
 
 async function main(): Promise<void> {
   await fetch(`${STANDIN}/__scenario`, {
@@ -112,6 +246,8 @@ async function main(): Promise<void> {
       session.get(`/api/leagues/${SEED_LEAGUE_KEY}/teams/${SEED_LEAGUE_KEY}.t.3/roster`)
     )
   );
+
+  results.push(...(await dailyStatsPhases(sessions)));
 
   let failed = false;
   console.log(`${USERS} users at once; target ${TARGET_MS} ms per league view\n`);
