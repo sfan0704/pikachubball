@@ -8,7 +8,6 @@ import { createAppErrorHandler } from "../../../server/http/composition-root";
 import { YahooFantasyDataSource } from "../../../server/fantasy/fantasy-data-source";
 import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
-import { getTeamRoster } from "../../../server/fantasy/yahoo/roster-service";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import {
   buildTestDependencies,
@@ -16,8 +15,6 @@ import {
   signedInSupabaseClient,
 } from "../../support/dependencies";
 import { fixedClock } from "../../support/clock";
-
-vi.mock("../../../server/fantasy/yahoo/roster-service");
 
 const CAPTURED = join(__dirname, "../fixtures/yahoo/captured");
 const RECORDED: Record<string, string> = {
@@ -80,11 +77,6 @@ function buildApp(
 
 beforeEach(() => {
   yahooGet.mockClear();
-  vi.mocked(getTeamRoster)
-    .mockReset()
-    .mockResolvedValue([
-      { playerKey: "466.p.1", name: "Test Player", position: "PG", team: "LAL", status: "active" },
-    ]);
 });
 
 describe("GET /api/me", () => {
@@ -263,38 +255,5 @@ describe("GET /api/leagues", () => {
     const { app } = buildApp();
 
     expect((await request(app).get("/api/leagues?refresh=maybe")).status).toBe(400);
-  });
-});
-
-describe("GET /api/leagues/:key/teams/:team/roster", () => {
-  it("returns the roster for a league the user has", async () => {
-    const { app } = buildApp();
-
-    const response = await request(app).get("/api/leagues/466.l.1/teams/466.l.1.t.3/roster");
-
-    expect(response.status).toBe(200);
-    expect(getTeamRoster).toHaveBeenCalledWith("466.l.1.t.3", expect.any(Function));
-    expect(response.body.fetchedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(response.body.roster).toHaveLength(1);
-    expect(response.body.roster[0]).toMatchObject({ playerKey: "466.p.1", name: "Test Player" });
-  });
-
-  it("refuses a league the user does not have, without calling Yahoo", async () => {
-    const { app } = buildApp({ member: false });
-
-    const response = await request(app).get("/api/leagues/466.l.7/teams/466.l.7.t.3/roster");
-
-    expect(response.status).toBe(403);
-    expect(getTeamRoster).not.toHaveBeenCalled();
-  });
-
-  it("rejects a team that is not in the league", async () => {
-    const { app, storage } = buildApp();
-
-    const response = await request(app).get("/api/leagues/466.l.1/teams/466.l.2.t.3/roster");
-
-    expect(response.status).toBe(400);
-    expect(storage.ownsLeague).not.toHaveBeenCalled();
-    expect(getTeamRoster).not.toHaveBeenCalled();
   });
 });

@@ -23,7 +23,7 @@ import {
   useWeeks,
 } from "../../../client/src/api/daily-stats-hooks";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
-import { useLeagueScope, useRoster } from "../../../client/src/api/hooks";
+import { useLeagueScope } from "../../../client/src/api/hooks";
 import { queryKeys } from "../../../client/src/api/query-keys";
 import { parseWeekTable } from "../../../server/fantasy/league-tables";
 import { missingLine } from "../../../shared/domain";
@@ -152,7 +152,6 @@ describe("the dataset query factory", () => {
         useWeeks(LEAGUE);
         useLeagueScope(LEAGUE, "current");
         useLeagueScope(LEAGUE, 3);
-        useRoster(LEAGUE, TEAM);
       },
       { wrapper }
     );
@@ -172,7 +171,6 @@ describe("the dataset query factory", () => {
     expect(timersOf(client, queryKeys.weeks(LEAGUE))).toEqual(settled);
     expect(timersOf(client, queryKeys.leagueScope(LEAGUE, "current"))).toEqual(recent);
     expect(timersOf(client, queryKeys.leagueScope(LEAGUE, 3))).toEqual(settled);
-    expect(timersOf(client, queryKeys.roster(LEAGUE, TEAM))).toEqual(recent);
   });
 
   it("polls every Live dataset every two minutes while a shown game is live", async () => {

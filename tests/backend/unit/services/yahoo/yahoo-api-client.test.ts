@@ -52,10 +52,14 @@ function routeFetchTo(network: NetworkDouble): void {
 }
 
 /** The client's private request method, which the transport tests call directly. */
+/** The client's transport, which every Yahoo read goes through, including query parameters. */
 function privateApi(client: YahooApiClient) {
-  return client as unknown as {
-    apiRequest(endpoint: string, params?: Record<string, string | number>): Promise<unknown>;
+  const { transport } = client as unknown as {
+    transport: {
+      get(endpoint: string, params?: Record<string, string | number>): Promise<unknown>;
+    };
   };
+  return { apiRequest: transport.get.bind(transport) };
 }
 
 describe("YahooApiClient", () => {
@@ -539,66 +543,6 @@ describe("YahooApiClient", () => {
       );
       expect(network.get).toHaveBeenCalledTimes(3);
       expect(refreshAccessToken).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("Team resource methods", () => {
-    let client: YahooApiClient;
-    let network: NetworkDouble;
-
-    beforeEach(async () => {
-      vi.mocked(storage.getYahooToken).mockResolvedValue({
-        userId,
-        accessToken,
-        refreshToken,
-        expiresAt,
-      });
-
-      network = {
-        get: vi.fn(),
-      };
-      routeFetchTo(network);
-
-      client = await YahooApiClient.create(userId, storage, yahooApp);
-    });
-
-    it("should get team roster without week", async () => {
-      // ARRANGE
-      const teamKey = "466.l.12345.t.1";
-      const rosterData = { roster: "data" };
-      network.get.mockResolvedValue({ data: rosterData });
-
-      // ACT
-      const result = await client.getTeamRoster(teamKey);
-
-      // ASSERT
-      expect(network.get).toHaveBeenCalledWith(
-        expect.stringContaining(`/team/${teamKey}/roster`),
-        expect.any(Object)
-      );
-      expect(result).toEqual(rosterData);
-    });
-
-    it("should get team roster with week", async () => {
-      // ARRANGE
-      const teamKey = "466.l.12345.t.1";
-      const week = 5;
-      const rosterData = { roster: "data" };
-      network.get.mockResolvedValue({ data: rosterData });
-
-      // ACT
-      const result = await client.getTeamRoster(teamKey, week);
-
-      // ASSERT
-      expect(network.get).toHaveBeenCalledWith(
-        expect.stringContaining(`/team/${teamKey}/roster`),
-        expect.any(Object)
-      );
-      expect(network.get).toHaveBeenCalledWith(
-        expect.stringContaining(`week=${week}`),
-        expect.any(Object)
-      );
-      expect(result).toEqual(rosterData);
     });
   });
 });

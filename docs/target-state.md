@@ -20,12 +20,9 @@ flowchart LR
 
 ### Product scope
 
-- Sign in with Yahoo and sign out; disconnect Yahoo; delete the account and everything stored for it.
+- Sign in with Yahoo and sign out; disconnect Yahoo; delete the account and everything stored for it. Account (disconnect and delete, each with a confirmation) opens from the header, beside the theme and sign-out buttons.
 - Pick one of the user's Yahoo fantasy basketball leagues, grouped by season and labelled preseason, active or finished; return to the last one used. A header always shows the season, league and the user's team.
-- Rankings for the season or any week, with a category heatmap.
-- The current matchup, and the selected team compared against every other team.
-- The selected team's roster, with the date it applies to.
-- Daily stats (FAN-88 mockup): **Matchup** for Today, Yesterday and the Week with per-player cards, live game state and comparison with season averages; **Players** with owned, available and waiver lists, Season, Last 7 and Last 30 averages, and tonight, tomorrow and back-to-back filters; **League** with category ranks for the season or a week and a team popover with roster, draft price and latest acquisition.
+- Daily stats (FAN-88 mockup): **Matchup** for Today, Yesterday and the Week with per-player cards, live game state and comparison with season averages; **Players** with owned, available and waiver lists, Season, Last 7 and Last 30 averages, and tonight, tomorrow and back-to-back filters; **League** with category ranks for the season or a week and a team popover with roster, draft price and latest acquisition. League is the board alone, with no view tabs (FAN-124): the board's rank tiles and colours replace the old heatmap and comparison, the popover the old roster view, and Matchup the old head-to-head.
 - A "Fantasy data provided by Yahoo Fantasy" line on every screen.
 - Phone and desktop layouts, light and dark themes.
 
@@ -191,8 +188,8 @@ flowchart TD
 
 ### Server
 
-- **Where computation lives.** Yahoo parsing lives in `server/fantasy`, behind `FantasyDataSource`, which returns validated domain types. Fantasy maths (category ranks, totals, heatmap values, head-to-head results, percentages from makes and attempts) is pure functions in `shared/domain`, run on the client. The server checks access, fetches, normalizes and returns the team table; it builds no view-specific responses.
-- **Use cases.** Each endpoint maps to one service function (list leagues, get a league scope, get a roster, disconnect) that takes the request context and its inputs.
+- **Where computation lives.** Yahoo parsing lives in `server/fantasy`, behind `FantasyDataSource`, which returns validated domain types. Fantasy maths (category ranks, totals, category-by-category comparisons, percentages from makes and attempts) is pure functions in `shared/domain`, run on the client. The server checks access, fetches, normalizes and returns the team table; it builds no view-specific responses.
+- **Use cases.** Each endpoint maps to one service function (list leagues, get a league scope, get a daily-stats dataset, disconnect) that takes the request context and its inputs.
 - **Per-request context.** Middleware builds one context per request: the signed-in user, owner-scoped repositories, one lazily created Yahoo client, the clock and a logger carrying the request id. Code receives it as an argument. Nothing lives in module-level state, so any number of serverless instances behave the same, and tests can replace the clock and Yahoo.
 
 ### Client
@@ -312,7 +309,7 @@ flowchart TD
 
 ### The team table
 
-Every view (season and weekly rankings, the heatmap, the current matchup and the comparison against every team) is computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table.
+League's season and weekly category ranks are computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table.
 
 ### Fantasy rules
 
@@ -321,7 +318,7 @@ Every view (season and weekly rankings, the heatmap, the current matchup and the
 - **The overall ranking** is the sum of category ranks, labelled "Category rank sum — lower is better" so it isn't mistaken for Yahoo's official standings. Tied sums stay tied.
 - **Percentages** are total makes divided by total attempts, never an average of percentages. Zero attempts means the percentage is unavailable.
 - **Missing is not zero.** An absent or invalid value is unknown. When a value a calculation needs is unknown, that rank, total or win/loss result is shown as unavailable rather than computed from partial data.
-- **Official matchup results** are Yahoo's. The comparison against other teams is labelled as a comparison of observed totals, not a prediction.
+- **Official matchup results** are Yahoo's.
 - **Seasons and weeks** come from Yahoo's game keys and week boundaries, never from a fixed calendar or week count.
 
 ### Yahoo calls
@@ -335,7 +332,6 @@ Yahoo data is grouped by how often it changes. Data that changes about once a se
 | Season table | While NBA games are live or being finalized | `/league/{key};out=settings,standings` | When the season scope is viewed |
 | Current week table | While NBA games are live or being finalized | `/league/{key};out=settings,scoreboard` | When the current week is viewed |
 | Past week table | Never, once stat corrections settle | `/league/{key};out=settings/scoreboard;week={n}` | When that week is viewed |
-| Roster | Trades and injury news, a few times a week | `/team/{key}/roster` | When the roster view is opened |
 | Daily stats | From every 2 minutes during games to once a season | Ten datasets, D1 to D10, in the [retrieval plan](reference/daily-stats-retrieval.md#datasets) | When a daily-stats screen needs them |
 
 - **One call per response.** Settings and stats arrive together, so a response never mixes data from different moments, and the current week and season status come with the stats.
@@ -379,7 +375,6 @@ erDiagram
 | Visit | Yahoo calls |
 |---|---|
 | Open rankings, or switch to a week not yet viewed | 1 |
-| Current matchup and comparison against every team | 0: computed from the same table |
 | A scope already viewed this session | 0 |
 | Matchup Today, first visit | 7 |
 | Matchup Week, first visit on the last day of the week | 16, in 6 API requests |
@@ -443,7 +438,6 @@ flowchart LR
 | `GET /api/leagues` | The user's leagues and teams, optionally refreshed from Yahoo |
 | `PUT /api/me/preferences` | Saves the selected league, team and display choices |
 | `GET /api/leagues/:key/:scope` | The team table for `season`, `current` or a week number, with settings, teams, matchup pairings and fetch time |
-| `GET /api/leagues/:key/teams/:team/roster` | One team's roster |
 | `GET /api/leagues/:key/teams/:team/days/:date` | One team's roster on a date, each player's slot and stats that date |
 | `GET /api/leagues/:key/teams/:team/days?from=&to=` | The same for each date of a range of at most 14, in one request; the Week view reads the days before today through it |
 | `GET /api/leagues/:key/games?players=` | Game logs for the listed players: date, opponent, home or away, tip-off, live or final state, minutes and the player's line in each game |
@@ -487,7 +481,7 @@ sequenceDiagram
         Y-->>F: Response
         F->>F: Validate and normalize
         F-->>B: Team table + fetch time
-        B->>B: Compute rankings, heatmap, matchups
+        B->>B: Compute category ranks
     end
 ```
 

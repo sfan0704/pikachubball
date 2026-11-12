@@ -7,7 +7,6 @@ import {
   getLeagueScope,
   getLeagues,
   getMe,
-  getRoster,
   savePreferences,
 } from "./endpoints";
 import { freshQuery } from "./fresh-query";
@@ -43,19 +42,6 @@ export function useLeagueScope(leagueKey: string | null, scope: LeagueScope | nu
             dataset: { kind: "weekTable", scope: weekTableScope(scope) },
             fetch: (signal) => getLeagueScope(leagueKey, scope, signal),
           }
-        : null
-    )
-  );
-}
-
-/** D9, one team's roster; waits until the league and team are chosen. */
-export function useRoster(leagueKey: string | null, teamKey: string | null) {
-  return useQuery(
-    freshQuery(
-      useFreshness(),
-      queryKeys.roster(leagueKey ?? "", teamKey ?? ""),
-      leagueKey !== null && teamKey !== null
-        ? { dataset: { kind: "roster" }, fetch: (signal) => getRoster(leagueKey, teamKey, signal) }
         : null
     )
   );

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { meResponseSchema, preferencesSchema, type Preferences } from "@shared/api/account";
 import type { LeagueScope } from "@shared/api/league-scope";
-import { leaguesResponseSchema, rosterResponseSchema } from "@shared/api/leagues";
+import { leaguesResponseSchema } from "@shared/api/leagues";
 import { teamTableSchema } from "@shared/api/team-table";
 import { apiRequest } from "./http";
 
@@ -22,14 +22,6 @@ export const getLeagues = (refresh = false, signal?: AbortSignal) =>
 /** `GET /api/leagues/:key/:scope` */
 export const getLeagueScope = (leagueKey: string, scope: LeagueScope, signal?: AbortSignal) =>
   apiRequest(`/api/leagues/${encodeURIComponent(leagueKey)}/${scope}`, teamTableSchema, { signal });
-
-/** `GET /api/leagues/:key/teams/:team/roster` */
-export const getRoster = (leagueKey: string, teamKey: string, signal?: AbortSignal) =>
-  apiRequest(
-    `/api/leagues/${encodeURIComponent(leagueKey)}/teams/${encodeURIComponent(teamKey)}/roster`,
-    rosterResponseSchema,
-    { signal }
-  );
 
 /** `DELETE /api/me/yahoo` */
 export const disconnectYahoo = () =>

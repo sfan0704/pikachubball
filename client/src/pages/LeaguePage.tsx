@@ -4,10 +4,11 @@ import ThemeToggle from "@/components/common/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AccountMenu } from "@/features/account/AccountMenu";
 import { useConnectResult } from "@/features/account/useConnectResult";
 import { ErrorScreen } from "@/features/league/ErrorScreen";
 import { LeagueLookup } from "@/features/league/LeagueLookup";
-import { LeagueView } from "@/features/league/LeagueTabs";
+import { LeagueView } from "@/features/league/LeagueView";
 import { pickDefaultLeague } from "@/features/league/selection";
 import { useLeagueSelection } from "@/features/league/useLeagueSelection";
 import { useAuth } from "@/lib/auth";
@@ -89,6 +90,7 @@ export default function LeaguePage() {
           </h1>
           <div className="flex shrink-0 items-center gap-1 md:gap-2">
             <ThemeToggle />
+            <AccountMenu />
             <Button
               variant="ghost"
               size="icon"

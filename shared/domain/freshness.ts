@@ -49,7 +49,6 @@ export type DailyDataset =
   | { readonly kind: "schedule" }
   | { readonly kind: "transactions" }
   | { readonly kind: "draft" }
-  | { readonly kind: "roster" }
   | { readonly kind: "weeks" };
 
 /** D2's class by how far its date is from today. */
@@ -87,7 +86,6 @@ const FIXED_CLASSES = {
   schedule: "daily",
   transactions: "recent",
   draft: "settled",
-  roster: "recent",
   weeks: "settled",
 } as const satisfies Record<string, FreshnessClass>;
 

@@ -20,6 +20,5 @@ export function registerLeagueRoutes(
   const limitRefreshes = (req: Request, res: Response, next: NextFunction) =>
     req.query.refresh === "true" ? leagueRefreshLimiter(req, res, next) : next();
   app.get("/api/leagues", requireAuth, dataLimiter, limitRefreshes, controller.listLeagues);
-  app.get("/api/leagues/:key/teams/:team/roster", requireAuth, dataLimiter, controller.getRoster);
   app.get("/api/leagues/:key/:scope", requireAuth, dataLimiter, controller.getLeagueScope);
 }

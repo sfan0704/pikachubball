@@ -14,7 +14,6 @@ export const queryKeys = {
   leagues: ["leagues"] as const,
   leagueScope: (leagueKey: string, scope: LeagueScope) =>
     [...league(leagueKey), "scope", String(scope)] as const,
-  roster: (leagueKey: string, teamKey: string) => [...team(leagueKey, teamKey), "roster"] as const,
   teamDay: (leagueKey: string, teamKey: string, date: string) =>
     [...team(leagueKey, teamKey), "days", date] as const,
   teamDays: (leagueKey: string, teamKey: string, from: string, to: string) =>

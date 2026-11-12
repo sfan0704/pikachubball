@@ -4,7 +4,7 @@
 import React from "react";
 import { readFileSync } from "node:fs";
 import axe from "axe-core";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
@@ -50,14 +50,6 @@ function stubApi() {
           ],
         });
       }
-      if (url.endsWith("/roster")) {
-        return jsonResponse({
-          fetchedAt: "2025-12-11T18:00:00.000Z",
-          roster: [
-            { playerKey: "466.p.1", name: "P", position: "PG", team: "LAL", status: "active" },
-          ],
-        });
-      }
       return jsonResponse(TABLE);
     })
   );
@@ -71,31 +63,44 @@ async function violations(container: HTMLElement) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("the league page has no structural accessibility violations", () => {
-  it.each(["rankings", "heatmap", "matchup", "compare", "roster", "account"])(
-    "%s tab",
-    async (tab) => {
-      stubApi();
-      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-      const { container } = render(
-        <QueryClientProvider client={client}>
-          <FreshnessProvider>
-            <AuthProvider>
-              <Router
-                hook={memoryLocation({ path: `/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/1` }).hook}
-              >
-                <LeaguePage />
-              </Router>
-            </AuthProvider>
-          </FreshnessProvider>
-        </QueryClientProvider>
-      );
-      await screen.findByRole("tab", { name: "rankings" });
-      await userEvent.click(await screen.findByRole("tab", { name: tab }));
-      await screen.findByRole("tabpanel");
-      await vi.waitFor(() => expect(screen.queryByRole("status", { name: "Loading" })).toBeNull());
-
-      expect(await violations(container)).toEqual([]);
-    }
+function renderPage() {
+  stubApi();
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <FreshnessProvider>
+        <AuthProvider>
+          <Router hook={memoryLocation({ path: `/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/1` }).hook}>
+            <LeaguePage />
+          </Router>
+        </AuthProvider>
+      </FreshnessProvider>
+    </QueryClientProvider>
   );
+}
+
+const loaded = () =>
+  vi.waitFor(() => expect(screen.queryByRole("status", { name: "Loading" })).toBeNull());
+
+describe("the league page has no structural accessibility violations", () => {
+  it("League board", async () => {
+    const { container } = renderPage();
+    await screen.findByTestId("card-league-rankings");
+    await loaded();
+
+    expect(await violations(container)).toEqual([]);
+  });
+
+  it("Account dialog", async () => {
+    renderPage();
+    await screen.findByTestId("card-league-rankings");
+    await userEvent.click(screen.getByRole("button", { name: "Account" }));
+    const dialog = await screen.findByRole("dialog", { name: "Account" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete account" }));
+    await loaded();
+
+    // The dialog alone: happy-dom doesn't honour the inert page Radix leaves behind it,
+    // which the browser test checks in a real browser.
+    expect(await violations(dialog)).toEqual([]);
+  });
 });

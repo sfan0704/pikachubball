@@ -1,10 +1,7 @@
-import { ForbiddenError } from "../../shared/api/errors";
-import type { RosterResponse, UserLeague } from "../../shared/api/leagues";
-import type { YahooClientProvider } from "../http/request-context";
+import type { UserLeague } from "../../shared/api/leagues";
 import type { Clock } from "../utils/clock";
 import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
 import type { FantasyDataSource } from "../fantasy/fantasy-data-source";
-import { getTeamRoster } from "../fantasy/yahoo/roster-service";
 
 type LeagueStorage = Pick<OwnerScopedStorage, "listUserLeagues" | "replaceUserLeagues">;
 type LeagueSource = Pick<FantasyDataSource, "listLeagues">;
@@ -55,19 +52,4 @@ export async function listLeagues(
   }
   await syncLeagues(storage, dataSource);
   return storage.listUserLeagues();
-}
-
-/** One team's roster, for a league the user has. */
-export async function getLeagueTeamRoster(
-  storage: Pick<OwnerScopedStorage, "ownsLeague">,
-  yahooClient: YahooClientProvider,
-  leagueKey: string,
-  teamKey: string,
-  clock: Clock
-): Promise<RosterResponse> {
-  if (!(await storage.ownsLeague(leagueKey))) {
-    throw new ForbiddenError("League not available to this account");
-  }
-  const roster = await getTeamRoster(teamKey, yahooClient);
-  return { fetchedAt: new Date(clock.now()).toISOString(), roster };
 }
