@@ -6,7 +6,7 @@ import {
   AUTH_NO_STORE_HEADERS,
   hardenCookieOptions,
   projectYahooIdentity,
-  readVerifiedYahooIdentity,
+  readSignedClaims,
   requireYahooProviderTokens,
   YAHOO_ISSUER,
   YAHOO_PROVIDER,
@@ -179,23 +179,32 @@ describe("Supabase Yahoo auth boundary", () => {
     ).toThrow(/provider refresh token/);
   });
 
-  it("rejects invalid claims and subject crossover", async () => {
+  it("rejects invalid claims and reads the signed subject and email", async () => {
     const invalidClaims = fakeClient({
       getClaims: vi.fn().mockResolvedValue({ data: null, error: new Error("bad") }),
     });
-    await expect(readVerifiedYahooIdentity(invalidClaims)).rejects.toThrow(/claims/);
+    await expect(readSignedClaims(invalidClaims)).rejects.toThrow(/claims/);
 
-    const crossedUser = fakeClient({
+    const noSubject = fakeClient({
+      getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: "" } }, error: null }),
+    });
+    await expect(readSignedClaims(noSubject)).rejects.toThrow(/claims/);
+
+    const signed = fakeClient({
       getClaims: vi.fn().mockResolvedValue({
-        data: { claims: { sub: USER_ID } },
-        error: null,
-      }),
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: yahooUser({ id: "d86688b2-0b07-4ddc-955b-655d600312ff" }) },
+        data: { claims: { sub: USER_ID, email: "manager@example.test" } },
         error: null,
       }),
     });
-    await expect(readVerifiedYahooIdentity(crossedUser)).rejects.toThrow(/session user/);
+    await expect(readSignedClaims(signed)).resolves.toEqual({
+      userId: USER_ID,
+      email: "manager@example.test",
+    });
+
+    const noEmail = fakeClient({
+      getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: USER_ID } }, error: null }),
+    });
+    await expect(readSignedClaims(noEmail)).resolves.toEqual({ userId: USER_ID, email: null });
   });
 
   it("starts only the custom Yahoo provider at the exact app callback", async () => {

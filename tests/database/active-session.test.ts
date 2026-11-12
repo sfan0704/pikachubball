@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { database, newClient, signUpOwner } from "./local-stack";
-import { readVerifiedYahooIdentity } from "../../server/http/auth/supabase-auth";
+import { cipher, database, newClient, signUpOwner } from "./local-stack";
+import { readSignedClaims } from "../../server/http/auth/supabase-auth";
+import { SupabaseOwnerStorage } from "../../server/storage/supabase-owner-storage";
 
 beforeAll(async () => {
   await database.connect();
@@ -24,7 +25,12 @@ describe("active session against real local Supabase Auth and PostgREST", () => 
       refresh_token: session.refresh_token,
     });
     expect(restoreError).toBeNull();
-    await expect(readVerifiedYahooIdentity(replay)).resolves.toMatchObject({ userId: owner.id });
+    // What the auth middleware does: check the signed claims, then open the request.
+    const openRequest = async (client: typeof replay) => {
+      const { userId } = await readSignedClaims(client);
+      return new SupabaseOwnerStorage(client, userId, cipher).openRequest(null);
+    };
+    await expect(openRequest(replay)).resolves.toMatchObject({ yahooGuid: owner.yahooGuid });
     expect((await owner.client.auth.signOut({ scope: "local" })).error).toBeNull();
     const claims = JSON.parse(
       Buffer.from(session.access_token.split(".")[1], "base64url").toString()
@@ -35,14 +41,14 @@ describe("active session against real local Supabase Auth and PostgREST", () => 
       [claims.session_id]
     );
     expect(rows.rows[0].count).toBe(0);
-    await expect(readVerifiedYahooIdentity(replay)).rejects.toThrow();
-    const result = await bearerReplay.rpc("is_current_session_active");
+    await expect(openRequest(replay)).rejects.toThrow(/no longer active/);
+    const result = await bearerReplay.rpc("load_request_access", { p_league_key: null });
     expect(result.error).toBeNull();
-    expect(result.data).toBe(false);
+    expect(result.data).toEqual({ active: false });
   });
 
   it("denies anonymous RPC access", async () => {
-    const result = await newClient().rpc("is_current_session_active");
+    const result = await newClient().rpc("load_request_access", { p_league_key: null });
     expect(result.error?.code).toBe("42501");
   });
 });

@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { UnauthorizedError } from "../../../shared/api/errors";
-import { readVerifiedYahooIdentity } from "../auth/supabase-auth";
+import { readSignedClaims, type YahooSessionIdentity } from "../auth/supabase-auth";
 import type { ServerDependencies } from "../dependencies";
 import { createRequestContext } from "../request-context";
 
@@ -10,10 +10,18 @@ export type RequireAuthDependencies = Pick<
   "createSupabaseClient" | "createOwnerStorage" | "createYahooClient" | "clock"
 >;
 
+/** The league a route names; every league route calls it `:key`. */
+function requestedLeagueKey(req: Request): string | null {
+  const key = req.params.key;
+  return typeof key === "string" && key.length > 0 ? key : null;
+}
+
 /**
  * Builds the middleware that requires a verified Supabase session. It builds
  * the request's context (user, owner-scoped storage, clock, logger and the
- * lazily created Yahoo client) once, or passes UNAUTHORIZED on.
+ * lazily created Yahoo client) once, or passes UNAUTHORIZED on. It makes one
+ * database call: the signed claims are checked locally, and `openRequest`
+ * confirms the session and reads ahead the league check and Yahoo tokens.
  */
 export function createRequireAuth(dependencies: RequireAuthDependencies) {
   return async function requireAuth(
@@ -32,11 +40,14 @@ export function createRequireAuth(dependencies: RequireAuthDependencies) {
     }
     try {
       const client = dependencies.createSupabaseClient(req, res);
-      const user = await readVerifiedYahooIdentity(client);
+      const claims = await readSignedClaims(client);
+      const storage = dependencies.createOwnerStorage(client, claims.userId);
+      const access = await storage.openRequest(requestedLeagueKey(req));
+      const user: YahooSessionIdentity = { ...claims, ...access };
       req.context = createRequestContext({
         scope,
         user,
-        storage: dependencies.createOwnerStorage(client, user.userId),
+        storage,
         clock: dependencies.clock,
         createYahooClient: dependencies.createYahooClient,
       });

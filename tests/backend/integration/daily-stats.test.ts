@@ -1,6 +1,5 @@
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   draftResponseSchema,
   gameLogsResponseSchema,
@@ -16,44 +15,25 @@ import { createAppErrorHandler } from "../../../server/http/composition-root";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
 import { fixedClock } from "../../support/clock";
-import { buildTestDependencies } from "../../support/dependencies";
+import {
+  buildTestDependencies,
+  openedRequest,
+  signedInSupabaseClient,
+} from "../../support/dependencies";
 
 const LEAGUE = "466.l.100000";
 const TEAM = `${LEAGUE}.t.11`;
 const NOW = "2026-11-11T20:00:00.000Z";
 const PLAYERS = [`466.p.11101`, `466.p.11102`];
 
-const verifiedClient = {
-  rpc: async () => ({ data: true, error: null }),
-  auth: {
-    getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
-    getUser: async () => ({
-      data: {
-        user: {
-          id: "user-1",
-          identities: [
-            {
-              provider: "custom:yahoo",
-              identity_data: { iss: "https://api.login.yahoo.com", sub: "yahoo-guid-1" },
-            },
-          ],
-          user_metadata: {},
-          app_metadata: {},
-        },
-      },
-      error: null,
-    }),
-  },
-} as unknown as SupabaseClient;
-
 function buildApp(options: { member?: boolean; wired?: boolean } = {}) {
   const clock = fixedClock(NOW);
   const source = new FixtureDailyStatsSource(clock);
   const ownsLeague = vi.fn().mockResolvedValue(options.member ?? true);
-  const storage = { ownsLeague } as unknown as OwnerScopedStorage;
+  const storage = { openRequest: openedRequest, ownsLeague } as unknown as OwnerScopedStorage;
   const dependencies = buildTestDependencies({
     clock,
-    createSupabaseClient: () => verifiedClient,
+    createSupabaseClient: () => signedInSupabaseClient,
     createOwnerStorage: () => storage,
     createDailyStatsSource: options.wired === false ? null : () => source,
   });

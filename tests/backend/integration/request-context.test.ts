@@ -1,12 +1,15 @@
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { createApp } from "../../../server/http/app";
 import { createAppErrorHandler } from "../../../server/http/composition-root";
 import type { YahooClientCreator } from "../../../server/http/request-context";
 import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
-import { buildTestDependencies } from "../../support/dependencies";
+import {
+  buildTestDependencies,
+  openedRequest,
+  signedInSupabaseClient,
+} from "../../support/dependencies";
 import { recordingLogger } from "../../support/logger";
 import { readFileSync } from "node:fs";
 import {
@@ -16,29 +19,6 @@ import {
 import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import { parseSeasonTable } from "../../../server/fantasy/league-tables";
 import { YahooResponseError } from "../../../server/fantasy/yahoo-shapes";
-
-const verifiedClient = {
-  rpc: async () => ({ data: true, error: null }),
-  auth: {
-    getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
-    getUser: async () => ({
-      data: {
-        user: {
-          id: "user-1",
-          identities: [
-            {
-              provider: "custom:yahoo",
-              identity_data: { iss: "https://api.login.yahoo.com", sub: "yahoo-guid-1" },
-            },
-          ],
-          user_metadata: {},
-          app_metadata: {},
-        },
-      },
-      error: null,
-    }),
-  },
-} as unknown as SupabaseClient;
 
 const SECRET_TOKEN = "yahoo-access-token-do-not-log";
 
@@ -52,6 +32,7 @@ function buildApp() {
     expiresAt: 4_000_000_000,
   });
   const storage = {
+    openRequest: openedRequest,
     getYahooToken,
     ownsLeague: vi.fn().mockResolvedValue(true),
   } as unknown as OwnerScopedStorage;
@@ -85,7 +66,7 @@ function buildApp() {
 
   const dependencies = buildTestDependencies({
     logger,
-    createSupabaseClient: () => verifiedClient,
+    createSupabaseClient: () => signedInSupabaseClient,
     createOwnerStorage: () => storage,
     createYahooClient,
     createFantasyDataSource,
@@ -128,8 +109,12 @@ describe("the request context, end to end", () => {
     const logger = recordingLogger();
     const dependencies = buildTestDependencies({
       logger,
-      createSupabaseClient: () => verifiedClient,
-      createOwnerStorage: () => ({ ownsLeague: async () => true }) as unknown as OwnerScopedStorage,
+      createSupabaseClient: () => signedInSupabaseClient,
+      createOwnerStorage: () =>
+        ({
+          openRequest: openedRequest,
+          ownsLeague: async () => true,
+        }) as unknown as OwnerScopedStorage,
       createFantasyDataSource: () => ({
         listLeagues: async () => [],
         getSeason: async () => {
@@ -203,9 +188,12 @@ describe("the request context, end to end", () => {
     const { YahooReconnectRequiredError } =
       await import("../../../server/fantasy/yahoo/yahoo-request-policy");
     const dependencies = buildTestDependencies({
-      createSupabaseClient: () => verifiedClient,
+      createSupabaseClient: () => signedInSupabaseClient,
       createOwnerStorage: () =>
-        ({ getYahooToken: async () => undefined }) as unknown as OwnerScopedStorage,
+        ({
+          openRequest: openedRequest,
+          getYahooToken: async () => undefined,
+        }) as unknown as OwnerScopedStorage,
       createYahooClient: async () => {
         throw new YahooReconnectRequiredError();
       },
