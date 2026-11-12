@@ -5,7 +5,6 @@ import { YahooFantasyDataSource } from "../../../server/fantasy/fantasy-data-sou
 import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import { createYahooStandIn } from "../../../server/dev/yahoo-standin";
 import { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
-import { getTeamRoster } from "../../../server/fantasy/yahoo/roster-service";
 import {
   YahooRateLimitedError,
   YahooUnavailableError,
@@ -81,7 +80,7 @@ async function client() {
 }
 
 describe("the Yahoo stand-in, through the real transport", () => {
-  it("replays the recorded league tables and roster", async () => {
+  it("replays the recorded league tables", async () => {
     const { client: yahoo } = await client();
     const source = new YahooFantasyDataSource(new YahooLeagueResources(async () => yahoo), {
       now: () => Date.parse("2025-12-11T18:00:00Z"),
@@ -90,7 +89,6 @@ describe("the Yahoo stand-in, through the real transport", () => {
     const season = await source.getSeason(LEAGUE);
     const current = await source.getWeek(LEAGUE, "current");
     const week3 = await source.getWeek(LEAGUE, 3);
-    const roster = await getTeamRoster(`${LEAGUE}.t.3`, async () => yahoo);
 
     expect(season.teams).toHaveLength(14);
     expect(current.scope).toEqual({ kind: "week", week: 8 });
@@ -99,7 +97,6 @@ describe("the Yahoo stand-in, through the real transport", () => {
     expect(season.teams.every((team) => team.games === null)).toBe(true);
     expect(week3.scope).toEqual({ kind: "week", week: 3 });
     expect(week3.pairings).toHaveLength(7);
-    expect(roster).toHaveLength(15);
   });
 
   it("answers 429 and the client waits for Retry-After before succeeding", async () => {

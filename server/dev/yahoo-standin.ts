@@ -61,7 +61,7 @@ function withWeek(fixture: Json, week: number): Json {
   return copy;
 }
 
-type Fixtures = Record<"season" | "current" | "week" | "roster", Json>;
+type Fixtures = Record<"season" | "current" | "week", Json>;
 
 /** The recorded response for a Fantasy API path, or null when nothing was recorded for it. */
 function recorded(path: string, fixtures: Fixtures): Json | null {
@@ -76,7 +76,7 @@ function recorded(path: string, fixtures: Fixtures): Json | null {
   if (week) {
     return withWeek(fixtures.week, Number(week));
   }
-  return /^\/fantasy\/v2\/team\/[^/]+\/roster$/.test(path) ? fixtures.roster : null;
+  return null;
 }
 
 const FAILURES: Partial<Record<Scenario, [number, Json, Record<string, string>?]>> = {
@@ -101,7 +101,6 @@ class StandIn {
       season: load("league-season"),
       current: load("league-current-week"),
       week: load("league-week-1"),
-      roster: load("team-roster"),
     };
     this.dailyStats = new DailyStatsRecordings(fixturesDir);
   }

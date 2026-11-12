@@ -8,7 +8,7 @@ import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { meResponseSchema } from "@shared/api/account";
-import { leaguesResponseSchema, rosterResponseSchema } from "@shared/api/leagues";
+import { leaguesResponseSchema } from "@shared/api/leagues";
 import { teamTableSchema } from "@shared/api/team-table";
 import { parseSeasonTable } from "../../../server/fantasy/league-tables";
 import { ApiError, isApiError } from "../../../client/src/api/errors";
@@ -18,7 +18,7 @@ import {
   getMe,
   savePreferences,
 } from "../../../client/src/api/endpoints";
-import { useLeagueScope, useLeagues, useMe, useRoster } from "../../../client/src/api/hooks";
+import { useLeagueScope, useLeagues, useMe } from "../../../client/src/api/hooks";
 import { queryKeys } from "../../../client/src/api/query-keys";
 import { jsonResponse } from "../../support/fetch";
 
@@ -40,11 +40,6 @@ const LEAGUES = {
     },
   ],
 };
-const ROSTER = {
-  fetchedAt: "2026-01-15T12:00:00.000Z",
-  roster: [{ playerKey: "466.p.1", name: "P", position: "PG", team: "LAL", status: "active" }],
-};
-
 function table() {
   const raw = JSON.parse(readFileSync("tests/backend/fixtures/yahoo/league-season.json", "utf8"));
   return parseSeasonTable(raw, "2025-12-11T18:00:00.000Z");
@@ -153,17 +148,9 @@ describe("hooks", () => {
     );
   }
 
-  it("load the user, leagues, a league scope and a roster, each passing its shared schema", async () => {
+  it("load the user, leagues and a league scope, each passing its shared schema", async () => {
     stubFetch((url) =>
-      jsonResponse(
-        url === "/api/me"
-          ? ME
-          : url === "/api/leagues"
-            ? LEAGUES
-            : url.endsWith("/roster")
-              ? ROSTER
-              : table()
-      )
+      jsonResponse(url === "/api/me" ? ME : url === "/api/leagues" ? LEAGUES : table())
     );
 
     const me = renderHook(() => useMe(), { wrapper: wrapper() });
@@ -171,16 +158,13 @@ describe("hooks", () => {
     const scope = renderHook(() => useLeagueScope("466.l.100000", "season"), {
       wrapper: wrapper(),
     });
-    const roster = renderHook(() => useRoster("466.l.1", "466.l.1.t.1"), { wrapper: wrapper() });
 
     await waitFor(() => expect(me.result.current.isSuccess).toBe(true));
     await waitFor(() => expect(leagues.result.current.isSuccess).toBe(true));
     await waitFor(() => expect(scope.result.current.isSuccess).toBe(true));
-    await waitFor(() => expect(roster.result.current.isSuccess).toBe(true));
     expect(meResponseSchema.parse(me.result.current.data)).toBeTruthy();
     expect(leaguesResponseSchema.parse(leagues.result.current.data)).toBeTruthy();
     expect(teamTableSchema.parse(scope.result.current.data)).toBeTruthy();
-    expect(rosterResponseSchema.parse(roster.result.current.data)).toBeTruthy();
   });
 
   it("wait until the league and scope are chosen, and surface typed errors", async () => {
@@ -189,9 +173,7 @@ describe("hooks", () => {
     );
 
     const idle = renderHook(() => useLeagueScope(null, null), { wrapper: wrapper() });
-    const idleRoster = renderHook(() => useRoster("466.l.1", null), { wrapper: wrapper() });
     expect(idle.result.current.fetchStatus).toBe("idle");
-    expect(idleRoster.result.current.fetchStatus).toBe("idle");
     expect(fetchMock).not.toHaveBeenCalled();
 
     const failing = renderHook(() => useLeagueScope("466.l.9", "current"), { wrapper: wrapper() });
@@ -201,7 +183,7 @@ describe("hooks", () => {
 
   it("key each kind of data by its path so a prefix covers what hangs under it", () => {
     expect(queryKeys.leagueScope("466.l.1", 3)).toEqual(["leagues", "466.l.1", "scope", "3"]);
-    expect(queryKeys.roster("466.l.1", "466.l.1.t.2").slice(0, 2)).toEqual([
+    expect(queryKeys.transactions("466.l.1", "466.l.1.t.2").slice(0, 2)).toEqual([
       ...queryKeys.leagues,
       "466.l.1",
     ]);

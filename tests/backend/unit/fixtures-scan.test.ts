@@ -21,7 +21,7 @@ const FORBIDDEN: [string, RegExp][] = [
 
 describe("recorded Yahoo responses carry no secrets or personal details", () => {
   it("has recordings to scan", () => {
-    expect(files.length).toBeGreaterThanOrEqual(4);
+    expect(files.length).toBeGreaterThanOrEqual(3);
   });
 
   it.each(files)("%s", (file) => {

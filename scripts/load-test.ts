@@ -311,14 +311,9 @@ async function main(): Promise<void> {
       )
     );
   }
-  // Going back to a scope already loaded, or comparing teams, needs no request: the
-  // client keeps the table and computes comparisons itself. Zero calls is what is measured.
-  results.push(await phase("repeat views and comparisons", sessions, 0, false, async () => 0));
-  results.push(
-    await phase("open a roster", sessions, USERS, false, (session) =>
-      session.get(`/api/leagues/${SEED_LEAGUE_KEY}/teams/${SEED_LEAGUE_KEY}.t.3/roster`)
-    )
-  );
+  // Going back to a scope already loaded needs no request: the client keeps the
+  // table. Zero calls is what is measured.
+  results.push(await phase("repeat a loaded scope", sessions, 0, false, async () => 0));
 
   results.push(...(await dailyStatsPhases(sessions)));
   results.push(...(await playersPhases(sessions)));

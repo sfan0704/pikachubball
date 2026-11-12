@@ -1,16 +1,14 @@
 import { describe, expect, it } from "vitest";
-import {
-  compareTotals,
-  compareWithAll,
-  headToHead,
-  heatmap,
-  officialResult,
-  opponentOf,
-  rankings,
-  type TeamTable,
-} from "../../../shared/domain";
+import { compareTotals, opponentOf, rankings, type TeamTable } from "../../../shared/domain";
 import { buildTeamTable, buildTeamTotals } from "../../support/builders";
 import { defined } from "../../support/defined";
+
+/** Two teams of a table compared from the first one's side. */
+function between(table: TeamTable, mine: string, theirs: string) {
+  const totals = (teamKey: string) =>
+    defined(table.teams.find((team) => team.teamKey === teamKey)).totals;
+  return compareTotals(totals(mine), totals(theirs));
+}
 
 function deepFreeze<T>(value: T): T {
   if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
@@ -84,36 +82,6 @@ describe("rankings", () => {
   });
 });
 
-describe("heatmap", () => {
-  it("gives each cell its value, rank and percentile", () => {
-    const rows = heatmap(ladder());
-
-    expect(rows.map((row) => row.teamKey)).toEqual(["466.l.1.t.1", "466.l.1.t.2", "466.l.1.t.3"]);
-    expect(rows[0].cells.pts).toEqual({ value: 600, rank: 1, percentile: 100 });
-    expect(rows[1].cells.pts).toEqual({ value: 500, rank: 2, percentile: (2 / 3) * 100 });
-    expect(rows[2].cells.pts).toEqual({ value: 500, rank: 2, percentile: (2 / 3) * 100 });
-  });
-
-  it("ranks turnovers with the fewest as best", () => {
-    const rows = heatmap(ladder());
-    expect(rows[0].cells.to.rank).toBe(1);
-    expect(rows[1].cells.to.rank).toBe(2);
-  });
-
-  it("computes percentage cells from makes and attempts", () => {
-    const rows = heatmap(buildTeamTable([{ fgMakes: 50, fgAttempts: 100 }]));
-    expect(rows[0].cells.fgPct.value).toBe(0.5);
-  });
-
-  it("leaves unknown cells unranked and bases percentiles on the teams that have a value", () => {
-    const rows = heatmap(buildTeamTable([{ blk: null }, { blk: 5 }, { blk: 9 }]));
-
-    expect(rows[0].cells.blk).toEqual({ value: null, rank: null, percentile: null });
-    expect(rows[2].cells.blk).toEqual({ value: 9, rank: 1, percentile: 100 });
-    expect(rows[1].cells.blk).toEqual({ value: 5, rank: 2, percentile: 50 });
-  });
-});
-
 describe("compareTotals", () => {
   it("scores two sets of counted totals, such as one day's, with turnovers inverted", () => {
     const { categories, score } = compareTotals(
@@ -128,12 +96,12 @@ describe("compareTotals", () => {
   });
 });
 
-describe("headToHead", () => {
+describe("compareTotals between two teams of a table", () => {
   it("scores each category from my team's side", () => {
-    const result = headToHead(ladder(), "466.l.1.t.1", "466.l.1.t.2");
+    const result = between(ladder(), "466.l.1.t.1", "466.l.1.t.2");
 
-    expect(result?.score).toEqual({ wins: 9, losses: 0, ties: 0, unavailable: 0, complete: true });
-    expect(result?.categories.find((c) => c.category === "pts")).toEqual({
+    expect(result.score).toEqual({ wins: 9, losses: 0, ties: 0, unavailable: 0, complete: true });
+    expect(result.categories.find((c) => c.category === "pts")).toEqual({
       category: "pts",
       mine: 600,
       theirs: 500,
@@ -143,18 +111,18 @@ describe("headToHead", () => {
   });
 
   it("reverses the result when seen from the other side", () => {
-    const result = headToHead(ladder(), "466.l.1.t.2", "466.l.1.t.1");
-    expect(result?.score).toMatchObject({ wins: 0, losses: 9 });
+    const result = between(ladder(), "466.l.1.t.2", "466.l.1.t.1");
+    expect(result.score).toMatchObject({ wins: 0, losses: 9 });
   });
 
   it("counts equal values as ties", () => {
-    const result = headToHead(ladder(), "466.l.1.t.2", "466.l.1.t.3");
-    expect(result?.score).toMatchObject({ wins: 0, losses: 0, ties: 9, complete: true });
+    const result = between(ladder(), "466.l.1.t.2", "466.l.1.t.3");
+    expect(result.score).toMatchObject({ wins: 0, losses: 0, ties: 9, complete: true });
   });
 
   it("treats fewer turnovers as a win", () => {
     const table = buildTeamTable([{ to: 40 }, { to: 70 }]);
-    const turnovers = headToHead(table, "466.l.1.t.1", "466.l.1.t.2")?.categories.find(
+    const turnovers = between(table, "466.l.1.t.1", "466.l.1.t.2").categories.find(
       (c) => c.category === "to"
     );
     expect(turnovers).toMatchObject({ result: "win", difference: -30 });
@@ -166,46 +134,28 @@ describe("headToHead", () => {
       { fgMakes: 4999, fgAttempts: 10000 },
       { fgMakes: 5000, fgAttempts: 10000 },
     ]);
-    const fg = headToHead(table, "466.l.1.t.1", "466.l.1.t.2")?.categories[0];
+    const fg = between(table, "466.l.1.t.1", "466.l.1.t.2").categories[0];
     expect(fg?.result).toBe("loss");
   });
 
   it("claims no result where a value is unknown, and says the score is incomplete", () => {
     const table = buildTeamTable([{ ftMakes: 0, ftAttempts: 0, blk: null }, {}]);
 
-    const result = headToHead(table, "466.l.1.t.1", "466.l.1.t.2");
+    const result = between(table, "466.l.1.t.1", "466.l.1.t.2");
 
-    expect(result?.categories.find((c) => c.category === "ftPct")).toMatchObject({
+    expect(result.categories.find((c) => c.category === "ftPct")).toMatchObject({
       mine: null,
       difference: null,
       result: "unavailable",
     });
-    expect(result?.categories.find((c) => c.category === "blk")?.result).toBe("unavailable");
-    expect(result?.score).toMatchObject({ unavailable: 2, complete: false });
+    expect(result.categories.find((c) => c.category === "blk")?.result).toBe("unavailable");
+    expect(result.score).toMatchObject({ unavailable: 2, complete: false });
     const score = defined(result).score;
     expect(score.wins + score.losses + score.ties).toBe(7);
   });
-
-  it("returns null when either team isn't in the table", () => {
-    expect(headToHead(ladder(), "466.l.1.t.1", "nope")).toBeNull();
-    expect(headToHead(ladder(), "nope", "466.l.1.t.1")).toBeNull();
-  });
 });
 
-describe("compareWithAll", () => {
-  it("compares my team against every other team in table order", () => {
-    const results = compareWithAll(ladder(), "466.l.1.t.2");
-
-    expect(results.map((result) => result.opponentTeamKey)).toEqual(["466.l.1.t.1", "466.l.1.t.3"]);
-    expect(results.map((result) => result.score.wins)).toEqual([0, 0]);
-  });
-
-  it("is empty for a team that isn't in the table", () => {
-    expect(compareWithAll(ladder(), "nope")).toEqual([]);
-  });
-});
-
-describe("the official matchup", () => {
+describe("the matchup pairing", () => {
   const table = (pairings: TeamTable["pairings"]) => ({ ...ladder(), pairings });
 
   it("finds my opponent from Yahoo's pairings", () => {
@@ -216,26 +166,6 @@ describe("the official matchup", () => {
     expect(opponentOf(withPairing, "466.l.1.t.3")).toBe("466.l.1.t.1");
     expect(opponentOf(withPairing, "466.l.1.t.2")).toBeNull();
   });
-
-  it("reports Yahoo's result rather than computing one", () => {
-    const decided = table([
-      { teamKeys: ["466.l.1.t.1", "466.l.1.t.2"], winnerTeamKey: "466.l.1.t.2", isTied: false },
-    ]);
-    expect(officialResult(decided, "466.l.1.t.1")).toBe("loss");
-    expect(officialResult(decided, "466.l.1.t.2")).toBe("win");
-  });
-
-  it("reports ties, undecided weeks and unpaired teams", () => {
-    const tied = table([
-      { teamKeys: ["466.l.1.t.1", "466.l.1.t.2"], winnerTeamKey: null, isTied: true },
-    ]);
-    const live = table([
-      { teamKeys: ["466.l.1.t.1", "466.l.1.t.2"], winnerTeamKey: null, isTied: false },
-    ]);
-    expect(officialResult(tied, "466.l.1.t.1")).toBe("tie");
-    expect(officialResult(live, "466.l.1.t.1")).toBe("undecided");
-    expect(officialResult(live, "466.l.1.t.3")).toBeNull();
-  });
 });
 
 describe("purity", () => {
@@ -244,15 +174,12 @@ describe("purity", () => {
 
     expect(() => {
       rankings(frozen);
-      heatmap(frozen);
-      headToHead(frozen, "466.l.1.t.1", "466.l.1.t.2");
-      compareWithAll(frozen, "466.l.1.t.1");
+      opponentOf(frozen, "466.l.1.t.1");
     }).not.toThrow();
   });
 
   it("gives the same answer every time", () => {
     const table = ladder();
     expect(rankings(table)).toEqual(rankings(table));
-    expect(heatmap(table)).toEqual(heatmap(table));
   });
 });

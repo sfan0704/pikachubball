@@ -12,7 +12,6 @@ import { ApiError } from "../../../client/src/api/errors";
 
 function setup(overrides: Partial<AccountActions> = {}) {
   const actions: AccountActions = {
-    signOut: vi.fn().mockResolvedValue(undefined),
     disconnectYahoo: vi.fn().mockResolvedValue({ revokedAtYahoo: true }),
     deleteAccount: vi.fn().mockResolvedValue({ revokedAtYahoo: true }),
     ...overrides,
@@ -20,17 +19,6 @@ function setup(overrides: Partial<AccountActions> = {}) {
   render(<AccountControls actions={actions} />);
   return actions;
 }
-
-describe("sign out", () => {
-  it("signs out straight away, without a confirmation", async () => {
-    const actions = setup();
-
-    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
-
-    expect(actions.signOut).toHaveBeenCalledOnce();
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-  });
-});
 
 describe("disconnect Yahoo", () => {
   it("explains what is removed and does nothing until confirmed", async () => {
@@ -132,7 +120,7 @@ describe("delete account", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Delete my account" }));
 
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Disconnect Yahoo" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
     finish({ revokedAtYahoo: true });
     expect(await screen.findByRole("status")).toBeInTheDocument();

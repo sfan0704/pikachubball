@@ -2,7 +2,7 @@
 
 Pikachu Basketball is a small Yahoo Fantasy Basketball analysis app for 9-category leagues. It keeps the original Vite, React, Express, service, parser, and repository structure and runs on Vercel with a dedicated Supabase project.
 
-The retained product includes league and week selection, rankings, team matchup comparison, roster data, and the matchup simulator. Yahoo is the only sign-in method. Chat and schedule features are outside the deployed product.
+The product has three screens: Matchup (today, yesterday and the week, player by player), Players (owned, available and waiver lists) and League (category ranks for the season or a week, with a team popover). Account (disconnect Yahoo, delete the account) opens from the header. Yahoo is the only sign-in method. Chat and schedule features are outside the deployed product.
 
 ## Runtime
 
@@ -46,7 +46,7 @@ npm ci
 
 The stand-in can fail the way Yahoo does. Tell it with `curl -X POST http://127.0.0.1:<stand-in port>/__scenario -d '{"scenario":"rate-limit","times":2}'`, using the `devStandIn` port from `npm run workspace`; scenarios are `ok`, `rate-limit`, `unavailable`, `unauthorized` (an expired token) and `timeout`, and `times` limits how many requests are affected. Local mode (`LOCAL_STACK=true`) refuses production, a hosted Supabase project and a hosted Yahoo address, and `YAHOO_API_BASE_URL` / `YAHOO_OAUTH_BASE_URL` cannot be set outside it.
 
-Before a release, `npm run build && npm run load` simulates 14 managers using the app at once against the stand-in and reports league-view timings against the 2-second target and the Yahoo calls each step made (1 for a new scope, 0 for repeat views and comparisons).
+Before a release, `npm run build && npm run load` simulates 14 managers using the app at once against the stand-in and reports league-view timings against the 2-second target and the Yahoo calls each step made (1 for a new scope, 0 for a scope already loaded).
 
 ### Several workspaces
 

@@ -96,7 +96,7 @@ describe("promises and size limits where the target layout applies", () => {
     const code = "async function load() { return 1; }\nexport function run() {\n  load();\n}\n";
     // A path no other test lints: the type-aware rules must not see a cached
     // program for the same file with different code.
-    expect(await errorsFor("shared/domain/player.ts", code)).toContain(
+    expect(await errorsFor("shared/domain/game-state.ts", code)).toContain(
       "@typescript-eslint/no-floating-promises"
     );
   });

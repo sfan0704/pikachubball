@@ -130,6 +130,7 @@ describe("application routing", () => {
       "/api/yahoo/roster-by-team/466.l.1.t.1",
       "/api/viz/heatmap/466.l.1",
       "/api/viz/matchup/466.l.1/466.l.1.t.1",
+      "/api/leagues/466.l.1/teams/466.l.1.t.1/roster",
     ];
 
     const responses = await Promise.all(removed.map((path) => request(app).get(path)));

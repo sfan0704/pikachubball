@@ -41,13 +41,6 @@ const ME = (connected = true, dailyStats = false) => ({
   features: { matchupAndLeague: dailyStats, players: dailyStats, projections: false },
   preferences: { selectedLeagueKey: null, selectedTeamKey: null, display: {} },
 });
-const ROSTER = {
-  fetchedAt: AT,
-  roster: [
-    { playerKey: "466.p.1", name: "Test Guard", position: "PG", team: "LAL", status: "active" },
-  ],
-};
-
 interface Backend {
   leagues?: unknown[];
   connected?: boolean;
@@ -90,7 +83,6 @@ function startBackend(options: Backend = {}) {
       if (dailyStats) return dailyStats;
       if (url === "/api/leagues") return jsonResponse({ leagues: stored });
       if (url === "/api/leagues?refresh=true") return jsonResponse({ leagues: [LEAGUE] });
-      if (url.endsWith("/roster")) return jsonResponse(ROSTER);
       if (options.tableError) {
         return jsonResponse(
           { code: options.tableError.code, message: "x", requestId: "req-1" },
@@ -181,17 +173,13 @@ describe("LeaguePage", () => {
     expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/current`);
   });
 
-  it("switches views without another request for the same table", async () => {
-    const requests = startBackend();
-    renderPage(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/1`);
-    await screen.findAllByTestId(/^row-ranking-/);
+  it("shows League as the board alone, with no view tabs", async () => {
+    startBackend({ dailyStats: true });
+    renderPage(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
 
-    for (const name of ["heatmap", "matchup", "compare"]) {
-      await userEvent.click(screen.getByRole("tab", { name }));
-    }
-
-    expect(await screen.findByTestId("card-comparison")).toBeInTheDocument();
-    expect(requests.filter((url) => url.includes("/api/leagues/"))).toHaveLength(1);
+    expect(await screen.findByTestId("card-league-rankings")).toBeInTheDocument();
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   });
 
   it("loads another period when it is chosen and records it in the URL", async () => {
@@ -205,16 +193,16 @@ describe("LeaguePage", () => {
     expect(location.history?.at(-1)).toBe(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/1`);
   });
 
-  it("shows the roster and the account controls", async () => {
+  it("opens the account controls from the header", async () => {
     startBackend();
     renderPage(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
     await screen.findAllByTestId(/^row-ranking-/);
 
-    await userEvent.click(screen.getByRole("tab", { name: "roster" }));
-    expect(await screen.findByText("Test Guard")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Account" }));
 
-    await userEvent.click(screen.getByRole("tab", { name: "account" }));
-    expect(screen.getByRole("button", { name: "Delete account" })).toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog", { name: "Account" });
+    expect(within(dialog).getByRole("button", { name: "Disconnect Yahoo" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Delete account" })).toBeInTheDocument();
   });
 
   it("looks up the leagues once when none are stored", async () => {

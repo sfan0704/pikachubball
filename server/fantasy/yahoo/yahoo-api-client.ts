@@ -41,19 +41,4 @@ export class YahooApiClient {
   get(endpoint: string): Promise<unknown> {
     return this.transport.get(endpoint);
   }
-
-  private apiRequest<T = unknown>(
-    endpoint: string,
-    params?: Record<string, string | number>
-  ): Promise<T> {
-    return this.transport.get<T>(endpoint, params);
-  }
-
-  /**
-   * Team resource methods
-   */
-  async getTeamRoster(teamKey: string, week?: number): Promise<unknown> {
-    const endpoint = week ? `/team/${teamKey}/roster;week=${week}` : `/team/${teamKey}/roster`;
-    return this.apiRequest(endpoint);
-  }
 }

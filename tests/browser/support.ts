@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Locator, type Page } from "@playwright/test";
 
 export { expect };
 
@@ -41,7 +41,6 @@ export const test = base.extend<{ browserErrors: void }>({
 
 export const LEAGUE = "466.l.100000";
 export const MY_TEAM = `${LEAGUE}.t.11`;
-export const TABS = ["rankings", "heatmap", "matchup", "compare", "roster", "account"] as const;
 
 /** This workspace's stand-in; playwright.config.mts sets the port. */
 function standIn(): string {
@@ -90,9 +89,12 @@ export async function setScenario(scenario: string, times?: number): Promise<voi
   expect(response.ok).toBe(true);
 }
 
-export async function openTab(page: Page, tab: (typeof TABS)[number]): Promise<void> {
-  await page.getByRole("tab", { name: tab }).click();
-  await expect(page.getByRole("tabpanel")).toBeVisible();
+/** Opens the Account dialog from the header and returns it. */
+export async function openAccount(page: Page): Promise<Locator> {
+  await page.getByRole("banner").getByRole("button", { name: "Account" }).click();
+  const dialog = page.getByRole("dialog", { name: "Account" });
+  await expect(dialog).toBeVisible();
+  return dialog;
 }
 
 /** Makes the page start in the given theme. */

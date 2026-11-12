@@ -2,7 +2,6 @@
  * Domain models and pure fantasy rules. No I/O, clock or framework imports.
  */
 
-export type { Player, PlayerStatus } from "./player";
 export type { CategoryKey } from "./stats";
 
 export { CATEGORIES } from "./stats";
@@ -30,24 +29,12 @@ export {
   tableCompleteness,
 } from "./fantasy-rules";
 export type { CategoryRanks, ScoringSupport, TableCompleteness } from "./fantasy-rules";
-export {
-  rankings,
-  heatmap,
-  compareTotals,
-  headToHead,
-  compareWithAll,
-  opponentOf,
-  officialResult,
-} from "./views";
+export { rankings, compareTotals, opponentOf } from "./views";
 export type {
   RankedTeam,
-  HeatmapCell,
-  HeatmapRow,
   CategoryResult,
   CategoryComparison,
   Score,
-  HeadToHead,
-  OfficialResult,
   TotalsComparison,
 } from "./views";
 export type {

@@ -6,7 +6,7 @@ import {
   rankSum,
 } from "./fantasy-rules";
 import { CATEGORIES, type CategoryKey } from "./stats";
-import type { MatchupPairing, TeamRow, TeamTable, TeamTotals } from "./team-table";
+import type { MatchupPairing, TeamTable, TeamTotals } from "./team-table";
 
 /** One team's line in the rankings. */
 export interface RankedTeam {
@@ -50,45 +50,6 @@ function compareSums(a: number | null, b: number | null): number {
   return a - b;
 }
 
-/** One heatmap cell. */
-export interface HeatmapCell {
-  readonly value: number | null;
-  readonly rank: number | null;
-  /** 100 for the best team in the category, near 0 for the worst; null when unranked. */
-  readonly percentile: number | null;
-}
-
-/** One team's row of heatmap cells. */
-export interface HeatmapRow {
-  readonly teamKey: string;
-  readonly teamName: string;
-  readonly cells: Readonly<Record<CategoryKey, HeatmapCell>>;
-}
-
-/** Every team's value, rank and percentile in every category, in table order. */
-export function heatmap(table: TeamTable): HeatmapRow[] {
-  const ranks = categoryRanks(table);
-  const rankedCount = Object.fromEntries(
-    CATEGORIES.map((key) => [
-      key,
-      table.teams.filter((team) => ranks[team.teamKey][key] !== null).length,
-    ])
-  ) as Record<CategoryKey, number>;
-
-  return table.teams.map((team) => ({
-    teamKey: team.teamKey,
-    teamName: team.teamName,
-    cells: Object.fromEntries(
-      CATEGORIES.map((key) => {
-        const rank = ranks[team.teamKey][key];
-        const count = rankedCount[key];
-        const percentile = rank === null ? null : ((count - rank + 1) / count) * 100;
-        return [key, { value: categoryValue(team.totals, key), rank, percentile }];
-      })
-    ) as Record<CategoryKey, HeatmapCell>,
-  }));
-}
-
 /** Who won a category. "unavailable" means a value is unknown, so no result is claimed. */
 export type CategoryResult = "win" | "loss" | "tie" | "unavailable";
 
@@ -112,14 +73,6 @@ export interface Score {
   readonly complete: boolean;
 }
 
-/** Two teams compared category by category, from my team's side. */
-export interface HeadToHead {
-  readonly myTeamKey: string;
-  readonly opponentTeamKey: string;
-  readonly categories: readonly CategoryComparison[];
-  readonly score: Score;
-}
-
 function compareCategory(mine: number | null, theirs: number | null, key: CategoryKey) {
   if (mine === null || theirs === null) {
     return "unavailable" as const;
@@ -141,10 +94,6 @@ function tally(categories: readonly CategoryComparison[]): Score {
     unavailable,
     complete: unavailable === 0,
   };
-}
-
-function findTeam(table: TeamTable, teamKey: string): TeamRow | undefined {
-  return table.teams.find((team) => team.teamKey === teamKey);
 }
 
 /** Two sets of totals compared category by category, from my side. */
@@ -172,27 +121,6 @@ export function compareTotals(mine: TeamTotals, theirs: TeamTotals): TotalsCompa
   return { categories, score: tally(categories) };
 }
 
-/** Compares two teams' observed totals; null if either team isn't in the table. */
-export function headToHead(
-  table: TeamTable,
-  myTeamKey: string,
-  opponentTeamKey: string
-): HeadToHead | null {
-  const mine = findTeam(table, myTeamKey);
-  const theirs = findTeam(table, opponentTeamKey);
-  if (!mine || !theirs) {
-    return null;
-  }
-  return { myTeamKey, opponentTeamKey, ...compareTotals(mine.totals, theirs.totals) };
-}
-
-/** My team compared against every other team, in table order. */
-export function compareWithAll(table: TeamTable, myTeamKey: string): HeadToHead[] {
-  return table.teams
-    .filter((team) => team.teamKey !== myTeamKey)
-    .flatMap((team) => headToHead(table, myTeamKey, team.teamKey) ?? []);
-}
-
 function pairingOf(table: TeamTable, teamKey: string): MatchupPairing | undefined {
   return table.pairings.find((pairing) => pairing.teamKeys.includes(teamKey));
 }
@@ -201,22 +129,4 @@ function pairingOf(table: TeamTable, teamKey: string): MatchupPairing | undefine
 export function opponentOf(table: TeamTable, myTeamKey: string): string | null {
   const pairing = pairingOf(table, myTeamKey);
   return pairing?.teamKeys.find((key) => key !== myTeamKey) ?? null;
-}
-
-/** Yahoo's own result for the week: "undecided" until it declares a winner or a tie. */
-export type OfficialResult = "win" | "loss" | "tie" | "undecided";
-
-/** The official outcome of my team's matchup, which is Yahoo's call and not computed here. */
-export function officialResult(table: TeamTable, myTeamKey: string): OfficialResult | null {
-  const pairing = pairingOf(table, myTeamKey);
-  if (!pairing) {
-    return null;
-  }
-  if (pairing.isTied) {
-    return "tie";
-  }
-  if (pairing.winnerTeamKey === null) {
-    return "undecided";
-  }
-  return pairing.winnerTeamKey === myTeamKey ? "win" : "loss";
 }

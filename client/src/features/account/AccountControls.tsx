@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { describeError } from "@/features/league/error-screens";
 
 /** What removing something does at Yahoo, as reported by the API. */
@@ -9,8 +8,8 @@ export interface RemovalResult {
   revokedAtYahoo: boolean;
 }
 
+/** What the account controls can do; each removal reports what Yahoo confirmed. */
 export interface AccountActions {
-  signOut(): Promise<unknown>;
   disconnectYahoo(): Promise<RemovalResult>;
   deleteAccount(): Promise<RemovalResult>;
 }
@@ -51,7 +50,10 @@ function ConfirmationPanel({
   const confirmation = CONFIRMATIONS[kind];
   return (
     <Alert role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">
-      <AlertTitle id="confirm-title">{confirmation.title}</AlertTitle>
+      {/* Under the Account dialog's title, so one level below it. */}
+      <h3 id="confirm-title" className="mb-1 font-medium leading-none tracking-tight">
+        {confirmation.title}
+      </h3>
       <AlertDescription className="mt-2 space-y-3">
         <p id="confirm-body">{confirmation.body}</p>
         <div className="flex gap-2">
@@ -72,7 +74,7 @@ function ConfirmationPanel({
   );
 }
 
-/** Sign out, disconnect Yahoo and delete the account; the last two ask first and say what they remove. */
+/** Disconnect Yahoo and delete the account; each asks first and says what it removes. */
 export function AccountControls({ actions }: { actions: AccountActions }) {
   const [pending, setPending] = useState<Pending>(null);
   const [busy, setBusy] = useState(false);
@@ -95,42 +97,33 @@ export function AccountControls({ actions }: { actions: AccountActions }) {
   };
 
   return (
-    <Card data-testid="card-account">
-      <CardHeader>
-        <CardTitle>Account</CardTitle>
-        <CardDescription>Signing out keeps your data; the other two remove it.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => void actions.signOut()} disabled={busy}>
-            Sign out
-          </Button>
-          <Button variant="outline" onClick={() => setPending("disconnect")} disabled={busy}>
-            Disconnect Yahoo
-          </Button>
-          <Button variant="destructive" onClick={() => setPending("delete")} disabled={busy}>
-            Delete account
-          </Button>
-        </div>
-        {pending && (
-          <ConfirmationPanel
-            kind={pending}
-            busy={busy}
-            onConfirm={() => void run(pending)}
-            onCancel={() => setPending(null)}
-          />
-        )}
-        {message && (
-          <p role="status" className="text-sm">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-4" data-testid="account-controls">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" onClick={() => setPending("disconnect")} disabled={busy}>
+          Disconnect Yahoo
+        </Button>
+        <Button variant="destructive" onClick={() => setPending("delete")} disabled={busy}>
+          Delete account
+        </Button>
+      </div>
+      {pending && (
+        <ConfirmationPanel
+          kind={pending}
+          busy={busy}
+          onConfirm={() => void run(pending)}
+          onCancel={() => setPending(null)}
+        />
+      )}
+      {message && (
+        <p role="status" className="text-sm">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

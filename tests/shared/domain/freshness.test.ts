@@ -47,7 +47,6 @@ describe("freshness policy table", () => {
         "schedule",
         "transactions",
         "draft",
-        "roster",
         "weeks",
       ] as const
     ).map((kind) => [kind, freshnessClass({ kind }, TODAY)]);
@@ -58,7 +57,6 @@ describe("freshness policy table", () => {
       schedule: "daily",
       transactions: "recent",
       draft: "settled",
-      roster: "recent",
       weeks: "settled",
     });
   });
@@ -73,7 +71,7 @@ describe("freshness policy table", () => {
     expect(followsLineup({ kind: "weekTable", scope: "current" })).toBe(true);
     expect(followsLineup({ kind: "weekTable", scope: "season" })).toBe(false);
     expect(followsLineup({ kind: "weekTable", scope: "past" })).toBe(false);
-    expect(followsLineup({ kind: "roster" })).toBe(false);
+    expect(followsLineup({ kind: "draft" })).toBe(false);
   });
 
   it("times a team day by how long ago it was (D2)", () => {
