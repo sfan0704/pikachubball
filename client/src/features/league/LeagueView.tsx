@@ -9,7 +9,7 @@ import { ShellSlot } from "@/features/shell/shell-slots";
 import type { Selection } from "./selection";
 import { TableBoundary } from "./TableBoundary";
 import { useNow } from "./useNow";
-import { LeagueControls } from "./LeagueControls";
+import { PeriodRow } from "./PeriodRow";
 import { optionFor, scopeOptions } from "./scope-options";
 import { LeagueSwitcher } from "./LeagueSwitcher";
 import type { Screen } from "./screens";
@@ -52,32 +52,34 @@ function Loading({ children }: { children: ReactNode }) {
 
 interface LeagueScreenProps extends Omit<LeagueViewProps, "league" | "screens"> {
   query: ReturnType<typeof useLeagueScope>;
+  /** The signed-in user's team in this league, which the board always ranks against. */
+  myTeamKey: string;
 }
 
-/** League: the league, team and period pickers, then the League board for that period. */
-function LeagueScreen({ selection, onSelect, onPickLeague, query }: LeagueScreenProps) {
+/** League: the period row, then the League board for that period. */
+function LeagueScreen({ selection, onSelect, onPickLeague, query, myTeamKey }: LeagueScreenProps) {
   const now = useNow();
-  const period = optionFor(selection.scope, scopeOptions(query.data?.settings.currentWeek ?? null));
+  const weeks = useWeeks(selection.leagueKey);
+  const options = scopeOptions(query.data?.settings.currentWeek ?? null, weeks.data?.weeks);
+  const period = optionFor(selection.scope, options);
   return (
-    <>
+    <div className="space-y-3">
       <ShellSlot name="context">{period.label}</ShellSlot>
-      <LeagueControls selection={selection} table={query.data} onSelect={onSelect} />
+      <PeriodRow options={options} period={period} onSelect={onSelect} />
       <TableBoundary query={query} now={now} onPickLeague={onPickLeague}>
         {(table) => (
           <Loading>
             <LeagueBoard
               table={table}
               leagueKey={selection.leagueKey}
-              myTeamKey={selection.teamKey}
-              periodLabel={
-                optionFor(selection.scope, scopeOptions(table.settings.currentWeek)).label
-              }
+              myTeamKey={myTeamKey}
+              periodLabel={period.label}
               onPickLeague={onPickLeague}
             />
           </Loading>
         )}
       </TableBoundary>
-    </>
+    </div>
   );
 }
 
@@ -127,7 +129,7 @@ export function LeagueView({ league, screens, ...rest }: LeagueViewProps) {
         />
       </ShellSlot>
       <div className="space-y-4">
-        <ScreenBody {...rest} query={query} />
+        <ScreenBody {...rest} query={query} myTeamKey={league.teamKey} />
       </div>
       {screens.length > 1 && <ScreenNav selection={selection} screens={screens} />}
     </>

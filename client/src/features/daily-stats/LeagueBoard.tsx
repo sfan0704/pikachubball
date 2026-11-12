@@ -1,15 +1,6 @@
 import { useMemo, useRef, useState, type MouseEvent } from "react";
-import { Info } from "lucide-react";
 import type { TeamTable } from "@shared/domain";
 import { useLeagueScope } from "@/api/hooks";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   boardRows,
@@ -21,7 +12,13 @@ import {
   type BoardTile,
   type Records,
 } from "./league-board-model";
-import { rankText, TONE_CLASS } from "./rank-tone";
+import {
+  BADGE_TONE_CLASS,
+  RANK_TEXT_CLASS,
+  rankText,
+  TILE_TONE_CLASS,
+  TONE_CLASS,
+} from "./rank-tone";
 import { TeamPopover } from "./TeamPopover";
 
 interface LeagueBoardProps {
@@ -41,13 +38,15 @@ function Tile({ tile, picked, onPick }: { tile: BoardTile; picked: boolean; onPi
       onClick={onPick}
       data-testid={`tile-${tile.pick}`}
       className={cn(
-        "flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-[10px] border px-0.5 py-1.5",
-        TONE_CLASS[tile.tone],
-        picked && "ring-2 ring-inset ring-foreground"
+        "flex flex-col items-center gap-0.5 rounded-[10px] border py-2",
+        TILE_TONE_CLASS[tile.tone],
+        picked && "shadow-[inset_0_0_0_2px_#15181D] dark:shadow-[inset_0_0_0_2px_white]"
       )}
     >
-      <span className="text-[11px] font-medium leading-none">{tile.label}</span>
-      <span className="text-lg font-extrabold leading-tight">
+      <span className="text-[9px] font-bold tracking-[0.2px] text-[#4B5563] dark:text-muted-foreground">
+        {tile.label}
+      </span>
+      <span className={cn("text-lg font-extrabold leading-tight", RANK_TEXT_CLASS[tile.tone])}>
         <span className="sr-only">your rank </span>
         {rankText(tile.rank)}
       </span>
@@ -85,12 +84,14 @@ function Cells({ cells }: { cells: readonly BoardCell[] }) {
         <span
           key={cell.key}
           className={cn(
-            "flex min-w-0 flex-col items-center rounded-[6px] py-1",
+            "flex min-w-0 flex-col items-center gap-px rounded-[6px] py-[5px]",
             TONE_CLASS[cell.tone]
           )}
         >
-          <span className="text-[9px] leading-none">{cell.label}</span>
-          <span className="text-[10.5px] font-bold leading-tight tracking-tighter">
+          <span className="text-[9.5px] font-bold leading-none text-[#4B5563] dark:text-muted-foreground">
+            {cell.label}
+          </span>
+          <span className="whitespace-nowrap text-xs font-bold leading-tight tracking-[-0.3px]">
             {cell.text}
           </span>
         </span>
@@ -107,65 +108,37 @@ function Row({
   onOpen: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
-    <li>
+    <li className="border-t border-[#F1F2F4] dark:border-border">
       <button
         type="button"
         onClick={onOpen}
         data-testid={`row-ranking-${row.teamKey}`}
         className={cn(
-          "flex w-full flex-col gap-1.5 rounded-[6px] px-1 py-2 text-left",
-          row.isMine && "bg-amber-50 dark:bg-amber-950/40"
+          "flex w-full flex-col gap-1.5 py-2 text-left",
+          row.isMine && "rounded-[6px] bg-[#FFFBEB] dark:bg-amber-950/40"
         )}
       >
-        <span className="grid w-full grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2">
+        <span className="grid w-full grid-cols-[26px_minmax(0,1fr)_auto] items-center gap-2">
           <span
             className={cn(
-              "rounded-[6px] py-0.5 text-center text-sm font-extrabold",
-              TONE_CLASS[row.tone]
+              "rounded-[6px] py-[3px] text-center text-sm font-extrabold",
+              BADGE_TONE_CLASS[row.tone]
             )}
             data-testid="row-rank"
           >
             {rankText(row.rank)}
           </span>
-          <span className="truncate text-sm font-semibold">
+          <span className="truncate text-[13px] font-semibold">
             {row.teamName}
             {row.isMine && <span className="sr-only"> (you)</span>}
           </span>
-          <span className="text-sm tabular-nums" data-testid="row-value">
+          <span className="text-right text-[13px] font-bold tabular-nums" data-testid="row-value">
             {row.value}
           </span>
         </span>
         {row.cells && <Cells cells={row.cells} />}
       </button>
     </li>
-  );
-}
-
-function Explanation() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          aria-label="How to read this"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-        >
-          <Info className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogTitle className="pr-10 text-base font-bold">Category ranks</DialogTitle>
-        <DialogDescription className="text-sm leading-relaxed text-foreground">
-          Every team in the league is ranked in each of the nine categories, using totals for the
-          period you pick. 1 is best. The top three are green and the bottom three red. Overall adds
-          up each team's category ranks, so a lower total is stronger. W–L–T is the season
-          head-to-head record from Yahoo; the ranks are not Yahoo's official standings.
-        </DialogDescription>
-        <p className="text-sm text-muted-foreground">
-          Tied teams share a rank and the next one is skipped (1, 1, 3).
-        </p>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -208,21 +181,19 @@ export function LeagueBoard({
   return (
     <div className="space-y-3" data-testid="card-league-rankings">
       <Tiles tiles={tiles} pick={pick} onPick={setPick} />
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold" data-testid="board-title">
-              {title}
-            </h2>
-            <Explanation />
-          </div>
-          <ul className="divide-y divide-border" aria-label={`${title} ranking`}>
-            {rows.map((row) => (
-              <Row key={row.teamKey} row={row} onOpen={open(row.teamKey)} />
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <section className="rounded-2xl border border-[#E2E5EA] bg-white px-3 py-1 dark:border-border dark:bg-card">
+        <h2
+          className="flex min-h-8 items-center text-xs font-bold uppercase tracking-[0.5px] text-[#374151] dark:text-muted-foreground"
+          data-testid="board-title"
+        >
+          {title}
+        </h2>
+        <ul aria-label={`${title} ranking`}>
+          {rows.map((row) => (
+            <Row key={row.teamKey} row={row} onOpen={open(row.teamKey)} />
+          ))}
+        </ul>
+      </section>
       {openTeam !== null && (
         <TeamPopover
           table={table}

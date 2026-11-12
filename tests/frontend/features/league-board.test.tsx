@@ -13,6 +13,7 @@ import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture
 import { parseSeasonTable, parseWeekTable } from "../../../server/fantasy/league-tables";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { LeagueBoard } from "../../../client/src/features/daily-stats/LeagueBoard";
+import { LeagueExplanation } from "../../../client/src/features/daily-stats/LeagueExplanation";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
 import { defined } from "../../support/defined";
@@ -139,8 +140,7 @@ describe("LeagueBoard", () => {
   });
 
   it("explains what the ranking measures", async () => {
-    stubServer();
-    renderBoard();
+    render(<LeagueExplanation />);
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "How to read this" }));

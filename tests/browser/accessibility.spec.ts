@@ -18,7 +18,7 @@ for (const theme of ["light", "dark"] as const) {
     test("League has no WCAG 2.1 AA violations", async ({ page }) => {
       await useTheme(page, theme);
       await signIn(page);
-      await page.getByLabel("Time period").selectOption("1");
+      await page.getByLabel("Period").selectOption("1");
       await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
       await expect(page.getByRole("status", { name: "Loading" })).toHaveCount(0);
 

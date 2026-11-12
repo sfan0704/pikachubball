@@ -3,6 +3,7 @@ import type { UserLeague } from "@shared/api/leagues";
 import {
   parseSelectionPath,
   pickDefaultLeague,
+  openScreen,
   resolveSelection,
   selectionPath,
   type Selection,
@@ -167,7 +168,7 @@ describe("resolving what to show", () => {
     const requested = selection({ screen: "players" });
 
     expect(resolveSelection(requested, [CURRENT], NO_PREFERENCE, LEAGUE_ONLY)).toEqual(
-      selection({ screen: "league", scope: "current" })
+      selection({ screen: "league", scope: "season" })
     );
     expect(
       resolveSelection(requested, [CURRENT], NO_PREFERENCE, ["matchup", "league"])
@@ -188,10 +189,11 @@ describe("resolving what to show", () => {
     };
 
     expect(resolveSelection(null, [CURRENT, OLD], preferences, LEAGUE_ONLY)).toEqual(
-      selection({ leagueKey: "454.l.9", teamKey: "454.l.9.t.5" })
+      selection({ leagueKey: "454.l.9", teamKey: "454.l.9.t.5", scope: "season" })
     );
     expect(resolveSelection(null, [CURRENT, OLD], preferences, ALL)).toMatchObject({
       screen: "matchup",
+      scope: "current",
       day: "today",
     });
   });
@@ -214,5 +216,20 @@ describe("resolving what to show", () => {
 
   it("has nothing to show without leagues", () => {
     expect(resolveSelection(null, [], NO_PREFERENCE, ALL)).toBeNull();
+  });
+});
+
+describe("opening a screen from the tab bar", () => {
+  it("opens League on the season totals, whatever week was shown", () => {
+    expect(openScreen(selection({ screen: "matchup", day: "week", scope: 4 }), "league")).toEqual(
+      selection({ screen: "league", day: "week", scope: "season" })
+    );
+  });
+
+  it("keeps the period and day when opening Matchup or Players", () => {
+    const current = selection({ screen: "league", scope: 2 });
+
+    expect(openScreen(current, "players")).toEqual({ ...current, screen: "players" });
+    expect(openScreen(current, "matchup")).toEqual({ ...current, screen: "matchup" });
   });
 });

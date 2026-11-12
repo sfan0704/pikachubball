@@ -18,7 +18,7 @@ test("signs in with a seeded manager and shows the league rankings", async ({ pa
 
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
   await expect(page.getByTestId(`row-ranking-${MY_TEAM}`)).toContainText("(you)");
-  await expect(page).toHaveURL(new RegExp(`/leagues/${LEAGUE}/teams/${MY_TEAM}/current$`));
+  await expect(page).toHaveURL(new RegExp(`/leagues/${LEAGUE}/teams/${MY_TEAM}/season$`));
 });
 
 test("opens on Matchup and keeps the screen and day through refresh and back", async ({ page }) => {
@@ -46,7 +46,7 @@ test("opens on Matchup and keeps the screen and day through refresh and back", a
   await expect(page.getByTestId("players-list")).toBeVisible();
 
   await openScreen(page, "League");
-  await expect(page).toHaveURL(`${base}/current`);
+  await expect(page).toHaveURL(`${base}/season`);
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
 
   await page.goBack();
@@ -64,16 +64,15 @@ test("opens on Matchup and keeps the screen and day through refresh and back", a
 test("keeps the selection in the URL: a deep link, another period, and back", async ({ page }) => {
   await signIn(page);
 
-  await page.goto(`/leagues/${LEAGUE}/teams/${LEAGUE}.t.3/season`);
-  await expect(page.getByLabel("Viewing as")).toHaveValue(`${LEAGUE}.t.3`);
-  await expect(page.getByLabel("Time period")).toHaveValue("season");
+  await page.goto(`/leagues/${LEAGUE}/teams/${MY_TEAM}/current`);
+  await expect(page.getByLabel("Period")).toHaveValue("current");
 
-  await page.getByLabel("Time period").selectOption("1");
+  await page.getByLabel("Period").selectOption("1");
   await expect(page).toHaveURL(/\/1$/);
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
 
   await page.goBack();
-  await expect(page.getByLabel("Time period")).toHaveValue("season");
+  await expect(page.getByLabel("Period")).toHaveValue("current");
 });
 
 test("shows League as the board alone, with no view tabs", async ({ page }) => {

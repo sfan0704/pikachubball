@@ -23,18 +23,39 @@ async function sidewaysOverflow(page: Page): Promise<number> {
 test("switches the period and keeps Yahoo's season record beside each team", async ({ page }) => {
   await signIn(page);
   const mine = page.getByTestId(`row-ranking-${MY_TEAM}`);
-  await expect(page.getByTestId("board-title")).toHaveText("Overall");
-  await expect(mine.getByTestId("row-value")).toHaveText("36–27–0");
-
-  await page.getByLabel("Time period").selectOption("season");
   await expect(page).toHaveURL(/\/season$/);
+  await expect(page.getByLabel("Period")).toHaveValue("season");
+  await expect(page.getByTestId("board-title")).toHaveText("Overall");
   await expect(page.getByTestId("tile-overall")).toContainText("4");
   await expect(mine).toContainText("47.9%");
+  await expect(mine.getByTestId("row-value")).toHaveText("36–27–0");
 
-  await page.getByLabel("Time period").selectOption("1");
+  await page.getByLabel("Period").selectOption("1");
   await expect(page).toHaveURL(/\/1$/);
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
   await expect(mine.getByTestId("row-value")).toHaveText("36–27–0");
+});
+
+test("has one period row at phone width: dated weeks, the ⓘ, and no League or Viewing as select", async ({
+  page,
+}) => {
+  await signIn(page);
+  const period = page.getByLabel("Period");
+  await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
+
+  await expect(page.getByLabel("Viewing as")).toHaveCount(0);
+  await expect(page.getByLabel("Time period")).toHaveCount(0);
+  await expect(page.getByRole("combobox")).toHaveCount(1);
+  const options = await period.getByRole("option").allTextContents();
+  expect(options[0]).toBe("Season totals");
+  expect(options[1]).toMatch(/^Week \d+ · \w{3} \d+–(\w{3} )?\d+ \(now\)$/);
+  expect(options.at(-1)).toMatch(/^Week 1 · \w{3} \d+–(\w{3} )?\d+$/);
+
+  const info = page.getByRole("button", { name: "How to read this" });
+  const [periodBox, infoBox] = [await period.boundingBox(), await info.boundingBox()];
+  expect(periodBox && infoBox && Math.abs(periodBox.y - infoBox.y)).toBeLessThanOrEqual(4);
+  await info.click();
+  await expect(page.getByRole("dialog", { name: "Category ranks" })).toBeVisible();
 });
 
 test("every tile selects its ranking without scrolling sideways", async ({ page }) => {
@@ -55,6 +76,7 @@ test("every tile selects its ranking without scrolling sideways", async ({ page 
 
 test("tied teams share a rank and the next one is skipped", async ({ page }) => {
   await signIn(page);
+  await page.getByLabel("Period").selectOption("current");
 
   // This week two teams have the same rank sum, and three share a TO rank.
   await expect(page.getByTestId("row-rank")).toHaveText([
@@ -94,10 +116,11 @@ test("tied teams share a rank and the next one is skipped", async ({ page }) => 
 
 test("opens a team's ranks and roster, and closes it again", async ({ page }) => {
   await signIn(page);
+  await page.getByLabel("Period").selectOption("current");
 
   await page.getByTestId(`row-ranking-${LEAGUE}.t.9`).click();
   const popover = page.getByRole("dialog", { name: "Team 9" });
-  await expect(popover).toContainText("ranks for this week");
+  await expect(popover).toContainText(/ranks for week \d+ · /);
   await expect(
     popover.getByRole("list", { name: "Category ranks and totals" }).getByRole("listitem")
   ).toHaveCount(9);
