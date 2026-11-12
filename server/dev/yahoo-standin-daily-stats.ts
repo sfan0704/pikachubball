@@ -24,7 +24,17 @@ const RECORDINGS = {
   weeks: "fan-91-week-2/game-weeks",
   transactions: "d7-transactions-own-team",
   draft: "d8-draft-results",
+  playerList: "d5-available",
+  scheduleFirst: "d6-status-t-start-0",
+  scheduleSecond: "d6-status-t-start-25",
 } as const;
+
+/**
+ * The NBA teams the two recorded schedule pages miss. The stand-in's third page
+ * gives five of its players these teams, so the schedule is complete after 3
+ * pages, inside the plan's 2 to 4.
+ */
+const TEAMS_AFTER_TWO_PAGES = ["CHA", "LAL", "MEM", "OKC", "ORL"] as const;
 
 type RecordingName = keyof typeof RECORDINGS;
 
@@ -97,6 +107,46 @@ export class DailyStatsRecordings {
 
   /** Yahoo's body for a daily-stats path, or null when the path isn't one of them. */
   body(path: string): Json | null {
+    return this.playerPages(path) ?? this.teamAndGameBodies(path);
+  }
+
+  /** D5 and D6: a page of the league's player list, or of its rostered players' game logs. */
+  private playerPages(path: string): Json | null {
+    const list =
+      /^\/league\/((\d+)\.l\.\d+)\/players;status=[ATW](;position=\w+)?(;search=[^;/]+)?;sort=(AR|OR);start=\d+;count=25;out=ownership,percent_owned$/.exec(
+        path
+      );
+    if (list) {
+      return this.inLeague("playerList", list[1], list[2], {});
+    }
+    const schedule =
+      /^\/league\/((\d+)\.l\.\d+)\/players;status=T;start=(\d+);count=25;out=game_log$/.exec(path);
+    return schedule ? this.schedulePage(schedule[1], schedule[2], Number(schedule[3])) : null;
+  }
+
+  /**
+   * A page of rostered players' game logs: the two recorded pages, then the
+   * first one again with five players moved to the teams those two miss.
+   */
+  private schedulePage(leagueKey: string, game: string, start: number): Json {
+    if (start < 50) {
+      return this.inLeague(start === 0 ? "scheduleFirst" : "scheduleSecond", leagueKey, game, {});
+    }
+    const body = this.inLeague("scheduleFirst", leagueKey, game, {});
+    const league = (body.fantasy_content as Json).league as Json[];
+    const players = (league[1] as { players: Record<string, { player: [Json[]] }> }).players;
+    TEAMS_AFTER_TWO_PAGES.forEach((team, i) => {
+      const identity = players[String(i)].player[0].find((part) => "editorial_team_abbr" in part);
+      if (identity === undefined) {
+        throw new Error("The recorded schedule page has a player without an NBA team");
+      }
+      identity.editorial_team_abbr = team;
+    });
+    return body;
+  }
+
+  /** Every other daily-stats body: team days, game logs, totals, weeks, moves and the draft. */
+  private teamAndGameBodies(path: string): Json | null {
     const day =
       /^\/team\/((\d+)\.l\.\d+\.t\.(\d+))\/roster;date=([\d-]+)\/players\/stats;type=date;date=\4$/.exec(
         path

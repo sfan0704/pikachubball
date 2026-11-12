@@ -138,7 +138,7 @@ describe("the Players screen", () => {
     );
   });
 
-  it("filters the page by NBA team and schedule, and says when nothing matches", async () => {
+  it("filters the page by NBA team and schedule without asking for anything, and says when nothing matches", async () => {
     const user = userEvent.setup();
     renderScreen();
     await list();
@@ -146,6 +146,7 @@ describe("the Players screen", () => {
     await waitFor(() =>
       expect(within(screen.getByLabelText("NBA team")).getAllByRole("option")).toHaveLength(9)
     );
+    const asked = [...requests];
 
     await user.selectOptions(screen.getByLabelText("NBA team"), "PHX");
     const phx = within(await list()).getAllByRole("listitem");
@@ -154,6 +155,8 @@ describe("the Players screen", () => {
     // PHX is idle today in the fixture.
     await user.click(screen.getByRole("button", { name: "Tonight" }));
     expect(screen.getByText("No players on this page match these filters.")).toBeInTheDocument();
+    // Yahoo can't filter on these, so the call budget for a filter tap is 0.
+    expect(requests).toEqual(asked);
   });
 
   it("switches the stats period", async () => {

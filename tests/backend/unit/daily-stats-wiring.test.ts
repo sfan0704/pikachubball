@@ -32,14 +32,14 @@ const PRODUCTION = {
 };
 
 describe("daily-stats wiring", () => {
-  it("builds the Yahoo source in production, never the fixture, with Matchup and League on and Players off", async () => {
+  it("builds the Yahoo source in production, never the fixture, with Matchup, League and Players on", async () => {
     constructed.count = 0;
 
     const dependencies = createServerDependencies(loadConfig(PRODUCTION));
 
     expect(dependencies.features).toEqual({
       matchupAndLeague: true,
-      players: false,
+      players: true,
       projections: false,
     });
     expect(dependencies.projectionSource).toBeNull();

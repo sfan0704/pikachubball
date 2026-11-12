@@ -430,7 +430,7 @@ flowchart LR
 - **Partial data.** Each dataset loads and fails on its own; a failed section keeps what it showed, labelled with its age, and offers a retry.
 - **Only the OAuth token.** No Yahoo website routes or cookies. Injury status and notes are today's values and are never shown against a past date.
 - **Projections slot.** `ProjectionSource` is an interface with no implementation. `GET /api/me` lists the wired features as separate switches (`matchupAndLeague`, `players`, `projections`; projections `false`), and the client offers Next 7 projected only when it is true. Turning it on is its own ticket after FAN-94.
-- **Static first.** The `shared/api` contracts are the boundary between screens and Yahoo. A fixture `DailyStatsSource`, wired only in local, CI and review like the Yahoo stand-in, lets the screens be finished before any Yahoo adapter; production shows a daily-stats screen through the same feature list only once every dataset it reads is connected to Yahoo. Matchup and League are on in production (FAN-116); Players stays off until FAN-119.
+- **Static first.** The `shared/api` contracts are the boundary between screens and Yahoo. A fixture `DailyStatsSource`, wired only in local, CI and review like the Yahoo stand-in, lets the screens be finished before any Yahoo adapter; production shows a daily-stats screen through the same feature list only once every dataset it reads is connected to Yahoo. Matchup and League are on in production (FAN-116), and Players too (FAN-119).
 
 ## API
 
