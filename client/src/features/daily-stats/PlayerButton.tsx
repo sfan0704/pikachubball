@@ -23,7 +23,8 @@ export function PlayerButton({ player, showInjury, onOpen }: PlayerButtonProps) 
       >
         <span className="block text-sm font-medium">{player.name}</span>
         <span className="block text-xs text-muted-foreground">
-          {player.positions.join(", ")} · {player.nbaTeam}
+          <span data-testid="player-positions">{player.positions.join(", ")}</span> ·{" "}
+          {player.nbaTeam}
         </span>
       </button>
       {showInjury && <InjuryTag player={player} />}
