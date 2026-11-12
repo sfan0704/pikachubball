@@ -29,7 +29,7 @@ async function pickPosition(page: Page, position: string) {
   const sheet = page.getByRole("dialog", { name: "Filters" });
   await sheet
     .getByRole("group", { name: "Position" })
-    .getByRole("button", { name: position })
+    .getByRole("button", { name: position, exact: true })
     .click();
   await sheet.getByRole("button", { name: /^Show \d+ players?$/ }).click();
   await expect(sheet).toBeHidden();
@@ -124,7 +124,10 @@ test("opens the filters sheet, badges what is on and clears it", async ({ page }
   const sheet = page.getByRole("dialog", { name: "Filters" });
   await expect(sheet).toBeVisible();
   await sheet.getByLabel("NBA team").selectOption("DEN");
-  await sheet.getByRole("group", { name: "Position" }).getByRole("button", { name: "C" }).click();
+  await sheet
+    .getByRole("group", { name: "Position" })
+    .getByRole("button", { name: "C", exact: true })
+    .click();
   await expect(sheet.getByRole("button", { name: /^Show \d+ players?$/ })).toBeVisible();
   expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
   await sheet.getByRole("button", { name: /^Show \d+ players?$/ }).click();

@@ -71,7 +71,7 @@ test("opens an available player from Players", async ({ page }) => {
   await signIn(page, "a", "Players");
 
   const first = page.getByTestId("players-list").getByRole("button").first();
-  const name = (await first.locator("span").first().textContent()) ?? "";
+  const name = (await first.textContent()) ?? "";
   await first.click();
   const sheet = page.getByRole("dialog", { name });
   await expect(sheet.getByTestId("player-detail-stats")).toBeVisible();
