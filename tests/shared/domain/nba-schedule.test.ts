@@ -25,6 +25,16 @@ describe("schedule filters", () => {
       tomorrow: true,
       backToBack: true,
       gamesLeftThisWeek: 3,
+      gamesThisWeek: 4,
+      weekDays: [
+        { date: "2026-11-09", plays: true },
+        { date: "2026-11-10", plays: true },
+        { date: "2026-11-11", plays: true },
+        { date: "2026-11-12", plays: false },
+        { date: "2026-11-13", plays: false },
+        { date: "2026-11-14", plays: true },
+        { date: "2026-11-15", plays: false },
+      ],
     });
   });
 
@@ -56,6 +66,18 @@ describe("schedule filters", () => {
     expect(teamSchedule(GAMES, at("2026-11-15T15:00:00Z", NEW_YORK)).gamesLeftThisWeek).toBe(0);
   });
 
+  it("marks each Eastern date of the scoring week the team plays, ignoring games outside it", () => {
+    const later = teamSchedule(GAMES, at("2026-11-13T15:00:00Z", NEW_YORK));
+    expect(later.weekDays.filter((day) => day.plays).map((day) => day.date)).toEqual([
+      "2026-11-09",
+      "2026-11-10",
+      "2026-11-11",
+      "2026-11-14",
+    ]);
+    expect(later.gamesThisWeek).toBe(4);
+    expect(later.gamesLeftThisWeek).toBe(1);
+  });
+
   it("counts the whole week when the week hasn't started yet", () => {
     const sunday = { now: Date.parse("2026-11-08T15:00:00Z"), timeZone: NEW_YORK, week: WEEK };
     expect(teamSchedule(GAMES, sunday).gamesLeftThisWeek).toBe(4);
@@ -67,6 +89,16 @@ describe("schedule filters", () => {
       tomorrow: false,
       backToBack: false,
       gamesLeftThisWeek: 0,
+      gamesThisWeek: 0,
+      weekDays: [
+        { date: "2026-11-09", plays: false },
+        { date: "2026-11-10", plays: false },
+        { date: "2026-11-11", plays: false },
+        { date: "2026-11-12", plays: false },
+        { date: "2026-11-13", plays: false },
+        { date: "2026-11-14", plays: false },
+        { date: "2026-11-15", plays: false },
+      ],
     });
   });
 

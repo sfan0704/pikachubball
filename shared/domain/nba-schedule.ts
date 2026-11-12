@@ -30,6 +30,26 @@ export interface TeamSchedule {
   readonly backToBack: boolean;
   /** Games on or after today's Eastern date and inside the scoring week. */
   readonly gamesLeftThisWeek: number;
+  /** Every game inside the scoring week, played or not. */
+  readonly gamesThisWeek: number;
+  /** Each date of the scoring week, first to last, and whether the team plays on it (Eastern dates). */
+  readonly weekDays: readonly WeekDay[];
+}
+
+/** One date of the scoring week for one team. */
+export interface WeekDay {
+  /** YYYY-MM-DD, US Eastern. */
+  readonly date: string;
+  readonly plays: boolean;
+}
+
+/** The dates from start to end, both included. */
+function datesFrom(start: string, end: string): string[] {
+  const dates: string[] = [];
+  for (let date = start; date <= end; date = addDays(date, 1)) {
+    dates.push(date);
+  }
+  return dates;
 }
 
 /** The YYYY-MM-DD date of an instant in a time zone. */
@@ -56,12 +76,15 @@ export function teamSchedule(
   const from = nbaToday > context.week.start ? nbaToday : context.week.start;
   const playsTonight = localDates.has(today);
   const playsTomorrow = localDates.has(tomorrow);
+  const { start, end } = context.week;
+  const gameDates = new Set(games.map((game) => game.date));
   return {
     tonight: playsTonight,
     tomorrow: playsTomorrow,
     backToBack: playsTonight && playsTomorrow,
-    gamesLeftThisWeek: games.filter((game) => game.date >= from && game.date <= context.week.end)
-      .length,
+    gamesLeftThisWeek: games.filter((game) => game.date >= from && game.date <= end).length,
+    gamesThisWeek: games.filter((game) => game.date >= start && game.date <= end).length,
+    weekDays: datesFrom(start, end).map((date) => ({ date, plays: gameDates.has(date) })),
   };
 }
 

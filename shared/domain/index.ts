@@ -104,5 +104,5 @@ export {
   weekPlayers,
   weekValue,
 } from "./matchup-week";
-export type { ScheduleContext, ScheduledGame, TeamSchedule } from "./nba-schedule";
+export type { ScheduleContext, ScheduledGame, TeamSchedule, WeekDay } from "./nba-schedule";
 export { localDateOf, scheduleByTeam, teamSchedule } from "./nba-schedule";

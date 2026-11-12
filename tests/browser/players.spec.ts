@@ -23,6 +23,27 @@ async function openPlayers(page: Page) {
   await expect(rows(page).first().getByTestId("player-averages")).not.toContainText("—");
 }
 
+/** Picks a position in the Filters sheet and closes it. */
+async function pickPosition(page: Page, position: string) {
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Filters" });
+  await sheet
+    .getByRole("group", { name: "Position" })
+    .getByRole("button", { name: position, exact: true })
+    .click();
+  await sheet.getByRole("button", { name: /^Show \d+ players?$/ }).click();
+  await expect(sheet).toBeHidden();
+}
+
+/** Picks an NBA team in the Filters sheet ("" for every team) and closes it. */
+async function pickNbaTeam(page: Page, team: string) {
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Filters" });
+  await sheet.getByLabel("NBA team").selectOption(team);
+  await sheet.getByRole("button", { name: /^Show \d+ players?$/ }).click();
+  await expect(sheet).toBeHidden();
+}
+
 /**
  * Waits until the list shows at least one row and every row lists a position
  * matching `position`. Polling rides out the unfiltered rows still on screen
@@ -45,12 +66,11 @@ test("lists not-owned players with a waiver row, an inactive row and a <1% row",
 }) => {
   await openPlayers(page);
 
-  await expect(page.getByTestId("players-range")).toHaveText(
-    "Players 1–25 · Season average per game"
-  );
+  await expect(page.getByTestId("players-range")).toHaveText("Players 1–25");
+  await expect(page.getByTestId("players-count")).toHaveText("25 players · season avg per game");
   const waiver = rows(page)
     .getByTestId("ownership")
-    .filter({ hasText: /^Waivers until \w{3}$/ });
+    .filter({ hasText: /^Clears \w{3}$/ });
   await expect(waiver.first()).toBeVisible();
   await expect(
     rows(page).getByTestId("rostered").filter({ hasText: /^<1%/ }).first()
@@ -77,7 +97,7 @@ test("shows owned players with their fantasy team", async ({ page }) => {
     .getByRole("button", { name: "Owned", exact: true })
     .click();
   await expect(rows(page).first().getByTestId("ownership")).toHaveText(/^Team \d+$/);
-  await expect(rows(page).filter({ hasText: "Waivers until" })).toHaveCount(0);
+  await expect(rows(page).filter({ hasText: "Clears" })).toHaveCount(0);
 });
 
 test("searches and filters by position, including a composite slot", async ({ page }) => {
@@ -89,10 +109,61 @@ test("searches and filters by position, including a composite slot", async ({ pa
   await page.getByRole("searchbox", { name: "Search players" }).fill("");
   await expect(rows(page)).toHaveCount(25);
 
-  await page.getByLabel("Position").selectOption("G");
+  await pickPosition(page, "G");
   await expectEveryRowPlays(page, /^(PG|SG)$/);
-  await page.getByLabel("Position").selectOption("C");
+  await pickPosition(page, "C");
   await expectEveryRowPlays(page, /^C$/);
+});
+
+test("opens the filters sheet, badges what is on and clears it", async ({ page }) => {
+  await openPlayers(page);
+  const filtersButton = page.getByRole("button", { name: /^Filters/ });
+  await expect(filtersButton).toHaveAccessibleName("Filters");
+
+  await filtersButton.click();
+  const sheet = page.getByRole("dialog", { name: "Filters" });
+  await expect(sheet).toBeVisible();
+  await sheet.getByLabel("NBA team").selectOption("DEN");
+  await sheet
+    .getByRole("group", { name: "Position" })
+    .getByRole("button", { name: "C", exact: true })
+    .click();
+  await expect(sheet.getByRole("button", { name: /^Show \d+ players?$/ })).toBeVisible();
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
+  await sheet.getByRole("button", { name: /^Show \d+ players?$/ }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page.getByTestId("filters-badge")).toHaveText("2");
+  await expect(filtersButton).toHaveAccessibleName("Filters, 2 on");
+  await expectEveryRowPlays(page, /^C$/);
+  for (const meta of await rows(page).allTextContents()) {
+    expect(meta).toContain("DEN");
+  }
+
+  await filtersButton.click();
+  await sheet.getByRole("button", { name: "Clear" }).click();
+  await sheet.getByRole("button", { name: /^Show \d+ players?$/ }).click();
+  await expect(page.getByTestId("filters-badge")).toBeHidden();
+  await expect(rows(page)).toHaveCount(25);
+});
+
+test("sorts the page by a category and by rostered %", async ({ page }) => {
+  await openPlayers(page);
+  const sortBy = page.getByLabel("Sort by");
+
+  await sortBy.selectOption({ label: "PTS" });
+  const points = await rows(page)
+    .getByTestId("player-averages")
+    .evaluateAll((lists) =>
+      lists.map((list) => Number(list.querySelectorAll("dd")[3]?.textContent))
+    );
+  expect(points).toEqual([...points].sort((a, b) => b - a));
+
+  await sortBy.selectOption({ label: "Rostered %" });
+  const rostered = (await rows(page).getByTestId("rostered").allTextContents()).map((text) =>
+    text.startsWith("<1%") ? 0 : Number.parseInt(text, 10)
+  );
+  expect(rostered).toEqual([...rostered].sort((a, b) => b - a));
+  await expect(rows(page)).toHaveCount(25);
 });
 
 test("filters by NBA team, tonight, tomorrow, back-to-back and games left", async ({ page }) => {
@@ -100,23 +171,26 @@ test("filters by NBA team, tonight, tomorrow, back-to-back and games left", asyn
   const schedule = page.getByRole("group", { name: "Schedule" });
 
   // In the fixture DEN and MIA play tonight and tomorrow; PHX plays only tomorrow.
-  await page.getByLabel("NBA team").selectOption("PHX");
+  await pickNbaTeam(page, "PHX");
   await expect(rows(page).first()).toContainText("PHX");
   await schedule.getByRole("button", { name: "Tonight" }).click();
   await expect(page.getByText("No players on this page match these filters.")).toBeVisible();
   await schedule.getByRole("button", { name: "Tomorrow" }).click();
   await expect(rows(page).first()).toContainText("PHX");
 
-  await page.getByLabel("NBA team").selectOption("");
+  await pickNbaTeam(page, "");
   await schedule.getByRole("button", { name: "B2B" }).click();
   await expect(rows(page).first()).toBeVisible();
-  for (const meta of await rows(page).getByRole("button").allTextContents()) {
-    expect(meta).toMatch(/DEN|MIA/);
+  for (const meta of await rows(page).allTextContents()) {
+    expect(meta).toMatch(/· (DEN|MIA)/);
   }
 
   await schedule.getByRole("button", { name: "Any day" }).click();
   // The fixture's week varies with the day the tests run, so ask only for one game left.
-  await page.getByLabel("Games left").selectOption("1");
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Filters" });
+  await sheet.getByLabel("Games left").selectOption("1");
+  await sheet.getByRole("button", { name: /^Show \d+ players?$/ }).click();
   const left = await rows(page).getByTestId("games-left").allTextContents();
   expect(left.length).toBeGreaterThan(0);
   for (const text of left) {
@@ -130,16 +204,16 @@ test("switches the stats period", async ({ page }) => {
   const stats = page.getByRole("group", { name: "Stats" });
 
   for (const [label, caption] of [
-    ["Last 7", "Last 7 days, average per game"],
-    ["Last 30", "Last 30 days, average per game"],
-    ["Season", "Season average per game"],
+    ["Last 7", "last 7 days per game"],
+    ["Last 30", "last 30 days per game"],
+    ["Season", "season avg per game"],
   ] as const) {
     await stats.getByRole("button", { name: label }).click();
     await expect(stats.getByRole("button", { name: label })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
-    await expect(page.getByTestId("players-range")).toContainText(caption);
+    await expect(page.getByTestId("players-count")).toContainText(caption);
     await expect(rows(page).first().getByTestId("player-averages")).not.toContainText("—");
   }
   await expect(stats.getByRole("button")).toHaveCount(3);
@@ -155,6 +229,10 @@ for (const theme of ["light", "dark"] as const) {
 
     await page.getByRole("button", { name: "Next 25" }).click();
     await expect(rows(page).filter({ hasText: "Inactive" })).toHaveCount(1);
+    expect(await accessibilityViolations(page)).toEqual([]);
+
+    await page.getByRole("button", { name: /^Filters/ }).click();
+    await expect(page.getByRole("dialog", { name: "Filters" })).toBeVisible();
     expect(await accessibilityViolations(page)).toEqual([]);
   });
 }
