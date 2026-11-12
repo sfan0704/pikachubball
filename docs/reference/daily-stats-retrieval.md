@@ -85,9 +85,10 @@ Counted per viewer, first attempts only. FAN-102 confirmed D3 and D7 work in the
 | Then Week, on the last day of the week | D10 1 + D2 12 more (14 in all) = **13** |
 | Matchup Week, straight to it on the last day | D10 1 + D1 1 + D2 14 = **16** |
 | A past week | Same as above, **16**, then free for the session |
-| Players, first page | D5 1 + D4 1 + D6 2 to 4 = **4 to 6** |
+| Players, first page | D5 1 + D4 1 + D6 2 to 4 + D10 1 (none if Matchup Week already read it this visit) = **4 to 7** |
 | Players, each further page, search or position change | D5 1 + D4 1 = **2** |
 | Players, switch period | D4 1 per loaded page |
+| Players, NBA team, schedule or games-left filter | **0**: Yahoo can't filter on these, so they apply to the page shown |
 | League, rankings | D1 or season table **1** |
 | League, first team popover | D2 today 1 + D4 1 + D7 1 + D8 1 = **4**; later popovers **3**, and 2 for a team already on the Matchup screen |
 

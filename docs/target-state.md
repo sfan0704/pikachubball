@@ -382,7 +382,7 @@ erDiagram
 | A scope already viewed this session | 0 |
 | Matchup Today, first visit | 7 |
 | Matchup Week, first visit on the last day of the week | 21 |
-| Players, first page / each further page | 4 to 6 / 2 |
+| Players, first page / each further page | 4 to 7 / 2 |
 | League team popover, first / later | 4 / 3 |
 | Live Matchup while a shown game is in progress | About 3 a minute |
 
