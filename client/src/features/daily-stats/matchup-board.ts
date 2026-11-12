@@ -10,6 +10,7 @@ import type {
 } from "@shared/api/daily-stats";
 import type { DailyPlayer, NbaGame } from "@shared/api/daily-stats-values";
 import {
+  CATEGORY_DIRECTIONS,
   isShootingCategory,
   lineWithGame,
   opponentOf,
@@ -173,4 +174,12 @@ export function gameStateText(state: GameState): string {
 /** The slot and the game under a player's name; no game, or a game still unknown, leaves just the slot. */
 export function cardMeta(row: PlayerCardRow): string {
   return row.game ? `${row.slot} · ${gameStateText(row.game.state)}` : row.slot;
+}
+
+/** How each column is sorted for a category, as the side-by-side card's hint says it. */
+export function orderHint(key: CategoryKey): string {
+  if (isShootingCategory(key)) {
+    return "most attempts first";
+  }
+  return CATEGORY_DIRECTIONS[key] === "lower" ? "fewest first" : "most first";
 }

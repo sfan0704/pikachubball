@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { LeagueScope } from "@shared/api/league-scope";
 import {
   CATEGORIES,
@@ -10,13 +10,13 @@ import {
 } from "@shared/domain";
 import { useLeagueScope } from "@/api/hooks";
 import { useTeamDays } from "@/api/daily-stats-hooks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CATEGORY_LABELS } from "@/features/league/categories";
 import { DatasetState } from "./DatasetState";
 import { FreshnessLine } from "./FreshnessLine";
-import { MatchupHeader } from "./MatchupHeader";
-import { shownOpponent } from "./matchup-board";
+import { orderHint, shownOpponent } from "./matchup-board";
+import { BoardCard, MatchupTop } from "./MatchupTop";
 import { PlayerColumns } from "./PlayerColumns";
+import { ScoreCard, ScoreCardLoading } from "./ScoreCard";
 import { TotalsGrid } from "./TotalsGrid";
 import { WeekColumnView } from "./WeekColumn";
 import { teamWeek, type ScoringWeek } from "./week-board";
@@ -30,6 +30,10 @@ interface MatchupWeekBoardProps {
   today: string;
   now: number;
   onPickLeague: () => void;
+  /** The Yesterday / Today / Week bar, which sticks with the score card. */
+  dayBar: ReactNode;
+  /** The week picker, under the sticky block. */
+  weekPicker: ReactNode;
 }
 
 /** A finished week's games are all final; the current week's live state isn't read here. */
@@ -79,8 +83,8 @@ const EMPTY_SCORE: Score = {
   complete: false,
 };
 
-/** The week's counted score and grid, with the opponent picker. */
-function WeekSummary({
+/** The score card from counted totals, its own skeleton while the week's table loads. */
+function ScoreSlot({
   board,
   teamKey,
   onPickLeague,
@@ -90,7 +94,7 @@ function WeekSummary({
   onPickLeague: () => void;
 }) {
   return (
-    <DatasetState query={board.table} onPickLeague={onPickLeague}>
+    <DatasetState query={board.table} onPickLeague={onPickLeague} loading={<ScoreCardLoading />}>
       {(data) => {
         const me = data.teams.find((team) => team.teamKey === teamKey);
         const opponent = data.teams.find((team) => team.teamKey === board.opponentKey);
@@ -102,22 +106,14 @@ function WeekSummary({
           );
         }
         return (
-          <>
-            <MatchupHeader
-              me={me}
-              opponent={opponent}
-              others={data.teams.filter((team) => team.teamKey !== teamKey)}
-              realOpponentKey={board.realOpponentKey}
-              score={board.comparison?.score ?? EMPTY_SCORE}
-              onPickOpponent={board.pickOpponent}
-            />
-            <h2 className="text-sm font-semibold">Counted totals</h2>
-            <CountedGrid
-              board={board}
-              labels={[me.teamName, opponent.teamName]}
-              onPickLeague={onPickLeague}
-            />
-          </>
+          <ScoreCard
+            me={me}
+            opponent={opponent}
+            others={data.teams.filter((team) => team.teamKey !== teamKey)}
+            realOpponentKey={board.realOpponentKey}
+            score={board.comparison?.score ?? EMPTY_SCORE}
+            onPickOpponent={board.pickOpponent}
+          />
         );
       }}
     </DatasetState>
@@ -125,98 +121,105 @@ function WeekSummary({
 }
 
 /** Both teams' counted totals as the grid, once both teams' days have loaded. */
-function CountedGrid({
+function CountedGrid({ board, opponentName }: { board: MatchupWeek; opponentName: string }) {
+  if (!board.mine || !board.theirs || !board.comparison) {
+    return null;
+  }
+  return (
+    <BoardCard label="Team totals" title="Counted totals" hint="Tap a category to compare below">
+      <TotalsGrid
+        mine={{ label: "You", totals: board.mine.totals }}
+        theirs={{ label: opponentName, totals: board.theirs.totals }}
+        comparison={board.comparison}
+        selected={board.category}
+        onSelect={board.pickCategory}
+      />
+    </BoardCard>
+  );
+}
+
+/** Each team's players' weeks side by side in the selected category. */
+function SideBySide({
   board,
-  labels,
-  onPickLeague,
+  names,
+  props,
 }: {
   board: MatchupWeek;
-  labels: readonly [string, string];
-  onPickLeague: () => void;
+  names: ReadonlyMap<string, string>;
+  props: MatchupWeekBoardProps;
 }) {
+  const { teamKey, onPickLeague } = props;
   return (
-    <DatasetState query={board.myDays} onPickLeague={onPickLeague}>
-      {() => (
-        <DatasetState query={board.theirDays} onPickLeague={onPickLeague}>
+    <BoardCard
+      label="Players side by side"
+      title={`${CATEGORY_LABELS[board.category]} · Week ${props.week.week}`}
+      titleTestId="columns-title"
+      hint={orderHint(board.category)}
+    >
+      <PlayerColumns>
+        <DatasetState query={board.myDays} onPickLeague={onPickLeague}>
           {() =>
-            board.mine && board.theirs && board.comparison ? (
-              <TotalsGrid
-                mine={{ label: labels[0], totals: board.mine.totals }}
-                theirs={{ label: labels[1], totals: board.theirs.totals }}
-                comparison={board.comparison}
-                selected={board.category}
-                onSelect={board.pickCategory}
+            board.mine && (
+              <WeekColumnView
+                category={board.category}
+                column={{
+                  teamKey,
+                  label: names.get(teamKey) ?? "Your team",
+                  cards: board.mine.cards,
+                }}
               />
-            ) : null
+            )
           }
         </DatasetState>
-      )}
-    </DatasetState>
+        <DatasetState query={board.theirDays} onPickLeague={onPickLeague}>
+          {() =>
+            board.theirs &&
+            board.opponentKey && (
+              <WeekColumnView
+                category={board.category}
+                column={{
+                  teamKey: board.opponentKey,
+                  label: names.get(board.opponentKey) ?? "Opponent",
+                  cards: board.theirs.cards,
+                }}
+              />
+            )
+          }
+        </DatasetState>
+      </PlayerColumns>
+      <p className="mt-2 text-[11px] leading-[1.4] text-[#4B5563] dark:text-muted-foreground">
+        Each side is sorted on its own, so players aren&apos;t paired. A week total only includes
+        games that counted: on the roster, in a starting slot.
+      </p>
+    </BoardCard>
   );
 }
 
 /**
- * Matchup over one scoring week: the score and grid from counted totals only
- * (starting-slot days on the roster), then each team's players' weeks side by
- * side. Each team's days load and fail on their own (its earlier days together,
- * today alone), and a failed request shows its error above the days that loaded.
+ * Matchup over one scoring week: the sticky score card and day bar, the week
+ * picker, the score and grid from counted totals only (starting-slot days on
+ * the roster), then each team's players' weeks side by side. Each team's days
+ * load and fail on their own (its earlier days together, today alone), and a
+ * failed request shows its error above the days that loaded.
  */
 export function MatchupWeekBoard(props: MatchupWeekBoardProps) {
-  const { teamKey, now, onPickLeague, isCurrentWeek } = props;
+  const { teamKey, now, onPickLeague, isCurrentWeek, dayBar, weekPicker } = props;
   const board = useMatchupWeek(props);
   const names = new Map(board.table.data?.teams.map((team) => [team.teamKey, team.teamName]));
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <FreshnessLine
         sources={[board.table, board.myDays, board.theirDays]}
         now={now}
         games={isCurrentWeek ? CURRENT_WEEK_GAMES : PAST_WEEK_GAMES}
       />
-      <Card>
-        <CardContent className="space-y-4 pt-6">
-          <WeekSummary board={board} teamKey={teamKey} onPickLeague={onPickLeague} />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base" data-testid="columns-title">
-            {CATEGORY_LABELS[board.category]} · Week {props.week.week}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PlayerColumns>
-            <DatasetState query={board.myDays} onPickLeague={onPickLeague}>
-              {() =>
-                board.mine && (
-                  <WeekColumnView
-                    category={board.category}
-                    column={{
-                      teamKey,
-                      label: names.get(teamKey) ?? "Your team",
-                      cards: board.mine.cards,
-                    }}
-                  />
-                )
-              }
-            </DatasetState>
-            <DatasetState query={board.theirDays} onPickLeague={onPickLeague}>
-              {() =>
-                board.theirs &&
-                board.opponentKey && (
-                  <WeekColumnView
-                    category={board.category}
-                    column={{
-                      teamKey: board.opponentKey,
-                      label: names.get(board.opponentKey) ?? "Opponent",
-                      cards: board.theirs.cards,
-                    }}
-                  />
-                )
-              }
-            </DatasetState>
-          </PlayerColumns>
-        </CardContent>
-      </Card>
+      <MatchupTop>
+        <ScoreSlot board={board} teamKey={teamKey} onPickLeague={onPickLeague} />
+        {dayBar}
+      </MatchupTop>
+      {weekPicker}
+      <CountedGrid board={board} opponentName={names.get(board.opponentKey ?? "") ?? "Opponent"} />
+      <SideBySide board={board} names={names} props={props} />
     </div>
   );
 }

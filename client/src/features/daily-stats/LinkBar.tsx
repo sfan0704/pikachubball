@@ -23,18 +23,18 @@ interface LinkBarProps {
 export function LinkBar({ label, items, testId }: LinkBarProps) {
   return (
     <nav aria-label={label} data-testid={testId}>
-      <ul className="flex w-full gap-1 rounded-lg bg-muted p-1">
+      <ul className="flex w-full gap-0.5 rounded-[10px] bg-[#E5E7EB] p-[3px] dark:bg-muted">
         {items.map((item) => (
           <li key={item.key} className="flex-1">
             <Link
               href={item.href}
               aria-current={item.current ? "page" : undefined}
               className={cn(
-                "flex min-h-[44px] items-center justify-center rounded-md px-3 text-sm font-medium",
+                "flex min-h-8 items-center justify-center rounded-md px-3 text-xs font-semibold",
                 "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                 item.current
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-[#111827] shadow-[0_1px_2px_rgba(0,0,0,0.12)] dark:bg-background dark:text-foreground"
+                  : "text-[#374151] hover:text-[#111827] dark:text-muted-foreground dark:hover:text-foreground"
               )}
             >
               {item.label}
