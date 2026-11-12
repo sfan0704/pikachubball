@@ -53,7 +53,7 @@ export type { GameState, LiveProgress } from "./game-state";
 export { isLive } from "./game-state";
 export type {
   CategoryValues,
-  GamesLeft,
+  GamesPlayed,
   PeriodTotals,
   PlayerDay,
   VersusAverage,
@@ -63,7 +63,7 @@ export {
   countedGames,
   countedTotals,
   expectedOver,
-  gamesLeft,
+  gamesPlayed,
   perGameAverages,
   versusAverage,
 } from "./daily-stats";

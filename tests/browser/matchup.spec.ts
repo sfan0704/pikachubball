@@ -139,15 +139,15 @@ for (const day of ["Today", "Week"] as const) {
   });
 }
 
-test("the games-left ⓘ explains the numbers and closes again", async ({ page }) => {
+test("the games-played ⓘ explains the numbers and closes again", async ({ page }) => {
   await signIn(page, "a", "Matchup");
-  await expect(page.getByTestId("games-left")).toHaveText(/Games left\s*You \d+\/\d+/);
-  const info = page.getByRole("button", { name: "What games left means" });
-  await expect(page.getByTestId("games-left-info")).toHaveCount(0);
+  await expect(page.getByTestId("games-played")).toHaveText(/Games played\s*You \d+\/\d+/);
+  const info = page.getByRole("button", { name: "What games played means" });
+  await expect(page.getByTestId("games-played-info")).toHaveCount(0);
 
   await info.click();
   await expect(info).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByTestId("games-left-info")).toContainText("games still to play");
+  await expect(page.getByTestId("games-played-info")).toContainText("games already played");
   await info.click();
-  await expect(page.getByTestId("games-left-info")).toHaveCount(0);
+  await expect(page.getByTestId("games-played-info")).toHaveCount(0);
 });
