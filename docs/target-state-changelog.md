@@ -33,3 +33,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 
 - 2026-10-14 · Protected requests verify the caller’s active Supabase session to reject copied cookies immediately after logout; migrate before deploying the code · #108 (CAR-132)
 - 2026-10-19 · No hosted dev; one baseline migration; releases check prod for drift and migrate with the database password only, with project refs written in the workflows · CAR-138 (PR pending)
+- 2026-11-12 · Yahoo date stats send `-` before tip-off too: a `-` line whose game log has a scheduled or live game that date is not yet played · FAN-123

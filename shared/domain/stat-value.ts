@@ -2,6 +2,7 @@
  * Daily-stat values. Yahoo marks a missing value in several ways, and each
  * means something different on screen, so none of them is ever a 0.
  */
+import type { GameState } from "./game-state";
 
 /** Why a value is missing: no NBA game, a game the player sat out, a game still to come, or no data. */
 export type MissingKind = "noGame" | "didNotPlay" | "notYetPlayed" | "unavailable";
@@ -91,6 +92,18 @@ export function appearance(line: StatLine): Appearance {
   }
   const first = values[0].kind as MissingKind;
   return values.every((value) => value.kind === first) ? first : "unavailable";
+}
+
+/**
+ * A date line read together with the player's game that date. Yahoo's date
+ * stats mark every stat `-` before tip-off, the same mark as a day with no
+ * game, so a no-game line on a date whose game is scheduled or live is a game
+ * still to come. With no game known (game logs loading or failed) the line is
+ * kept as Yahoo sent it.
+ */
+export function lineWithGame(line: StatLine, game: GameState | null | undefined): StatLine {
+  const gameAhead = game?.kind === "scheduled" || game?.kind === "live";
+  return gameAhead && appearance(line) === "noGame" ? missingLine("notYetPlayed") : line;
 }
 
 /** Which missing kind a sum of missing values reads as: a sat-out game outranks one still to come. */
