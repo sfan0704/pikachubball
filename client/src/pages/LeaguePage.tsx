@@ -1,17 +1,14 @@
-import { LogOut } from "lucide-react";
 import { useMe } from "@/api/hooks";
-import ThemeToggle from "@/components/common/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AccountMenu } from "@/features/account/AccountMenu";
 import { useConnectResult } from "@/features/account/useConnectResult";
 import { ErrorScreen } from "@/features/league/ErrorScreen";
 import { LeagueLookup } from "@/features/league/LeagueLookup";
 import { LeagueView } from "@/features/league/LeagueView";
 import { pickDefaultLeague } from "@/features/league/selection";
 import { useLeagueSelection } from "@/features/league/useLeagueSelection";
-import { useAuth } from "@/lib/auth";
+import { AppShell } from "@/features/shell/AppShell";
 
 function Loading() {
   return (
@@ -77,36 +74,12 @@ function Body() {
   );
 }
 
-/** The one page after sign-in: header, then the selected league's views. */
+/** The one page after sign-in: the app shell around the selected league's screens. */
 export default function LeaguePage() {
   useConnectResult();
-  const { logout } = useAuth();
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center justify-between gap-2 px-4 py-3 md:px-6">
-          <h1 className="truncate text-lg md:text-xl font-semibold" data-testid="heading-app-title">
-            Fantasy Basketball
-          </h1>
-          <div className="flex shrink-0 items-center gap-1 md:gap-2">
-            <ThemeToggle />
-            <AccountMenu />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11"
-              aria-label="Sign out"
-              onClick={() => void logout()}
-              data-testid="button-logout"
-            >
-              <LogOut className="h-5 w-5" aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto p-4 md:p-6 pb-24">
-        <Body />
-      </main>
-    </div>
+    <AppShell>
+      <Body />
+    </AppShell>
   );
 }

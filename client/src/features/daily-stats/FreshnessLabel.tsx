@@ -1,3 +1,4 @@
+import { ShellSlot } from "@/features/shell/shell-slots";
 import { freshnessLabel, type FreshnessSource } from "@/features/league/freshness";
 
 interface FreshnessLabelProps {
@@ -7,18 +8,20 @@ interface FreshnessLabelProps {
   now: number;
 }
 
-/** "Updated N min ago" for the oldest section, or the stale label after a failed refresh. */
+/** "Updated N min ago", shown in the header, for the oldest section, or the stale label after a failed refresh. */
 export function FreshnessLabel({ sources, now }: FreshnessLabelProps) {
   const label = freshnessLabel(sources, now);
   if (label === null) {
     return null;
   }
   return (
-    <p
-      data-testid="text-freshness"
-      className={`text-xs ${label.stale ? "text-destructive" : "text-muted-foreground"}`}
-    >
-      {label.text}
-    </p>
+    <ShellSlot name="freshness">
+      <p
+        data-testid="text-freshness"
+        className={`text-[11px] ${label.stale ? "text-destructive" : "text-muted-foreground"}`}
+      >
+        {label.text}
+      </p>
+    </ShellSlot>
   );
 }

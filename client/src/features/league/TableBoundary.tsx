@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
 import { scoringSupport, tableCompleteness, type TeamTable } from "@shared/domain";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ShellSlot } from "@/features/shell/shell-slots";
 import { ErrorScreen } from "./ErrorScreen";
 import { formatAge } from "./freshness";
 
@@ -48,19 +48,24 @@ function Loaded({
   const completeness = tableCompleteness(table);
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-        <span data-testid="text-updated">Updated {formatAge(table.fetchedAt, now)}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => query.refetch()}
-          disabled={query.isFetching}
-          aria-label="Refresh from Yahoo"
-        >
-          <RefreshCw className={`h-3 w-3 mr-1 ${query.isFetching ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
-      </div>
+      <ShellSlot name="freshness">
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span aria-hidden="true" className="size-[7px] rounded-full bg-muted-foreground/60" />
+          <span data-testid="text-updated">Updated {formatAge(table.fetchedAt, now)}</span>
+          <button
+            type="button"
+            onClick={() => query.refetch()}
+            disabled={query.isFetching}
+            aria-label="Refresh from Yahoo"
+            className="-my-3 ml-auto inline-flex h-10 w-10 items-center justify-center rounded-full hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+          </button>
+        </p>
+      </ShellSlot>
       {completeness === "partial" && (
         <Alert role="status">
           <AlertTitle>Some numbers are missing</AlertTitle>
@@ -79,7 +84,7 @@ function Loaded({
  * Chooses what a table view shows: a skeleton while loading, the screen for
  * each error (above the old data when there is some), a notice for a league
  * the app can't rank or one that hasn't started, and otherwise the table with
- * its age and a refresh button. Nothing incomplete or old passes as current.
+ * its age and a refresh button in the header's freshness line. Nothing incomplete or old passes as current.
  */
 export function TableBoundary({ query, now, onPickLeague, children }: TableBoundaryProps) {
   const retry = () => query.refetch();

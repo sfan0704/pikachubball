@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 export function MatchupTop({ children }: { children: ReactNode }) {
   return (
     <div
-      className="sticky top-[var(--app-header-height)] z-[5] -mx-4 flex flex-col gap-2.5 border-b border-[#E2E5EA] bg-[#F3F4F6] px-4 pb-2.5 pt-3 md:-mx-6 md:px-6 dark:border-border dark:bg-background"
+      className="sticky top-[var(--app-header-height)] z-[5] -mx-4 flex flex-col gap-2.5 border-b border-[#E2E5EA] bg-background px-4 pb-2.5 pt-3 md:-mx-6 md:px-6 dark:border-border"
       data-testid="matchup-top"
     >
       {children}

@@ -285,12 +285,15 @@
   --elevate-1: rgba(0, 0, 0, 0.03);
   --elevate-2: rgba(0, 0, 0, 0.08);
 
-  --background: 0 0% 100%;
+  /* The FAN-88 mockup's page: grey ground (a shade lighter than its #F3F4F6, so 700-weight result colours keep 4.5:1), white bordered cards. */
+  --background: 220 14% 97%;
   --foreground: 222 15% 12%;
-  --border: 220 13% 91%;
-  --card: 0 0% 98%;
+  --border: 216 15% 90%;
+  --card: 0 0% 100%;
   --card-foreground: 222 15% 12%;
-  --card-border: 220 13% 93%;
+  --card-border: 216 15% 90%;
+  /* The sticky app header's fixed height; sticky blocks below it offset by this. */
+  --app-header-height: 73px;
   --sidebar: 220 8% 96%;
   --sidebar-foreground: 222 15% 12%;
   --sidebar-border: 220 13% 89%;
@@ -310,7 +313,7 @@
   --muted-foreground: 215 14% 34%;
   --accent: 220 16% 88%;
   --accent-foreground: 222 15% 12%;
-  --destructive: 0 72% 51%;
+  --destructive: 0 74% 42%;
   --destructive-foreground: 0 0% 98%;
   --input: 220 13% 75%;
   --ring: 221 83% 53%;
@@ -338,8 +341,6 @@
 
   /* Safe area insets for mobile devices */
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  /* How far sticky blocks sit below the sticky app header. */
-  --app-header-height: 69px;
   --safe-area-right: env(safe-area-inset-right, 0px);
 
   /* Fallback for older browsers */
