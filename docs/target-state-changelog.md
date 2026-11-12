@@ -2,6 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-11-12 · A team-days range endpoint: Matchup Week reads each team's days before today in one request and today on its own, 6 requests instead of 16 for the same Yahoo calls; a range takes the shortest freshness class among its dates · FAN-120 (PR pending)
 - 2026-11-12 · Players on in production; the load test counts the Players views' Yahoo calls, and the stand-in's league schedule completes in 3 pages · FAN-119 (PR pending)
 - 2026-11-12 · A protected request makes one Supabase call before Yahoo: no auth-server user lookup, and one RPC checks the session and reads the Yahoo identity, league ownership and tokens · FAN-121 (PR pending)
 - 2026-11-11 · Matchup and League on in production; the load test counts the daily-stats views' Yahoo calls through the Yahoo source against the stand-in (`LOCAL_DAILY_STATS=standin`); Matchup Week costs 16 calls, the popover reads D2 · FAN-116 (PR pending)

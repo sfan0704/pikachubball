@@ -13,7 +13,7 @@ const STANDIN = process.env.LOAD_STANDIN_URL ?? "";
 const USERS = 14;
 const TARGET_MS = 2000;
 // A browser opens at most 6 connections to one host over HTTP/1.1, as the local
-// app serves, so each user has at most 6 requests in flight; Matchup Week asks for 16.
+// app serves, so each user has at most 6 requests in flight, as many as Matchup Week asks for.
 const CONNECTIONS_PER_USER = 6;
 
 if (!/^http:\/\/(localhost|127\.0\.0\.1):/.test(BASE) || !/^http:\/\/127\.0\.0\.1:/.test(STANDIN)) {
@@ -23,6 +23,8 @@ if (!/^http:\/\/(localhost|127\.0\.0\.1):/.test(BASE) || !/^http:\/\/127\.0\.0\.
 class Session {
   private readonly cookies = new Map<string, string>();
   private inFlight = 0;
+  /** API requests sent so far, for each phase's requests per user. */
+  requests = 0;
   private readonly waiting: (() => void)[] = [];
 
   constructor(private readonly user: SeedUser) {}
@@ -54,6 +56,7 @@ class Session {
       await new Promise<void>((resolve) => this.waiting.push(resolve));
     }
     this.inFlight += 1;
+    this.requests += 1;
     try {
       const response = await fetch(`${BASE}${path}`, {
         headers: { Cookie: [...this.cookies].map(([n, v]) => `${n}=${v}`).join("; ") },
@@ -87,6 +90,8 @@ interface PhaseResult {
   readonly timings: number[];
   readonly calls: number;
   readonly expectedCalls: number;
+  /** API requests each user sent, on average. */
+  readonly requestsPerUser: number;
   readonly isView: boolean;
 }
 
@@ -99,8 +104,17 @@ async function phase(
   step: (session: Session) => Promise<number>
 ): Promise<PhaseResult> {
   const before = await yahooCalls();
+  const sent = () => sessions.reduce((sum, session) => sum + session.requests, 0);
+  const sentBefore = sent();
   const timings = await Promise.all(sessions.map(step));
-  return { name, timings, calls: (await yahooCalls()) - before, expectedCalls, isView };
+  return {
+    name,
+    timings,
+    calls: (await yahooCalls()) - before,
+    expectedCalls,
+    requestsPerUser: (sent() - sentBefore) / sessions.length,
+    isView,
+  };
 }
 
 const table = (scope: string) => `/api/leagues/${SEED_LEAGUE_KEY}/${scope}`;
@@ -147,15 +161,24 @@ async function matchupToday(session: Session, opponent: string): Promise<number>
   return performance.now() - started;
 }
 
-/** Matchup Week straight from nothing on the week's last day: D10, D1 and both teams' seven days. */
+/** A team's days before today (D2, one call a day), in one request as the Week view asks. */
+function earlierDays(session: Session, teamKey: string): Promise<unknown> {
+  const [from, to] = [WEEK_DATES[0], WEEK_DATES[WEEK_DATES.length - 2]];
+  return session.json(`${league}/teams/${teamKey}/days?from=${from}&to=${to}`);
+}
+
+/**
+ * Matchup Week straight from nothing on the week's last day: D10, D1, and
+ * each team's earlier days in one request plus today on its own: 6 requests.
+ */
 async function matchupWeek(session: Session, opponent: string): Promise<number> {
   const started = performance.now();
   await Promise.all([
     session.json(`${league}/weeks`),
     session.json(table("current")),
-    ...WEEK_DATES.flatMap((date) => [
-      teamDay(session, session.teamKey, date),
-      teamDay(session, opponent, date),
+    ...[session.teamKey, opponent].flatMap((teamKey) => [
+      earlierDays(session, teamKey),
+      teamDay(session, teamKey, TODAY),
     ]),
   ]);
   return performance.now() - started;
@@ -303,7 +326,7 @@ async function main(): Promise<void> {
   let failed = false;
   console.log(`${USERS} users at once; target ${TARGET_MS} ms per league view\n`);
   console.log(
-    "phase                                  p50 ms   p95 ms   max ms   yahoo calls (expected)"
+    "phase                                  p50 ms   p95 ms   max ms   requests/user   yahoo calls (expected)"
   );
   for (const result of results) {
     const sorted = [...result.timings].sort((a, b) => a - b);
@@ -311,7 +334,7 @@ async function main(): Promise<void> {
     const timeOk = !result.isView || percentile(sorted, 95) <= TARGET_MS;
     failed ||= !callsOk || !timeOk;
     console.log(
-      `${result.name.padEnd(36)} ${percentile(sorted, 50).toFixed(0).padStart(7)} ${percentile(sorted, 95).toFixed(0).padStart(8)} ${sorted[sorted.length - 1].toFixed(0).padStart(8)}   ${String(result.calls).padStart(3)} (${result.expectedCalls}) ${callsOk && timeOk ? "ok" : "FAIL"}`
+      `${result.name.padEnd(36)} ${percentile(sorted, 50).toFixed(0).padStart(7)} ${percentile(sorted, 95).toFixed(0).padStart(8)} ${sorted[sorted.length - 1].toFixed(0).padStart(8)}   ${String(result.requestsPerUser).padStart(13)}   ${String(result.calls).padStart(3)} (${result.expectedCalls}) ${callsOk && timeOk ? "ok" : "FAIL"}`
     );
   }
   console.log(failed ? "\nFAILED" : "\nPassed");

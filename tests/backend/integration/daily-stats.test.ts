@@ -7,6 +7,7 @@ import {
   playerStatsResponseSchema,
   scheduleResponseSchema,
   teamDayResponseSchema,
+  teamDaysResponseSchema,
   transactionsResponseSchema,
   weeksResponseSchema,
 } from "../../../shared/api/daily-stats";
@@ -44,6 +45,10 @@ function buildApp(options: { member?: boolean; wired?: boolean } = {}) {
 
 const ENDPOINTS = [
   { path: `/api/leagues/${LEAGUE}/teams/${TEAM}/days/2026-11-11`, schema: teamDayResponseSchema },
+  {
+    path: `/api/leagues/${LEAGUE}/teams/${TEAM}/days?from=2026-11-05&to=2026-11-10`,
+    schema: teamDaysResponseSchema,
+  },
   {
     path: `/api/leagues/${LEAGUE}/games?players=${PLAYERS.join(",")}`,
     schema: gameLogsResponseSchema,
@@ -103,6 +108,10 @@ describe("daily-stats endpoints on the fixture source", () => {
     [`/api/leagues/not-a-league/weeks`],
     [`/api/leagues/${LEAGUE}/teams/466.l.200000.t.1/days/2026-11-11`],
     [`/api/leagues/${LEAGUE}/teams/${TEAM}/days/11-11-2026`],
+    [`/api/leagues/${LEAGUE}/teams/${TEAM}/days?from=2026-11-10&to=2026-11-09`],
+    [`/api/leagues/${LEAGUE}/teams/${TEAM}/days?from=2026-11-01&to=2026-11-15`],
+    [`/api/leagues/${LEAGUE}/teams/${TEAM}/days?from=2026-11-01`],
+    [`/api/leagues/466.l.200000/teams/${TEAM}/days?from=2026-11-01&to=2026-11-02`],
     [`/api/leagues/${LEAGUE}/teams/not-a-team/transactions`],
     [`/api/leagues/${LEAGUE}/games?players=478.p.11101`],
     [`/api/leagues/${LEAGUE}/games?players=466.p.11101,466.p.11101`],
@@ -120,6 +129,28 @@ describe("daily-stats endpoints on the fixture source", () => {
     expect(ownsLeague).not.toHaveBeenCalled();
   });
 
+  it("returns each date of a team-days range in order, each as its own team day", async () => {
+    const { app } = buildApp();
+    const days = `/api/leagues/${LEAGUE}/teams/${TEAM}/days`;
+
+    const range = await request(app).get(`${days}?from=2026-11-08&to=2026-11-10`);
+    const single = await request(app).get(`${days}/2026-11-09`);
+
+    const body = teamDaysResponseSchema.parse(range.body);
+    expect(body.days.map((day) => day.date)).toEqual(["2026-11-08", "2026-11-09", "2026-11-10"]);
+    expect({ ...body.days[1], fetchedAt: body.fetchedAt }).toEqual(single.body);
+  });
+
+  it("allows a two-week range, the longest scoring week", async () => {
+    const { app } = buildApp();
+
+    const response = await request(app).get(
+      `/api/leagues/${LEAGUE}/teams/${TEAM}/days?from=2026-11-01&to=2026-11-14`
+    );
+
+    expect(teamDaysResponseSchema.parse(response.body).days).toHaveLength(14);
+  });
+
   it("rejects more players than one request may name", async () => {
     const { app } = buildApp();
     const players = Array.from({ length: 51 }, (_, index) => `466.p.${20001 + index}`);
@@ -131,6 +162,7 @@ describe("daily-stats endpoints on the fixture source", () => {
 
   it.each([
     [`/api/leagues/${LEAGUE}/teams/${LEAGUE}.t.99/days/2026-11-11`],
+    [`/api/leagues/${LEAGUE}/teams/${LEAGUE}.t.99/days?from=2026-11-09&to=2026-11-10`],
     [`/api/leagues/${LEAGUE}/teams/${LEAGUE}.t.99/transactions`],
     [`/api/leagues/${LEAGUE}/games?players=466.p.99999`],
     [`/api/leagues/${LEAGUE}/player-stats/season?players=466.p.11101,466.p.99999`],

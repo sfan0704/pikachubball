@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, mondayOf, nbaDateOf } from "../../../shared/domain";
+import { addDays, datesFrom, daysBetween, mondayOf, nbaDateOf } from "../../../shared/domain";
 
 describe("fantasy dates", () => {
+  it("lists every date of a range across a month end, both ends included", () => {
+    expect(datesFrom("2026-11-29", "2026-12-02")).toEqual([
+      "2026-11-29",
+      "2026-11-30",
+      "2026-12-01",
+      "2026-12-02",
+    ]);
+    expect(datesFrom("2026-11-29", "2026-11-29")).toEqual(["2026-11-29"]);
+    expect(datesFrom("2026-11-30", "2026-11-29")).toEqual([]);
+  });
+
   it("dates a moment in US Eastern time, so a late game is still that evening's date", () => {
     expect(nbaDateOf(Date.parse("2026-11-12T03:30:00Z"))).toBe("2026-11-11");
     expect(nbaDateOf(Date.parse("2026-11-12T05:30:00Z"))).toBe("2026-11-12");

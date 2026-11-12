@@ -382,7 +382,7 @@ erDiagram
 | Current matchup and comparison against every team | 0: computed from the same table |
 | A scope already viewed this session | 0 |
 | Matchup Today, first visit | 7 |
-| Matchup Week, first visit on the last day of the week | 21 |
+| Matchup Week, first visit on the last day of the week | 16, in 6 API requests |
 | Players, first page / each further page | 4 to 7 / 2 |
 | League team popover, first / later | 4 / 3 |
 | Live Matchup while a shown game is in progress | About 3 a minute |
@@ -445,6 +445,7 @@ flowchart LR
 | `GET /api/leagues/:key/:scope` | The team table for `season`, `current` or a week number, with settings, teams, matchup pairings and fetch time |
 | `GET /api/leagues/:key/teams/:team/roster` | One team's roster |
 | `GET /api/leagues/:key/teams/:team/days/:date` | One team's roster on a date, each player's slot and stats that date |
+| `GET /api/leagues/:key/teams/:team/days?from=&to=` | The same for each date of a range of at most 14, in one request; the Week view reads the days before today through it |
 | `GET /api/leagues/:key/games?players=` | Game logs for the listed players: date, opponent, home or away, tip-off, live or final state, minutes and the player's line in each game |
 | `GET /api/leagues/:key/player-stats/:period?players=` | Season, last-7-day or last-30-day totals with GP and makes and attempts |
 | `GET /api/leagues/:key/players` | One page of 25 owned, available or waiver players, with ownership, rostered % and trend; optional position, search and sort |
@@ -578,7 +579,7 @@ flowchart LR
 | Where views are computed | On the client, from one team table per scope | A server endpoint per view, each with its own Yahoo calls |
 | Daily-stats data source | Yahoo Fantasy API only, OAuth token only; schedule and live game state from `out=game_log` (FAN-92) | BALLDONTLIE or ESPN for schedule and live state: kept as documented fallbacks, not needed; Yahoo website pages: need a session cookie |
 | Daily-stats endpoints | One endpoint per Yahoo dataset, combined in the browser | One endpoint per screen: fewer requests, but each screen would refetch data another already has |
-| Week view counted totals | Seven dated team-day calls per team, summed in `shared/domain` | The one-call week roster: not yet checked on a week with bench games; storing finished days: waits on the API agreement |
+| Week view counted totals | Seven dated team-day calls per team, summed in `shared/domain`; the days before today come in one API request per team and today in its own, so the range never polls as Live | The one-call week roster: not yet checked on a week with bench games; storing finished days: waits on the API agreement; one API request per day: 16 requests, each paying the sign-in and storage checks; today inside the range: fewer requests, but the whole week would poll every 2 minutes while a game is live |
 | Live refresh | Each viewer's open tab polls every 2 minutes while a shown game is live; nothing runs in the background and the server writes nothing, so any number of instances can serve it without coordination. Accepted risk (owner, 2026-11-10): viewers of the same game repeat the same Yahoo calls, up to about 2,500 an hour on a busy night, and Yahoo publishes no limit | One shared poll per league: fewer calls, but needs stored, shared data, a server-only database role and a guard against instances writing the same data at once |
 | Data freshness | One policy in `shared/domain` with four classes, applied by the client's query-key factory; the server only stamps fetch times | A timer per dataset or per screen: hard to keep consistent; a server cache: needs storage; HTTP cache headers: API responses are private and the browser cache can't be labelled or tested |
 | Next 7 projected | Left out; a `ProjectionSource` slot, off by default (FAN-94, FAN-99) | Building the website-cookie reader now, before the cookie durability check |

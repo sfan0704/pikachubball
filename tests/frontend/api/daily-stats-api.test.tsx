@@ -20,6 +20,7 @@ import {
   useWeeks,
 } from "../../../client/src/api/daily-stats-hooks";
 import { queryKeys } from "../../../client/src/api/query-keys";
+import { datesFrom } from "../../../shared/domain";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
 
@@ -33,7 +34,11 @@ async function answer(url: string): Promise<object> {
   const { pathname, searchParams } = new URL(url, "http://app.test");
   const path = decodeURIComponent(pathname).replace(`/api/leagues/${LEAGUE}`, "");
   const players = searchParams.get("players")?.split(",") ?? [];
+  const range = datesFrom(searchParams.get("from") ?? "", searchParams.get("to") ?? "");
   const routes: Record<string, () => Promise<object>> = {
+    [`/teams/${TEAM}/days`]: async () => ({
+      days: await Promise.all(range.map((date) => source.getTeamDay(LEAGUE, TEAM, date))),
+    }),
     [`/teams/${TEAM}/days/2026-11-10`]: () => source.getTeamDay(LEAGUE, TEAM, "2026-11-10"),
     [`/teams/${TEAM}/days/2026-11-11`]: () => source.getTeamDay(LEAGUE, TEAM, "2026-11-11"),
     "/games": () => source.getGameLogs(LEAGUE, players),
@@ -108,33 +113,68 @@ describe("daily-stats hooks", () => {
     ]);
   });
 
-  it("keep a team's loaded days when one date fails, under that date's error", async () => {
+  it("load a team's days before today in one request and today on its own", async () => {
+    const fetchMock = stubServer();
+    const dates = ["2026-11-09", "2026-11-10", "2026-11-11"];
+    const { result } = renderHook(() => useTeamDays(LEAGUE, TEAM, dates, "2026-11-11"), {
+      wrapper: wrapper(),
+    });
+
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    expect(result.current.data?.map((day) => [day.date, day.fetchedAt])).toEqual(
+      dates.map((date) => [date, AT])
+    );
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `/api/leagues/${LEAGUE}/teams/${TEAM}/days?from=2026-11-09&to=2026-11-10`,
+      `/api/leagues/${LEAGUE}/teams/${TEAM}/days/2026-11-11`,
+    ]);
+  });
+
+  it("share today's day with the Today view instead of asking again", async () => {
+    const fetchMock = stubServer();
+    const { result } = renderHook(
+      () => ({
+        today: useTeamDay(LEAGUE, TEAM, "2026-11-11"),
+        week: useTeamDays(LEAGUE, TEAM, ["2026-11-11"], "2026-11-11"),
+      }),
+      { wrapper: wrapper() }
+    );
+
+    await waitFor(() => expect(result.current.week.data).toBeDefined());
+    expect(result.current.week.data).toEqual([result.current.today.data]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keep today when the earlier days' request fails, under that error", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) =>
-        url.endsWith("/days/2026-11-09")
+        url.includes("/days?")
           ? jsonResponse({ code: "YAHOO_UNAVAILABLE", message: "x", requestId: "r" }, 503)
           : jsonResponse(await answer(url))
       )
     );
     const dates = ["2026-11-09", "2026-11-10", "2026-11-11"];
-    const { result } = renderHook(() => useTeamDays(LEAGUE, TEAM, dates), { wrapper: wrapper() });
+    const { result } = renderHook(() => useTeamDays(LEAGUE, TEAM, dates, "2026-11-11"), {
+      wrapper: wrapper(),
+    });
 
     await waitFor(() => expect(result.current.data).toBeDefined());
-    expect(result.current.data?.map((day) => day.date)).toEqual(["2026-11-10", "2026-11-11"]);
+    expect(result.current.data?.map((day) => day.date)).toEqual(["2026-11-11"]);
     expect(result.current.error).not.toBeNull();
   });
 
-  it("give no days when every date fails, so the section shows only the error", async () => {
+  it("give no days when every request fails, so the section shows only the error", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
         jsonResponse({ code: "YAHOO_UNAVAILABLE", message: "x", requestId: "r" }, 503)
       )
     );
-    const { result } = renderHook(() => useTeamDays(LEAGUE, TEAM, ["2026-11-10", "2026-11-11"]), {
-      wrapper: wrapper(),
-    });
+    const { result } = renderHook(
+      () => useTeamDays(LEAGUE, TEAM, ["2026-11-10", "2026-11-11"], "2026-11-11"),
+      { wrapper: wrapper() }
+    );
 
     await waitFor(() => expect(result.current.error).not.toBeNull());
     expect(result.current.data).toBeUndefined();
@@ -167,6 +207,16 @@ describe("daily-stats hooks", () => {
       TEAM,
       "days",
       "2026-11-11",
+    ]);
+    expect(queryKeys.teamDays(LEAGUE, TEAM, "2026-11-09", "2026-11-10")).toEqual([
+      "leagues",
+      LEAGUE,
+      "teams",
+      TEAM,
+      "days",
+      "range",
+      "2026-11-09",
+      "2026-11-10",
     ]);
     expect(queryKeys.gameLogs(LEAGUE, ["b", "a"])).toEqual(queryKeys.gameLogs(LEAGUE, ["a", "b"]));
     expect(queryKeys.playerStats(LEAGUE, "season", ["a"])).not.toEqual(

@@ -1,11 +1,17 @@
-import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query";
-import type { PlayerListQuery, StatPeriod, TeamDayResponse } from "@shared/api/daily-stats";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import type {
+  PlayerListQuery,
+  StatPeriod,
+  TeamDayResponse,
+  TeamDaysResponse,
+} from "@shared/api/daily-stats";
 import {
   getDraft,
   getGameLogs,
   getPlayerStats,
   getSchedule,
   getTeamDay,
+  getTeamDays,
   getTransactions,
   getWeeks,
   listPlayers,
@@ -33,53 +39,103 @@ export function useTeamDay(leagueKey: string | null, teamKey: string | null, dat
 /** Several dates of D2 for one team, read as one section. */
 export interface TeamDays {
   /**
-   * The dates that loaded, in date order, once none is still loading; a failed
-   * date is left out so the others still show under its error. Undefined while
-   * any date loads, or when every date failed.
+   * The dates that loaded, in date order, once none is still loading; dates
+   * whose request failed are left out so the others still show under its
+   * error. Undefined while any request loads, or when every request failed.
    */
   readonly data: TeamDayResponse[] | undefined;
-  /** The first failure among the dates, if any. */
+  /** The first failure among the requests, if any. */
   readonly error: Error | null;
-  /** When the oldest date's data landed, in epoch milliseconds. */
+  /** When the oldest request's data landed, in epoch milliseconds. */
   readonly dataUpdatedAt: number;
-  /** Retries the dates that failed. */
+  /** Retries the requests that failed. */
   readonly refetch: () => Promise<unknown>;
 }
 
-function combineDays(results: UseQueryResult<TeamDayResponse>[]): TeamDays {
-  const failed = results.filter((result) => result.error !== null);
-  const loaded = results.flatMap((result) => (result.data === undefined ? [] : [result.data]));
-  const settled = loaded.length + failed.filter((result) => result.data === undefined).length;
+/** What the section reads from each of its requests, a range or a single date. */
+interface DaysRequest {
+  readonly data: readonly TeamDayResponse[] | undefined;
+  readonly error: Error | null;
+  readonly dataUpdatedAt: number;
+  readonly refetch: () => Promise<unknown>;
+}
+
+function combineDays(requests: readonly DaysRequest[]): TeamDays {
+  const failed = requests.filter((request) => request.error !== null);
+  const loaded = requests.flatMap((request) => request.data ?? []);
+  const settled = requests.filter(
+    (request) => request.data !== undefined || request.error !== null
+  ).length;
   return {
-    data: loaded.length > 0 && settled === results.length ? loaded : undefined,
+    data: loaded.length > 0 && settled === requests.length ? loaded : undefined,
     error: failed[0]?.error ?? null,
-    dataUpdatedAt: Math.min(...results.map((result) => result.dataUpdatedAt)),
-    refetch: () => Promise.all(failed.map((result) => result.refetch())),
+    dataUpdatedAt: Math.min(...requests.map((request) => request.dataUpdatedAt)),
+    refetch: () => Promise.all(failed.map((request) => request.refetch())),
   };
 }
 
-/** D2 for each listed date of one team, one request a date, as the Week view reads it. */
+/** A range's days as single-day bodies, each stamped with the range's fetch time. */
+function asDays({ fetchedAt, days }: TeamDaysResponse): TeamDayResponse[] {
+  return days.map((day) => ({ ...day, fetchedAt }));
+}
+
+/** The dates before today as one range request; idle when there are none. */
+function useDayRange(leagueKey: string | null, teamKey: string | null, past: readonly string[]) {
+  const from = past[0];
+  const to = past[past.length - 1];
+  return useQuery(
+    freshQuery(
+      useFreshness(),
+      queryKeys.teamDays(leagueKey ?? "", teamKey ?? "", from ?? "", to ?? ""),
+      leagueKey !== null && teamKey !== null && from !== undefined && to !== undefined
+        ? {
+            dataset: { kind: "teamDays", from, to },
+            fetch: async (signal) =>
+              asDays(await getTeamDays(leagueKey, teamKey, { from, to }, signal)),
+          }
+        : null
+    )
+  );
+}
+
+/**
+ * D2 for each listed date of one team, as the Week view reads it. The dates
+ * before today load as one range request; today (and any later date) loads on
+ * its own, so it keeps its Live timers and shares the Today view's cache.
+ * `dates` must run day by day with no gaps.
+ */
 export function useTeamDays(
   leagueKey: string | null,
   teamKey: string | null,
-  dates: readonly string[]
+  dates: readonly string[],
+  today: string
 ): TeamDays {
   const freshness = useFreshness();
-  return useQueries({
-    queries: dates.map((date) =>
-      freshQuery(
-        freshness,
-        queryKeys.teamDay(leagueKey ?? "", teamKey ?? "", date),
-        leagueKey !== null && teamKey !== null
-          ? {
-              dataset: { kind: "teamDay", date },
-              fetch: (signal) => getTeamDay(leagueKey, teamKey, date, signal),
-            }
-          : null
-      )
-    ),
-    combine: combineDays,
+  const past = dates.filter((date) => date < today);
+  const range = useDayRange(leagueKey, teamKey, past);
+  const singles = useQueries({
+    queries: dates
+      .filter((date) => date >= today)
+      .map((date) =>
+        freshQuery(
+          freshness,
+          queryKeys.teamDay(leagueKey ?? "", teamKey ?? "", date),
+          leagueKey !== null && teamKey !== null
+            ? {
+                dataset: { kind: "teamDay", date },
+                fetch: (signal) => getTeamDay(leagueKey, teamKey, date, signal),
+              }
+            : null
+        )
+      ),
   });
+  const requests: DaysRequest[] = singles.map((single) => ({
+    data: single.data === undefined ? undefined : [single.data],
+    error: single.error,
+    dataUpdatedAt: single.dataUpdatedAt,
+    refetch: single.refetch,
+  }));
+  return combineDays(past.length > 0 ? [range, ...requests] : requests);
 }
 
 /** D3: game logs for the listed players; waits for at least one player. */

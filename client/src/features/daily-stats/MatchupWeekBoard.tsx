@@ -45,8 +45,8 @@ function useMatchupWeek(props: MatchupWeekBoardProps) {
   const table = useLeagueScope(leagueKey, scope);
   const { opponentKey, realOpponentKey } = shownOpponent(table.data, teamKey, pickedOpponent);
   const dates = elapsedDates(week, today);
-  const myDays = useTeamDays(leagueKey, teamKey, dates);
-  const theirDays = useTeamDays(leagueKey, opponentKey, dates);
+  const myDays = useTeamDays(leagueKey, teamKey, dates, today);
+  const theirDays = useTeamDays(leagueKey, opponentKey, dates, today);
   const mine = myDays.data ? teamWeek(myDays.data, week, isCurrentWeek) : null;
   const theirs = theirDays.data ? teamWeek(theirDays.data, week, isCurrentWeek) : null;
   const comparison = mine && theirs ? compareTotals(mine.totals, theirs.totals) : null;
@@ -158,8 +158,8 @@ function CountedGrid({
 /**
  * Matchup over one scoring week: the score and grid from counted totals only
  * (starting-slot days on the roster), then each team's players' weeks side by
- * side. Each team's days load and fail on their own, and a failed day shows its
- * error above the days that loaded.
+ * side. Each team's days load and fail on their own (its earlier days together,
+ * today alone), and a failed request shows its error above the days that loaded.
  */
 export function MatchupWeekBoard(props: MatchupWeekBoardProps) {
   const { teamKey, now, onPickLeague, isCurrentWeek } = props;

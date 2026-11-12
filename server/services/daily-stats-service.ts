@@ -1,5 +1,6 @@
 import { ForbiddenError } from "../../shared/api/errors";
 import type { PlayerListQuery, StatPeriod } from "../../shared/api/daily-stats";
+import { datesFrom } from "../../shared/domain/nba-date";
 import type { DailyStatsSource } from "../fantasy/daily-stats-source";
 import type { OwnerScopedStorage } from "../storage/yahoo-token-storage";
 import type { Clock } from "../utils/clock";
@@ -27,6 +28,22 @@ async function readInLeague<T extends object>(
 /** D2: one team's roster and lines on a date. */
 export function getTeamDay(access: DailyStatsAccess, key: string, team: string, date: string) {
   return readInLeague(access, key, (source) => source.getTeamDay(key, team, date));
+}
+
+/**
+ * D2 for each date from `from` to `to`, read in parallel in one request so the
+ * Week view pays the sign-in and storage checks once per team, not once a day.
+ * Any failed date fails the whole range.
+ */
+export function getTeamDays(
+  access: DailyStatsAccess,
+  key: string,
+  team: string,
+  { from, to }: { from: string; to: string }
+) {
+  return readInLeague(access, key, async (source) => ({
+    days: await Promise.all(datesFrom(from, to).map((date) => source.getTeamDay(key, team, date))),
+  }));
 }
 
 /** D3: the listed players' game logs. */
