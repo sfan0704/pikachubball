@@ -4,32 +4,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createApp } from "../../../server/http/app";
 import { createAppErrorHandler } from "../../../server/http/composition-root";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
-import { buildTestDependencies } from "../../support/dependencies";
+import { buildTestDependencies, openedRequest } from "../../support/dependencies";
 
 const APP_ORIGIN = "https://basketball.example.test";
 
 function verifiedClient(signOut = vi.fn().mockResolvedValue({ error: null })) {
   return {
-    rpc: async () => ({ data: true, error: null }),
     auth: {
       signOut,
       getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
-      getUser: async () => ({
-        data: {
-          user: {
-            id: "user-1",
-            identities: [
-              {
-                provider: "custom:yahoo",
-                identity_data: { iss: "https://api.login.yahoo.com", sub: "yahoo-guid-1" },
-              },
-            ],
-            user_metadata: {},
-            app_metadata: {},
-          },
-        },
-        error: null,
-      }),
     },
   } as unknown as SupabaseClient;
 }
@@ -37,6 +20,7 @@ function verifiedClient(signOut = vi.fn().mockResolvedValue({ error: null })) {
 function buildApp(options: { revoked?: boolean; token?: boolean; signOutError?: boolean } = {}) {
   const calls: string[] = [];
   const storage = {
+    openRequest: openedRequest,
     getYahooToken: vi.fn(async () => {
       calls.push("read-token");
       return options.token === false ? undefined : { userId: "user-1", refreshToken: "refresh-1" };

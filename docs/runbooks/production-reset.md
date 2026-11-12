@@ -31,7 +31,8 @@ drop function if exists
   public.replace_user_leagues(jsonb),
   public.disconnect_yahoo(),
   public.delete_my_account(),
-  public.is_current_session_active();
+  public.is_current_session_active(),
+  public.load_request_access(text);
 delete from supabase_migrations.schema_migrations;
 commit;
 ```

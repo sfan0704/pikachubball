@@ -3,7 +3,7 @@ import express from "express";
 import { http, HttpResponse } from "msw";
 import { vi } from "vitest";
 import { z } from "zod";
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
   createSupabaseRequestClient,
   YAHOO_ISSUER,
@@ -12,6 +12,8 @@ import {
 import { createSupabaseAuthController } from "../../server/http/controllers/supabase-auth-controller";
 import { createRequireAuth } from "../../server/http/middleware/auth";
 import { createErrorHandler } from "../../server/http/middleware/error-handler";
+import { AesGcmOwnerTokenCipher } from "../../server/storage/owner-token-cipher";
+import { SupabaseOwnerStorage } from "../../server/storage/supabase-owner-storage";
 import type { OwnerScopedStorage } from "../../server/storage/yahoo-token-storage";
 import { buildTestConfig, silentLogger } from "./dependencies";
 import { buildRequestScope } from "./context";
@@ -58,10 +60,13 @@ export function syntheticAuth() {
   const codes = new Map<string, { challenge: string; incomplete: boolean; used: boolean }>();
   let active = true;
   const save = vi.fn().mockResolvedValue({});
-  const storage = {
-    saveYahooConnection: save,
-    replaceUserLeagues: vi.fn().mockResolvedValue(undefined),
-  } as unknown as OwnerScopedStorage;
+  const cipher = AesGcmOwnerTokenCipher.fromHex("11".repeat(32));
+  // The real storage opens each request over the mocked Data API; only the writes are recorded.
+  const ownerStorage = (client: SupabaseClient, ownerId: string): OwnerScopedStorage =>
+    Object.assign(new SupabaseOwnerStorage(client, ownerId, cipher), {
+      saveYahooConnection: save,
+      replaceUserLeagues: vi.fn().mockResolvedValue(undefined),
+    });
   networkGuard.use(
     http.post(`${auth.supabaseUrl}/auth/v1/token`, async ({ request }) => {
       const body = z
@@ -92,8 +97,18 @@ export function syntheticAuth() {
       }
       return HttpResponse.json(user);
     }),
-    http.post(`${auth.supabaseUrl}/rest/v1/rpc/is_current_session_active`, ({ request }) =>
-      HttpResponse.json(active && request.headers.get("authorization") === `Bearer ${accessToken}`)
+    http.post(`${auth.supabaseUrl}/rest/v1/rpc/load_request_access`, ({ request }) =>
+      HttpResponse.json(
+        active && request.headers.get("authorization") === `Bearer ${accessToken}`
+          ? {
+              active: true,
+              yahoo_guid: "synthetic-guid",
+              display_name: null,
+              owns_league: null,
+              connection: null,
+            }
+          : { active: false }
+      )
     ),
     http.post(`${auth.supabaseUrl}/auth/v1/logout`, () => {
       active = false;
@@ -112,7 +127,7 @@ export function syntheticAuth() {
       clock: fixedClock("2027-01-15T08:00:00Z"),
       createClient: (req: express.Request, res: express.Response) =>
         createSupabaseRequestClient(req, res, auth),
-      createOwnerStorage: () => storage,
+      createOwnerStorage: ownerStorage,
       createYahooClient: async () => {
         throw new Error("Synthetic auth tests cannot reach Yahoo");
       },

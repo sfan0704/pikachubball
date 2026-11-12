@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "../../../shared/api/errors";
 import { createApp } from "../../../server/http/app";
 import { createAppErrorHandler } from "../../../server/http/composition-root";
@@ -11,7 +10,11 @@ import { YahooLeagueResources } from "../../../server/fantasy/league-resources";
 import type { YahooApiClient } from "../../../server/fantasy/yahoo/yahoo-api-client";
 import { getTeamRoster } from "../../../server/fantasy/yahoo/roster-service";
 import type { OwnerScopedStorage } from "../../../server/storage/yahoo-token-storage";
-import { buildTestDependencies } from "../../support/dependencies";
+import {
+  buildTestDependencies,
+  openedRequest,
+  signedInSupabaseClient,
+} from "../../support/dependencies";
 import { fixedClock } from "../../support/clock";
 
 vi.mock("../../../server/fantasy/yahoo/roster-service");
@@ -38,29 +41,6 @@ const createFantasyDataSource = () =>
 
 const APP_ORIGIN = "https://basketball.example.test";
 
-const verifiedClient = {
-  rpc: async () => ({ data: true, error: null }),
-  auth: {
-    getClaims: async () => ({ data: { claims: { sub: "user-1" } }, error: null }),
-    getUser: async () => ({
-      data: {
-        user: {
-          id: "user-1",
-          identities: [
-            {
-              provider: "custom:yahoo",
-              identity_data: { iss: "https://api.login.yahoo.com", sub: "yahoo-guid-1" },
-            },
-          ],
-          user_metadata: {},
-          app_metadata: {},
-        },
-      },
-      error: null,
-    }),
-  },
-} as unknown as SupabaseClient;
-
 const STORED_LEAGUE = {
   leagueKey: "466.l.1",
   teamKey: "466.l.1.t.3",
@@ -74,6 +54,7 @@ function buildApp(
   options: { member?: boolean; stored?: (typeof STORED_LEAGUE)[]; now?: string } = {}
 ) {
   const storage = {
+    openRequest: openedRequest,
     getYahooToken: vi.fn(async () => ({ userId: "user-1", refreshToken: "r" })),
     getPreferences: vi.fn(async () => ({
       selectedLeagueKey: "466.l.1",
@@ -86,7 +67,7 @@ function buildApp(
     ownsLeague: vi.fn(async () => options.member ?? true),
   } as unknown as OwnerScopedStorage;
   const dependencies = buildTestDependencies({
-    createSupabaseClient: () => verifiedClient,
+    createSupabaseClient: () => signedInSupabaseClient,
     createOwnerStorage: () => storage,
     createYahooClient: async () => ({}) as unknown as YahooApiClient,
     createFantasyDataSource,
@@ -260,7 +241,7 @@ describe("GET /api/leagues", () => {
   it("limits refreshes to one a minute but not plain reads", async () => {
     const dependencies = buildTestDependencies({
       config: { ...buildTestDependencies().config, nodeEnv: "production" },
-      createSupabaseClient: () => verifiedClient,
+      createSupabaseClient: () => signedInSupabaseClient,
       createOwnerStorage: () => buildApp().storage,
       createFantasyDataSource,
     });

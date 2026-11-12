@@ -133,21 +133,25 @@ export function requireYahooProviderTokens(session: Session): {
   };
 }
 
-export async function readVerifiedYahooIdentity(
-  client: SupabaseClient
-): Promise<YahooSessionIdentity> {
-  const { data: claimsData, error: claimsError } = await client.auth.getClaims();
-  if (claimsError || !claimsData?.claims?.sub) {
+/** The signed-in caller as the signed access token's claims name them. */
+export interface SignedClaims {
+  userId: string;
+  email: string | null;
+}
+
+/**
+ * Checks the access token's signature and returns its subject. It does not
+ * prove the session is still live: the caller must also run the storage's
+ * `openRequest`, which rejects a session ended by logout (CAR-132).
+ */
+export async function readSignedClaims(client: SupabaseClient): Promise<SignedClaims> {
+  const { data, error } = await client.auth.getClaims();
+  if (error || !data?.claims?.sub) {
     throw new Error("Supabase session claims are invalid");
   }
-
-  const { data, error } = await client.auth.getUser();
-  if (error || !data.user || data.user.id !== claimsData.claims.sub) {
-    throw new Error("Supabase session user is invalid");
-  }
-  const { data: active, error: sessionError } = await client.rpc("is_current_session_active");
-  if (sessionError || active !== true) {
-    throw new Error("Supabase session is no longer active");
-  }
-  return projectYahooIdentity(data.user);
+  const { sub, email } = data.claims;
+  return {
+    userId: requiredString(sub, "Supabase subject"),
+    email: typeof email === "string" && email.length > 0 ? email : null,
+  };
 }
