@@ -4,7 +4,7 @@
  * screen sets its own timer.
  */
 import type { GameState } from "./game-state";
-import { daysBetween } from "./nba-date";
+import { datesFrom, daysBetween } from "./nba-date";
 
 /** How quickly a dataset changes. */
 export type FreshnessClass = "live" | "recent" | "daily" | "settled";
@@ -41,6 +41,8 @@ export type DailyDataset =
   | { readonly kind: "weekTable"; readonly scope: "season" | "current" | "past" }
   /** D2, for a US Eastern date (YYYY-MM-DD). */
   | { readonly kind: "teamDay"; readonly date: string }
+  /** D2 for every date from `from` to `to`, read as one request. */
+  | { readonly kind: "teamDays"; readonly from: string; readonly to: string }
   | { readonly kind: "gameLogs" }
   | { readonly kind: "playerStats" }
   | { readonly kind: "playerList" }
@@ -64,6 +66,20 @@ function teamDayClass(date: string, today: string): FreshnessClass {
   return "settled";
 }
 
+/** The classes from shortest-lived to longest. */
+const CLASS_ORDER: readonly FreshnessClass[] = ["live", "recent", "daily", "settled"];
+
+/**
+ * Several dates of D2 read together take the shortest class among them, so
+ * no date in the range is shown staler than the policy allows. The Week view
+ * keeps today out of its range so the range doesn't poll as Live.
+ */
+function teamDaysClass(from: string, to: string, today: string): FreshnessClass {
+  const classes = new Set(datesFrom(from, to).map((date) => teamDayClass(date, today)));
+  // An empty range has nothing to refresh.
+  return CLASS_ORDER.find((policyClass) => classes.has(policyClass)) ?? "settled";
+}
+
 const FIXED_CLASSES = {
   gameLogs: "live",
   playerStats: "daily",
@@ -82,6 +98,8 @@ export function freshnessClass(dataset: DailyDataset, today: string): FreshnessC
       return dataset.scope === "past" ? "settled" : "live";
     case "teamDay":
       return teamDayClass(dataset.date, today);
+    case "teamDays":
+      return teamDaysClass(dataset.from, dataset.to, today);
     default:
       return FIXED_CLASSES[dataset.kind];
   }

@@ -13,6 +13,8 @@ import {
   scheduleResponseSchema,
   teamDayParamsSchema,
   teamDayResponseSchema,
+  teamDaysRequestSchema,
+  teamDaysResponseSchema,
   teamParamsSchema,
   transactionsResponseSchema,
   weeksResponseSchema,
@@ -50,6 +52,11 @@ export function createDailyStatsController({
     getTeamDay: endpoint(teamDayResponseSchema, (req, access) => {
       const { key, team, date } = teamDayParamsSchema.parse(req.params);
       return dailyStats.getTeamDay(access, key, team, date);
+    }),
+    /** `GET /api/leagues/:key/teams/:team/days?from=&to=` */
+    getTeamDays: endpoint(teamDaysResponseSchema, (req, access) => {
+      const { key, team, ...range } = teamDaysRequestSchema.parse({ ...req.query, ...req.params });
+      return dailyStats.getTeamDays(access, key, team, range);
     }),
     /** `GET /api/leagues/:key/games?players=` */
     getGameLogs: endpoint(gameLogsResponseSchema, (req, access) => {

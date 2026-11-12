@@ -5,6 +5,7 @@ import {
   playerStatsResponseSchema,
   scheduleResponseSchema,
   teamDayResponseSchema,
+  teamDaysResponseSchema,
   transactionsResponseSchema,
   weeksResponseSchema,
   type PlayerListQuery,
@@ -23,6 +24,19 @@ export const getTeamDay = (
   date: string,
   signal?: AbortSignal
 ) => apiRequest(`${team(leagueKey, teamKey)}/days/${date}`, teamDayResponseSchema, { signal });
+
+/** `GET /api/leagues/:key/teams/:team/days?from=&to=` */
+export const getTeamDays = (
+  leagueKey: string,
+  teamKey: string,
+  { from, to }: { from: string; to: string },
+  signal?: AbortSignal
+) =>
+  apiRequest(
+    `${team(leagueKey, teamKey)}/days?${new URLSearchParams({ from, to })}`,
+    teamDaysResponseSchema,
+    { signal }
+  );
 
 /** `GET /api/leagues/:key/games?players=` */
 export const getGameLogs = (leagueKey: string, players: readonly string[], signal?: AbortSignal) =>

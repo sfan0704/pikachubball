@@ -17,6 +17,8 @@ export const queryKeys = {
   roster: (leagueKey: string, teamKey: string) => [...team(leagueKey, teamKey), "roster"] as const,
   teamDay: (leagueKey: string, teamKey: string, date: string) =>
     [...team(leagueKey, teamKey), "days", date] as const,
+  teamDays: (leagueKey: string, teamKey: string, from: string, to: string) =>
+    [...team(leagueKey, teamKey), "days", "range", from, to] as const,
   gameLogs: (leagueKey: string, players: readonly string[]) =>
     [...league(leagueKey), "games", playerList(players)] as const,
   playerStats: (leagueKey: string, period: StatPeriod, players: readonly string[]) =>

@@ -32,3 +32,8 @@ export function mondayOf(date: string): string {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
   return addDays(date, -((weekday + 6) % 7));
 }
+
+/** Every date from `from` to `to`, both included, in order; empty when `to` is earlier. */
+export function datesFrom(from: string, to: string): string[] {
+  return Array.from({ length: Math.max(daysBetween(from, to) + 1, 0) }, (_, i) => addDays(from, i));
+}

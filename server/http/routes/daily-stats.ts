@@ -18,6 +18,7 @@ export function registerDailyStatsRoutes(
   { requireAuth, dataLimiter, controller }: DailyStatsRouteDependencies
 ): void {
   const guard = [requireAuth, dataLimiter];
+  app.get("/api/leagues/:key/teams/:team/days", ...guard, controller.getTeamDays);
   app.get("/api/leagues/:key/teams/:team/days/:date", ...guard, controller.getTeamDay);
   app.get("/api/leagues/:key/teams/:team/transactions", ...guard, controller.getTransactions);
   app.get("/api/leagues/:key/games", ...guard, controller.getGameLogs);

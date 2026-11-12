@@ -86,6 +86,15 @@ describe("freshness policy table", () => {
     expect(dayClass("2026-10-22")).toBe("settled");
   });
 
+  it("times several team days read together by the shortest class among them", () => {
+    const rangeClass = (from: string, to: string) =>
+      freshnessClass({ kind: "teamDays", from, to }, TODAY);
+    expect(rangeClass("2026-11-02", "2026-11-08")).toBe("settled");
+    expect(rangeClass("2026-11-05", "2026-11-10")).toBe("recent");
+    expect(rangeClass("2026-11-05", "2026-11-11")).toBe("live");
+    expect(rangeClass("2026-11-11", "2026-11-10")).toBe("settled");
+  });
+
   it("counts day boundaries across a month end", () => {
     const dayClass = (date: string) => freshnessClass({ kind: "teamDay", date }, "2026-12-01");
     expect(dayClass("2026-11-29")).toBe("recent");

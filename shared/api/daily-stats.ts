@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { daysBetween } from "../domain/nba-date";
 import {
   dailyPlayerSchema,
   dateSchema,
@@ -38,6 +39,22 @@ export const teamParamsSchema = z
 export const teamDayParamsSchema = z
   .object({ key: leagueKeySchema, team: teamKeySchema, date: dateSchema })
   .refine(teamInLeague.check, teamInLeague.message);
+
+/**
+ * The most dates one team-days request may cover: Yahoo's longest scoring
+ * week, around the All-Star break, is two weeks.
+ */
+export const MAX_DAYS_PER_REQUEST = 14;
+
+/** The path and query of `GET /api/leagues/:key/teams/:team/days?from=&to=`; both dates count. */
+export const teamDaysRequestSchema = z
+  .object({ key: leagueKeySchema, team: teamKeySchema, from: dateSchema, to: dateSchema })
+  .refine(teamInLeague.check, teamInLeague.message)
+  .refine(({ from, to }) => from <= to, { message: "from must not be after to", path: ["to"] })
+  .refine(({ from, to }) => daysBetween(from, to) < MAX_DAYS_PER_REQUEST, {
+    message: `at most ${MAX_DAYS_PER_REQUEST} days`,
+    path: ["to"],
+  });
 
 /** Player keys as a comma-separated query value: distinct, at most 50. */
 const playerKeysSchema = z
@@ -90,9 +107,8 @@ export const playerListQuerySchema = z.object({
 
 export type PlayerListQuery = z.infer<typeof playerListQuerySchema>;
 
-/** The body of `GET /api/leagues/:key/teams/:team/days/:date`: the roster that date and each player's line. */
-export const teamDayResponseSchema = z.object({
-  fetchedAt: fetchedAtSchema,
+/** One team's roster on a date and each player's line. */
+const teamDaySchema = z.object({
   teamKey: teamKeySchema,
   date: dateSchema,
   players: z.array(
@@ -107,7 +123,18 @@ export const teamDayResponseSchema = z.object({
   ),
 });
 
+/** The body of `GET /api/leagues/:key/teams/:team/days/:date`: the roster that date and each player's line. */
+export const teamDayResponseSchema = teamDaySchema.extend({ fetchedAt: fetchedAtSchema });
+
 export type TeamDayResponse = z.infer<typeof teamDayResponseSchema>;
+
+/** The body of `GET /api/leagues/:key/teams/:team/days?from=&to=`: each date's team day, in date order. */
+export const teamDaysResponseSchema = z.object({
+  fetchedAt: fetchedAtSchema,
+  days: z.array(teamDaySchema),
+});
+
+export type TeamDaysResponse = z.infer<typeof teamDaysResponseSchema>;
 
 /** The body of `GET /api/leagues/:key/games`: each player's team games, with the player's minutes and line in each. */
 export const gameLogsResponseSchema = z.object({

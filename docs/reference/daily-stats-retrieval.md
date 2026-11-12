@@ -34,6 +34,8 @@ Inputs: the Linear page "Daily stats data reference (source of truth)" (final fo
 
 **Week view.** Seven D2 calls per team (one per elapsed date), not the one-call week roster: that shortcut was not checked on a week with bench games. Counted totals are the sum of starting-slot days, which reconciled exactly with Yahoo's daily and weekly team totals in FAN-91.
 
+**Week requests (FAN-120).** Every API request pays the same sign-in and storage checks before its Yahoo calls, so the Week view asks for each team's days before today in one request, `GET /api/leagues/:key/teams/:team/days?from=&to=` (at most 14 dates, Yahoo's longest scoring week). The server makes the same D2 call per date, in parallel within the request. Today stays its own request, the one the Today view makes. On the last day of the week, Matchup Week from nothing is 6 API requests (D10, D1, and a range plus today for each team) instead of 16, for the same 16 Yahoo calls; coming from Today, it is 3 (D10 and the two ranges). A failed date fails its whole range; today still shows under the error.
+
 **Games left.** `remaining_games` follows the lineup as currently set (Howard's Sabonis test), so D1 is refetched whenever the user comes back to the tab, not only on a timer.
 
 ## Freshness policy
@@ -47,6 +49,7 @@ Freshness is managed in one place: a policy in `shared/domain` that the browser 
 | Daily | 6 hours | No | D4, D6 |
 | Settled | The whole visit | No | D1 past weeks, D2 older days, D8, D10 |
 
+- **Ranges of days.** Several D2 dates read in one request take the shortest class among them. The Week view keeps today out of its range, so the range never polls as Live: it is Recent while it holds yesterday or the day before, and Settled otherwise. The cost is that a stale Recent range re-reads all its dates (up to 6 calls a team instead of 2), and only when the view is shown again or the tab regains focus after 10 minutes.
 - **One table, one function.** The class of each dataset is a single table in `shared/domain`. A pure function takes the dataset (with its date or week), the current time and whether any shown game is live, and returns how long the data stays fresh and whether to poll. Changing a timer is a one-line change, tested with a fixed clock. Live data counts as Recent when no shown game is live.
 - **One live signal.** "Games live now" is derived from the game logs (D3) of the players on screen (`is_game_live`, or a tip-off that has passed without a final, for at most 4 hours so a postponed game can't keep it on). It switches polling on and off for every Live dataset at once, and turns polling back on at the next shown tip-off.
 - **Applied by the query-key factory.** The factory that builds every TanStack Query key also attaches the policy's fresh time and poll interval, so no component sets them (`freshQuery` in `client/src/api`, built in FAN-108; a lint rule rejects query timers anywhere else in the client). Stale data refetches when it is next shown or the tab regains focus; D1's current week refetches on every return to the tab, fresh or not (`followsLineup`), because games left follow the lineup.
@@ -82,8 +85,8 @@ Counted per viewer, first attempts only. FAN-102 confirmed D3 and D7 work in the
 |---|---|
 | Matchup, Today | D1 1 + D2 2 + D3 2 + D4 season 2 = **7** |
 | Then Yesterday | D2 2 = **2** |
-| Then Week, on the last day of the week | D10 1 + D2 12 more (14 in all) = **13** |
-| Matchup Week, straight to it on the last day | D10 1 + D1 1 + D2 14 = **16** |
+| Then Week, on the last day of the week | D10 1 + D2 12 more (14 in all) = **13**, in 3 API requests |
+| Matchup Week, straight to it on the last day | D10 1 + D1 1 + D2 14 = **16**, in 6 API requests |
 | A past week | Same as above, **16**, then free for the session |
 | Players, first page | D5 1 + D4 1 + D6 2 to 4 + D10 1 (none if Matchup Week already read it this visit) = **4 to 7** |
 | Players, each further page, search or position change | D5 1 + D4 1 = **2** |

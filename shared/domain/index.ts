@@ -80,7 +80,7 @@ export {
   perGameAverages,
   versusAverage,
 } from "./daily-stats";
-export { addDays, daysBetween, mondayOf, nbaDateOf } from "./nba-date";
+export { addDays, datesFrom, daysBetween, mondayOf, nbaDateOf } from "./nba-date";
 export type { ClassTimers, DailyDataset, FreshnessClass, LiveSignal } from "./freshness";
 export {
   backedOffInterval,
