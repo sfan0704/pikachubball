@@ -29,19 +29,21 @@ interface DailyStatsRequestScope {
 
 /**
  * Which daily-stats screens production shows. Each turns on only once every
- * dataset it reads is connected to Yahoo (FAN-116, FAN-119).
+ * dataset it reads is connected to Yahoo: Matchup and League since FAN-116,
+ * Players at FAN-119.
  */
-const YAHOO_DAILY_STATS_SCREENS = { matchupAndLeague: false, players: false } as const;
+const YAHOO_DAILY_STATS_SCREENS = { matchupAndLeague: true, players: false } as const;
 
 /**
  * Daily stats run on the fixture source wherever the Yahoo stand-in is in use
- * (local, CI, review), with every screen on. Everywhere else they read Yahoo,
- * and production shows only the screens whose datasets are connected.
+ * (local, CI, review), with every screen on, except the load test, which reads
+ * the stand-in through the Yahoo source to count calls. Everywhere else they
+ * read Yahoo, and production shows only the screens whose datasets are connected.
  */
 function dailyStatsWiring(config: AppConfig, clock: Clock) {
   const projectionSource: ProjectionSource | null = null;
   const projections = projectionSource !== null;
-  if (config.localStack) {
+  if (config.localDailyStats === "fixture") {
     const fixture = new FixtureDailyStatsSource(clock);
     return {
       createDailyStatsSource: () => fixture,
@@ -53,7 +55,9 @@ function dailyStatsWiring(config: AppConfig, clock: Clock) {
     createDailyStatsSource: ({ yahooClient, logger }: DailyStatsRequestScope) =>
       new YahooDailyStatsSource(new DailyStatsRequests(yahooClient, logger, clock)),
     projectionSource,
-    features: { ...YAHOO_DAILY_STATS_SCREENS, projections } satisfies Features,
+    features: (config.localStack
+      ? { matchupAndLeague: true, players: true, projections }
+      : { ...YAHOO_DAILY_STATS_SCREENS, projections }) satisfies Features,
   };
 }
 

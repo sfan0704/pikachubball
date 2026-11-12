@@ -3,6 +3,7 @@
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
 - 2026-11-12 · A protected request makes one Supabase call before Yahoo: no auth-server user lookup, and one RPC checks the session and reads the Yahoo identity, league ownership and tokens · FAN-121 (PR pending)
+- 2026-11-11 · Matchup and League on in production; the load test counts the daily-stats views' Yahoo calls through the Yahoo source against the stand-in (`LOCAL_DAILY_STATS=standin`); Matchup Week costs 16 calls, the popover reads D2 · FAN-116 (PR pending)
 - 2026-11-11 · Players filters by NBA team, schedule and games left on the page shown, since Yahoo's player list can't; its first page also reads the scoring weeks (D10) for games left · FAN-110 (PR pending)
 - 2026-11-11 · Game logs (D3) carry the player's line in each game, so the shared player detail shows today, yesterday and the week for rostered and available players alike · FAN-105 (PR pending)
 - 2026-11-11 · The freshness policy times every dataset query, including the team table (current week and season Live, earlier weeks Settled) and rosters (Recent); a lint rule keeps query timers in the API module · FAN-108 (PR pending)

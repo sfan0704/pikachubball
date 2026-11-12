@@ -24,8 +24,8 @@ import { parseWeeks } from "./yahoo/weeks-parser";
 
 /**
  * The daily-stats source that reads Yahoo live through one request's calls.
- * Every method checks its keys before any call. Production keeps the screens
- * off through the feature list until they are switched on (FAN-116, FAN-119).
+ * Every method checks its keys before any call. Production shows each screen
+ * through the feature list once its datasets are connected (FAN-116, FAN-119).
  */
 export class YahooDailyStatsSource implements DailyStatsSource {
   constructor(private readonly requests: DailyStatsRequests) {}

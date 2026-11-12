@@ -32,13 +32,13 @@ const PRODUCTION = {
 };
 
 describe("daily-stats wiring", () => {
-  it("builds the Yahoo source in production, never the fixture, with every screen still off", async () => {
+  it("builds the Yahoo source in production, never the fixture, with Matchup and League on and Players off", async () => {
     constructed.count = 0;
 
     const dependencies = createServerDependencies(loadConfig(PRODUCTION));
 
     expect(dependencies.features).toEqual({
-      matchupAndLeague: false,
+      matchupAndLeague: true,
       players: false,
       projections: false,
     });
@@ -57,7 +57,9 @@ describe("daily-stats wiring", () => {
   it("serves the fixture source and turns Matchup, League and Players on with the Yahoo stand-in", async () => {
     constructed.count = 0;
 
-    const dependencies = createServerDependencies(buildTestConfig({ localStack: true }));
+    const dependencies = createServerDependencies(
+      buildTestConfig({ localStack: true, localDailyStats: "fixture" })
+    );
 
     expect(dependencies.features).toEqual({
       matchupAndLeague: true,
@@ -72,5 +74,26 @@ describe("daily-stats wiring", () => {
       logger: silentLogger,
     });
     await expect(source?.getWeeks("466.l.100000")).resolves.toHaveProperty("weeks");
+  });
+
+  it("reads the Yahoo stand-in through the Yahoo source for the load test, with every screen on", async () => {
+    constructed.count = 0;
+
+    const dependencies = createServerDependencies(
+      buildTestConfig({ localStack: true, localDailyStats: "standin" })
+    );
+
+    expect(dependencies.features).toEqual({
+      matchupAndLeague: true,
+      players: true,
+      projections: false,
+    });
+    const yahoo = replayYahoo({ "/game/478/game_weeks": "daily-stats/fan-91-week-2/game-weeks" });
+    const source = dependencies.createDailyStatsSource?.({
+      yahooClient: async () => yahoo as unknown as YahooApiClient,
+      logger: silentLogger,
+    });
+    expect(source).toBeInstanceOf(YahooDailyStatsSource);
+    expect(constructed.count).toBe(0);
   });
 });
