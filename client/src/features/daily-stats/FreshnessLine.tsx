@@ -1,6 +1,7 @@
 import type { NbaGame } from "@shared/api/daily-stats-values";
 import { isLive } from "@shared/domain";
 import { freshnessLabel, type FreshnessSource } from "@/features/league/freshness";
+import { ShellSlot } from "@/features/shell/shell-slots";
 import { cn } from "@/lib/utils";
 
 /** What the line says about the board's games. */
@@ -47,7 +48,7 @@ interface FreshnessLineProps {
   readonly now: number;
 }
 
-/** One line on how current the board is: live, delayed, final, and the shared age label. */
+/** One line in the header on how current the board is: live, delayed, final, and the shared age label. */
 export function FreshnessLine({ sources, games, now }: FreshnessLineProps) {
   const label = freshnessLabel(sources, now);
   if (label === null) {
@@ -55,17 +56,19 @@ export function FreshnessLine({ sources, games, now }: FreshnessLineProps) {
   }
   const state = boardState(games, label.stale);
   return (
-    <p
-      className={cn(
-        "flex items-center gap-1.5 text-xs",
-        label.stale ? "text-destructive" : "text-muted-foreground"
-      )}
-      data-testid="freshness"
-      data-state={state}
-    >
-      <span aria-hidden="true" className={cn("size-2 rounded-full", DOT[state])} />
-      {LEAD[state]}
-      {label.text}
-    </p>
+    <ShellSlot name="freshness">
+      <p
+        className={cn(
+          "flex items-center gap-1.5 text-[11px]",
+          label.stale ? "text-destructive" : "text-muted-foreground"
+        )}
+        data-testid="freshness"
+        data-state={state}
+      >
+        <span aria-hidden="true" className={cn("size-[7px] rounded-full", DOT[state])} />
+        {LEAD[state]}
+        {label.text}
+      </p>
+    </ShellSlot>
   );
 }

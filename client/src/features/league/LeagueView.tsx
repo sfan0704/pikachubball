@@ -1,13 +1,17 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import type { UserLeague } from "@shared/api/leagues";
+import { nbaDateOf } from "@shared/domain";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLeagueScope } from "@/api/hooks";
+import { useWeeks } from "@/api/daily-stats-hooks";
+import { weekFor, weekLabel } from "@/features/daily-stats/week-board";
+import { ShellSlot } from "@/features/shell/shell-slots";
 import type { Selection } from "./selection";
 import { TableBoundary } from "./TableBoundary";
 import { useNow } from "./useNow";
 import { LeagueControls } from "./LeagueControls";
 import { optionFor, scopeOptions } from "./scope-options";
-import { LeagueHeader } from "./LeagueHeader";
+import { LeagueSwitcher } from "./LeagueSwitcher";
 import type { Screen } from "./screens";
 import { ScreenNav } from "@/features/daily-stats/ScreenNav";
 
@@ -51,16 +55,13 @@ interface LeagueScreenProps extends Omit<LeagueViewProps, "league" | "screens"> 
 }
 
 /** League: the league, team and period pickers, then the League board for that period. */
-function LeagueScreen({ selection, leagues, onSelect, onPickLeague, query }: LeagueScreenProps) {
+function LeagueScreen({ selection, onSelect, onPickLeague, query }: LeagueScreenProps) {
   const now = useNow();
+  const period = optionFor(selection.scope, scopeOptions(query.data?.settings.currentWeek ?? null));
   return (
     <>
-      <LeagueControls
-        selection={selection}
-        leagues={leagues}
-        table={query.data}
-        onSelect={onSelect}
-      />
+      <ShellSlot name="context">{period.label}</ShellSlot>
+      <LeagueControls selection={selection} table={query.data} onSelect={onSelect} />
       <TableBoundary query={query} now={now} onPickLeague={onPickLeague}>
         {(table) => (
           <Loading>
@@ -80,12 +81,23 @@ function LeagueScreen({ selection, leagues, onSelect, onPickLeague, query }: Lea
   );
 }
 
+/** The header's period for Matchup and Players: the week shown, as "Week 3 · Nov 2–8". */
+function WeekContext({ selection }: { selection: Selection }) {
+  const now = useNow();
+  const weeks = useWeeks(selection.leagueKey);
+  const scope =
+    selection.screen === "matchup" && selection.day === "week" ? selection.scope : "current";
+  const week = weeks.data ? weekFor(weeks.data.weeks, scope, nbaDateOf(now)) : undefined;
+  return week ? <ShellSlot name="context">{weekLabel(week)}</ShellSlot> : null;
+}
+
 /** The chosen screen: Matchup, Players or League. */
 function ScreenBody(props: LeagueScreenProps) {
   const { selection, onPickLeague } = props;
   if (selection.screen === "matchup") {
     return (
       <Loading>
+        <WeekContext selection={selection} />
         <MatchupScreen selection={selection} onPickLeague={onPickLeague} />
       </Loading>
     );
@@ -93,6 +105,7 @@ function ScreenBody(props: LeagueScreenProps) {
   if (selection.screen === "players") {
     return (
       <Loading>
+        <WeekContext selection={selection} />
         <PlayersScreen leagueKey={selection.leagueKey} onPickLeague={onPickLeague} />
       </Loading>
     );
@@ -100,17 +113,23 @@ function ScreenBody(props: LeagueScreenProps) {
   return <LeagueScreen {...props} />;
 }
 
-/** The selected league: header, the screen navigation, and the chosen screen. */
+/** The selected league: its name in the header, the chosen screen, and the bottom tab bar. */
 export function LeagueView({ league, screens, ...rest }: LeagueViewProps) {
-  const { selection } = rest;
+  const { selection, leagues, onSelect } = rest;
   const query = useLeagueScope(selection.leagueKey, selection.scope);
-  const teamName =
-    query.data?.teams.find((team) => team.teamKey === selection.teamKey)?.teamName ?? null;
   return (
-    <div className="space-y-4 md:space-y-6">
-      <LeagueHeader league={league} teamName={teamName} />
+    <>
+      <ShellSlot name="league">
+        <LeagueSwitcher
+          league={league}
+          leagues={leagues}
+          onPick={(leagueKey) => onSelect({ leagueKey })}
+        />
+      </ShellSlot>
+      <div className="space-y-4">
+        <ScreenBody {...rest} query={query} />
+      </div>
       {screens.length > 1 && <ScreenNav selection={selection} screens={screens} />}
-      <ScreenBody {...rest} query={query} />
-    </div>
+    </>
   );
 }

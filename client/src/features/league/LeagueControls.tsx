@@ -1,22 +1,13 @@
-import type { LeagueStatus, UserLeague } from "@shared/api/leagues";
 import type { TeamTable } from "@shared/domain";
 import type { Selection } from "./selection";
 import { optionFor, scopeOptions } from "./scope-options";
 
 interface LeagueControlsProps {
   selection: Selection;
-  leagues: readonly UserLeague[];
   /** Any loaded table for this league, to know the current week and the teams. */
   table: TeamTable | undefined;
   onSelect: (change: Partial<Selection>) => void;
 }
-
-/** What follows a league's name in the picker; a league in progress needs no note. */
-const STATUS_SUFFIX: Record<LeagueStatus, string> = {
-  preseason: " – preseason",
-  active: "",
-  finished: " – finished",
-};
 
 const SELECT_CLASS =
   "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
@@ -32,37 +23,8 @@ function Field({ id, label, children }: { id: string; label: string; children: R
   );
 }
 
-function LeagueSelect({
-  leagues,
-  value,
-  onChange,
-}: {
-  leagues: readonly UserLeague[];
-  value: string;
-  onChange: (leagueKey: string) => void;
-}) {
-  return (
-    <Field id="league-select" label="League">
-      <select
-        id="league-select"
-        className={SELECT_CLASS}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {leagues.map((league) => (
-          <option key={league.leagueKey} value={league.leagueKey}>
-            {league.name}
-            {league.season ? ` (${league.season})` : ""}
-            {STATUS_SUFFIX[league.status]}
-          </option>
-        ))}
-      </select>
-    </Field>
-  );
-}
-
-/** League, time period and team ("viewing as") pickers; plain selects so they work with any keyboard or screen reader. */
-export function LeagueControls({ selection, leagues, table, onSelect }: LeagueControlsProps) {
+/** Time period and team ("viewing as") pickers; plain selects so they work with any keyboard or screen reader. The league is picked in the header. */
+export function LeagueControls({ selection, table, onSelect }: LeagueControlsProps) {
   const options = scopeOptions(table?.settings.currentWeek ?? null);
   const scope = optionFor(selection.scope, options);
   const shownOptions = options.some((option) => option.value === scope.value)
@@ -73,13 +35,6 @@ export function LeagueControls({ selection, leagues, table, onSelect }: LeagueCo
 
   return (
     <div className="flex flex-col gap-3 md:flex-row">
-      {leagues.length > 1 && (
-        <LeagueSelect
-          leagues={leagues}
-          value={selection.leagueKey}
-          onChange={(leagueKey) => onSelect({ leagueKey })}
-        />
-      )}
       <Field id="scope-select" label="Time period">
         <select
           id="scope-select"

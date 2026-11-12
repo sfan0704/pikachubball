@@ -20,8 +20,8 @@ flowchart LR
 
 ### Product scope
 
-- Sign in with Yahoo and sign out; disconnect Yahoo; delete the account and everything stored for it. Account (disconnect and delete, each with a confirmation) opens from the header, beside the theme and sign-out buttons.
-- Pick one of the user's Yahoo fantasy basketball leagues, grouped by season and labelled preseason, active or finished; return to the last one used. A header always shows the season, league and the user's team.
+- Sign in with Yahoo and sign out; disconnect Yahoo; delete the account and everything stored for it. The header's one Account button opens the theme switch, sign-out, and disconnect and delete (each with a confirmation).
+- Pick one of the user's Yahoo fantasy basketball leagues, grouped by season and labelled preseason, active or finished; return to the last one used. A compact header (the FAN-88 shell) always shows the league, which is also the league switcher, the period shown and how fresh the data is; Matchup, Players and League are tabs at the bottom.
 - Daily stats (FAN-88 mockup): **Matchup** for Today, Yesterday and the Week with per-player cards, live game state and comparison with season averages; **Players** with owned, available and waiver lists, Season, Last 7 and Last 30 averages, and tonight, tomorrow and back-to-back filters; **League** with category ranks for the season or a week and a team popover with roster, draft price and latest acquisition. League is the board alone, with no view tabs (FAN-124): the board's rank tiles and colours replace the old heatmap and comparison, the popover the old roster view, and Matchup the old head-to-head.
 - A "Fantasy data provided by Yahoo Fantasy" line on every screen.
 - Phone and desktop layouts, light and dark themes.

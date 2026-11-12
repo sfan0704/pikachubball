@@ -8,12 +8,10 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { describe, expect, it, vi } from "vitest";
 import { ERROR_CODES } from "@shared/api/errors";
-import type { UserLeague } from "@shared/api/leagues";
 import { ApiError, type ApiErrorCode } from "../../../client/src/api/errors";
 import { describeError } from "../../../client/src/features/league/error-screens";
 import { formatAge } from "../../../client/src/features/league/freshness";
 import { useNow } from "../../../client/src/features/league/useNow";
-import { LeagueHeader } from "../../../client/src/features/league/LeagueHeader";
 import { TableBoundary, type TableQuery } from "../../../client/src/features/league/TableBoundary";
 import { ErrorBoundary } from "../../../client/src/components/common/ErrorBoundary";
 import { buildLeagueSettings, buildTeamTable } from "../../support/builders";
@@ -186,36 +184,6 @@ describe("the freshness label", () => {
     [-60_000, "just now"],
   ])("%i ms old reads %s", (age, label) => {
     expect(formatAge(AT, Date.parse(AT) + age)).toBe(label);
-  });
-});
-
-describe("the header", () => {
-  const league: UserLeague = {
-    leagueKey: "466.l.1",
-    teamKey: "466.l.1.t.3",
-    name: "Test League",
-    season: 2025,
-    status: "active",
-    syncedAt: "2026-10-08T01:00:00.000+00:00",
-  };
-
-  it("always names the season, league and team", () => {
-    render(<LeagueHeader league={league} teamName="My Team" />);
-
-    expect(screen.getByRole("heading", { name: "Test League" })).toBeInTheDocument();
-    expect(screen.getByText(/2025 season/)).toHaveTextContent("My Team");
-  });
-
-  it("falls back to the team key and marks a finished league", () => {
-    render(<LeagueHeader league={{ ...league, status: "finished" }} teamName={null} />);
-
-    expect(screen.getByText(/finished/)).toHaveTextContent("466.l.1.t.3");
-  });
-
-  it("marks a league that hasn't started", () => {
-    render(<LeagueHeader league={{ ...league, status: "preseason" }} teamName="My Team" />);
-
-    expect(screen.getByText(/2025 season/)).toHaveTextContent("(preseason)");
   });
 });
 

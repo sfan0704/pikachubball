@@ -16,7 +16,6 @@ test.beforeEach(async () => {
 test("signs in with a seeded manager and shows the league rankings", async ({ page }) => {
   await signIn(page);
 
-  await expect(page.getByText(/2025 season/)).toContainText("Team 11");
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
   await expect(page.getByTestId(`row-ranking-${MY_TEAM}`)).toContainText("(you)");
   await expect(page).toHaveURL(new RegExp(`/leagues/${LEAGUE}/teams/${MY_TEAM}/current$`));
