@@ -2,8 +2,9 @@
 // stack and the Yahoo stand-in (never real Yahoo): `npm run load`.
 // Each phase starts with every user at once. It reports how long league views
 // take against the 2-second target and how many Yahoo calls each phase made.
-// The daily-stats phases make the requests the Matchup and League screens make
-// and hold each to its call budget (docs/reference/daily-stats-retrieval.md).
+// The daily-stats phases make the requests the Matchup, League and Players
+// screens make and hold each to its call budget
+// (docs/reference/daily-stats-retrieval.md).
 import { SEED_LEAGUE_KEY, seedUsers, type SeedUser } from "../server/dev/seed-users";
 
 // scripts/load-test.sh passes this workspace's ports (scripts/workspace.mts).
@@ -184,6 +185,55 @@ async function firstPopover(session: Session, teamKey: string): Promise<number> 
   return performance.now() - started;
 }
 
+/** One page of the Players list (D5) and the season totals of its players (D4), as the screen asks. */
+async function playersPage(session: Session, query: Record<string, string>): Promise<number> {
+  const started = performance.now();
+  const params = new URLSearchParams({
+    status: "available",
+    sort: "actualRank",
+    start: "0",
+    ...query,
+  });
+  const page = (await session.json(`${league}/players?${params}`)) as {
+    players: { player: { playerKey: string } }[];
+  };
+  const keys = page.players.map(({ player }) => player.playerKey).join(",");
+  await session.json(`${league}/player-stats/season?players=${keys}`);
+  return performance.now() - started;
+}
+
+/** Players from nothing: the first page with its totals, the league schedule (D6) and the weeks (D10). */
+async function playersFirstPage(session: Session): Promise<number> {
+  const started = performance.now();
+  await Promise.all([
+    playersPage(session, {}),
+    session.json(`${league}/schedule`),
+    session.json(`${league}/weeks`),
+  ]);
+  return performance.now() - started;
+}
+
+/**
+ * Each user's Players visit. The NBA team, schedule and games-left filters
+ * apply to the page shown and send nothing, so they cost 0 calls by
+ * construction; the client tests hold that.
+ */
+async function playersPhases(sessions: Session[]): Promise<PhaseResult[]> {
+  const n = sessions.length;
+  return [
+    await phase("Players, first page, cold (6)", sessions, 6 * n, true, playersFirstPage),
+    await phase("Players, next page (2)", sessions, 2 * n, true, (s) =>
+      playersPage(s, { start: "25" })
+    ),
+    await phase("Players, search (2)", sessions, 2 * n, true, (s) =>
+      playersPage(s, { search: "Doncic" })
+    ),
+    await phase("Players, position change (2)", sessions, 2 * n, true, (s) =>
+      playersPage(s, { position: "C" })
+    ),
+  ];
+}
+
 /** Each user's Matchup and League visits, each phase held to its per-user call budget. */
 async function dailyStatsPhases(sessions: Session[]): Promise<PhaseResult[]> {
   const opponents = new Map<Session, string>();
@@ -248,6 +298,7 @@ async function main(): Promise<void> {
   );
 
   results.push(...(await dailyStatsPhases(sessions)));
+  results.push(...(await playersPhases(sessions)));
 
   let failed = false;
   console.log(`${USERS} users at once; target ${TARGET_MS} ms per league view\n`);

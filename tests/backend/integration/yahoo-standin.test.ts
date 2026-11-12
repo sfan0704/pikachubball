@@ -192,6 +192,32 @@ describe("the Yahoo stand-in's daily stats, for the load test's call counts", ()
     expect((await calls()) - before).toBe(6);
   });
 
+  it("serves Players pages in 1 call each and the league schedule for all 30 teams in 3", async () => {
+    const source = await dailyStats();
+    const before = await calls();
+
+    const first = await source.listPlayers(LEAGUE, {
+      status: "available",
+      sort: "actualRank",
+      start: 0,
+    });
+    const centres = await source.listPlayers(LEAGUE, {
+      status: "available",
+      position: "C",
+      search: "Doncic",
+      sort: "actualRank",
+      start: 25,
+    });
+    expect((await calls()) - before).toBe(2);
+    const schedule = await source.getSchedule(LEAGUE);
+
+    expect(first.players).toHaveLength(25);
+    expect(first.players[0].player.playerKey.startsWith("466.p.")).toBe(true);
+    expect(centres.players).toHaveLength(25);
+    expect(schedule.teams).toHaveLength(30);
+    expect((await calls()) - before).toBe(5);
+  });
+
   it("serves the weeks, a team's moves and the draft in this league's game", async () => {
     const source = await dailyStats();
 

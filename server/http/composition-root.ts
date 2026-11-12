@@ -30,9 +30,9 @@ interface DailyStatsRequestScope {
 /**
  * Which daily-stats screens production shows. Each turns on only once every
  * dataset it reads is connected to Yahoo: Matchup and League since FAN-116,
- * Players at FAN-119.
+ * Players since FAN-119.
  */
-const YAHOO_DAILY_STATS_SCREENS = { matchupAndLeague: true, players: false } as const;
+const YAHOO_DAILY_STATS_SCREENS = { matchupAndLeague: true, players: true } as const;
 
 /**
  * Daily stats run on the fixture source wherever the Yahoo stand-in is in use
