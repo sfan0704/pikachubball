@@ -36,8 +36,8 @@ interface PlayerColumnProps {
 }
 
 const CALLOUT_TEXT: Readonly<Record<VersusAverage, string>> = {
-  better: "text-green-700 dark:text-green-400",
-  worse: "text-red-700 dark:text-red-400",
+  better: "text-[#15803D] dark:text-green-400",
+  worse: "text-[#DC2626] dark:text-red-400",
   usual: "",
   unavailable: "",
 };
@@ -62,7 +62,7 @@ function CardName({
       type="button"
       onClick={() => onOpenPlayer(player)}
       aria-label={`${player.name}: open player detail`}
-      className="truncate rounded-md text-left text-xs font-bold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+      className="truncate rounded-md text-left text-xs font-bold text-[#15181D] dark:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
       {shortName(player.name)}
     </button>
@@ -93,8 +93,9 @@ function PlayerCard({
   return (
     <li
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-0.5 rounded-[10px] border p-2",
-        !row.isStartingSlot && "border-dashed bg-muted"
+        "grid min-h-[52px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-0.5 rounded-[10px] border border-[#E2E5EA] bg-white p-2 dark:border-border dark:bg-card",
+        !row.isStartingSlot &&
+          "border-dashed border-[#9CA3AF] bg-[#F3F4F6] dark:border-muted-foreground dark:bg-muted"
       )}
       data-testid={`player-card-${row.player.playerKey}`}
       aria-label={`${row.player.name}, ${CATEGORY_LABELS[category]} ${value}${CALLOUT_NAME[callout]}, ${meta}`}
@@ -107,8 +108,8 @@ function PlayerCard({
         className={cn(
           "text-right tabular-nums",
           entry.kind === "value"
-            ? "text-base font-extrabold"
-            : "text-xs font-semibold italic text-muted-foreground",
+            ? "text-[17px] font-extrabold"
+            : "text-xs font-semibold italic text-[#4B5563] dark:text-muted-foreground",
           CALLOUT_TEXT[callout]
         )}
         data-testid="card-value"
@@ -116,11 +117,32 @@ function PlayerCard({
       >
         {value}
       </span>
-      <span className="col-span-2 truncate text-[0.6875rem] text-muted-foreground">{meta}</span>
-      <span className="col-span-2 truncate text-[0.6875rem] text-muted-foreground">
+      <span className="truncate text-[10.5px] text-[#4B5563] dark:text-muted-foreground">
+        {meta}
+      </span>
+      <span className="whitespace-nowrap text-right text-[10px] text-[#4B5563] dark:text-muted-foreground">
         {averageText(category, entry, row.average)}
       </span>
     </li>
+  );
+}
+
+/** A column's heading: the team, and how many of its players are listed. */
+export function ColumnHead({ label, count }: { label: string; count: string }) {
+  return (
+    <h3 className="flex justify-between gap-1 border-b border-[#E2E5EA] pb-1 text-[11px] font-bold text-[#374151] dark:border-border dark:text-muted-foreground">
+      <span className="truncate">{label}</span>
+      <span className="shrink-0">{count}</span>
+    </h3>
+  );
+}
+
+/** A set-apart group within a column, such as the bench or dropped players. */
+export function GroupHead({ children }: { children: ReactNode }) {
+  return (
+    <h4 className="mt-1 border-t border-dashed border-[#9CA3AF] pt-1.5 text-[10px] font-bold uppercase tracking-[0.4px] text-[#4B5563] dark:text-muted-foreground">
+      {children}
+    </h4>
   );
 }
 
@@ -144,15 +166,13 @@ export function PlayerColumnView({ column, category, isToday, onOpenPlayer }: Pl
       className="min-w-0 space-y-1.5"
       data-testid={`column-${column.teamKey}`}
     >
-      <h3 className="truncate text-xs font-semibold">{column.label}</h3>
+      <ColumnHead label={column.label} count={`${counted.length} counted`} />
       <ul className="space-y-1.5" data-testid="counted-players">
         {counted.map(card)}
       </ul>
       {bench.length > 0 && (
         <>
-          <h4 className="border-t border-dashed pt-1.5 text-[0.625rem] font-bold uppercase tracking-wide text-muted-foreground">
-            Bench &amp; IL · not counted
-          </h4>
+          <GroupHead>Bench &amp; IL · not counted</GroupHead>
           <ul className="space-y-1.5" data-testid="bench-players">
             {bench.map(card)}
           </ul>
@@ -168,7 +188,7 @@ export function PlayerColumnView({ column, category, isToday, onOpenPlayer }: Pl
  */
 export function PlayerColumns({ children }: { children: ReactNode }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5" data-testid="player-columns">
+    <div className="mt-2 grid grid-cols-2 gap-2.5" data-testid="player-columns">
       {children}
     </div>
   );

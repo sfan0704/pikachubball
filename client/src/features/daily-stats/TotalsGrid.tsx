@@ -13,10 +13,10 @@ import { percentText } from "./matchup-board";
 
 /** The tint of a category's heading: green win, red loss, grey tie, none when unknown. */
 const RESULT_TINT: Readonly<Record<CategoryResult, string>> = {
-  win: "bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100",
-  loss: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100",
-  tie: "bg-muted text-foreground",
-  unavailable: "text-foreground",
+  win: "bg-[#DCFCE7] text-[#15181D] dark:bg-green-900/40 dark:text-green-100",
+  loss: "bg-[#FEE2E2] text-[#15181D] dark:bg-red-900/40 dark:text-red-100",
+  tie: "bg-[#F3F4F6] text-[#15181D] dark:bg-muted dark:text-foreground",
+  unavailable: "text-[#15181D] dark:text-foreground",
 };
 
 const RESULT_NAME: Readonly<Record<CategoryResult, string>> = {
@@ -60,7 +60,10 @@ function TeamRow({
 }) {
   return (
     <>
-      <span className="truncate text-xs font-semibold" title={team.label}>
+      <span
+        className="truncate text-[11px] font-bold text-[#374151] dark:text-muted-foreground"
+        title={team.label}
+      >
         {team.label}
       </span>
       {CATEGORIES.map((key) => (
@@ -68,8 +71,8 @@ function TeamRow({
           key={key}
           data-testid={`grid-${side}-${key}`}
           className={cn(
-            "rounded-md py-1.5 text-center text-xs tabular-nums",
-            key === selected && "bg-muted font-semibold"
+            "rounded-md py-1.5 text-center text-[11px] tabular-nums",
+            key === selected && "bg-[#FEF3C7] font-semibold dark:bg-amber-900/40"
           )}
         >
           {totalText(team.totals, key)}
@@ -86,7 +89,7 @@ function TeamRow({
 export function TotalsGrid({ mine, theirs, comparison, selected, onSelect }: TotalsGridProps) {
   return (
     <div
-      className="grid grid-cols-[3rem_repeat(9,minmax(0,1fr))] items-center gap-x-0.5 gap-y-1"
+      className="grid grid-cols-[44px_repeat(9,minmax(0,1fr))] items-center gap-x-0.5 gap-y-1"
       data-testid="totals-grid"
     >
       <span aria-hidden="true" />
@@ -100,10 +103,11 @@ export function TotalsGrid({ mine, theirs, comparison, selected, onSelect }: Tot
           data-result={result}
           onClick={() => onSelect(category)}
           className={cn(
-            "min-h-[44px] rounded-md text-[0.6875rem] font-bold",
+            "min-h-10 rounded-md text-[10.5px] font-extrabold",
             "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
             RESULT_TINT[result],
-            category === selected && "ring-2 ring-inset ring-foreground"
+            category === selected &&
+              "shadow-[inset_0_0_0_2px_#15181D] dark:shadow-[inset_0_0_0_2px_white]"
           )}
         >
           {CATEGORY_LABELS[category]}

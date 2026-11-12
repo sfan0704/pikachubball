@@ -338,6 +338,8 @@
 
   /* Safe area insets for mobile devices */
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  /* How far sticky blocks sit below the sticky app header. */
+  --app-header-height: 69px;
   --safe-area-right: env(safe-area-inset-right, 0px);
 
   /* Fallback for older browsers */
