@@ -83,6 +83,28 @@ describe("schedule filters", () => {
     expect(teamSchedule(GAMES, sunday).gamesLeftThisWeek).toBe(4);
   });
 
+  it("counts a Sunday and Monday back-to-back across the scoring week's end", () => {
+    // Sunday 7:30 pm Eastern ends the week; Monday 7:30 pm Eastern opens the next one.
+    const sundayMonday: ScheduledGame[] = [
+      { date: "2026-11-15", state: { tipOff: "2026-11-16T00:30:00Z" } },
+      { date: "2026-11-16", state: { tipOff: "2026-11-17T00:30:00Z" } },
+    ];
+    const sundayInNewYork = teamSchedule(sundayMonday, at("2026-11-15T20:00:00Z", NEW_YORK));
+    expect(sundayInNewYork).toMatchObject({ tonight: true, tomorrow: true, backToBack: true });
+    // 11 pm Sunday Pacific is already Monday in Eastern, but still Sunday night for this viewer.
+    const sundayLateInLosAngeles = teamSchedule(
+      sundayMonday,
+      at("2026-11-16T07:00:00Z", LOS_ANGELES)
+    );
+    expect(sundayLateInLosAngeles).toMatchObject({
+      tonight: true,
+      tomorrow: true,
+      backToBack: true,
+    });
+    // The week's own counts still stop at Sunday.
+    expect(sundayInNewYork).toMatchObject({ gamesThisWeek: 1, gamesLeftThisWeek: 1 });
+  });
+
   it("says an idle team plays neither night", () => {
     expect(teamSchedule([], at("2026-11-10T20:00:00Z", NEW_YORK))).toEqual({
       tonight: false,
