@@ -26,7 +26,7 @@ export interface ScheduleContext {
 export interface TeamSchedule {
   readonly tonight: boolean;
   readonly tomorrow: boolean;
-  /** Plays tonight and tomorrow. */
+  /** Plays tonight and tomorrow, even when tomorrow opens the next scoring week. */
   readonly backToBack: boolean;
   /** Games on or after today's Eastern date and inside the scoring week. */
   readonly gamesLeftThisWeek: number;

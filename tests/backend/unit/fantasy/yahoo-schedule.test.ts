@@ -170,4 +170,21 @@ describe("Yahoo league schedule (D6) on the FAN-92 pages", () => {
     expect(chicago("2026-11-14T08:01:00Z", "America/Los_Angeles")?.backToBack).toBe(false);
     expect(chicago("2026-11-10T15:00:00Z", "America/New_York")?.gamesLeftThisWeek).toBe(3);
   });
+
+  it("counts DAL's Sunday–Monday back-to-back across the end of week 3", async () => {
+    const { teams } = await fan92Source().source.getSchedule(LEAGUE);
+    // Week 3 runs Monday 2026-11-02 to Sunday 2026-11-08, the recording's league date.
+    const week = { start: "2026-11-02", end: "2026-11-08" };
+    const dallas = (iso: string, timeZone: string) =>
+      scheduleByTeam(teams, { now: Date.parse(iso), timeZone, week }).get("DAL");
+
+    // DAL tips off at 7:30 pm Eastern on Sunday 2026-11-08 and 8 pm Eastern on Monday 2026-11-09.
+    expect(dallas("2026-11-08T18:00:00Z", "America/New_York")).toMatchObject({
+      tonight: true,
+      tomorrow: true,
+      backToBack: true,
+      gamesLeftThisWeek: 1,
+    });
+    expect(dallas("2026-11-09T07:30:00Z", "America/Los_Angeles")?.backToBack).toBe(true);
+  });
 });
