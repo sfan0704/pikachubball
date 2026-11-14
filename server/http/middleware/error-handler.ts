@@ -63,7 +63,7 @@ export function createErrorHandler({ logger, exposeErrorDetails }: ErrorHandlerO
         res,
         "VALIDATION_ERROR",
         "Validation error",
-        err.errors.map((e) => ({ path: e.path.join("."), message: e.message }))
+        err.issues.map((e) => ({ path: e.path.join("."), message: e.message }))
       );
       return;
     }

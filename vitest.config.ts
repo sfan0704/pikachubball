@@ -25,7 +25,8 @@ export default defineConfig({
     },
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      // json-summary feeds the per-file floor (scripts/coverage-floor.mts).
+      reporter: ["text", "json", "json-summary", "html"],
       include: ["client/src/**", "server/**", "shared/**"],
       exclude: [
         "node_modules/",
@@ -36,7 +37,8 @@ export default defineConfig({
         // The development-only Vite middleware.
         "server/config/vite.ts",
       ],
-      // CI fails when coverage drops below these.
+      // CI fails when coverage drops below these. Each client and server file also
+      // has its own floor: tests/coverage-floor.json.
       thresholds: {
         lines: 80,
         "shared/domain/**": { lines: 90 },

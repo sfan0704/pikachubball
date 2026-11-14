@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-11-12.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-11-14.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -267,7 +267,7 @@ flowchart TD
 #### Conventions
 
 - **Formatting** is done by Prettier and checked in CI, so style is never a review topic.
-- **Dependencies.** Node 24 and npm 11 are pinned, the lockfile is committed and installs use `npm ci`. Platform APIs come first (the built-in `fetch` rather than an HTTP library), every package has a reason to exist, and unused packages fail CI (knip).
+- **Dependencies.** Node 24 and npm 11 are pinned, the lockfile is committed and installs use `npm ci`. Platform APIs come first (the built-in `fetch` rather than an HTTP library), every package has a reason to exist, and unused packages fail CI (knip). Packages only tests and tooling use are devDependencies, so production installs exactly what the app runs.
 - **Async.** Every external call has a timeout and an abort signal. The client cancels requests the user has navigated away from, and the server passes cancellation through to Yahoo. Independent calls run in parallel; nothing is fire-and-forget.
 - **Time.** The server works in UTC through the injected clock; weeks follow Yahoo's boundaries; the client shows dates in the user's time zone.
 - **Numbers.** Stats stay exact until display. Rounding happens only when formatting, with one formatter per kind of stat.
@@ -276,9 +276,10 @@ flowchart TD
 
 #### Enforcement
 
-- **Lint (ESLint) fails the build** on: the dependency rules, `any`, unhandled promises, unused code, and the size and complexity limits. Prettier and knip run in the same step.
+- **Lint (ESLint) fails the build** on: the dependency rules, `any`, unhandled promises, unused code, and the size and complexity limits, and code smells (sonarjs: cognitive complexity over 15, identical functions, a string literal repeated three times). Prettier and knip run in the same step.
+- **Known vulnerabilities fail the build:** `npm audit --omit=dev --audit-level=high` runs with the static checks, so a production dependency with a high or critical advisory blocks the merge.
 - **Type checking** with `tsc` in strict mode.
-- **Coverage thresholds** enforced in CI: 90% of lines in `shared/domain` and `server/fantasy`, 80% overall.
+- **Coverage thresholds** enforced in CI: 90% of lines in `shared/domain` and `server/fantasy`, 80% overall, and a floor for every file in `client/src` and `server` on its own (80% of lines, 75% of branches, 80% of functions). Files below the floor when it arrived are listed in `tests/coverage-floor.json`; that list only shrinks and the floor only rises (`scripts/coverage-floor.mts` compares with main).
 - **Every bug fix** comes with a test that fails without it.
 
 ## Testing

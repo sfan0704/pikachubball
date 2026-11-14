@@ -17,6 +17,7 @@ export type CheckName =
   | "lint"
   | "format"
   | "knip"
+  | "audit"
   | "types"
   | "migrations"
   | "unit"
@@ -44,6 +45,8 @@ const CHECKS: Readonly<Record<CheckName, Check>> = {
   lint: { script: "lint" },
   format: { script: "format:check" },
   knip: { script: "knip" },
+  // Known high or critical vulnerabilities in what production installs.
+  audit: { script: "audit:deps" },
   types: { script: "check" },
   // Compares with origin/main, so CI fetches main first.
   migrations: { script: "check:migrations" },
@@ -57,7 +60,7 @@ const CHECKS: Readonly<Record<CheckName, Check>> = {
 
 /** Named groups of checks. `review` is what a change needs before review; `iterate` is not enough. */
 export const PROFILES: Readonly<Record<string, readonly CheckName[]>> = {
-  static: ["lint", "format", "knip", "types", "migrations"],
+  static: ["lint", "format", "knip", "audit", "types", "migrations"],
   unit: ["unit"],
   build: ["build", "bundle"],
   database: ["database"],
@@ -66,6 +69,7 @@ export const PROFILES: Readonly<Record<string, readonly CheckName[]>> = {
     "lint",
     "format",
     "knip",
+    "audit",
     "types",
     "migrations",
     "unit",

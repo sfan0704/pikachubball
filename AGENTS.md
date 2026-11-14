@@ -22,13 +22,14 @@ npm run doctor     # read-only: tools, which integrations this environment reach
 npm ci             # install (versions pinned in .nvmrc and packageManager)
 npm run dev        # run locally against a throwaway Supabase stack and the Yahoo stand-in (needs Docker)
 npm run review:start # the review environment: this commit, signed-in, on this checkout (review:status, review:stop)
-npm run validate   # every check CI requires (needs Docker and Chromium); profiles: static, unit, build, database, browser
+npm run validate   # every check CI requires (needs Docker and Chromium); profiles: static (incl. audit), unit, build, database, browser
 npm run validate -- iterate # lint, types and tests: fast while working, never enough for review
-npm run lint       # ESLint, including the import-boundary and size rules
+npm run lint       # ESLint, including the import-boundary, size and code-smell (sonarjs) rules
 npm run format     # Prettier (format:check only checks)
 npm run knip       # unused or unlisted packages and dead files
+npm run audit:deps # known high or critical vulnerabilities in production dependencies (needs the npm registry)
 npm run check      # TypeScript
-npm test           # unit and route tests (npm run test:coverage also enforces the coverage thresholds CI uses)
+npm test           # unit and route tests (npm run test:coverage also enforces the coverage thresholds CI uses, including the per-file floor in tests/coverage-floor.json)
 npm run build      # production build
 npm run test:db    # database and access-rule tests (needs Docker)
 npm run check:migrations # every added migration sorts after the newest on origin/main
@@ -64,6 +65,7 @@ The target state has the detail; these are the rules most often broken.
 ## Tests
 
 - Every behaviour change has tests at the right layer (see Testing in the target state). A bug fix includes a test that fails without it.
+- Every client and server file meets the per-file coverage floor. `tests/coverage-floor.json` lists the files that predate it: take a file off when you test it, and never add one.
 - Tests are deterministic: fixed clock, no real network, no sleeps, no shared state.
 - Never skip, retry or quarantine a failing test; fix the test or the code.
 - Recorded Yahoo responses are scrubbed of names and personal details before they are committed.

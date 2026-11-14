@@ -35,9 +35,9 @@ jobs:
         run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
 
       # The same contract people and agents run (scripts/validate.mts): lint,
-      # format, knip, types, migration order, tests with coverage thresholds,
+      # format, knip, dependency audit, types, migration order, tests with coverage thresholds,
       # build and bundle size.
-      - name: Static checks, tests with coverage, build and bundle size
+      - name: Static checks, dependency audit, tests with coverage, build and bundle size
         run: npm run validate -- static unit build
 
   database:
