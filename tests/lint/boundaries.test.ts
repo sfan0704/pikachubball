@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { ESLint } from "eslint";
 
 const eslint = new ESLint({ cwd: process.cwd() });
@@ -12,6 +12,12 @@ async function errorsFor(filePath: string, code: string): Promise<string[]> {
 }
 
 describe("import boundaries", () => {
+  // The first type-aware lint loads the whole TypeScript project, which takes
+  // most of 20 seconds on a CI runner. Pay it once here, not inside a test's timeout.
+  beforeAll(async () => {
+    await eslint.lintText("export {};\n", { filePath: "shared/domain/team-table.ts" });
+  }, 120_000);
+
   it("lets shared/domain import only from itself", async () => {
     expect(
       await errorsFor(
