@@ -179,7 +179,7 @@ function localDailyStats(values: z.infer<typeof environmentSchema>): AppConfig["
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppConfig {
   const parsed = environmentSchema.safeParse(environment);
   if (!parsed.success) {
-    const problems = parsed.error.errors.map((issue) => `${issue.path.join(".")} ${issue.message}`);
+    const problems = parsed.error.issues.map((issue) => `${issue.path.join(".")} ${issue.message}`);
     throw new Error(`Invalid configuration: ${problems.join("; ")}`);
   }
   const values = parsed.data;

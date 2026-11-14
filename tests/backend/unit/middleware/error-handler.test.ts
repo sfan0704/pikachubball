@@ -126,7 +126,7 @@ describe("errorHandler middleware", () => {
           message: "Required",
           code: "invalid_type",
           expected: "string",
-          received: "undefined",
+          input: undefined,
         },
       ]);
 
