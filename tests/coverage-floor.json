@@ -1,0 +1,28 @@
+{
+  "floor": {
+    "lines": 80,
+    "branches": 75,
+    "functions": 80
+  },
+  "exceptions": [
+    "client/src/api/endpoints.ts",
+    "client/src/api/http.ts",
+    "client/src/components/common/ErrorBoundary.tsx",
+    "client/src/components/ui/toast.tsx",
+    "client/src/components/ui/toaster.tsx",
+    "client/src/components/ui/tooltip.tsx",
+    "client/src/features/account/AccountMenu.tsx",
+    "client/src/features/daily-stats/DatasetState.tsx",
+    "client/src/features/daily-stats/MatchupScreen.tsx",
+    "client/src/features/daily-stats/PlayerDetailSheet.tsx",
+    "client/src/features/daily-stats/ScoreCard.tsx",
+    "client/src/features/daily-stats/TeamPopover.tsx",
+    "client/src/features/daily-stats/rank-tone.ts",
+    "client/src/features/league/LeagueLookup.tsx",
+    "client/src/hooks/useMobile.ts",
+    "client/src/main.tsx",
+    "server/http/app.ts",
+    "server/http/composition-root.ts",
+    "server/index.ts"
+  ]
+}

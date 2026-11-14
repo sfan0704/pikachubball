@@ -276,10 +276,10 @@ flowchart TD
 
 #### Enforcement
 
-- **Lint (ESLint) fails the build** on: the dependency rules, `any`, unhandled promises, unused code, and the size and complexity limits. Prettier and knip run in the same step.
+- **Lint (ESLint) fails the build** on: the dependency rules, `any`, unhandled promises, unused code, and the size and complexity limits, and code smells (sonarjs: cognitive complexity over 15, identical functions, a string literal repeated three times). Prettier and knip run in the same step.
 - **Known vulnerabilities fail the build:** `npm audit --omit=dev --audit-level=high` runs with the static checks, so a production dependency with a high or critical advisory blocks the merge.
 - **Type checking** with `tsc` in strict mode.
-- **Coverage thresholds** enforced in CI: 90% of lines in `shared/domain` and `server/fantasy`, 80% overall.
+- **Coverage thresholds** enforced in CI: 90% of lines in `shared/domain` and `server/fantasy`, 80% overall, and a floor for every file in `client/src` and `server` on its own (80% of lines, 75% of branches, 80% of functions). Files below the floor when it arrived are listed in `tests/coverage-floor.json`; that list only shrinks and the floor only rises (`scripts/coverage-floor.mts` compares with main).
 - **Every bug fix** comes with a test that fails without it.
 
 ## Testing

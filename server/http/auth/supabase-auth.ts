@@ -7,6 +7,7 @@ import type { HostedAuthConfig } from "../../config/config";
 export const AUTH_COOKIE_NAME = "pikachubball-auth";
 export const YAHOO_PROVIDER = "custom:yahoo";
 export const YAHOO_ISSUER = "https://api.login.yahoo.com";
+const SET_COOKIE = "Set-Cookie";
 export const AUTH_NO_STORE_HEADERS = Object.freeze({
   "Cache-Control": "private, no-cache, no-store, must-revalidate, max-age=0",
   Expires: "0",
@@ -43,7 +44,7 @@ export function clearAuthSessionCookies(
 ): void {
   const isSession = (name: string) => /^pikachubball-auth(?:-user)?(?:\.\d+)?$/.test(name);
   const incoming = Object.keys(parse(req.headers.cookie ?? "")).filter(isSession);
-  const header = res.getHeader("Set-Cookie");
+  const header = res.getHeader(SET_COOKIE);
   const outgoing = Array.isArray(header)
     ? header.map(String)
     : typeof header === "string"
@@ -54,11 +55,11 @@ export function clearAuthSessionCookies(
     ...outgoing.map((cookie) => cookie.split("=")[0]).filter(isSession),
   ]);
   const retained = outgoing.filter((cookie) => !isSession(cookie.split("=")[0]));
-  res.removeHeader("Set-Cookie");
-  if (retained.length > 0) res.setHeader("Set-Cookie", retained);
+  res.removeHeader(SET_COOKIE);
+  if (retained.length > 0) res.setHeader(SET_COOKIE, retained);
   for (const name of names) {
     res.append(
-      "Set-Cookie",
+      SET_COOKIE,
       serialize(
         name,
         "",
@@ -87,7 +88,7 @@ export function createSupabaseRequestClient(
       setAll(cookiesToSet) {
         for (const { name, value, options } of cookiesToSet) {
           res.append(
-            "Set-Cookie",
+            SET_COOKIE,
             serialize(name, value, hardenCookieOptions(options, config.secureCookies))
           );
         }
