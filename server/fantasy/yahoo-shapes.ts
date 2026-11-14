@@ -35,7 +35,7 @@ export function mergeFragments(value: unknown): Record<string, unknown> {
 }
 
 /** An object that Yahoo writes as a list of fragments, validated once merged. */
-export const fragments = <T extends z.ZodTypeAny>(schema: T) =>
+export const fragments = <T extends z.ZodType<unknown, Record<string, unknown>>>(schema: T) =>
   z.unknown().transform(mergeFragments).pipe(schema);
 
 /** A collection written as `{"0": item, "1": item, "count": 2}`, validated item by item. */

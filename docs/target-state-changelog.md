@@ -36,3 +36,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-11-12 · Yahoo date stats send `-` before tip-off too: a `-` line whose game log has a scheduled or live game that date is not yet played · FAN-123
 - 2026-11-12 · Players matches the mockup: filters in a sheet, a sort menu over the page shown, Last 7 and Last 30 coloured against the season average (the page's season totals are read too) · FAN-128
 - 2026-11-12 · The app shell follows the FAN-88 mockup: a compact header (league switcher, period, freshness line, Account with theme and sign-out) and a bottom tab bar · FAN-125
+- 2026-11-14 · CI fails on a high or critical advisory in a production dependency (`npm audit --omit=dev`); test-only packages move to devDependencies · FAN-137
