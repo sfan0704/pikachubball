@@ -37,3 +37,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-11-12 · Players matches the mockup: filters in a sheet, a sort menu over the page shown, Last 7 and Last 30 coloured against the season average (the page's season totals are read too) · FAN-128
 - 2026-11-12 · The app shell follows the FAN-88 mockup: a compact header (league switcher, period, freshness line, Account with theme and sign-out) and a bottom tab bar · FAN-125
 - 2026-11-14 · CI fails on a high or critical advisory in a production dependency (`npm audit --omit=dev`); test-only packages move to devDependencies · FAN-137
+- 2026-11-14 · Lint fails on code smells (sonarjs) and every client and server file has its own coverage floor, with an exception list that only shrinks · FAN-137

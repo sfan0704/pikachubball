@@ -13,6 +13,8 @@ export interface ErrorScreenContent {
   readonly requestId: string | null;
 }
 
+const GENERIC_TITLE = "Something went wrong";
+
 const SCREENS: Record<ApiErrorCode, Omit<ErrorScreenContent, "code" | "requestId">> = {
   UNAUTHORIZED: {
     title: "Please sign in",
@@ -40,7 +42,7 @@ const SCREENS: Record<ApiErrorCode, Omit<ErrorScreenContent, "code" | "requestId
     action: "retry",
   },
   VALIDATION_ERROR: {
-    title: "Something went wrong",
+    title: GENERIC_TITLE,
     message: "The request wasn't accepted. Try again, or choose a different league or week.",
     action: "retry",
   },
@@ -60,7 +62,7 @@ const SCREENS: Record<ApiErrorCode, Omit<ErrorScreenContent, "code" | "requestId
     action: "retry",
   },
   INTERNAL_ERROR: {
-    title: "Something went wrong",
+    title: GENERIC_TITLE,
     message: "An unexpected error occurred.",
     action: "retry",
   },
@@ -70,7 +72,7 @@ const SCREENS: Record<ApiErrorCode, Omit<ErrorScreenContent, "code" | "requestId
     action: "retry",
   },
   INVALID_RESPONSE: {
-    title: "Something went wrong",
+    title: GENERIC_TITLE,
     message: "The server sent something the app couldn't read.",
     action: "retry",
   },

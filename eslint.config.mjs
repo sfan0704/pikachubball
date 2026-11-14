@@ -3,6 +3,7 @@ import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
+import sonarjs from "eslint-plugin-sonarjs";
 
 export default [
   js.configs.recommended,
@@ -250,14 +251,18 @@ export default [
     },
   },
 
-  // Size, complexity and promise rules, for all source code.
+  // Size, complexity, code-smell and promise rules, for all source code.
   {
     files: ["client/src/**/*.{ts,tsx}", "server/**/*.ts", "shared/**/*.ts"],
     ignores: ["**/*.test.*"],
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
+    plugins: { sonarjs },
     rules: {
+      "sonarjs/cognitive-complexity": ["error", 15],
+      "sonarjs/no-identical-functions": "error",
+      "sonarjs/no-duplicate-string": ["error", { threshold: 3 }],
       "@typescript-eslint/no-floating-promises": "error",
       "max-lines-per-function": ["error", { max: 60, skipBlankLines: true, skipComments: true }],
       complexity: ["error", 10],
