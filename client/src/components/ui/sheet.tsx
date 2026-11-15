@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-/** A sheet that slides up from the bottom of the screen; a modal dialog underneath. */
+/** A sheet that slides up from the bottom of the screen; a modal dialog underneath. Its className styles the scrolling body. */
 const Sheet = DialogPrimitive.Root;
 
 const SheetTitle = React.forwardRef<
@@ -40,15 +40,25 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border bg-background p-5 shadow-lg",
-        "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom",
-        className
+        "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border bg-background shadow-lg",
+        "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom"
       )}
       {...props}
     >
-      {children}
+      {/* Only the body scrolls, so the close button stays in view on a long sheet. */}
+      <div
+        data-sheet-body=""
+        // Focusable so a keyboard can scroll a long body.
+        tabIndex={0}
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto overscroll-contain focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]",
+          className
+        )}
+      >
+        {children}
+      </div>
       <DialogPrimitive.Close
-        className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+        className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-background text-muted-foreground hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Close"
       >
         <X className="h-5 w-5" aria-hidden />
