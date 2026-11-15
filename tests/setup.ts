@@ -1,11 +1,17 @@
 import "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach } from "vitest";
+import { declareBreakpoints } from "./support/breakpoints";
 import { networkGuard, startNetworkGuard } from "./support/network-guard";
 
 // Start before test modules load, so a test that replaces fetch with its
 // own mock still takes precedence over the guard.
 startNetworkGuard();
+
+// Only the happy-dom (client) tests have a document.
+if (typeof document !== "undefined") {
+  declareBreakpoints();
+}
 
 afterEach(() => {
   cleanup();
