@@ -1,4 +1,4 @@
-import { LeagueExplanation } from "@/features/daily-stats/LeagueExplanation";
+import { LeagueExplanation, type ExplainedLeague } from "@/features/daily-stats/LeagueExplanation";
 import type { Selection } from "./selection";
 import { optionText, type ScopeOption } from "./scope-options";
 
@@ -8,10 +8,12 @@ interface PeriodRowProps {
   /** The period shown; added to the list when a shared link names a week beyond it. */
   period: ScopeOption;
   onSelect: (change: Partial<Selection>) => void;
+  /** The period's table and the viewer's team for the ⓘ; null while the table loads. */
+  explained: ExplainedLeague | null;
 }
 
 /** League's one row: the period picker (a plain select, so it works with any keyboard or screen reader) and the ⓘ. */
-export function PeriodRow({ options, period, onSelect }: PeriodRowProps) {
+export function PeriodRow({ options, period, onSelect, explained }: PeriodRowProps) {
   const shownOptions = options.some((option) => option.value === period.value)
     ? options
     : [...options, period];
@@ -34,7 +36,7 @@ export function PeriodRow({ options, period, onSelect }: PeriodRowProps) {
           </option>
         ))}
       </select>
-      <LeagueExplanation />
+      <LeagueExplanation league={explained} />
     </div>
   );
 }

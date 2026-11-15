@@ -1,19 +1,12 @@
 import { useMemo, type MouseEvent } from "react";
-import type { AllPlayTable, TeamTable } from "@shared/domain";
-import { useSeasonWeekTables } from "@/api/hooks";
+import type { TeamTable } from "@shared/domain";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorScreen } from "@/features/league/ErrorScreen";
 import type { StandingsSort } from "@/features/league/league-board-state";
 import { cn } from "@/lib/utils";
-import {
-  luckText,
-  ordinal,
-  seasonAllPlayOf,
-  standingsRows,
-  weekAllPlay,
-  type StandingsRow,
-} from "./league-standings-model";
+import { luckText, ordinal, standingsRows, type StandingsRow } from "./league-standings-model";
 import { BADGE_TONE_CLASS, rankText } from "./rank-tone";
+import { useLeagueAllPlay, type AllPlayState } from "./useLeagueAllPlay";
 
 interface StandingsTableProps {
   table: TeamTable;
@@ -25,37 +18,6 @@ interface StandingsTableProps {
   onPickLeague: () => void;
   /** Whether the period's own table already shows a failed refresh, which then speaks for the weeks too. */
   tableFailed: boolean;
-}
-
-/** All-play for the table's period, as the columns need it: ready, still loading, or failed. */
-interface AllPlayState {
-  readonly table: AllPlayTable | null;
-  readonly error: Error | null;
-  readonly retry: () => void;
-}
-
-/**
- * A week's all-play comes from its own table. The season's adds up every
- * week's table, which loads only while the season standings are on screen.
- */
-function useAllPlay(table: TeamTable, leagueKey: string): AllPlayState {
-  const season = table.scope.kind === "season";
-  const { startWeek, currentWeek } = table.settings;
-  const weeks = useSeasonWeekTables(
-    season ? leagueKey : null,
-    season ? { startWeek, currentWeek } : null
-  );
-  const allPlay = useMemo(() => {
-    if (!season) {
-      return weekAllPlay(table);
-    }
-    return weeks.data ? seasonAllPlayOf(weeks.data) : null;
-  }, [season, table, weeks.data]);
-  return {
-    table: allPlay,
-    error: season ? weeks.error : null,
-    retry: () => void weeks.refetch(),
-  };
 }
 
 /** The sortable columns. Places sort best first (ascending); luck sorts luckiest first. */
@@ -236,7 +198,7 @@ export function StandingsTable({
   onPickLeague,
   tableFailed,
 }: StandingsTableProps) {
-  const allPlay = useAllPlay(table, leagueKey);
+  const allPlay = useLeagueAllPlay(table, leagueKey);
   const rows = useMemo(
     () => standingsRows(table, myTeamKey, allPlay.table, sort),
     [table, myTeamKey, allPlay.table, sort]
