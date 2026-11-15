@@ -1,54 +1,6 @@
-import {
-  CATEGORY_DIRECTIONS,
-  categoryRanks,
-  categoryValue,
-  competitionRanks,
-  rankSum,
-} from "./fantasy-rules";
+import { CATEGORY_DIRECTIONS, categoryValue } from "./fantasy-rules";
 import { CATEGORIES, type CategoryKey } from "./stats";
 import type { MatchupPairing, TeamTable, TeamTotals } from "./team-table";
-
-/** One team's line in the rankings. */
-export interface RankedTeam {
-  readonly teamKey: string;
-  readonly teamName: string;
-  readonly managerName: string | null;
-  /** Rank in each category; null where the team's value is unknown. */
-  readonly categoryRanks: Readonly<Record<CategoryKey, number | null>>;
-  /** Sum of category ranks, lower is better; null when any rank is unknown. */
-  readonly rankSum: number | null;
-  /** Place by rank sum (1, 1, 3 for ties); null when the sum is unknown. */
-  readonly position: number | null;
-}
-
-/**
- * Teams ordered by rank sum, best first. Teams whose sum is unknown go last,
- * and equal sums keep the table's order.
- */
-export function rankings(table: TeamTable): RankedTeam[] {
-  const ranks = categoryRanks(table);
-  const sums = table.teams.map((team) => rankSum(ranks[team.teamKey]));
-  const positions = competitionRanks(sums, "lower");
-  const ranked = table.teams.map((team, index) => ({
-    teamKey: team.teamKey,
-    teamName: team.teamName,
-    managerName: team.managerName,
-    categoryRanks: ranks[team.teamKey],
-    rankSum: sums[index],
-    position: positions[index],
-  }));
-  return ranked
-    .map((team, index) => ({ team, index }))
-    .sort((a, b) => compareSums(a.team.rankSum, b.team.rankSum) || a.index - b.index)
-    .map(({ team }) => team);
-}
-
-function compareSums(a: number | null, b: number | null): number {
-  if (a === null || b === null) {
-    return a === b ? 0 : a === null ? 1 : -1;
-  }
-  return a - b;
-}
 
 /** Who won a category. "unavailable" means a value is unknown, so no result is claimed. */
 export type CategoryResult = "win" | "loss" | "tie" | "unavailable";

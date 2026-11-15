@@ -1,50 +1,24 @@
 import {
-  CATEGORIES,
-  categoryRanks,
-  rankings,
-  type CategoryKey,
-  type TeamRecord,
+  competitionRanks,
+  type LeagueCategory,
+  type TeamCategoryValues,
   type TeamTable,
 } from "@shared/domain";
-import { CATEGORY_LABELS, formatTotal, UNAVAILABLE } from "@/features/league/categories";
-
-/** What the tiles select: the overall order or one category. */
-export type BoardPick = "overall" | CategoryKey;
+import { UNAVAILABLE } from "@/features/league/categories";
 
 /** How a rank reads against the league: top three, bottom three, or neither. */
 export type RankTone = "top" | "bottom" | "none";
 
-/** The season records by team; null until the standings have loaded. */
-export type Records = ReadonlyMap<string, TeamRecord | null> | null;
+/** Each team's rank in each of the league's categories: team key, then stat id. */
+export type CategoryRankTable = Readonly<Record<string, Readonly<Record<string, number | null>>>>;
 
 /** One category of a team: its rank and total. */
 export interface BoardCell {
-  readonly key: CategoryKey;
+  readonly statId: string;
   readonly label: string;
   readonly rank: number | null;
   readonly tone: RankTone;
   readonly text: string;
-}
-
-/** One tile: the user's rank overall or in a category. */
-export interface BoardTile {
-  readonly pick: BoardPick;
-  readonly label: string;
-  readonly rank: number | null;
-  readonly tone: RankTone;
-}
-
-/** One team in the list below the tiles. */
-export interface BoardRow {
-  readonly teamKey: string;
-  readonly teamName: string;
-  readonly isMine: boolean;
-  readonly rank: number | null;
-  readonly tone: RankTone;
-  /** The record on the Overall list, the category total otherwise. */
-  readonly value: string;
-  /** The nine categories, on the Overall list only. */
-  readonly cells: readonly BoardCell[] | null;
 }
 
 /** Green for the top three and red for the bottom three, whatever the league's size. */
@@ -58,87 +32,51 @@ export function rankTone(rank: number | null, teamCount: number): RankTone {
   return rank > teamCount - 3 ? "bottom" : "none";
 }
 
-/** Yahoo's record as W–L–T; unavailable when the standings didn't give it, blank while loading. */
-export function recordText(records: Records, teamKey: string): string {
-  if (records === null) {
-    return "";
-  }
-  const record = records.get(teamKey) ?? null;
-  return record === null ? UNAVAILABLE : `${record.wins}–${record.losses}–${record.ties}`;
-}
-
-/** A team's rank and total in each of the nine categories. */
-export function teamCells(table: TeamTable, teamKey: string): BoardCell[] {
-  const ranks = categoryRanks(table)[teamKey];
-  const team = table.teams.find((row) => row.teamKey === teamKey);
-  return CATEGORIES.map((key) => {
-    const rank = ranks?.[key] ?? null;
-    return {
-      key,
-      label: CATEGORY_LABELS[key],
-      rank,
-      tone: rankTone(rank, table.teams.length),
-      text: team ? formatTotal(team.totals, key) : UNAVAILABLE,
-    };
-  });
-}
-
-/** The ten tiles: the user's overall place, then their rank in each category. */
-export function boardTiles(table: TeamTable, myTeamKey: string): BoardTile[] {
-  const count = table.teams.length;
-  const position = rankings(table).find((team) => team.teamKey === myTeamKey)?.position ?? null;
-  return [
-    { pick: "overall", label: "Overall", rank: position, tone: rankTone(position, count) },
-    ...teamCells(table, myTeamKey).map((cell) => ({
-      pick: cell.key,
-      label: cell.label,
-      rank: cell.rank,
-      tone: cell.tone,
-    })),
-  ];
-}
-
-function overallRows(table: TeamTable, myTeamKey: string, records: Records): BoardRow[] {
-  return rankings(table).map((team) => ({
-    teamKey: team.teamKey,
-    teamName: team.teamName,
-    isMine: team.teamKey === myTeamKey,
-    rank: team.position,
-    tone: rankTone(team.position, table.teams.length),
-    value: recordText(records, team.teamKey),
-    cells: teamCells(table, team.teamKey),
-  }));
-}
-
-function categoryRows(table: TeamTable, myTeamKey: string, key: CategoryKey): BoardRow[] {
-  const ranks = categoryRanks(table);
-  const byRank = (rank: number | null) => rank ?? Number.POSITIVE_INFINITY;
-  return table.teams
-    .map((team, index) => ({ team, index, rank: ranks[team.teamKey]?.[key] ?? null }))
-    .sort((a, b) => byRank(a.rank) - byRank(b.rank) || a.index - b.index)
-    .map(({ team, rank }) => ({
-      teamKey: team.teamKey,
-      teamName: team.teamName,
-      isMine: team.teamKey === myTeamKey,
-      rank,
-      tone: rankTone(rank, table.teams.length),
-      value: formatTotal(team.totals, key),
-      cells: null,
-    }));
+/** Each team's values in the league's own categories, as the League maths takes them. */
+export function teamValues(table: TeamTable): TeamCategoryValues[] {
+  return table.teams.map((team) => ({ teamKey: team.teamKey, values: team.categoryValues }));
 }
 
 /**
- * The list the selected tile shows: every team by strength (sum of its nine
- * ranks) with its record and totals, or every team ranked in one category.
- * Tied teams share a rank; unranked teams go last.
+ * Every team ranked in every one of the league's categories, from Yahoo's own
+ * values. Tied teams share a rank (1, 1, 3); an unknown value gets no rank.
  */
-export function boardRows(
-  table: TeamTable,
-  myTeamKey: string,
-  pick: BoardPick,
-  records: Records
-): BoardRow[] {
-  return pick === "overall"
-    ? overallRows(table, myTeamKey, records)
-    : categoryRows(table, myTeamKey, pick);
+export function categoryRankTable(table: TeamTable): CategoryRankTable {
+  const ranks: Record<string, Record<string, number | null>> = Object.fromEntries(
+    table.teams.map((team) => [team.teamKey, {}])
+  );
+  for (const category of table.settings.categories) {
+    const values = table.teams.map((team) => team.categoryValues[category.statId] ?? null);
+    competitionRanks(values, category.direction).forEach((rank, index) => {
+      ranks[table.teams[index].teamKey][category.statId] = rank;
+    });
+  }
+  return ranks;
+}
+
+/**
+ * A category value as text: a percentage to one decimal ("47.9%") when the
+ * category is one, otherwise Yahoo's number as given. Unknown reads as unavailable.
+ */
+export function categoryText(category: LeagueCategory, value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return UNAVAILABLE;
+  }
+  return category.displayName.includes("%") ? `${(value * 100).toFixed(1)}%` : String(value);
+}
+
+/** A team's rank and total in each of the league's categories, in the league's order. */
+export function teamCells(table: TeamTable, teamKey: string): BoardCell[] {
+  const ranks = categoryRankTable(table)[teamKey] ?? {};
+  const team = table.teams.find((row) => row.teamKey === teamKey);
+  return table.settings.categories.map((category) => {
+    const rank = ranks[category.statId] ?? null;
+    return {
+      statId: category.statId,
+      label: category.displayName,
+      rank,
+      tone: rankTone(rank, table.teams.length),
+      text: categoryText(category, team?.categoryValues[category.statId]),
+    };
+  });
 }

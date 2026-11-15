@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareTotals, opponentOf, rankings, type TeamTable } from "../../../shared/domain";
+import { compareTotals, opponentOf, type TeamTable } from "../../../shared/domain";
 import { buildTeamTable, buildTeamTotals } from "../../support/builders";
 import { defined } from "../../support/defined";
 
@@ -25,62 +25,6 @@ const ladder = () =>
     { pts: 500, reb: 200, ast: 100, stl: 30, blk: 20, tpm: 50, to: 80 },
     { pts: 500, reb: 200, ast: 100, stl: 30, blk: 20, tpm: 50, to: 80 },
   ]);
-
-describe("rankings", () => {
-  it("orders teams by rank sum, best first", () => {
-    const result = rankings(ladder());
-
-    expect(result.map((team) => team.teamKey)).toEqual([
-      "466.l.1.t.1",
-      "466.l.1.t.2",
-      "466.l.1.t.3",
-    ]);
-    expect(result[0]).toMatchObject({ rankSum: 9, position: 1 });
-  });
-
-  it("gives tied rank sums the same position and skips the next one (1, 1, 3)", () => {
-    const result = rankings(ladder());
-
-    expect(result.map((team) => team.position)).toEqual([1, 2, 2]);
-    const reversed = rankings(
-      buildTeamTable([{ pts: 100 }, { pts: 600 }, { pts: 600 }, { pts: 600 }])
-    );
-    expect(reversed.map((team) => team.position)).toEqual([1, 1, 1, 4]);
-  });
-
-  it("keeps the table's order among equal sums", () => {
-    const table = buildTeamTable([{}, {}, {}]);
-    expect(rankings(table).map((team) => team.teamKey)).toEqual([
-      "466.l.1.t.1",
-      "466.l.1.t.2",
-      "466.l.1.t.3",
-    ]);
-  });
-
-  it("puts teams with an unknown category last, without a sum or position", () => {
-    const table = buildTeamTable([{ reb: null, pts: 900 }, { pts: 100 }, { pts: 200 }]);
-
-    const result = rankings(table);
-
-    expect(result.map((team) => team.teamKey)).toEqual([
-      "466.l.1.t.3",
-      "466.l.1.t.2",
-      "466.l.1.t.1",
-    ]);
-    expect(result[2]).toMatchObject({ rankSum: null, position: null });
-    expect(result[2].categoryRanks.reb).toBeNull();
-    expect(result[2].categoryRanks.pts).toBe(1);
-  });
-
-  it("carries names and managers through", () => {
-    const table = buildTeamTable([{}]);
-    const named: TeamTable = {
-      ...table,
-      teams: [{ ...table.teams[0], teamName: "Hoops", managerName: "Sam" }],
-    };
-    expect(rankings(named)[0]).toMatchObject({ teamName: "Hoops", managerName: "Sam" });
-  });
-});
 
 describe("compareTotals", () => {
   it("scores two sets of counted totals, such as one day's, with turnovers inverted", () => {
@@ -173,13 +117,15 @@ describe("purity", () => {
     const frozen = deepFreeze(ladder());
 
     expect(() => {
-      rankings(frozen);
+      between(frozen, "466.l.1.t.1", "466.l.1.t.2");
       opponentOf(frozen, "466.l.1.t.1");
     }).not.toThrow();
   });
 
   it("gives the same answer every time", () => {
     const table = ladder();
-    expect(rankings(table)).toEqual(rankings(table));
+    expect(between(table, "466.l.1.t.1", "466.l.1.t.2")).toEqual(
+      between(table, "466.l.1.t.1", "466.l.1.t.2")
+    );
   });
 });

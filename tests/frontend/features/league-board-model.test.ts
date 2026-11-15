@@ -1,15 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { missingLine } from "@shared/domain";
-import {
-  boardRows,
-  rankTone,
-  recordText,
-} from "../../../client/src/features/daily-stats/league-board-model";
+import { rankTone } from "../../../client/src/features/daily-stats/league-board-model";
 import {
   acquisitionText,
   rosterLines,
 } from "../../../client/src/features/daily-stats/team-roster-model";
-import { buildStatLine, buildTeamTable } from "../../support/builders";
+import { buildStatLine } from "../../support/builders";
 
 describe("rankTone", () => {
   it("marks the top three and the bottom three whatever the league's size", () => {
@@ -24,34 +20,6 @@ describe("rankTone", () => {
     expect(rankTone(7, 10)).toBe("none");
     expect(rankTone(8, 10)).toBe("bottom");
     expect(rankTone(null, 14)).toBe("none");
-  });
-});
-
-describe("recordText", () => {
-  it("shows Yahoo's W–L–T, a dash when it is unknown and nothing while loading", () => {
-    const records = new Map([
-      ["a", { wins: 36, losses: 27, ties: 2 }],
-      ["b", null],
-    ]);
-    expect(recordText(records, "a")).toBe("36–27–2");
-    expect(recordText(records, "b")).toBe("—");
-    expect(recordText(null, "a")).toBe("");
-  });
-});
-
-describe("boardRows", () => {
-  it("puts a team with an unknown total last in a category and never ranks it", () => {
-    const table = buildTeamTable([{ pts: null }, { pts: 500 }, { pts: 600 }]);
-
-    const rows = boardRows(table, "466.l.1.t.2", "pts", null);
-
-    expect(rows.map((row) => [row.teamName, row.rank, row.value])).toEqual([
-      ["Team 3", 1, "600"],
-      ["Team 2", 2, "500"],
-      ["Team 1", null, "—"],
-    ]);
-    expect(rows[1]?.isMine).toBe(true);
-    expect(rows[0]?.cells).toBeNull();
   });
 });
 

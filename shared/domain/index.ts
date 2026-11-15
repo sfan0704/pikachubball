@@ -24,20 +24,12 @@ export {
   percentage,
   categoryValue,
   competitionRanks,
-  categoryRanks,
-  rankSum,
   scoringSupport,
   tableCompleteness,
 } from "./fantasy-rules";
-export type { CategoryRanks, ScoringSupport, TableCompleteness } from "./fantasy-rules";
-export { rankings, compareTotals, opponentOf } from "./views";
-export type {
-  RankedTeam,
-  CategoryResult,
-  CategoryComparison,
-  Score,
-  TotalsComparison,
-} from "./views";
+export type { ScoringSupport, TableCompleteness } from "./fantasy-rules";
+export { compareTotals, opponentOf } from "./views";
+export type { CategoryResult, CategoryComparison, Score, TotalsComparison } from "./views";
 export type {
   Appearance,
   CountValue,

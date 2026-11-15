@@ -15,7 +15,7 @@ interface TeamPopoverProps {
   table: TeamTable;
   leagueKey: string;
   teamKey: string;
-  /** Yahoo's season record as W–L–T, or blank while it loads. */
+  /** The team's official record for the period as W–L–T. */
   record: string;
   periodLabel: string;
   onClose: () => void;
@@ -29,7 +29,7 @@ function RankGrid({ table, teamKey }: { table: TeamTable; teamKey: string }) {
     <ul className="grid grid-cols-3 gap-1.5" aria-label="Category ranks and totals">
       {teamCells(table, teamKey).map((cell) => (
         <li
-          key={cell.key}
+          key={cell.statId}
           className={cn("flex flex-col items-center rounded-[10px] py-1.5", TONE_CLASS[cell.tone])}
         >
           <span className="text-xs">{cell.label}</span>
@@ -123,7 +123,7 @@ function Roster({
   );
 }
 
-/** One team's nine ranks and totals for the period, and its roster today. */
+/** One team's rank and total in each of the league's categories for the period, and its roster today. */
 export function TeamPopover({
   table,
   leagueKey,
@@ -135,9 +135,7 @@ export function TeamPopover({
   onPickLeague,
 }: TeamPopoverProps) {
   const name = table.teams.find((team) => team.teamKey === teamKey)?.teamName ?? "Team";
-  const subtitle = [record, `ranks for ${periodLabel.toLowerCase()}`]
-    .filter((part) => part !== "")
-    .join(" · ");
+  const subtitle = `${record} · ranks for ${periodLabel.toLowerCase()}`;
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent

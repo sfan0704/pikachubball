@@ -6,7 +6,7 @@ import { useLeagueScope } from "@/api/hooks";
 import { useWeeks } from "@/api/daily-stats-hooks";
 import { weekFor, weekLabel } from "@/features/daily-stats/week-board";
 import { ShellSlot } from "@/features/shell/shell-slots";
-import type { Selection } from "./selection";
+import { selectionPath, type Selection } from "./selection";
 import { TableBoundary } from "./TableBoundary";
 import { useNow } from "./useNow";
 import { PeriodRow } from "./PeriodRow";
@@ -56,7 +56,7 @@ interface LeagueScreenProps extends Omit<LeagueViewProps, "league" | "screens"> 
   myTeamKey: string;
 }
 
-/** League: the period row, then the League board for that period. */
+/** League: the period row, then the League board for that period, in the view the URL names. */
 function LeagueScreen({ selection, onSelect, onPickLeague, query, myTeamKey }: LeagueScreenProps) {
   const now = useNow();
   const weeks = useWeeks(selection.leagueKey);
@@ -74,6 +74,9 @@ function LeagueScreen({ selection, onSelect, onPickLeague, query, myTeamKey }: L
               leagueKey={selection.leagueKey}
               myTeamKey={myTeamKey}
               periodLabel={period.label}
+              board={selection.board}
+              boardHref={(board) => selectionPath({ ...selection, board })}
+              onBoard={(board) => onSelect({ board })}
               onPickLeague={onPickLeague}
             />
           </Loading>

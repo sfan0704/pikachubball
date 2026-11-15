@@ -10,8 +10,6 @@ import {
   test,
 } from "./support";
 
-const TILES = ["Overall", "FG%", "FT%", "3PM", "PTS", "REB", "AST", "STL", "BLK", "TO"];
-
 test.beforeEach(async () => {
   await setScenario("ok");
 });
@@ -20,20 +18,28 @@ async function sidewaysOverflow(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 }
 
-test("switches the period and keeps Yahoo's season record beside each team", async ({ page }) => {
+const ORDINAL = /^\d+(st|nd|rd|th)$/;
+const LUCK = /^([+−]\d+\.\d|0)$/;
+
+test("ranks Season by Yahoo's record with all-play and luck, and keeps the view across periods", async ({
+  page,
+}) => {
   await signIn(page);
-  const mine = page.getByTestId(`row-ranking-${MY_TEAM}`);
+  const mine = page.getByTestId(`standings-row-${MY_TEAM}`);
   await expect(page).toHaveURL(/\/season$/);
   await expect(page.getByLabel("Period")).toHaveValue("season");
-  await expect(page.getByTestId("board-title")).toHaveText("Overall");
-  await expect(page.getByTestId("tile-overall")).toContainText("4");
-  await expect(mine).toContainText("47.9%");
-  await expect(mine.getByTestId("row-value")).toHaveText("36–27–0");
+  await expect(page.getByTestId(/^standings-row-/)).toHaveCount(14);
+  await expect(mine.getByTestId("row-record")).toHaveText("36–27–0");
+  await expect(mine.getByTestId("row-all-play")).toHaveText(ORDINAL);
+  await expect(mine.getByTestId("row-luck")).toHaveText(LUCK);
+  const ranks = (await page.getByTestId("row-rank").allTextContents()).map(Number);
+  expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
 
   await page.getByLabel("Period").selectOption("1");
   await expect(page).toHaveURL(/\/1$/);
-  await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
-  await expect(mine.getByTestId("row-value")).toHaveText("36–27–0");
+  await expect(mine.getByTestId("row-record")).toHaveText(/^\d+–\d+–\d+$/);
+  await expect(mine.getByTestId("row-all-play")).toHaveText(ORDINAL);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
 });
 
 test("has one period row at phone width: dated weeks, the ⓘ, and no League or Viewing as select", async ({
@@ -55,48 +61,76 @@ test("has one period row at phone width: dated weeks, the ⓘ, and no League or 
   const [periodBox, infoBox] = [await period.boundingBox(), await info.boundingBox()];
   expect(periodBox && infoBox && Math.abs(periodBox.y - infoBox.y)).toBeLessThanOrEqual(4);
   await info.click();
-  await expect(page.getByRole("dialog", { name: "Category ranks" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "How to read League" })).toBeVisible();
 });
 
-test("every tile selects its ranking without scrolling sideways", async ({ page }) => {
+test("switches between Standings and Categories in the URL, and back returns", async ({ page }) => {
   await signIn(page);
+  const views = page.getByRole("navigation", { name: "League view" });
+  await expect(views.getByRole("link", { name: "Standings" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
 
-  const tiles = page.getByRole("group", { name: "Rank by" }).getByRole("button");
-  await expect(tiles).toHaveCount(TILES.length);
-  for (const [index, label] of TILES.entries()) {
-    const tile = tiles.nth(index);
-    await expect(tile).toContainText(label);
-    await tile.click();
-    await expect(tile).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByTestId("board-title")).toHaveText(label);
-    await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
-    expect(await sidewaysOverflow(page), `overflows on ${label}`).toBeLessThanOrEqual(0);
-  }
+  await views.getByRole("link", { name: "Categories" }).click();
+  await expect(page).toHaveURL(/\/season\?view=categories$/);
+  const grid = page.getByRole("table", { name: "Category ranks" });
+  await expect(grid.getByRole("columnheader")).toHaveCount(10);
+  await expect(page.getByTestId(/^grid-row-/)).toHaveCount(14);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
+
+  await page.getByLabel("Period").selectOption("current");
+  await expect(page).toHaveURL(/\/current\?view=categories$/);
+
+  await page.goBack();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/season$/);
+  await expect(page.getByTestId(/^standings-row-/)).toHaveCount(14);
 });
 
-test("tied teams share a rank and the next one is skipped", async ({ page }) => {
+test("sorts Standings by a column header, kept in the URL", async ({ page }) => {
+  await signIn(page);
+  await expect(page.getByTestId(`standings-row-${MY_TEAM}`).getByTestId("row-luck")).toHaveText(
+    LUCK
+  );
+
+  await page.getByRole("button", { name: "Luck" }).click();
+  await expect(page).toHaveURL(/\/season\?sort=luck$/);
+  await expect(page.getByRole("columnheader", { name: "Luck" })).toHaveAttribute(
+    "aria-sort",
+    "descending"
+  );
+  const luck = (await page.getByTestId("row-luck").allTextContents()).map((text) =>
+    Number(text.replace("−", "-"))
+  );
+  expect(luck).toEqual([...luck].sort((a, b) => b - a));
+
+  await page.getByRole("button", { name: "All-play" }).click();
+  await expect(page).toHaveURL(/\/season\?sort=all-play$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/season\?sort=luck$/);
+  await expect(page.getByRole("columnheader", { name: "Luck" })).toHaveAttribute(
+    "aria-sort",
+    "descending"
+  );
+});
+
+test("picks a category in the grid: tied teams share a rank, and a second tap clears it", async ({
+  page,
+}) => {
   await signIn(page);
   await page.getByLabel("Period").selectOption("current");
+  await page
+    .getByRole("navigation", { name: "League view" })
+    .getByRole("link", { name: "Categories" })
+    .click();
 
-  // This week two teams have the same rank sum, and three share a TO rank.
-  await expect(page.getByTestId("row-rank")).toHaveText([
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "8",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-  ]);
-  await page.getByTestId("tile-to").click();
-  await expect(page.getByTestId("row-rank")).toHaveText([
+  await page.getByRole("button", { name: "TO", exact: true }).click();
+  await expect(page).toHaveURL(/\/current\?view=categories&category=19$/);
+  await expect(page.getByTestId("row-total")).toHaveCount(14);
+  // Three teams share 11th in turnovers this week; the next rank is skipped.
+  const column = page.getByTestId(/^grid-row-/).locator("td:last-child");
+  await expect(column).toHaveText([
     "1",
     "2",
     "3",
@@ -112,6 +146,12 @@ test("tied teams share a rank and the next one is skipped", async ({ page }) => 
     "11",
     "14",
   ]);
+
+  await page.getByRole("button", { name: "TO", exact: true }).click();
+  await expect(page).toHaveURL(/\/current\?view=categories$/);
+  await expect(page.getByTestId("row-total")).toHaveCount(0);
+  await page.goBack();
+  await expect(page.getByTestId("row-total")).toHaveCount(14);
 });
 
 test("opens a team's ranks and roster, and closes it again", async ({ page }) => {
@@ -120,7 +160,7 @@ test("opens a team's ranks and roster, and closes it again", async ({ page }) =>
 
   await page.getByTestId(`row-ranking-${LEAGUE}.t.9`).click();
   const popover = page.getByRole("dialog", { name: "Team 9" });
-  await expect(popover).toContainText(/ranks for week \d+ · /);
+  await expect(popover).toContainText(/Team 9\d+–\d+–\d+ · ranks for week \d+ · /);
   await expect(
     popover.getByRole("list", { name: "Category ranks and totals" }).getByRole("listitem")
   ).toHaveCount(9);
@@ -137,21 +177,32 @@ test("opens a team's ranks and roster, and closes it again", async ({ page }) =>
 });
 
 for (const theme of ["light", "dark"] as const) {
-  test(`the board, its explanation and the team popover pass accessibility checks (${theme})`, async ({
+  test(`both views, the explanation and the team popover pass accessibility checks (${theme})`, async ({
     page,
   }) => {
     await useTheme(page, theme);
     await signIn(page);
-    await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
+    await expect(page.getByTestId(`standings-row-${MY_TEAM}`).getByTestId("row-luck")).toHaveText(
+      LUCK
+    );
     expect(await accessibilityViolations(page)).toEqual([]);
 
     await page.getByRole("button", { name: "How to read this" }).click();
-    await expect(page.getByRole("dialog", { name: "Category ranks" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "How to read League" })).toBeVisible();
     expect(await accessibilityViolations(page)).toEqual([]);
     await page.keyboard.press("Escape");
 
     await page.getByTestId(`row-ranking-${MY_TEAM}`).click();
     await expect(page.getByTestId("popover-player").first()).toContainText(/\d\.\d PTS/);
+    expect(await accessibilityViolations(page)).toEqual([]);
+    await page.keyboard.press("Escape");
+
+    await page
+      .getByRole("navigation", { name: "League view" })
+      .getByRole("link", { name: "Categories" })
+      .click();
+    await page.getByRole("button", { name: "PTS", exact: true }).click();
+    await expect(page.getByTestId("row-total")).toHaveCount(14);
     expect(await accessibilityViolations(page)).toEqual([]);
   });
 }

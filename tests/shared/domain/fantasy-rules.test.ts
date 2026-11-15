@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  categoryRanks,
   categoryValue,
   competitionRanks,
   percentage,
-  rankSum,
   scoringSupport,
   tableCompleteness,
 } from "../../../shared/domain";
@@ -49,59 +47,6 @@ describe("competitionRanks", () => {
 
   it("leaves unknown values unranked without affecting the others", () => {
     expect(competitionRanks([10, null, 8], "higher")).toEqual([1, null, 2]);
-  });
-});
-
-describe("categoryRanks", () => {
-  it("ranks turnovers ascending and the other categories descending", () => {
-    const table = buildTeamTable([
-      { pts: 600, to: 80 },
-      { pts: 500, to: 60 },
-    ]);
-    const ranks = categoryRanks(table);
-    expect(ranks["466.l.1.t.1"].pts).toBe(1);
-    expect(ranks["466.l.1.t.2"].pts).toBe(2);
-    expect(ranks["466.l.1.t.1"].to).toBe(2);
-    expect(ranks["466.l.1.t.2"].to).toBe(1);
-  });
-
-  it("ranks percentages by makes over attempts across the scope", () => {
-    const table = buildTeamTable([
-      { fgMakes: 40, fgAttempts: 100 },
-      { fgMakes: 210, fgAttempts: 400 },
-    ]);
-    const ranks = categoryRanks(table);
-    expect(ranks["466.l.1.t.2"].fgPct).toBe(1);
-    expect(ranks["466.l.1.t.1"].fgPct).toBe(2);
-  });
-
-  it("leaves a team unranked in a category with zero attempts", () => {
-    const ranks = categoryRanks(buildTeamTable([{ ftMakes: 0, ftAttempts: 0 }, {}]));
-    expect(ranks["466.l.1.t.1"].ftPct).toBeNull();
-    expect(ranks["466.l.1.t.2"].ftPct).toBe(1);
-  });
-});
-
-describe("rankSum", () => {
-  it("adds the nine category ranks", () => {
-    const ranks = categoryRanks(buildTeamTable([{}, {}]));
-    expect(rankSum(ranks["466.l.1.t.1"])).toBe(9);
-  });
-
-  it("is unavailable when any category rank is unknown", () => {
-    const ranks = categoryRanks(buildTeamTable([{ reb: null }, {}]));
-    expect(rankSum(ranks["466.l.1.t.1"])).toBeNull();
-    expect(rankSum(ranks["466.l.1.t.2"])).toBe(9);
-  });
-
-  it("keeps tied sums tied", () => {
-    const ranks = categoryRanks(
-      buildTeamTable([
-        { pts: 600, reb: 200 },
-        { pts: 500, reb: 300 },
-      ])
-    );
-    expect(rankSum(ranks["466.l.1.t.1"])).toBe(rankSum(ranks["466.l.1.t.2"]));
   });
 });
 

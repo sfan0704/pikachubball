@@ -1,4 +1,4 @@
-import { CATEGORIES, type CategoryKey } from "./stats";
+import type { CategoryKey } from "./stats";
 import type { CategoryDirection, LeagueSettings, TeamTable, TeamTotals } from "./team-table";
 
 /** The direction of each of the nine standard categories. */
@@ -50,38 +50,6 @@ export function competitionRanks(
     const betterCount = values.filter((other) => other !== null && better(other, value)).length;
     return betterCount + 1;
   });
-}
-
-/** Each team's rank in each category, keyed by team key. */
-export type CategoryRanks = Readonly<Record<string, Readonly<Record<CategoryKey, number | null>>>>;
-
-/** Ranks every team in every standard category. */
-export function categoryRanks(table: TeamTable): CategoryRanks {
-  const ranks: Record<string, Record<CategoryKey, number | null>> = {};
-  for (const team of table.teams) {
-    ranks[team.teamKey] = {} as Record<CategoryKey, number | null>;
-  }
-  for (const key of CATEGORIES) {
-    const values = table.teams.map((team) => categoryValue(team.totals, key));
-    const keyRanks = competitionRanks(values, CATEGORY_DIRECTIONS[key]);
-    table.teams.forEach((team, index) => {
-      ranks[team.teamKey][key] = keyRanks[index];
-    });
-  }
-  return ranks;
-}
-
-/** The sum of a team's category ranks; null when any rank is unknown. Lower is better. */
-export function rankSum(ranks: Readonly<Record<CategoryKey, number | null>>): number | null {
-  let sum = 0;
-  for (const key of CATEGORIES) {
-    const rank = ranks[key];
-    if (rank === null) {
-      return null;
-    }
-    sum += rank;
-  }
-  return sum;
 }
 
 /** Whether the app can rank a league, and why not when it can't. */
