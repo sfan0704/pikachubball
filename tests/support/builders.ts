@@ -1,5 +1,7 @@
 import {
+  categoryValue,
   measured,
+  type CategoryKey,
   type LeagueCategory,
   type LeagueSettings,
   type StatLine,
@@ -7,17 +9,41 @@ import {
   type TeamTotals,
 } from "../../shared/domain";
 
+const COUNTING = { kind: "counting" } as const;
+
 const STANDARD_CATEGORIES: LeagueCategory[] = [
-  { statId: "5", key: "fgPct", displayName: "FG%", direction: "higher" },
-  { statId: "8", key: "ftPct", displayName: "FT%", direction: "higher" },
-  { statId: "10", key: "tpm", displayName: "3PTM", direction: "higher" },
-  { statId: "12", key: "pts", displayName: "PTS", direction: "higher" },
-  { statId: "15", key: "reb", displayName: "REB", direction: "higher" },
-  { statId: "16", key: "ast", displayName: "AST", direction: "higher" },
-  { statId: "17", key: "stl", displayName: "ST", direction: "higher" },
-  { statId: "18", key: "blk", displayName: "BLK", direction: "higher" },
-  { statId: "19", key: "to", displayName: "TO", direction: "lower" },
+  {
+    statId: "5",
+    key: "fgPct",
+    displayName: "FG%",
+    direction: "higher",
+    makeup: { kind: "ratio", topStatId: "4", bottomStatId: "3" },
+  },
+  {
+    statId: "8",
+    key: "ftPct",
+    displayName: "FT%",
+    direction: "higher",
+    makeup: { kind: "ratio", topStatId: "7", bottomStatId: "6" },
+  },
+  { statId: "10", key: "tpm", displayName: "3PTM", direction: "higher", makeup: COUNTING },
+  { statId: "12", key: "pts", displayName: "PTS", direction: "higher", makeup: COUNTING },
+  { statId: "15", key: "reb", displayName: "REB", direction: "higher", makeup: COUNTING },
+  { statId: "16", key: "ast", displayName: "AST", direction: "higher", makeup: COUNTING },
+  { statId: "17", key: "stl", displayName: "ST", direction: "higher", makeup: COUNTING },
+  { statId: "18", key: "blk", displayName: "BLK", direction: "higher", makeup: COUNTING },
+  { statId: "19", key: "to", displayName: "TO", direction: "lower", makeup: COUNTING },
 ];
+
+/** Yahoo's own value in each standard category, as it would send it for these totals. */
+function standardCategoryValues(totals: TeamTotals): Record<string, number | null> {
+  return Object.fromEntries(
+    STANDARD_CATEGORIES.map((category) => [
+      category.statId,
+      categoryValue(totals, category.key as CategoryKey),
+    ])
+  );
+}
 
 /** League settings for a standard nine-category head-to-head league. */
 export function buildLeagueSettings(overrides: Partial<LeagueSettings> = {}): LeagueSettings {
@@ -61,14 +87,18 @@ export function buildTeamTable(
   return {
     scope: { kind: "week", week: 5 },
     settings: buildLeagueSettings(),
-    teams: totals.map((teamTotals, index) => ({
-      teamKey: `466.l.1.t.${index + 1}`,
-      teamName: `Team ${index + 1}`,
-      managerName: null,
-      games: null,
-      record: null,
-      totals: buildTeamTotals(teamTotals),
-    })),
+    teams: totals.map((teamTotals, index) => {
+      const built = buildTeamTotals(teamTotals);
+      return {
+        teamKey: `466.l.1.t.${index + 1}`,
+        teamName: `Team ${index + 1}`,
+        managerName: null,
+        games: null,
+        record: null,
+        totals: built,
+        categoryValues: standardCategoryValues(built),
+      };
+    }),
     pairings: [],
     fetchedAt: "2026-01-15T12:00:00.000Z",
     ...overrides,
