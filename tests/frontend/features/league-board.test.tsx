@@ -128,13 +128,16 @@ describe("LeagueBoard", () => {
   });
 
   it("keeps the record when a week fails, and says so instead of showing all-play or luck", async () => {
-    stubServer({ failWeeks: true });
+    const fetchMock = stubServer({ failWeeks: true });
     renderBoard();
 
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(cellsOf("row-all-play").every((text) => text === "—")).toBe(true);
     expect(cellsOf("row-luck").every((text) => text === "—")).toBe(true);
     expect(cellsOf("row-record")).toContain("36–27–0");
+    const calls = fetchMock.mock.calls.length;
+    await userEvent.setup().click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(calls));
   });
 
   it("sorts by a column header and marks it as the sort", async () => {
