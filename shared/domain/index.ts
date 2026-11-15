@@ -8,6 +8,7 @@ export { CATEGORIES } from "./stats";
 
 export type {
   CategoryDirection,
+  CategoryMakeup,
   LeagueCategory,
   LeagueSettings,
   TeamTotals,

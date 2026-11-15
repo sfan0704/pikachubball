@@ -19,6 +19,7 @@ import {
   yahooFlag,
   yahooInteger,
 } from "./yahoo-shapes";
+import { nbaStatMakeup } from "./yahoo/nba-stat-makeup";
 
 /** Yahoo's stat id for each of the nine standard categories. */
 const CATEGORY_BY_STAT_ID: Readonly<Record<string, CategoryKey>> = {
@@ -144,6 +145,7 @@ function toSettings(
       key: CATEGORY_BY_STAT_ID[stat.stat_id] ?? null,
       displayName: stat.display_name,
       direction: stat.sort_order === "1" ? "higher" : "lower",
+      makeup: nbaStatMakeup(stat.stat_id),
     }));
   return {
     leagueKey: meta.league_key,
@@ -164,14 +166,37 @@ function toCount(value: unknown): number | null {
   return typeof text === "string" && /^\d+$/.test(text.trim()) ? Number(text.trim()) : null;
 }
 
+/** A plain number from Yahoo's text (".471", "1.85", "12"); null when absent or "-". */
+function toDecimal(value: unknown): number | null {
+  const text = typeof value === "number" ? String(value) : value;
+  return typeof text === "string" && /^(\d+(\.\d*)?|\.\d+)$/.test(text.trim())
+    ? Number(text.trim())
+    : null;
+}
+
 /** "127/298" as makes and attempts; both null when the value isn't in that form. */
 function toMakesAttempts(value: unknown): [number | null, number | null] {
   const match = typeof value === "string" ? /^(\d+)\/(\d+)$/.exec(value.trim()) : null;
   return match ? [Number(match[1]), Number(match[2])] : [null, null];
 }
 
+function statValues(team: YahooTeam): Map<string, unknown> {
+  return new Map(team.team_stats.stats.map(({ stat }) => [stat.stat_id, stat.value]));
+}
+
+/** Yahoo's own value in each of the league's categories, whatever they are. */
+function toCategoryValues(
+  team: YahooTeam,
+  categories: readonly LeagueCategory[]
+): Record<string, number | null> {
+  const values = statValues(team);
+  return Object.fromEntries(
+    categories.map((category) => [category.statId, toDecimal(values.get(category.statId))])
+  );
+}
+
 function toTotals(team: YahooTeam): TeamTotals {
-  const values = new Map(team.team_stats.stats.map(({ stat }) => [stat.stat_id, stat.value]));
+  const values = statValues(team);
   const [fgMakes, fgAttempts] = toMakesAttempts(values.get(FG_MAKES_ATTEMPTS));
   const [ftMakes, ftAttempts] = toMakesAttempts(values.get(FT_MAKES_ATTEMPTS));
   return {
@@ -201,7 +226,7 @@ function toWeekGames(team: YahooTeam): WeekGames | null {
     : null;
 }
 
-function toRow(team: YahooTeam, scope: Scope): TeamRow {
+function toRow(team: YahooTeam, scope: Scope, settings: LeagueSettings): TeamRow {
   const nickname = team.managers?.[0]?.manager.nickname;
   return {
     teamKey: team.team_key,
@@ -209,6 +234,7 @@ function toRow(team: YahooTeam, scope: Scope): TeamRow {
     // Yahoo masks managers who hide their name.
     managerName: nickname && nickname !== "--hidden--" ? nickname : null,
     totals: toTotals(team),
+    categoryValues: toCategoryValues(team, settings.categories),
     games: scope.kind === "week" ? toWeekGames(team) : null,
     record: team.team_standings?.outcome_totals ?? null,
   };
@@ -221,7 +247,13 @@ function build(
   pairings: readonly MatchupPairing[],
   fetchedAt: string
 ): TeamTable {
-  return { scope, settings, teams: teams.map((team) => toRow(team, scope)), pairings, fetchedAt };
+  return {
+    scope,
+    settings,
+    teams: teams.map((team) => toRow(team, scope, settings)),
+    pairings,
+    fetchedAt,
+  };
 }
 
 /** The season table from a `/league/{key};out=settings,standings` response. */

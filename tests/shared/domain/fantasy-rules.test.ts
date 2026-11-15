@@ -117,25 +117,25 @@ describe("scoringSupport", () => {
     }
   });
 
-  it("rejects a league with a non-standard category", () => {
+  it("supports any set of categories, including ones the app can't build", () => {
     const settings = buildLeagueSettings();
     const support = scoringSupport({
       ...settings,
       categories: [
-        ...settings.categories,
-        { statId: "9004003", key: null, displayName: "FGM/A", direction: "higher" },
+        ...settings.categories.slice(0, 7),
+        {
+          statId: "26",
+          key: null,
+          displayName: "MPG",
+          direction: "higher",
+          makeup: { kind: "unavailable" },
+        },
       ],
     });
-    expect(support).toEqual({ supported: false, reason: "Unsupported categories: FGM/A" });
+    expect(support).toEqual({ supported: true });
   });
 
-  it("rejects a league missing a standard category", () => {
-    const settings = buildLeagueSettings();
-    const support = scoringSupport({ ...settings, categories: settings.categories.slice(0, 8) });
-    expect(support.supported).toBe(false);
-  });
-
-  it("rejects turnovers scored as higher-is-better", () => {
+  it("supports the league's own directions", () => {
     const settings = buildLeagueSettings();
     const support = scoringSupport({
       ...settings,
@@ -143,10 +143,7 @@ describe("scoringSupport", () => {
         category.key === "to" ? { ...category, direction: "higher" as const } : category
       ),
     });
-    expect(support).toEqual({
-      supported: false,
-      reason: "TO is scored in an unexpected direction",
-    });
+    expect(support).toEqual({ supported: true });
   });
 });
 

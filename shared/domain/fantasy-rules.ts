@@ -88,31 +88,15 @@ export function rankSum(ranks: Readonly<Record<CategoryKey, number | null>>): nu
 export type ScoringSupport =
   { readonly supported: true } | { readonly supported: false; readonly reason: string };
 
-/** Only head-to-head category leagues with exactly the nine standard categories are supported. */
+/**
+ * Only head-to-head category leagues are supported. Any set of categories is:
+ * one the app can't build is marked unavailable for combined views, never refused.
+ */
 export function scoringSupport(settings: LeagueSettings): ScoringSupport {
   if (settings.scoringType !== "head") {
     return {
       supported: false,
       reason: `Scoring type "${settings.scoringType}" isn't head-to-head categories`,
-    };
-  }
-  const keys = settings.categories.map((category) => category.key);
-  const unknown = settings.categories.filter((category) => category.key === null);
-  if (unknown.length > 0) {
-    const names = unknown.map((category) => category.displayName).join(", ");
-    return { supported: false, reason: `Unsupported categories: ${names}` };
-  }
-  const missing = CATEGORIES.filter((key) => !keys.includes(key));
-  if (missing.length > 0 || keys.length !== CATEGORIES.length) {
-    return { supported: false, reason: "The league doesn't use the standard nine categories" };
-  }
-  const wrongDirection = settings.categories.find(
-    (category) => category.key !== null && category.direction !== CATEGORY_DIRECTIONS[category.key]
-  );
-  if (wrongDirection) {
-    return {
-      supported: false,
-      reason: `${wrongDirection.displayName} is scored in an unexpected direction`,
     };
   }
   return { supported: true };
@@ -122,12 +106,13 @@ export function scoringSupport(settings: LeagueSettings): ScoringSupport {
 export type TableCompleteness = "empty" | "partial" | "complete";
 
 /**
- * "empty" when no team has any recorded stat (a preseason league: every total
+ * "empty" when no team has any recorded stat (a preseason league: every value
  * is zero or unknown), "partial" when some value is unknown, else "complete".
- * Unknown stays unknown: it is never counted as a zero.
+ * Only the league's own categories count, so a stat it doesn't score never
+ * makes a table partial. Unknown stays unknown: it is never counted as a zero.
  */
 export function tableCompleteness(table: TeamTable): TableCompleteness {
-  const values = table.teams.flatMap((team) => Object.values(team.totals));
+  const values = table.teams.flatMap((team) => Object.values(team.categoryValues));
   if (values.every((value) => value === null || value === 0)) {
     return "empty";
   }

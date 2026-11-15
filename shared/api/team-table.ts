@@ -9,6 +9,11 @@ const leagueCategorySchema = z.object({
   key: z.enum(CATEGORIES).nullable(),
   displayName: z.string(),
   direction: z.enum(["higher", "lower"]),
+  makeup: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("counting") }),
+    z.object({ kind: z.literal("ratio"), topStatId: z.string(), bottomStatId: z.string() }),
+    z.object({ kind: z.literal("unavailable") }),
+  ]),
 });
 
 const leagueSettingsSchema = z.object({
@@ -42,6 +47,7 @@ const teamRowSchema = z.object({
   teamName: z.string(),
   managerName: z.string().nullable(),
   totals: teamTotalsSchema,
+  categoryValues: z.record(z.string(), nullableNumber),
   games: z
     .object({
       remaining: z.number().int().nonnegative(),
