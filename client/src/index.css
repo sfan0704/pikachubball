@@ -4,16 +4,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-  /*
-   * The app's only two breakpoints (docs/target-state.md, Responsive layout):
-   * under md the phone layout; from md the top bar over one column; from lg
-   * the desktop layouts. Tailwind's other defaults are dropped so no third
-   * width creeps in.
-   */
+/*
+ * The app's only two breakpoints (docs/target-state.md, Responsive layout):
+ * under md the phone layout; from md the top bar over one column; from lg
+ * the desktop layouts. Tailwind's other defaults are dropped so no third
+ * width creeps in. Static so they are also CSS variables on :root, which
+ * useBreakpoint reads for the few choices CSS can't make (sheet or panel).
+ */
+@theme static {
   --breakpoint-*: initial;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1100px;
+}
+
+@theme {
   /* The widest the page content gets, centred, as in the FAN-129 mockup. */
   --container-page: 1280px;
 
