@@ -310,7 +310,7 @@ flowchart TD
 
 ### The team table
 
-League's season and weekly category ranks are computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table.
+League's season and weekly category ranks are computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table. Season all-play and luck need every week's totals, not the season's, so on Season totals the client also reads each week's table so far through the same scope endpoint (`useSeasonWeekTables`, FAN-141): finished weeks are Settled and the week in progress counts as it stands. If any week fails, no week tables are given, so all-play and luck show the dataset's error rather than a partial sum, while the official record still shows.
 
 ### Fantasy rules
 
@@ -380,6 +380,7 @@ erDiagram
 | Matchup Today, first visit | 7 |
 | Matchup Week, first visit on the last day of the week | 16, in 6 API requests |
 | Players, first page / each further page | 4 to 7 / 2 (3 on Last 7 or Last 30, which also read the page's season totals) |
+| League Season totals (all-play and luck), first visit | Weeks so far + 1 (about 20 in a full season) |
 | League team popover, first / later | 4 / 3 |
 | Live Matchup while a shown game is in progress | About 3 a minute |
 

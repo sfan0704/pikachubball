@@ -38,3 +38,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-11-12 · The app shell follows the FAN-88 mockup: a compact header (league switcher, period, freshness line, Account with theme and sign-out) and a bottom tab bar · FAN-125
 - 2026-11-14 · CI fails on a high or critical advisory in a production dependency (`npm audit --omit=dev`); test-only packages move to devDependencies · FAN-137
 - 2026-11-14 · Lint fails on code smells (sonarjs) and every client and server file has its own coverage floor, with an exception list that only shrinks · FAN-137
+- 2026-11-14 · Season totals read every week's table so far (one scope request a week, finished weeks Settled) for all-play and luck; any failed week withholds them all · FAN-141

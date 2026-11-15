@@ -6,6 +6,7 @@
 // screens make and hold each to its call budget
 // (docs/reference/daily-stats-retrieval.md).
 import { SEED_LEAGUE_KEY, seedUsers, type SeedUser } from "../server/dev/seed-users";
+import { seasonWeekScopes } from "../shared/domain/season-weeks";
 
 // scripts/load-test.sh passes this workspace's ports (scripts/workspace.mts).
 const BASE = process.env.LOAD_BASE_URL ?? "";
@@ -208,6 +209,22 @@ async function firstPopover(session: Session, teamKey: string): Promise<number> 
   return performance.now() - started;
 }
 
+/**
+ * League on Season totals from nothing: D1 season, then D1 for every week of
+ * the season so far (the recording's weeks 1 to 7, then week 8 as "current"),
+ * which all-play and luck add up. A full season is about 20 weeks.
+ */
+async function leagueSeason(session: Session): Promise<number> {
+  const started = performance.now();
+  const season = (await session.json(table("season"))) as {
+    settings: { startWeek: number; currentWeek: number };
+  };
+  await Promise.all(
+    seasonWeekScopes(season.settings).map((scope) => session.json(table(String(scope))))
+  );
+  return performance.now() - started;
+}
+
 /** One page of the Players list (D5) and the season totals of its players (D4), as the screen asks. */
 async function playersPage(session: Session, query: Record<string, string>): Promise<number> {
   const started = performance.now();
@@ -283,6 +300,7 @@ async function dailyStatsPhases(sessions: Session[]): Promise<PhaseResult[]> {
     await phase("League, first team popover (4)", sessions, 4 * n, false, (s) =>
       firstPopover(s, stranger(s))
     ),
+    await phase("League Season, every week, cold (9)", sessions, 9 * n, true, leagueSeason),
   ];
 }
 
