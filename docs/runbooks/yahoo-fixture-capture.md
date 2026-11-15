@@ -37,6 +37,10 @@ Yahoo's player game log carries the NBA schedule and game state. To see how it s
 
 `npm run capture:yahoo-live-calls` records, scrubbed, the two daily-stats calls parsers are tested against: game logs for 25 players by key (D3) and adds, drops and trades for one team (D7) in your newest league (pass a league key to choose another). Sign in as above, and run it while NBA games are live: it reads the rostered players' game logs first and puts players with a live game into the 25. For D7 it records the first team in the transactions feed that made a trade, and your own team; it stops if nobody has traded. The files go to `tests/backend/fixtures/yahoo/daily-stats/`, replacing any earlier capture, with a `README.md` giving each call's time, status and what came back. They're checked with the same leak check as the research capture (public NBA names pass) and are committed.
 
+## Record Yahoo's NBA stat list (FAN-147)
+
+`npm run capture:yahoo-stat-categories` records Yahoo's official list of NBA stats (`/game/nba/stat_categories`) for the current season, signing in as above. It names every stat id a league or a player stat line can carry, with its sort order and whether Yahoo shows it only for display. The scrubbed reply goes to `tests/backend/fixtures/yahoo/stat-categories/`, replacing any earlier capture, and is committed. It holds no personal details, but the usual leak check still runs.
+
 ## Check
 
 - Skim the captured files (fixtures only; the research folder is shared privately) for your Yahoo nickname, team names, league name and email. The script already checks for these, so none should appear.
