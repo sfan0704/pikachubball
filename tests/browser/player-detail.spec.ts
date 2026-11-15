@@ -46,6 +46,18 @@ test("opens an injured player from Matchup with today's tag and every category",
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
+test("puts focus back on the player's row when the sheet closes", async ({ page }) => {
+  await signIn(page, "a", "Matchup");
+  const row = page.getByTestId(MY_COLUMN).getByRole("button", { name: /Casey Knoll/ });
+
+  await row.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog", { name: "Casey Knoll" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(row).toBeFocused();
+});
+
 test("shows no game today for a player whose team is off", async ({ page }) => {
   await signIn(page, "a", "Matchup");
 
