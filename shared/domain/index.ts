@@ -106,3 +106,20 @@ export {
 } from "./matchup-week";
 export type { ScheduleContext, ScheduledGame, TeamSchedule, WeekDay } from "./nba-schedule";
 export { localDateOf, scheduleByTeam, teamSchedule } from "./nba-schedule";
+export type {
+  AllPlayRecord,
+  AllPlayTable,
+  LuckSteps,
+  ScoringCategory,
+  TeamCategoryValues,
+} from "./all-play";
+export {
+  addRecords,
+  luckSteps,
+  officialWeekRecords,
+  resultsPlayed,
+  seasonAllPlay,
+  weeklyAllPlay,
+  winPercentage,
+  winPercentageRanks,
+} from "./all-play";
