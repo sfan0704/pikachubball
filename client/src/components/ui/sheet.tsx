@@ -4,8 +4,17 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-/** A sheet that slides up from the bottom of the screen; a modal dialog underneath. Its className styles the scrolling body. */
+/** A sheet that slides up from the bottom of the screen, or in from the right as a drawer; a modal dialog underneath. Its className styles the scrolling body. */
 const Sheet = DialogPrimitive.Root;
+
+/** Which edge the sheet comes from. */
+type SheetSide = "bottom" | "right";
+
+const SIDE_CLASS: Record<SheetSide, string> = {
+  bottom:
+    "inset-x-0 bottom-0 mx-auto max-h-[90dvh] max-w-lg rounded-t-2xl border data-[state=open]:slide-in-from-bottom",
+  right: "inset-y-0 right-0 h-dvh max-w-md border-l data-[state=open]:slide-in-from-right",
+};
 
 const SheetTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
@@ -33,15 +42,15 @@ SheetDescription.displayName = DialogPrimitive.Description.displayName;
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { side?: SheetSide }
+>(({ className, children, side = "bottom", ...props }, ref) => (
   <DialogPrimitive.Portal>
     <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border bg-background shadow-lg",
-        "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom"
+        "fixed z-50 flex w-full flex-col overflow-hidden bg-background shadow-lg data-[state=open]:animate-in",
+        SIDE_CLASS[side]
       )}
       {...props}
     >
@@ -68,4 +77,4 @@ const SheetContent = React.forwardRef<
 ));
 SheetContent.displayName = DialogPrimitive.Content.displayName;
 
-export { Sheet, SheetContent, SheetTitle, SheetDescription };
+export { Sheet, SheetContent, SheetTitle, SheetDescription, type SheetSide };
