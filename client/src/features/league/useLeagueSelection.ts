@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import type { LeagueScope } from "@shared/api/league-scope";
 import { useLeagues, useMe, useSavePreferences } from "@/api/hooks";
 import {
@@ -28,12 +28,14 @@ function loadStatus(
 }
 
 /**
- * The selected league, team, screen and scope or day, held in the URL. A new visit is sent to
+ * The selected league, team, screen and scope or day, and League's board, held in the URL. A new visit is sent to
  * the URL of the saved (or default) selection; choosing something navigates,
  * so back works, and saves the league and team as the next visit's start.
  */
 export function useLeagueSelection() {
-  const [location, navigate] = useLocation();
+  const [path, navigate] = useLocation();
+  const search = useSearch();
+  const location = search === "" ? path : `${path}?${search}`;
   const me = useMe();
   const leagues = useLeagues();
   const savePreferences = useSavePreferences();
@@ -53,7 +55,7 @@ export function useLeagueSelection() {
   // Make the URL say what is shown, replacing the entry so back doesn't bounce.
   const canonical = selection ? selectionPath(selection) : null;
   useEffect(() => {
-    if (canonical !== null && location.split("?")[0] !== canonical) {
+    if (canonical !== null && location !== canonical) {
       navigate(canonical, { replace: true });
     }
   }, [canonical, location, navigate]);

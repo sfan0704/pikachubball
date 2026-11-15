@@ -28,19 +28,12 @@ export {
   percentage,
   competitionRanks,
   categoryRanks,
-  rankSum,
   scoringSupport,
   tableCompleteness,
 } from "./fantasy-rules";
 export type { CategoryRanks, ScoringSupport, TableCompleteness } from "./fantasy-rules";
-export { rankings, compareCategories, opponentOf } from "./views";
-export type {
-  RankedTeam,
-  CategoryResult,
-  CategoryComparison,
-  Score,
-  TotalsComparison,
-} from "./views";
+export { compareCategories, opponentOf } from "./views";
+export type { CategoryResult, CategoryComparison, Score, TotalsComparison } from "./views";
 export type {
   Appearance,
   CountValue,

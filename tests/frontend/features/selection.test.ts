@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { UserLeague } from "@shared/api/leagues";
 import {
+  applyChange,
   parseSelectionPath,
   pickDefaultLeague,
   openScreen,
@@ -13,6 +14,7 @@ import {
   openingScreen,
   type Screen,
 } from "../../../client/src/features/league/screens";
+import { DEFAULT_BOARD } from "../../../client/src/features/league/league-board-state";
 
 function league(overrides: Partial<UserLeague>): UserLeague {
   return {
@@ -45,6 +47,7 @@ function selection(overrides: Partial<Selection>): Selection {
     screen: "league",
     scope: "current",
     day: "today",
+    board: DEFAULT_BOARD,
     ...overrides,
   };
 }
@@ -66,6 +69,14 @@ describe("selection paths", () => {
       "/leagues/466.l.1/teams/466.l.1.t.3/matchup/week/4",
     ],
     [selection({ screen: "players" }), "/leagues/466.l.1/teams/466.l.1.t.3/players"],
+    [
+      selection({ scope: "season", board: { view: "categories", sort: "record", category: "12" } }),
+      "/leagues/466.l.1/teams/466.l.1.t.3/season?view=categories&category=12",
+    ],
+    [
+      selection({ scope: 3, board: { view: "standings", sort: "luck", category: null } }),
+      "/leagues/466.l.1/teams/466.l.1.t.3/3?sort=luck",
+    ],
   ])("round-trips %o through its URL", (chosen, path) => {
     expect(selectionPath(chosen)).toBe(path);
     expect(parseSelectionPath(path)).toEqual(chosen);
@@ -80,10 +91,29 @@ describe("selection paths", () => {
     );
   });
 
-  it("ignores the query string", () => {
-    expect(parseSelectionPath("/leagues/466.l.1/teams/466.l.1.t.3/season?x=1")?.scope).toBe(
-      "season"
+  it("reads League's board from the query string and ignores anything else in it", () => {
+    const parsed = parseSelectionPath(
+      "/leagues/466.l.1/teams/466.l.1.t.3/season?x=1&view=categories&sort=all-play&category=5"
     );
+    expect(parsed?.scope).toBe("season");
+    expect(parsed?.board).toEqual({ view: "categories", sort: "all-play", category: "5" });
+    expect(
+      parseSelectionPath("/leagues/466.l.1/teams/466.l.1.t.3/season?view=x&sort=y&category=FG")
+        ?.board
+    ).toEqual(DEFAULT_BOARD);
+  });
+
+  it("keeps League's board out of the other screens' URLs", () => {
+    const board = { view: "categories", sort: "luck", category: "5" } as const;
+    expect(selectionPath(selection({ screen: "players", board }))).toBe(
+      "/leagues/466.l.1/teams/466.l.1.t.3/players"
+    );
+    expect(
+      parseSelectionPath("/leagues/466.l.1/teams/466.l.1.t.3/matchup/today?view=categories")?.board
+    ).toEqual(DEFAULT_BOARD);
+  });
+
+  it("ignores a trailing slash", () => {
     expect(parseSelectionPath("/leagues/466.l.1/teams/466.l.1.t.3/matchup/today/")?.day).toBe(
       "today"
     );
@@ -216,6 +246,25 @@ describe("resolving what to show", () => {
 
   it("has nothing to show without leagues", () => {
     expect(resolveSelection(null, [], NO_PREFERENCE, ALL)).toBeNull();
+  });
+});
+
+describe("changing the selection", () => {
+  const board = { view: "categories", sort: "luck", category: "5" } as const;
+
+  it("keeps League's board when the period changes", () => {
+    expect(applyChange(selection({ board }), { scope: 2 }, [CURRENT, OLD]).board).toEqual(board);
+  });
+
+  it("resets League's board in another league, where the category may not exist", () => {
+    const next = applyChange(selection({ board }), { leagueKey: OLD.leagueKey }, [CURRENT, OLD]);
+    expect(next).toMatchObject({ teamKey: OLD.teamKey, board: DEFAULT_BOARD });
+  });
+
+  it("opens League's board on Standings from the tab bar", () => {
+    expect(openScreen(selection({ screen: "players", board }), "league").board).toEqual(
+      DEFAULT_BOARD
+    );
   });
 });
 

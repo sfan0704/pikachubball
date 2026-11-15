@@ -2,6 +2,7 @@ import { leagueScopeSchema, type LeagueScope } from "@shared/api/league-scope";
 import type { Preferences } from "@shared/api/account";
 import type { UserLeague } from "@shared/api/leagues";
 import { MATCHUP_DAYS, openingScreen, type MatchupDay, type Screen } from "./screens";
+import { boardQuery, DEFAULT_BOARD, parseBoard, type LeagueBoardState } from "./league-board-state";
 
 /** What the user is looking at: a league, a team in it, a screen, and that screen's scope or day. */
 export interface Selection {
@@ -12,6 +13,8 @@ export interface Selection {
   readonly scope: LeagueScope;
   /** The Matchup day; other screens keep today. */
   readonly day: MatchupDay;
+  /** League's view, sort and picked category; other screens keep the default. */
+  readonly board: LeagueBoardState;
 }
 
 /** What a URL says, before it is checked against the user's leagues and wired screens. */
@@ -22,18 +25,26 @@ const PATH = /^\/leagues\/([^/]+)\/teams\/([^/]+)\/(.+?)\/?$/;
 /**
  * The URL that holds a selection, so refresh, back and shared links all work:
  * `…/matchup/<day>` (`…/matchup/week/<n>` for a past week), `…/players`, or
- * `…/<scope>` for League, as before daily stats.
+ * `…/<scope>` for League, as before daily stats, with League's view, sort and
+ * category in the query string when they differ from the default.
  */
-export function selectionPath({ leagueKey, teamKey, screen, scope, day }: Selection): string {
+export function selectionPath({
+  leagueKey,
+  teamKey,
+  screen,
+  scope,
+  day,
+  board,
+}: Selection): string {
   const base = `/leagues/${encodeURIComponent(leagueKey)}/teams/${encodeURIComponent(teamKey)}`;
   if (screen === "matchup") {
     const week = day === "week" && typeof scope === "number" ? `/${scope}` : "";
     return `${base}/matchup/${day}${week}`;
   }
-  return screen === "players" ? `${base}/players` : `${base}/${scope}`;
+  return screen === "players" ? `${base}/players` : `${base}/${scope}${boardQuery(board)}`;
 }
 
-type ScreenPart = Pick<Selection, "screen" | "scope" | "day">;
+type ScreenPart = Pick<Selection, "screen" | "scope" | "day" | "board">;
 
 /** `<day>`, or `week/<n>` for one scoring week. */
 function parseMatchup(day: string | undefined, week: string | undefined): ScreenPart | null {
@@ -43,12 +54,12 @@ function parseMatchup(day: string | undefined, week: string | undefined): Screen
   }
   const scope = week === undefined ? "current" : leagueScopeSchema.safeParse(week).data;
   return typeof scope === "number" || scope === "current"
-    ? { screen: "matchup", scope, day: found }
+    ? { screen: "matchup", scope, day: found, board: DEFAULT_BOARD }
     : null;
 }
 
-/** The screen, scope and day that the rest of the path names, or null. */
-function parseScreen(rest: string): ScreenPart | null {
+/** The screen, scope and day that the rest of the path names, or null; League's board comes from the query. */
+function parseScreen(rest: string, search: string): ScreenPart | null {
   const [first, second, third, ...extra] = rest.split("/");
   if (first === "matchup") {
     return extra.length > 0 ? null : parseMatchup(second, third);
@@ -57,20 +68,23 @@ function parseScreen(rest: string): ScreenPart | null {
     return null;
   }
   if (first === "players") {
-    return { screen: "players", scope: "current", day: "today" };
+    return { screen: "players", scope: "current", day: "today", board: DEFAULT_BOARD };
   }
   const scope = leagueScopeSchema.safeParse(first);
-  return scope.success ? { screen: "league", scope: scope.data, day: "today" } : null;
+  return scope.success
+    ? { screen: "league", scope: scope.data, day: "today", board: parseBoard(search) }
+    : null;
 }
 
-/** The selection a path asks for, or null when it isn't a league path. */
+/** The selection a path (with its query string, if any) asks for, or null when it isn't a league path. */
 export function parseSelectionPath(path: string): RequestedSelection | null {
-  const match = PATH.exec(path.split("?")[0]);
+  const [pathname, search = ""] = path.split("?");
+  const match = PATH.exec(pathname);
   if (!match) {
     return null;
   }
   try {
-    const screen = parseScreen(decodeURIComponent(match[3]));
+    const screen = parseScreen(decodeURIComponent(match[3]), search);
     return screen
       ? {
           leagueKey: decodeURIComponent(match[1]),
@@ -109,13 +123,13 @@ function openingScope(screen: Screen): LeagueScope {
 /** Where a visit to a league starts: the opening screen and its period, today. */
 function opening(screens: readonly Screen[]): ScreenPart {
   const screen = openingScreen(screens);
-  return { screen, scope: openingScope(screen), day: "today" };
+  return { screen, scope: openingScope(screen), day: "today", board: DEFAULT_BOARD };
 }
 
-/** The selection after opening another screen from the tab bar; League starts on the season totals. */
+/** The selection after opening another screen from the tab bar; League starts on the season standings. */
 export function openScreen(selection: Selection, screen: Screen): Selection {
   return screen === "league"
-    ? { ...selection, screen, scope: openingScope(screen) }
+    ? { ...selection, screen, scope: openingScope(screen), board: DEFAULT_BOARD }
     : { ...selection, screen };
 }
 
@@ -133,11 +147,11 @@ export function resolveSelection(
 ): Selection | null {
   const fromUrl = leagues.find((league) => league.leagueKey === requested?.leagueKey);
   if (fromUrl && requested) {
-    const { screen, scope, day } = requested;
+    const { screen, scope, day, board } = requested;
     return {
       leagueKey: fromUrl.leagueKey,
       teamKey: teamIn(fromUrl, requested.teamKey),
-      ...(screens.includes(screen) ? { screen, scope, day } : opening(screens)),
+      ...(screens.includes(screen) ? { screen, scope, day, board } : opening(screens)),
     };
   }
   const saved = leagues.find((league) => league.leagueKey === preferences.selectedLeagueKey);
@@ -155,7 +169,8 @@ export function resolveSelection(
 
 /**
  * The selection after the user changes part of it. Choosing another league
- * moves to the user's own team there; otherwise the team stays unless changed.
+ * moves to the user's own team there and resets League's board, whose picked
+ * category may not exist there; otherwise the team stays unless changed.
  */
 export function applyChange(
   current: Selection,
@@ -169,6 +184,7 @@ export function applyChange(
     ...current,
     ...change,
     leagueKey,
+    board: leagueChanged ? DEFAULT_BOARD : (change.board ?? current.board),
     teamKey: leagueChanged
       ? (league?.teamKey ?? current.teamKey)
       : (change.teamKey ?? current.teamKey),

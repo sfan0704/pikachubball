@@ -67,11 +67,19 @@ function setup(
     })
   );
   const location = memoryLocation({ path, record: true });
+  // Like the browser's location: the path without the query, and the query on its own.
+  const pathHook = (): [string, typeof location.navigate] => {
+    const [current, navigate] = location.hook();
+    return [current.split("?")[0] ?? current, navigate];
+  };
+  const searchHook = () => location.hook()[0].split("?")[1] ?? "";
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>
       <FreshnessProvider>
-        <Router hook={location.hook}>{children}</Router>
+        <Router hook={pathHook} searchHook={searchHook}>
+          {children}
+        </Router>
       </FreshnessProvider>
     </QueryClientProvider>
   );
@@ -92,8 +100,37 @@ describe("useLeagueSelection", () => {
       screen: "league",
       scope: 3,
       day: "today",
+      board: { view: "standings", sort: "record", category: null },
     });
     expect(location.history).toEqual(["/leagues/454.l.9/teams/454.l.9.t.7/3"]);
+  });
+
+  it("keeps League's view, sort and category in the URL, so back restores them", async () => {
+    const { result, location } = setup("/leagues/466.l.1/teams/466.l.1.t.3/season?view=categories");
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(result.current.selection?.board.view).toBe("categories");
+
+    act(() =>
+      result.current.select({ board: { view: "categories", sort: "record", category: "12" } })
+    );
+    act(() => result.current.select({ scope: 2 }));
+
+    await waitFor(() =>
+      expect(location.history).toEqual([
+        "/leagues/466.l.1/teams/466.l.1.t.3/season?view=categories",
+        "/leagues/466.l.1/teams/466.l.1.t.3/season?view=categories&category=12",
+        "/leagues/466.l.1/teams/466.l.1.t.3/2?view=categories&category=12",
+      ])
+    );
+  });
+
+  it("replaces a League link with an unknown view by the canonical one", async () => {
+    const { result, location } = setup("/leagues/466.l.1/teams/466.l.1.t.3/season?view=chart");
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    await waitFor(() =>
+      expect(location.history).toEqual(["/leagues/466.l.1/teams/466.l.1.t.3/season"])
+    );
   });
 
   it("opens a first visit on Matchup Today when daily stats are wired", async () => {

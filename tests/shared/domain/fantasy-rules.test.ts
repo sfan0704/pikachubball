@@ -3,17 +3,10 @@ import {
   categoryRanks,
   competitionRanks,
   percentage,
-  rankSum,
   scoringSupport,
   tableCompleteness,
 } from "../../../shared/domain";
-import {
-  buildLeagueSettings,
-  buildTeamTable,
-  CATEGORY,
-  EIGHT_CATEGORIES,
-  STAT,
-} from "../../support/builders";
+import { buildLeagueSettings, buildTeamTable, CATEGORY, STAT } from "../../support/builders";
 
 describe("percentage", () => {
   it("divides total makes by total attempts", () => {
@@ -71,33 +64,6 @@ describe("categoryRanks", () => {
     const ranks = categoryRanks(buildTeamTable([{ ftm: 0, fta: 0 }, {}]));
     expect(ranks["466.l.1.t.1"][STAT.ftPct]).toBeNull();
     expect(ranks["466.l.1.t.2"][STAT.ftPct]).toBe(1);
-  });
-});
-
-describe("rankSum", () => {
-  it("adds the league's category ranks, however many it has", () => {
-    const ranks = categoryRanks(buildTeamTable([{}, {}]));
-    expect(rankSum(ranks["466.l.1.t.1"])).toBe(9);
-    const eight = buildTeamTable([{}, {}], {
-      settings: buildLeagueSettings({ categories: EIGHT_CATEGORIES }),
-    });
-    expect(rankSum(categoryRanks(eight)["466.l.1.t.1"])).toBe(8);
-  });
-
-  it("is unavailable when any category rank is unknown", () => {
-    const ranks = categoryRanks(buildTeamTable([{ reb: null }, {}]));
-    expect(rankSum(ranks["466.l.1.t.1"])).toBeNull();
-    expect(rankSum(ranks["466.l.1.t.2"])).toBe(9);
-  });
-
-  it("keeps tied sums tied", () => {
-    const ranks = categoryRanks(
-      buildTeamTable([
-        { pts: 600, reb: 200 },
-        { pts: 500, reb: 300 },
-      ])
-    );
-    expect(rankSum(ranks["466.l.1.t.1"])).toBe(rankSum(ranks["466.l.1.t.2"]));
   });
 });
 

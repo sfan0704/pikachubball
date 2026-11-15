@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { teamTableSchema } from "../../../../shared/api/team-table";
-import { categoryRanks, scoringSupport, tableCompleteness } from "../../../../shared/domain";
+import { scoringSupport, tableCompleteness, weeklyAllPlay } from "../../../../shared/domain";
 import { parseSeasonTable, parseWeekTable } from "../../../../server/fantasy/league-tables";
 import { defined } from "../../../support/defined";
 import { YahooResponseError } from "../../../../server/fantasy/yahoo-shapes";
@@ -93,9 +93,15 @@ describe("season table from the standings response", () => {
 
   it("matches the shared API schema and feeds the domain maths", () => {
     expect(teamTableSchema.parse(table)).toEqual(table);
-    const ranks = categoryRanks(table);
-    expect(Object.keys(ranks)).toHaveLength(14);
-    expect(Object.values(ranks).every((row) => row["12"] !== null)).toBe(true);
+    const allPlay = weeklyAllPlay(
+      table.settings.categories,
+      table.teams.map((team) => ({ teamKey: team.teamKey, values: team.categoryValues }))
+    );
+    expect(Object.keys(allPlay)).toHaveLength(14);
+    // Every team meets 13 others in 9 categories.
+    expect(
+      Object.values(allPlay).every(({ total }) => total.wins + total.losses + total.ties === 117)
+    ).toBe(true);
   });
 });
 

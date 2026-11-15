@@ -45,18 +45,6 @@ export function categoryRanks(table: TeamTable): CategoryRanks {
   return ranks;
 }
 
-/** The sum of a team's category ranks; null when any rank is unknown. Lower is better. */
-export function rankSum(ranks: Readonly<Record<string, number | null>>): number | null {
-  let sum = 0;
-  for (const rank of Object.values(ranks)) {
-    if (rank === null) {
-      return null;
-    }
-    sum += rank;
-  }
-  return sum;
-}
-
 /** Whether the app can rank a league, and why not when it can't. */
 export type ScoringSupport =
   { readonly supported: true } | { readonly supported: false; readonly reason: string };

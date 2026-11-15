@@ -42,3 +42,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-11-14 · Lint fails on code smells (sonarjs) and every client and server file has its own coverage floor, with an exception list that only shrinks · FAN-137
 - 2026-11-14 · Categories are league settings read from Yahoo, each counting or a ratio; a category the app can't build loads as unavailable instead of the league being refused · FAN-145
 - 2026-11-14 · Season totals read every week's table so far (one scope request a week, finished weeks Settled) for all-play and luck; any failed week withholds them all · FAN-141
+- 2026-11-15 · League is a Standings | Categories bar: standings by the official record with all-play and luck, a rank grid over the league's own categories, and the view, sort and category in the URL; the rank tiles and the rank-sum Overall order are gone · FAN-142

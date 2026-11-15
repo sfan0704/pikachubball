@@ -6,7 +6,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-/** The round ⓘ next to the League period picker, which explains how the ranks are worked out. */
+/** The round ⓘ next to the League period picker, which explains the standings and the ranks. */
 export function LeagueExplanation() {
   return (
     <Dialog>
@@ -20,12 +20,14 @@ export function LeagueExplanation() {
         </button>
       </DialogTrigger>
       <DialogContent>
-        <DialogTitle className="pr-10 text-base font-bold">Category ranks</DialogTitle>
+        <DialogTitle className="pr-10 text-base font-bold">How to read League</DialogTitle>
         <DialogDescription className="text-sm leading-relaxed text-foreground">
-          Every team in the league is ranked in each of the nine categories, using totals for the
-          period you pick. 1 is best. The top three are green and the bottom three red. Overall adds
-          up each team's category ranks, so a lower total is stronger. W–L–T is the season
-          head-to-head record from Yahoo; the ranks are not Yahoo's official standings.
+          Standings ranks teams by their official category record for the period you pick (W–L–T),
+          with a tie counting as half a win. All-play is where a team would rank if it played every
+          other team every week; on Season totals the week in progress counts as it stands. Luck is
+          the real category wins minus the wins all-play expects, so plus means the schedule helped.
+          Categories ranks every team in each of the league's categories from the period's totals: 1
+          is best, the top three are green and the bottom three red.
         </DialogDescription>
         <p className="text-sm text-muted-foreground">
           Tied teams share a rank and the next one is skipped (1, 1, 3).
