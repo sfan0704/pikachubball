@@ -320,6 +320,9 @@ League's season and weekly category ranks are computed from one table: each team
 - **Percentages** are total makes divided by total attempts, never an average of percentages. Zero attempts means the percentage is unavailable.
 - **Missing is not zero.** An absent or invalid value is unknown. When a value a calculation needs is unknown, that rank, total or win/loss result is shown as unavailable rather than computed from partial data.
 - **Official matchup results** are Yahoo's.
+- **All-play** plays every team against every other team in each of the league's categories, from the league's own category list and directions (any number of teams and categories). A category with an unknown value on either side has no result. Season all-play adds up each week's all-play W–L–T (method A): margins never carry over between weeks.
+- **Win %** counts a tie as half a win; official and all-play standings rank by it with competition ranks.
+- **Luck** is real wins (official category wins plus half the ties) minus expected wins (all-play win % × categories with an official result). These are pure functions in `shared/domain/all-play.ts`.
 - **Seasons and weeks** come from Yahoo's game keys and week boundaries, never from a fixed calendar or week count.
 
 ### Yahoo calls
