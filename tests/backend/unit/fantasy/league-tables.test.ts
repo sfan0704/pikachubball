@@ -39,45 +39,32 @@ describe("season table from the standings response", () => {
   });
 
   it("lists the nine scoring categories and not the display-only columns", () => {
-    expect(table.settings.categories.map((category) => category.key)).toEqual([
-      "fgPct",
-      "ftPct",
-      "tpm",
-      "pts",
-      "reb",
-      "ast",
-      "stl",
-      "blk",
-      "to",
+    expect(table.settings.categories.map((category) => category.statId)).toEqual([
+      "5",
+      "8",
+      "10",
+      "12",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
     ]);
-    expect(table.settings.categories.find((category) => category.key === "to")?.direction).toBe(
+    expect(table.settings.categories.find((category) => category.statId === "19")?.direction).toBe(
       "lower"
     );
     expect(scoringSupport(table.settings)).toEqual({ supported: true });
   });
 
-  it("reads every team's makes, attempts and counting totals", () => {
+  it("reads every team's category values, ratios exact from makes and attempts", () => {
     expect(table.teams).toHaveLength(14);
     expect(table.teams.find((team) => team.teamKey === "466.l.100000.t.11")).toEqual({
       teamKey: "466.l.100000.t.11",
       teamName: "Team 11",
       managerName: "Manager 11",
-      totals: {
-        fgMakes: 1713,
-        fgAttempts: 3579,
-        ftMakes: 889,
-        ftAttempts: 1162,
-        tpm: 448,
-        pts: 4763,
-        reb: 1716,
-        ast: 1023,
-        stl: 313,
-        blk: 180,
-        to: 556,
-      },
       categoryValues: {
-        "5": 0.479,
-        "8": 0.765,
+        "5": 1713 / 3579,
+        "8": 889 / 1162,
         "10": 448,
         "12": 4763,
         "15": 1716,
@@ -164,12 +151,12 @@ describe("what Yahoo leaves out", () => {
       )
     );
 
-    expect(team.totals).toMatchObject({
-      pts: null,
-      stl: null,
-      fgMakes: null,
-      fgAttempts: null,
-      reb: 1716,
+    // FG% falls back to Yahoo's own rounded value when its makes and attempts don't read.
+    expect(team.categoryValues).toMatchObject({
+      "5": 0.479,
+      "12": null,
+      "17": null,
+      "15": 1716,
     });
   });
 
@@ -198,7 +185,6 @@ describe("what Yahoo leaves out", () => {
 
     expect(table.settings.categories.find((category) => category.statId === "1001")).toEqual({
       statId: "1001",
-      key: null,
       displayName: "BLK",
       direction: "higher",
       makeup: { kind: "unavailable" },
@@ -212,10 +198,13 @@ describe("what Yahoo leaves out", () => {
     const teamStats = firstSeasonTeam(response).find((part: Fixture) => part.team_stats).team_stats
       .stats;
     teamStats.find((entry: Fixture) => entry.stat.stat_id === "5").stat.value = "-";
+    teamStats.find((entry: Fixture) => entry.stat.stat_id === "9004003").stat.value = "-/-";
+    teamStats.find((entry: Fixture) => entry.stat.stat_id === "9007006").stat.value = "0/0";
 
     const team = parseSeasonTable(response, FETCHED_AT).teams[0];
 
     expect(team.categoryValues["5"]).toBeNull();
+    expect(team.categoryValues["8"]).toBeNull();
     expect(team.categoryValues["12"]).toBe(4763);
   });
 });
@@ -297,14 +286,13 @@ describe("leagues with their own categories", () => {
     ]);
     expect(table.settings.categories[2]).toMatchObject({
       statId: "11",
-      key: null,
       makeup: { kind: "ratio", topStatId: "10", bottomStatId: "9" },
     });
     expect(table.settings.categories[9]).toMatchObject({
       statId: "21",
       makeup: { kind: "counting" },
     });
-    expect(table.teams[0].categoryValues).toMatchObject({ "11": 0.345, "21": 1171 });
+    expect(table.teams[0].categoryValues).toMatchObject({ "11": 441 / 1279, "21": 1171 });
     expect(teamTableSchema.parse(table)).toEqual(table);
   });
 

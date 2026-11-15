@@ -80,11 +80,18 @@ export async function signIn(
   }
 }
 
-/** Tells the Yahoo stand-in how to answer from now on. */
-export async function setScenario(scenario: string, times?: number): Promise<void> {
+/**
+ * Tells the Yahoo stand-in how to answer from now on, and which league shape
+ * to serve: the recorded standard league unless "12x10" is asked for.
+ */
+export async function setScenario(
+  scenario: string,
+  times?: number,
+  league: "standard" | "12x10" = "standard"
+): Promise<void> {
   const response = await fetch(`${standIn()}/__scenario`, {
     method: "POST",
-    body: JSON.stringify({ scenario, times }),
+    body: JSON.stringify({ scenario, times, league }),
   });
   expect(response.ok).toBe(true);
 }

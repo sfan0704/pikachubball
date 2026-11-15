@@ -2,6 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-11-15 · Matchup and Players follow the league's categories: player stat lines are keyed by Yahoo stat id with makes and attempts apart, team tables carry each category's value by stat id instead of fixed nine-category totals, more than nine categories lay out in equal rows, and Players' first page reads the current week's table (D1) for the categories · FAN-146 (PR pending)
 - 2026-11-14 · League maths: all-play (weekly and season, method A), win-% ranks and luck as pure functions over the league's own categories · FAN-140 (PR pending)
 - 2026-11-12 · League is the board alone: the Heatmap, Matchup, Compare and Roster tabs, the rankings-table fallback and the roster endpoint are gone, and Account (disconnect, delete) opens from the header · FAN-124 (PR pending)
 - 2026-11-12 · A team-days range endpoint: Matchup Week reads each team's days before today in one request and today on its own, 6 requests instead of 16 for the same Yahoo calls; a range takes the shortest freshness class among its dates · FAN-120 (PR pending)

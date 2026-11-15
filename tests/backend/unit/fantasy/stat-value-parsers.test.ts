@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { measured, missing, missingLine } from "../../../../shared/domain";
+import { lineOf, measured, missing, missingLine, statOf } from "../../../../shared/domain";
 import {
   yahooCountValue,
   yahooDateLine,
@@ -74,18 +74,37 @@ describe("Yahoo stat value parsers", () => {
 });
 
 describe("Yahoo date line", () => {
-  it("reads a played line and ignores the percentages", () => {
-    expect(yahooDateLine.parse(stats(PLAYED))).toEqual({
-      fg: measured({ makes: 7, attempts: 15 }),
-      ft: measured({ makes: 4, attempts: 5 }),
-      tpm: measured(2),
-      pts: measured(20),
-      reb: measured(6),
-      ast: measured(3),
-      stl: measured(1),
-      blk: measured(0),
-      to: measured(2),
-    });
+  it("reads a played line by stat id, splits made/attempted pairs and ignores the percentages", () => {
+    expect(yahooDateLine.parse(stats(PLAYED))).toEqual(
+      lineOf({
+        "4": measured(7),
+        "3": measured(15),
+        "7": measured(4),
+        "6": measured(5),
+        "10": measured(2),
+        "12": measured(20),
+        "15": measured(6),
+        "16": measured(3),
+        "17": measured(1),
+        "18": measured(0),
+        "19": measured(2),
+      })
+    );
+  });
+
+  it("reads whatever a league scores: 3PTM/A, fouls and minutes, but not ratios or unknown stats", () => {
+    const line = yahooDateLine.parse(
+      stats({ "9010009": "3/8", "11": ".375", "20": "1.50", "21": "4", "2": "31:30", "1001": "x" })
+    );
+    expect(line).toEqual(
+      lineOf({
+        "10": measured(3),
+        "9": measured(8),
+        "21": measured(4),
+        "2": measured(31.5),
+      })
+    );
+    expect(statOf(line, "19")).toEqual(missing("unavailable"));
   });
 
   it("reads a date without a team game as no game", () => {
@@ -133,13 +152,20 @@ describe("Yahoo date line", () => {
       stats({ ...PLAYED, "9004003": "0/0", "9007006": "0/0", "12": "0", "10": "0" })
     );
 
-    expect(line.reb).toEqual(measured(6));
-    expect(line.fg).toEqual(measured({ makes: 0, attempts: 0 }));
+    expect(statOf(line, "15")).toEqual(measured(6));
+    expect([statOf(line, "4"), statOf(line, "3")]).toEqual([measured(0), measured(0)]);
   });
 
-  it("fails when a category is absent instead of treating it as zero", () => {
+  it("reads a stat Yahoo didn't send as unavailable, never as zero", () => {
     const { "15": _rebounds, ...withoutRebounds } = PLAYED;
 
-    expect(yahooDateLine.safeParse(stats(withoutRebounds)).success).toBe(false);
+    expect(statOf(yahooDateLine.parse(stats(withoutRebounds)), "15")).toEqual(
+      missing("unavailable")
+    );
+  });
+
+  it("fails on a counting stat it can't read instead of guessing", () => {
+    expect(yahooDateLine.safeParse(stats({ ...PLAYED, "12": "1.5" })).success).toBe(false);
+    expect(yahooDateLine.safeParse(stats({ ...PLAYED, "9004003": "8/5" })).success).toBe(false);
   });
 });

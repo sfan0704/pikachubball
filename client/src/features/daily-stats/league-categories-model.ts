@@ -1,5 +1,11 @@
-import { winPercentageRanks, type LeagueCategory, type TeamTable } from "@shared/domain";
-import { categoryRankTable, categoryText, rankTone, type RankTone } from "./league-board-model";
+import {
+  categoryRanks,
+  winPercentageRanks,
+  type LeagueCategory,
+  type TeamTable,
+} from "@shared/domain";
+import { categoryById, formatTotal } from "@/features/league/categories";
+import { rankTone, type RankTone } from "./league-board-model";
 import { officialRecords } from "./league-standings-model";
 
 /** One rank in the grid. */
@@ -41,8 +47,8 @@ export function categoryGrid(
   pickedStatId: string | null
 ): CategoryGrid {
   const { categories } = table.settings;
-  const picked = categories.find((category) => category.statId === pickedStatId) ?? null;
-  const ranks = categoryRankTable(table);
+  const picked = categoryById(categories, pickedStatId) ?? null;
+  const ranks = categoryRanks(table);
   const official = winPercentageRanks(officialRecords(table));
   const count = table.teams.length;
   const rows = table.teams.map((team, index) => ({
@@ -53,7 +59,7 @@ export function categoryGrid(
       teamKey: team.teamKey,
       teamName: team.teamName,
       isMine: team.teamKey === myTeamKey,
-      total: picked ? categoryText(picked, team.categoryValues[picked.statId]) : null,
+      total: picked ? formatTotal(picked, team.categoryValues[picked.statId] ?? null) : null,
       cells: categories.map((category) => {
         const rank = ranks[team.teamKey][category.statId];
         return {

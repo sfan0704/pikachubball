@@ -2,11 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { TeamTable } from "@shared/domain";
 import { parseSeasonTable } from "../../../server/fantasy/league-tables";
-import {
-  categoryRankTable,
-  categoryText,
-  teamCells,
-} from "../../../client/src/features/daily-stats/league-board-model";
+import { teamCells } from "../../../client/src/features/daily-stats/league-board-model";
 import { categoryGrid } from "../../../client/src/features/daily-stats/league-categories-model";
 import {
   luckText,
@@ -28,8 +24,8 @@ const STRONG = {
   blk: 40,
   tpm: 90,
   to: 50,
-  fgMakes: 260,
-  ftMakes: 90,
+  fgm: 260,
+  ftm: 90,
 };
 const WEAK = {
   pts: 400,
@@ -39,8 +35,8 @@ const WEAK = {
   blk: 10,
   tpm: 30,
   to: 90,
-  fgMakes: 200,
-  ftMakes: 60,
+  fgm: 200,
+  ftm: 60,
 };
 
 /**
@@ -142,32 +138,17 @@ describe("luckText and ordinal", () => {
   });
 });
 
-describe("category ranks", () => {
-  it("ranks the lower-is-better category ascending and leaves unknown values unranked", () => {
-    const ranks = categoryRankTable(buildTeamTable([{ to: 80, pts: null }, { to: 60 }]));
-    expect(ranks[T(1)]?.["19"]).toBe(2);
-    expect(ranks[T(2)]?.["19"]).toBe(1);
-    expect(ranks[T(1)]?.["12"]).toBeNull();
-    expect(ranks[T(2)]?.["12"]).toBe(1);
-  });
-
-  it("shows percentages to one decimal, other values as Yahoo gives them, unknown as a dash", () => {
-    const [fg, , , pts] = buildTeamTable([{}]).settings.categories;
-    expect(categoryText(defined(fg), 0.4789)).toBe("47.9%");
-    expect(categoryText(defined(pts), 512)).toBe("512");
-    expect(categoryText(defined(pts), null)).toBe("—");
-  });
-
+describe("teamCells", () => {
   it("gives a team's cells in the league's own categories", () => {
     const cells = teamCells(week(), T(1));
     expect(cells.map((cell) => cell.label)).toEqual([
       "FG%",
       "FT%",
-      "3PTM",
+      "3PM",
       "PTS",
       "REB",
       "AST",
-      "ST",
+      "STL",
       "BLK",
       "TO",
     ]);

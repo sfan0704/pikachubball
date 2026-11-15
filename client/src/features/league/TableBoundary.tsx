@@ -104,7 +104,7 @@ export function TableBoundary({ query, now, onPickLeague, children }: TableBound
   if (!support.supported) {
     return (
       <Notice title="This league isn't supported yet">
-        {support.reason}. Only head-to-head leagues with the standard nine categories can be ranked.
+        {support.reason}. Only head-to-head category leagues can be ranked.
       </Notice>
     );
   }

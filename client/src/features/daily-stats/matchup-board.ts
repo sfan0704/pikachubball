@@ -10,18 +10,24 @@ import type {
 } from "@shared/api/daily-stats";
 import type { DailyPlayer, NbaGame } from "@shared/api/daily-stats-values";
 import {
-  CATEGORY_DIRECTIONS,
-  isShootingCategory,
+  appearance,
+  isPercentage,
   lineWithGame,
   opponentOf,
   perGameAverages,
   type CategoryEntry,
-  type CategoryKey,
   type CategoryValues,
   type GameState,
+  type LeagueCategory,
   type StatLine,
   type TeamTable,
 } from "@shared/domain";
+import {
+  averageValueText,
+  cardValueText,
+  categoryById,
+  UNAVAILABLE,
+} from "@/features/league/categories";
 
 /** One player card: who, where they sat, their line, and what is known about their game and average. */
 export interface PlayerCardRow {
@@ -43,12 +49,16 @@ function gameOn(logs: GameLogsResponse | undefined, playerKey: string, date: str
   return log ? (log.games.find((game) => game.date === date) ?? null) : undefined;
 }
 
-function averageOf(season: PlayerStatsResponse | undefined, playerKey: string) {
+function averageOf(
+  season: PlayerStatsResponse | undefined,
+  playerKey: string,
+  categories: readonly LeagueCategory[]
+) {
   const totals = season?.players.find((entry) => entry.playerKey === playerKey);
   if (!totals || totals.gamesPlayed === 0) {
     return null;
   }
-  return perGameAverages(totals);
+  return perGameAverages(totals, categories);
 }
 
 /**
@@ -58,7 +68,8 @@ function averageOf(season: PlayerStatsResponse | undefined, playerKey: string) {
 export function playerCards(
   day: TeamDayResponse,
   logs: GameLogsResponse | undefined,
-  season: PlayerStatsResponse | undefined
+  season: PlayerStatsResponse | undefined,
+  categories: readonly LeagueCategory[]
 ): PlayerCardRow[] {
   return day.players.map(({ player, slot, isStartingSlot, line }) => {
     const game = gameOn(logs, player.playerKey, day.date);
@@ -68,7 +79,7 @@ export function playerCards(
       isStartingSlot,
       line: lineWithGame(line, game?.state),
       game,
-      average: averageOf(season, player.playerKey),
+      average: averageOf(season, player.playerKey, categories),
     };
   });
 }
@@ -87,15 +98,27 @@ export function shownOpponent(
   return { opponentKey: picked ?? realOpponentKey ?? fallback, realOpponentKey };
 }
 
+/** Until the league's table loads, its categories aren't known. */
+export const NO_CATEGORIES: readonly LeagueCategory[] = [];
+
+/** The category on show: the one picked, else the lost one closest to turning, else the league's first. */
+export function shownCategory(
+  categories: readonly LeagueCategory[],
+  picked: string | null,
+  closest: LeagueCategory | null
+): LeagueCategory | null {
+  return categoryById(categories, picked) ?? closest ?? categories[0] ?? null;
+}
+
 /** "A. Knoll": a player's first initial and the rest of the name, so two columns fit a phone. */
 export function shortName(name: string): string {
   const space = name.indexOf(" ");
   return space < 1 ? name : `${name[0]}. ${name.slice(space + 1)}`;
 }
 
-/** ".482": a percentage as box scores print it; "–" when nothing was attempted. */
-export function percentText(value: number | null): string {
-  return value === null ? "–" : value.toFixed(3).replace(/^0/, "");
+/** A total or value as the board prints it ("–" when unknown): ".482", "2.15" for A/T, or a count. */
+export function boardValueText(category: LeagueCategory, value: number | null): string {
+  return value === null ? "–" : cardValueText(category, value);
 }
 
 /** Whether the player is out today by Yahoo's designation; never said of a past date. */
@@ -104,16 +127,21 @@ export function isOutToday(player: DailyPlayer, isToday: boolean): boolean {
 }
 
 /**
- * The card's main value: the percentage or count when measured, "–" before
- * the game, "n/a" when Yahoo has no data, "No game", and "Out" or "DNP" for a
- * player who didn't play. A measured zero always shows as 0.
+ * The card's main value: the ratio or count when measured (a ratio with
+ * nothing below it shows its parts, "0/0"), "–" before the game, "n/a" when
+ * Yahoo has no data, "No game", and "Out" or "DNP" for a player who didn't
+ * play. A measured zero always shows as 0.
  */
-export function entryText(entry: CategoryEntry, out: boolean): string {
+export function entryText(
+  category: LeagueCategory | null,
+  entry: CategoryEntry,
+  out: boolean
+): string {
   if (entry.kind === "value") {
-    if (entry.shots) {
-      return entry.value === null ? "0/0" : percentText(entry.value);
+    if (entry.value === null) {
+      return entry.parts ? `${entry.parts.top}/${entry.parts.bottom}` : "–";
     }
-    return String(entry.value);
+    return category ? cardValueText(category, entry.value) : UNAVAILABLE;
   }
   if (out) {
     return "Out";
@@ -128,19 +156,25 @@ export function entryText(entry: CategoryEntry, out: boolean): string {
   return MISSING[entry.kind];
 }
 
-/** The line under the value: makes/attempts for shooting, and the season average. */
+/**
+ * A card's entry while the league's categories are unknown (the week's table
+ * failed or is loading): whether the player played, without a value.
+ */
+export function rosterEntry(line: StatLine): CategoryEntry {
+  const shown = appearance(line);
+  return { kind: shown === "played" ? "unavailable" : shown };
+}
+
+/** The line under the value: a ratio's parts (makes/attempts), and the season average. */
 export function averageText(
-  key: CategoryKey,
+  category: LeagueCategory,
   entry: CategoryEntry,
   average: CategoryValues | null
 ): string {
-  const value = average?.[key] ?? null;
-  const avg =
-    value === null
-      ? "avg –"
-      : `avg ${isShootingCategory(key) ? percentText(value) : value.toFixed(1)}`;
-  if (entry.kind === "value" && entry.shots) {
-    return `${entry.shots.makes}/${entry.shots.attempts} · ${avg}`;
+  const value = average?.[category.statId] ?? null;
+  const avg = value === null ? "avg –" : `avg ${averageValueText(category, value)}`;
+  if (entry.kind === "value" && entry.parts) {
+    return `${entry.parts.top}/${entry.parts.bottom} · ${avg}`;
   }
   return avg;
 }
@@ -177,9 +211,9 @@ export function cardMeta(row: PlayerCardRow): string {
 }
 
 /** How each column is sorted for a category, as the side-by-side card's hint says it. */
-export function orderHint(key: CategoryKey): string {
-  if (isShootingCategory(key)) {
+export function orderHint(category: LeagueCategory): string {
+  if (isPercentage(category)) {
     return "most attempts first";
   }
-  return CATEGORY_DIRECTIONS[key] === "lower" ? "fewest first" : "most first";
+  return category.direction === "lower" ? "fewest first" : "most first";
 }

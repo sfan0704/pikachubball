@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { liveSignal, measured, missingLine } from "../../../../shared/domain";
+import { lineOf, liveSignal, measured, missingLine } from "../../../../shared/domain";
 import { YahooDailyStatsSource } from "../../../../server/fantasy/yahoo-daily-stats-source";
 import { DailyStatsRequests } from "../../../../server/fantasy/yahoo/daily-stats-requests";
 import {
@@ -74,6 +74,14 @@ function gameOn(player: GameLogPlayer | undefined, date: string) {
   return player?.games.find((game) => game.date === date);
 }
 
+/** A played game's line as the parser reads it: the minutes and each counting stat, by Yahoo stat id. */
+function playedLine(minutes: number, counts: Record<string, number>) {
+  return lineOf({
+    "2": measured(minutes),
+    ...Object.fromEntries(Object.entries(counts).map(([id, value]) => [id, measured(value)])),
+  });
+}
+
 describe("Yahoo game logs (D3) on the FAN-102 recording", () => {
   it("reads all 25 players in one call, in the order asked for", async () => {
     const { yahoo, source } = sourceOver({ [pathFor(RECORDED_KEYS)]: RECORDING });
@@ -111,17 +119,19 @@ describe("Yahoo game logs (D3) on the FAN-102 recording", () => {
         progress: { kind: "clock", period: 1, clock: "1:17", ownScore: 23, opponentScore: 18 },
       },
       minutes: { kind: "value", value: 7 + 55 / 60 },
-      line: {
-        fg: measured({ makes: 2, attempts: 4 }),
-        ft: measured({ makes: 1, attempts: 2 }),
-        tpm: measured(0),
-        pts: measured(5),
-        reb: measured(5),
-        ast: measured(1),
-        stl: measured(0),
-        blk: measured(1),
-        to: measured(2),
-      },
+      line: playedLine(7 + 55 / 60, {
+        "4": 2,
+        "3": 4,
+        "7": 1,
+        "6": 2,
+        "10": 0,
+        "12": 5,
+        "15": 5,
+        "16": 1,
+        "17": 0,
+        "18": 1,
+        "19": 2,
+      }),
     });
     expect(gameOn(bucks, "2026-11-10")?.state).toMatchObject({
       progress: { ownScore: 18, opponentScore: 23 },
@@ -139,17 +149,19 @@ describe("Yahoo game logs (D3) on the FAN-102 recording", () => {
         opponentScore: 97,
       },
       minutes: { kind: "value", value: 34 },
-      line: {
-        fg: measured({ makes: 11, attempts: 21 }),
-        ft: measured({ makes: 5, attempts: 5 }),
-        tpm: measured(2),
-        pts: measured(29),
-        reb: measured(13),
-        ast: measured(3),
-        stl: measured(2),
-        blk: measured(0),
-        to: measured(0),
-      },
+      line: playedLine(34, {
+        "4": 11,
+        "3": 21,
+        "7": 5,
+        "6": 5,
+        "10": 2,
+        "12": 29,
+        "15": 13,
+        "16": 3,
+        "17": 2,
+        "18": 0,
+        "19": 0,
+      }),
     });
   });
 

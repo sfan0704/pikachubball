@@ -1,13 +1,11 @@
 import { z } from "zod";
 import type {
-  CategoryKey,
   LeagueCategory,
   LeagueSettings,
   MatchupPairing,
   Scope,
   TeamRow,
   TeamTable,
-  TeamTotals,
   WeekGames,
 } from "../../shared/domain";
 import {
@@ -20,31 +18,6 @@ import {
   yahooInteger,
 } from "./yahoo-shapes";
 import { nbaStatMakeup } from "./yahoo/nba-stat-makeup";
-
-/** Yahoo's stat id for each of the nine standard categories. */
-const CATEGORY_BY_STAT_ID: Readonly<Record<string, CategoryKey>> = {
-  "5": "fgPct",
-  "8": "ftPct",
-  "10": "tpm",
-  "12": "pts",
-  "15": "reb",
-  "16": "ast",
-  "17": "stl",
-  "18": "blk",
-  "19": "to",
-};
-
-const FG_MAKES_ATTEMPTS = "9004003";
-const FT_MAKES_ATTEMPTS = "9007006";
-const COUNTING_STATS = {
-  tpm: "10",
-  pts: "12",
-  reb: "15",
-  ast: "16",
-  stl: "17",
-  blk: "18",
-  to: "19",
-} as const;
 
 const statId = z.coerce.string();
 
@@ -142,7 +115,6 @@ function toSettings(
     .filter((stat) => !stat.is_only_display_stat)
     .map((stat) => ({
       statId: stat.stat_id,
-      key: CATEGORY_BY_STAT_ID[stat.stat_id] ?? null,
       displayName: stat.display_name,
       direction: stat.sort_order === "1" ? "higher" : "lower",
       makeup: nbaStatMakeup(stat.stat_id),
@@ -160,12 +132,6 @@ function toSettings(
   };
 }
 
-/** A whole number from Yahoo's text; null when absent or not a plain number. */
-function toCount(value: unknown): number | null {
-  const text = typeof value === "number" ? String(value) : value;
-  return typeof text === "string" && /^\d+$/.test(text.trim()) ? Number(text.trim()) : null;
-}
-
 /** A plain number from Yahoo's text (".471", "1.85", "12"); null when absent or "-". */
 function toDecimal(value: unknown): number | null {
   const text = typeof value === "number" ? String(value) : value;
@@ -174,44 +140,48 @@ function toDecimal(value: unknown): number | null {
     : null;
 }
 
-/** "127/298" as makes and attempts; both null when the value isn't in that form. */
-function toMakesAttempts(value: unknown): [number | null, number | null] {
+/** "127/298" as makes and attempts; null when the value isn't in that form. */
+function toMakesAttempts(value: unknown): [number, number] | null {
   const match = typeof value === "string" ? /^(\d+)\/(\d+)$/.exec(value.trim()) : null;
-  return match ? [Number(match[1]), Number(match[2])] : [null, null];
+  return match ? [Number(match[1]), Number(match[2])] : null;
+}
+
+/** Yahoo's combined makes/attempts stat id for a ratio's parts: "9004003" for "4" over "3". */
+function combinedStatId(topStatId: string, bottomStatId: string): string {
+  return `9${topStatId.padStart(3, "0")}${bottomStatId.padStart(3, "0")}`;
 }
 
 function statValues(team: YahooTeam): Map<string, unknown> {
   return new Map(team.team_stats.stats.map(({ stat }) => [stat.stat_id, stat.value]));
 }
 
-/** Yahoo's own value in each of the league's categories, whatever they are. */
+/**
+ * A category's value. A ratio whose makes and attempts Yahoo also sends (FG%
+ * with "9004003") is exact makes over attempts, so rounding never makes a
+ * tie; anything else is Yahoo's own value.
+ */
+function categoryValue(values: Map<string, unknown>, category: LeagueCategory): number | null {
+  const makeup = category.makeup;
+  if (makeup.kind === "ratio") {
+    const parts = toMakesAttempts(
+      values.get(combinedStatId(makeup.topStatId, makeup.bottomStatId))
+    );
+    if (parts !== null) {
+      return parts[1] === 0 ? null : parts[0] / parts[1];
+    }
+  }
+  return toDecimal(values.get(category.statId));
+}
+
+/** The team's value in each of the league's categories, whatever they are. */
 function toCategoryValues(
   team: YahooTeam,
   categories: readonly LeagueCategory[]
 ): Record<string, number | null> {
   const values = statValues(team);
   return Object.fromEntries(
-    categories.map((category) => [category.statId, toDecimal(values.get(category.statId))])
+    categories.map((category) => [category.statId, categoryValue(values, category)])
   );
-}
-
-function toTotals(team: YahooTeam): TeamTotals {
-  const values = statValues(team);
-  const [fgMakes, fgAttempts] = toMakesAttempts(values.get(FG_MAKES_ATTEMPTS));
-  const [ftMakes, ftAttempts] = toMakesAttempts(values.get(FT_MAKES_ATTEMPTS));
-  return {
-    fgMakes,
-    fgAttempts,
-    ftMakes,
-    ftAttempts,
-    tpm: toCount(values.get(COUNTING_STATS.tpm)),
-    pts: toCount(values.get(COUNTING_STATS.pts)),
-    reb: toCount(values.get(COUNTING_STATS.reb)),
-    ast: toCount(values.get(COUNTING_STATS.ast)),
-    stl: toCount(values.get(COUNTING_STATS.stl)),
-    blk: toCount(values.get(COUNTING_STATS.blk)),
-    to: toCount(values.get(COUNTING_STATS.to)),
-  };
 }
 
 /** The week's games, or null when Yahoo's table didn't say. */
@@ -233,7 +203,6 @@ function toRow(team: YahooTeam, scope: Scope, settings: LeagueSettings): TeamRow
     teamName: team.name,
     // Yahoo masks managers who hide their name.
     managerName: nickname && nickname !== "--hidden--" ? nickname : null,
-    totals: toTotals(team),
     categoryValues: toCategoryValues(team, settings.categories),
     games: scope.kind === "week" ? toWeekGames(team) : null,
     record: team.team_standings?.outcome_totals ?? null,

@@ -1,15 +1,13 @@
-import {
-  CATEGORIES,
-  categoryValue,
-  isShootingCategory,
-  type CategoryKey,
-  type CategoryResult,
-  type TeamTotals,
-  type TotalsComparison,
+import type {
+  CategoryComparison,
+  CategoryResult,
+  CategoryValues,
+  LeagueCategory,
+  TotalsComparison,
 } from "@shared/domain";
-import { CATEGORY_LABELS } from "@/features/league/categories";
+import { categoryLabel, categoryRows } from "@/features/league/categories";
 import { cn } from "@/lib/utils";
-import { percentText } from "./matchup-board";
+import { boardValueText } from "./matchup-board";
 
 /** The tint of a category's heading: green win, red loss, grey tie, none when unknown. */
 const RESULT_TINT: Readonly<Record<CategoryResult, string>> = {
@@ -29,34 +27,29 @@ const RESULT_NAME: Readonly<Record<CategoryResult, string>> = {
 /** One team's row of the grid. */
 export interface TotalsGridTeam {
   readonly label: string;
-  readonly totals: TeamTotals;
+  /** The team's value in each category, by stat id. */
+  readonly values: CategoryValues;
 }
 
 interface TotalsGridProps {
   mine: TotalsGridTeam;
   theirs: TotalsGridTeam;
   comparison: TotalsComparison;
-  selected: CategoryKey;
-  onSelect: (category: CategoryKey) => void;
-}
-
-/** A total as the grid shows it: percentages only, never makes/attempts; unknown is "–". */
-function totalText(totals: TeamTotals, key: CategoryKey): string {
-  const value = categoryValue(totals, key);
-  if (value === null) {
-    return "–";
-  }
-  return isShootingCategory(key) ? percentText(value) : String(value);
+  /** The selected category's stat id. */
+  selected: string;
+  onSelect: (statId: string) => void;
 }
 
 function TeamRow({
   team,
   side,
+  categories,
   selected,
 }: {
   team: TotalsGridTeam;
   side: "mine" | "theirs";
-  selected: CategoryKey;
+  categories: readonly LeagueCategory[];
+  selected: string;
 }) {
   return (
     <>
@@ -66,55 +59,68 @@ function TeamRow({
       >
         {team.label}
       </span>
-      {CATEGORIES.map((key) => (
+      {categories.map((category) => (
         <span
-          key={key}
-          data-testid={`grid-${side}-${key}`}
+          key={category.statId}
+          data-testid={`grid-${side}-${category.statId}`}
           className={cn(
             "rounded-md py-1.5 text-center text-[11px] tabular-nums",
-            key === selected && "bg-[#FEF3C7] font-semibold dark:bg-amber-900/40"
+            category.statId === selected && "bg-[#FEF3C7] font-semibold dark:bg-amber-900/40"
           )}
         >
-          {totalText(team.totals, key)}
+          {boardValueText(category, team.values[category.statId] ?? null)}
         </span>
       ))}
     </>
   );
 }
 
-/**
- * Both teams' week-to-date totals in the nine categories. The headings are the
- * category picker: tinted by result, the selected one outlined.
- */
-export function TotalsGrid({ mine, theirs, comparison, selected, onSelect }: TotalsGridProps) {
+function GridRow({ row, props }: { row: readonly CategoryComparison[]; props: TotalsGridProps }) {
+  const { mine, theirs, selected, onSelect } = props;
+  const categories = row.map((entry) => entry.category);
   return (
     <div
-      className="grid grid-cols-[44px_repeat(9,minmax(0,1fr))] items-center gap-x-0.5 gap-y-1"
-      data-testid="totals-grid"
+      className="grid items-center gap-x-0.5 gap-y-1"
+      style={{ gridTemplateColumns: `44px repeat(${row.length}, minmax(0, 1fr))` }}
     >
       <span aria-hidden="true" />
-      {comparison.categories.map(({ category, result }) => (
+      {row.map(({ category, result }) => (
         <button
-          key={category}
+          key={category.statId}
           type="button"
-          aria-pressed={category === selected}
-          aria-label={`${CATEGORY_LABELS[category]}, ${RESULT_NAME[result]}`}
-          data-testid={`grid-category-${category}`}
+          aria-pressed={category.statId === selected}
+          aria-label={`${categoryLabel(category)}, ${RESULT_NAME[result]}`}
+          data-testid={`grid-category-${category.statId}`}
           data-result={result}
-          onClick={() => onSelect(category)}
+          onClick={() => onSelect(category.statId)}
           className={cn(
             "min-h-10 rounded-md text-[10.5px] font-extrabold",
             "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
             RESULT_TINT[result],
-            category === selected &&
+            category.statId === selected &&
               "shadow-[inset_0_0_0_2px_#15181D] dark:shadow-[inset_0_0_0_2px_white]"
           )}
         >
-          {CATEGORY_LABELS[category]}
+          {categoryLabel(category)}
         </button>
       ))}
-      <TeamRow team={mine} side="mine" selected={selected} />
-      <TeamRow team={theirs} side="theirs" selected={selected} />
+      <TeamRow team={mine} side="mine" categories={categories} selected={selected} />
+      <TeamRow team={theirs} side="theirs" categories={categories} selected={selected} />
+    </div>
+  );
+}
+
+/**
+ * Both teams' totals in each of the league's categories. The headings are the
+ * category picker: tinted by result, the selected one outlined. More than
+ * nine categories split into rows of equal size so each stays readable.
+ */
+export function TotalsGrid(props: TotalsGridProps) {
+  return (
+    <div className="space-y-3" data-testid="totals-grid">
+      {categoryRows(props.comparison.categories).map((row) => (
+        <GridRow key={row[0].category.statId} row={row} props={props} />
+      ))}
     </div>
   );
 }

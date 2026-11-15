@@ -1,6 +1,7 @@
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
-import { addDays, nbaDateOf } from "@shared/domain";
+import { addDays, nbaDateOf, type LeagueCategory } from "@shared/domain";
 import { useGameLogs, usePlayerStats, useWeeks } from "@/api/daily-stats-hooks";
+import { useLeagueScope } from "@/api/hooks";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
@@ -32,7 +33,7 @@ interface PlayerDetailSheetProps {
 }
 
 /**
- * The player detail that Matchup and Players both open: the nine categories for
+ * The player detail that Matchup and Players both open: the league's categories for
  * today, yesterday, the week and the season average, then recent and upcoming
  * games. Works the same for rostered and available players.
  */
@@ -70,6 +71,8 @@ function PlayerDetail({
   const logs = useGameLogs(leagueKey, keys);
   const season = usePlayerStats(leagueKey, "season", keys);
   const weeks = useWeeks(leagueKey);
+  // The current week's table, which Matchup and Players already read, names the league's categories.
+  const table = useLeagueScope(leagueKey, "current");
   return (
     <div className="space-y-5">
       <PlayerHeader player={player} showInjury={viewDate === today} />
@@ -86,16 +89,21 @@ function PlayerDetail({
                 {(seasonData) => (
                   <DatasetState query={weeks} onPickLeague={onPickLeague}>
                     {(weekData) => (
-                      <CategoryTable
-                        games={games}
-                        today={today}
-                        week={weekOf(weekData.weeks, today)}
-                        season={
-                          seasonData.players.find(
-                            (entry) => entry.playerKey === player.playerKey
-                          ) ?? null
-                        }
-                      />
+                      <DatasetState query={table} onPickLeague={onPickLeague}>
+                        {(tableData) => (
+                          <CategoryTable
+                            games={games}
+                            today={today}
+                            week={weekOf(weekData.weeks, today)}
+                            categories={tableData.settings.categories}
+                            season={
+                              seasonData.players.find(
+                                (entry) => entry.playerKey === player.playerKey
+                              ) ?? null
+                            }
+                          />
+                        )}
+                      </DatasetState>
                     )}
                   </DatasetState>
                 )}
@@ -130,19 +138,23 @@ interface CategoryTableProps {
   games: readonly LoggedGame[];
   today: string;
   week: { start: string; end: string } | null;
+  categories: readonly LeagueCategory[];
   season: Parameters<typeof detailRows>[0]["season"];
 }
 
-function CategoryTable({ games, today, week, season }: CategoryTableProps) {
+function CategoryTable({ games, today, week, categories, season }: CategoryTableProps) {
   const yesterday = addDays(today, -1);
-  const rows = detailRows({
-    lines: {
-      today: lineOnDate(games, today),
-      yesterday: lineOnDate(games, yesterday),
-      week: weekLine(games, week),
+  const rows = detailRows(
+    {
+      lines: {
+        today: lineOnDate(games, today),
+        yesterday: lineOnDate(games, yesterday),
+        week: weekLine(games, week),
+      },
+      season,
     },
-    season,
-  });
+    categories
+  );
   const status = columnStatus(games, today, week, season);
   return (
     <table className="w-full table-fixed text-sm" data-testid="player-detail-stats">
@@ -173,9 +185,9 @@ function CategoryTable({ games, today, week, season }: CategoryTableProps) {
             {DETAIL_COLUMNS.map((column) => (
               <td key={column} className="py-1.5 text-right tabular-nums">
                 {row.cells[column].text}
-                {row.cells[column].shots !== null && (
+                {row.cells[column].parts !== null && (
                   <span className="block text-xs text-muted-foreground">
-                    {row.cells[column].shots}
+                    {row.cells[column].parts}
                   </span>
                 )}
               </td>

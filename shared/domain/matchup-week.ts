@@ -5,11 +5,9 @@
  */
 import { addDays } from "./nba-date";
 import { countedGames, countedTotals, type PlayerDay } from "./daily-stats";
-import { CATEGORY_DIRECTIONS, categoryValue } from "./fantasy-rules";
-import { isShootingCategory } from "./matchup-day";
+import { categoryTotal, isPercentage, type RatioParts, type StatTotals } from "./categories";
 import { appearance } from "./stat-value";
-import type { CategoryKey } from "./stats";
-import type { TeamTotals } from "./team-table";
+import type { LeagueCategory } from "./team-table";
 
 /** A scoring week's first and last date, as Yahoo bounds it. */
 export interface WeekBounds {
@@ -43,8 +41,8 @@ export interface WeekPlayer {
   readonly countedGames: number;
   /** Whether any counted game has a measured line; without one the player added nothing. */
   readonly contributed: boolean;
-  /** The totals that counted for the team. */
-  readonly totals: TeamTotals;
+  /** The totals that counted for the team, by stat id. */
+  readonly totals: StatTotals;
 }
 
 function playedGames(days: readonly PlayerDay[]): number {
@@ -65,11 +63,13 @@ function groupOf(isDropped: boolean, isOutNow: boolean): WeekGroup {
  * Every player on the team's roster on any shown date, in the order they
  * first appear. `days` holds the team's player-days for the shown dates;
  * `outNow` names the players out injured right now, who are set apart.
+ * Totals cover the stats the league's categories are built from.
  */
 export function weekPlayers(
   days: readonly PlayerDay[],
   bounds: WeekBounds,
-  outNow: ReadonlySet<string>
+  outNow: ReadonlySet<string>,
+  categories: readonly LeagueCategory[]
 ): WeekPlayer[] {
   const byPlayer = new Map<string, PlayerDay[]>();
   for (const day of days) {
@@ -88,7 +88,7 @@ export function weekPlayers(
       games: playedGames(own),
       countedGames: countedGames(own),
       contributed: counted.some((day) => appearance(day.line) === "played"),
-      totals: countedTotals(own),
+      totals: countedTotals(own, categories),
     };
   });
 }
@@ -108,32 +108,49 @@ export function countedGamesLabel(player: WeekPlayer): string | null {
 }
 
 /** The player's counted value in a category; null when nothing counted or it is unknown. */
-export function weekValue(player: WeekPlayer, key: CategoryKey): number | null {
-  return player.contributed ? categoryValue(player.totals, key) : null;
+export function weekValue(player: WeekPlayer, category: LeagueCategory): number | null {
+  return player.contributed ? categoryTotal(player.totals, category) : null;
 }
 
-/** The number a column sorts on: attempts for shooting (volume decides the percentage), else the value. */
-function sortValue(player: WeekPlayer, key: CategoryKey): number | null {
+/** A ratio's counted parts (for example makes and attempts); null for counting categories or when unknown. */
+export function weekParts(player: WeekPlayer, category: LeagueCategory): RatioParts | null {
+  const makeup = category.makeup;
+  if (makeup.kind !== "ratio" || weekValue(player, category) === null) {
+    return null;
+  }
+  const top = player.totals[makeup.topStatId] ?? null;
+  const bottom = player.totals[makeup.bottomStatId] ?? null;
+  return top === null || bottom === null ? null : { top, bottom };
+}
+
+/** The number a column sorts on: attempts for a percentage (volume decides it), else the value. */
+function sortValue(player: WeekPlayer, category: LeagueCategory): number | null {
   if (!player.contributed) {
     return null;
   }
-  if (isShootingCategory(key)) {
-    return key === "fgPct" ? player.totals.fgAttempts : player.totals.ftAttempts;
+  const makeup = category.makeup;
+  if (makeup.kind === "ratio" && isPercentage(category)) {
+    return player.totals[makeup.bottomStatId] ?? null;
   }
-  return categoryValue(player.totals, key);
+  return categoryTotal(player.totals, category);
 }
 
 /**
  * One group of a Week column ordered for a category: players who added
- * something first, best first (fewest turnovers, most attempts for FG% and
- * FT%), then the rest. Equal players keep their roster order.
+ * something first, best first (fewest turnovers, most attempts for a
+ * percentage), then the rest. Equal players keep their roster order, which
+ * is all that orders them while the league's categories are unknown.
  */
 export function orderWeekPlayers<T extends WeekPlayer>(
   players: readonly T[],
-  key: CategoryKey
+  category: LeagueCategory | null
 ): T[] {
-  const lowerIsBetter = CATEGORY_DIRECTIONS[key] === "lower";
-  const keyed = players.map((player, index) => ({ player, index, value: sortValue(player, key) }));
+  const lowerIsBetter = category?.direction === "lower" && !isPercentage(category);
+  const keyed = players.map((player, index) => ({
+    player,
+    index,
+    value: category ? sortValue(player, category) : 0,
+  }));
   keyed.sort((a, b) => {
     if (a.value === null || b.value === null) {
       return (a.value === null ? 1 : 0) - (b.value === null ? 1 : 0) || a.index - b.index;

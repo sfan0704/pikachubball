@@ -3,15 +3,15 @@ import {
   countedGamesLabel,
   countedTotals,
   elapsedDates,
-  measured,
   missingLine,
   orderWeekPlayers,
+  weekParts,
   weekPlayers,
   weekValue,
   type PlayerDay,
   type StatLine,
 } from "../../../shared/domain";
-import { buildStatLine } from "../../support/builders";
+import { buildStatLine, CATEGORY, STANDARD_CATEGORIES, STAT } from "../../support/builders";
 
 const WEEK = { start: "2026-11-02", end: "2026-11-08" };
 
@@ -24,7 +24,7 @@ function day(
   return { playerKey, date, slot: isStartingSlot ? "PG" : "BN", isStartingSlot, line };
 }
 
-const points = (pts: number) => buildStatLine({ pts: measured(pts) });
+const points = (pts: number) => buildStatLine({ pts });
 
 describe("elapsedDates", () => {
   it("lists the week's dates up to today", () => {
@@ -56,7 +56,7 @@ describe("weekPlayers", () => {
     day("b", "2026-11-03", false, points(25)),
     day("b", "2026-11-04", false, missingLine("noGame")),
   ];
-  const players = weekPlayers(days, WEEK, new Set(["a"]));
+  const players = weekPlayers(days, WEEK, new Set(["a"]), STANDARD_CATEGORIES);
   const byKey = (key: string) => {
     const found = players.find((player) => player.playerKey === key);
     if (!found) {
@@ -83,14 +83,14 @@ describe("weekPlayers", () => {
 
   it("counts only starting-slot games toward a player's totals", () => {
     expect(byKey("p")).toMatchObject({ games: 2, countedGames: 1 });
-    expect(byKey("p").totals.pts).toBe(8);
+    expect(byKey("p").totals[STAT.pts]).toBe(8);
     expect(byKey("a")).toMatchObject({ games: 2, countedGames: 2 });
-    expect(byKey("a").totals.pts).toBe(30);
+    expect(byKey("a").totals[STAT.pts]).toBe(30);
   });
 
   it("adds up to the team's counted totals", () => {
-    const sum = players.reduce((total, player) => total + (player.totals.pts ?? 0), 0);
-    expect(sum).toBe(countedTotals(days).pts);
+    const sum = players.reduce((total, player) => total + (player.totals[STAT.pts] ?? 0), 0);
+    expect(sum).toBe(countedTotals(days, STANDARD_CATEGORIES)[STAT.pts]);
   });
 
   it("labels partly and fully benched players, and nobody else", () => {
@@ -100,12 +100,30 @@ describe("weekPlayers", () => {
   });
 
   it("shows no value for a player whose games never counted, never a 0", () => {
-    expect(weekValue(byKey("b"), "pts")).toBeNull();
-    expect(weekValue(byKey("p"), "pts")).toBe(8);
+    expect(weekValue(byKey("b"), CATEGORY.pts)).toBeNull();
+    expect(weekValue(byKey("p"), CATEGORY.pts)).toBe(8);
   });
 
   it("orders contributors best first and the rest after, keeping roster order", () => {
-    const ordered = orderWeekPlayers(players, "pts").map((player) => player.playerKey);
+    const ordered = orderWeekPlayers(players, CATEGORY.pts).map((player) => player.playerKey);
     expect(ordered).toEqual(["a", "n", "d", "p", "b"]);
+  });
+
+  it("gives a ratio's counted parts, and none for counts or players who added nothing", () => {
+    expect(weekParts(byKey("a"), CATEGORY.fgPct)).toEqual({ top: 12, bottom: 26 });
+    expect(weekParts(byKey("a"), CATEGORY.pts)).toBeNull();
+    expect(weekParts(byKey("b"), CATEGORY.fgPct)).toBeNull();
+  });
+
+  it("orders a percentage by attempts and turnovers fewest first", () => {
+    const byAttempts = orderWeekPlayers(players, CATEGORY.fgPct).map((p) => p.playerKey);
+    expect(byAttempts.slice(0, 1)).toEqual(["a"]);
+    const byTurnovers = orderWeekPlayers(players, CATEGORY.to).map((p) => p.playerKey);
+    expect(byTurnovers.at(-1)).toBe("b");
+  });
+
+  it("keeps roster order while the categories are unknown", () => {
+    const ordered = orderWeekPlayers(players, null).map((player) => player.playerKey);
+    expect(ordered).toEqual(players.map((player) => player.playerKey));
   });
 });

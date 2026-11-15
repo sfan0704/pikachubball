@@ -1,5 +1,6 @@
 import { useMemo, type MouseEvent } from "react";
 import type { TeamTable } from "@shared/domain";
+import { categoryLabel } from "@/features/league/categories";
 import { cn } from "@/lib/utils";
 import {
   categoryGrid,
@@ -113,7 +114,7 @@ function Head({ grid, onPick }: { grid: CategoryGrid; onPick: (category: string 
                     "text-[#15181D] shadow-[inset_0_0_0_2px_#15181D] dark:text-foreground dark:shadow-[inset_0_0_0_2px_white]"
                 )}
               >
-                {item.displayName}
+                {categoryLabel(item)}
               </button>
             </th>
           );

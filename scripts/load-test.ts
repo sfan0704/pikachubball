@@ -242,13 +242,17 @@ async function playersPage(session: Session, query: Record<string, string>): Pro
   return performance.now() - started;
 }
 
-/** Players from nothing: the first page with its totals, the league schedule (D6) and the weeks (D10). */
+/**
+ * Players from nothing: the first page with its totals, the league schedule
+ * (D6), the weeks (D10) and the current week's table (D1) for the league's categories.
+ */
 async function playersFirstPage(session: Session): Promise<number> {
   const started = performance.now();
   await Promise.all([
     playersPage(session, {}),
     session.json(`${league}/schedule`),
     session.json(`${league}/weeks`),
+    session.json(table("current")),
   ]);
   return performance.now() - started;
 }
@@ -261,7 +265,7 @@ async function playersFirstPage(session: Session): Promise<number> {
 async function playersPhases(sessions: Session[]): Promise<PhaseResult[]> {
   const n = sessions.length;
   return [
-    await phase("Players, first page, cold (6)", sessions, 6 * n, true, playersFirstPage),
+    await phase("Players, first page, cold (7)", sessions, 7 * n, true, playersFirstPage),
     await phase("Players, next page (2)", sessions, 2 * n, true, (s) =>
       playersPage(s, { start: "25" })
     ),

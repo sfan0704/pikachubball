@@ -14,6 +14,7 @@ import { PlayerDetailSheet } from "../../../client/src/features/daily-stats/Play
 import { PlayerButton } from "../../../client/src/features/daily-stats/PlayerButton";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
+import { buildLeagueSettings, buildTeamTable } from "../../support/builders";
 
 const LEAGUE = "466.l.100000";
 const TEAM = `${LEAGUE}.t.11`;
@@ -27,6 +28,8 @@ async function answer(url: string): Promise<object> {
   const path = decodeURIComponent(pathname).replace(`/api/leagues/${LEAGUE}`, "");
   const players = searchParams.get("players")?.split(",") ?? [];
   const routes: Record<string, () => Promise<object>> = {
+    "/current": async () =>
+      buildTeamTable([{}], { settings: buildLeagueSettings({ leagueKey: LEAGUE }) }),
     "/games": () => source.getGameLogs(LEAGUE, players),
     "/player-stats/season": () => source.getPlayerStats(LEAGUE, "season", players),
     "/weeks": () => source.getWeeks(LEAGUE),

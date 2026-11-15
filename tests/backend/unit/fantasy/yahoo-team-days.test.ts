@@ -3,9 +3,12 @@ import { z } from "zod";
 import {
   countedGames,
   countedTotals,
+  measured,
+  missing,
+  statOf,
   type PlayerDay,
-  type TeamTotals,
 } from "../../../../shared/domain";
+import { STANDARD_CATEGORIES, STAT } from "../../../support/builders";
 import type { TeamDay } from "../../../../server/fantasy/daily-stats-source";
 import { YahooDailyStatsSource } from "../../../../server/fantasy/yahoo-daily-stats-source";
 import { DailyStatsRequests } from "../../../../server/fantasy/yahoo/daily-stats-requests";
@@ -55,7 +58,10 @@ function sourceOver(recordings: Readonly<Record<string, string | object>> = week
   return { yahoo, source };
 }
 
-/** Yahoo's team totals (`team_stats`) from a recorded team stats body. */
+/** Counted totals for the recorded league's standard nine categories. */
+const counted = (days: readonly PlayerDay[]) => countedTotals(days, STANDARD_CATEGORIES);
+
+/** Yahoo's team totals (`team_stats`) from a recorded team stats body, by stat id. */
 const teamTotalsSchema = z
   .object({
     fantasy_content: z.object({
@@ -82,18 +88,17 @@ const teamTotalsSchema = z
     const [fgMakes, fgAttempts] = pair("9004003");
     const [ftMakes, ftAttempts] = pair("9007006");
     const count = (id: string) => Number(value(id));
-    const totals: TeamTotals = {
-      fgMakes,
-      fgAttempts,
-      ftMakes,
-      ftAttempts,
-      tpm: count("10"),
-      pts: count("12"),
-      reb: count("15"),
-      ast: count("16"),
-      stl: count("17"),
-      blk: count("18"),
-      to: count("19"),
+    const totals: Record<string, number> = {
+      [STAT.fgm]: fgMakes,
+      [STAT.fga]: fgAttempts,
+      [STAT.ftm]: ftMakes,
+      [STAT.fta]: ftAttempts,
+      ...Object.fromEntries(
+        [STAT.tpm, STAT.pts, STAT.reb, STAT.ast, STAT.stl, STAT.blk, STAT.to].map((id) => [
+          id,
+          count(id),
+        ])
+      ),
     };
     return { totals, completedGames: team_remaining_games?.total.completed_games };
   });
@@ -120,7 +125,7 @@ describe("YahooDailyStatsSource team days (D2) against FAN-91 week 2", () => {
     const day = await source().getTeamDay(LEAGUE, TEAMS[side], date);
 
     expect(day).toMatchObject({ teamKey: TEAMS[side], date });
-    expect(countedTotals(playerDays(day))).toEqual(yahooTeamStats(`${side}-${date}-stats`).totals);
+    expect(counted(playerDays(day))).toEqual(yahooTeamStats(`${side}-${date}-stats`).totals);
   });
 
   it.each(["mine", "opponent"] as const)(
@@ -135,7 +140,7 @@ describe("YahooDailyStatsSource team days (D2) against FAN-91 week 2", () => {
       const week = days.flatMap(playerDays);
 
       const yahoo = yahooTeamStats(`${side}-stats-week`);
-      expect(countedTotals(week)).toEqual(yahoo.totals);
+      expect(counted(week)).toEqual(yahoo.totals);
       expect(countedGames(week)).toBe(yahoo.completedGames);
     }
   );
@@ -159,23 +164,25 @@ describe("YahooDailyStatsSource team days (D2) against FAN-91 week 2", () => {
         positions: ["PG", "SG"],
         injuryToday: { designation: "O", reason: "Thigh" },
       },
-      line: { fg: { kind: "noGame" }, pts: { kind: "noGame" } },
     });
+    expect(injured && statOf(injured.line, STAT.fgm)).toEqual(missing("noGame"));
+    expect(injured && statOf(injured.line, STAT.pts)).toEqual(missing("noGame"));
   });
 
   it("leaves bench and IL days out of counted totals", async () => {
     const { source } = sourceOver();
     const day = await source().getTeamDay(LEAGUE, TEAMS.mine, "2026-10-27");
     const benched = day.players.filter(({ isStartingSlot }) => !isStartingSlot);
-    const played = { kind: "value", value: 10 } as const;
-
     const withBenchGame = playerDays({
       ...day,
-      players: benched.map((entry) => ({ ...entry, line: { ...entry.line, pts: played } })),
+      players: benched.map((entry) => ({
+        ...entry,
+        line: { stats: { ...entry.line.stats, [STAT.pts]: measured(10) }, otherwise: "noGame" },
+      })),
     });
 
     expect(benched.length).toBeGreaterThan(0);
-    expect(countedTotals(withBenchGame).pts).toBe(0);
+    expect(counted(withBenchGame)[STAT.pts]).toBe(0);
   });
 });
 
