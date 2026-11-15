@@ -25,9 +25,14 @@ export default defineConfig({
     channel: process.env.PW_CHANNEL,
     trace: "retain-on-failure",
   },
+  // A test for one width only is tagged "@phone" or "@desktop"; the other project skips it.
   projects: [
-    { name: "mobile", use: { viewport: { width: 390, height: 844 }, hasTouch: true } },
-    { name: "desktop", use: { viewport: { width: 1280, height: 800 } } },
+    {
+      name: "mobile",
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true },
+      grepInvert: /@desktop/,
+    },
+    { name: "desktop", use: { viewport: { width: 1280, height: 800 } }, grepInvert: /@phone/ },
   ],
   webServer: {
     command: "bash scripts/dev-local.sh --built",
