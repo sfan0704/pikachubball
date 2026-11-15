@@ -9,7 +9,7 @@ interface PlayerDetailSheetProps {
   player: DailyPlayer | null;
   /** The date the opening screen shows; the injury tag appears only when it is today. */
   viewDate: string;
-  /** Up from the bottom on a phone; "right" is the drawer Matchup and Players use from 768 px (FAN-152, FAN-153). */
+  /** Up from the bottom on a phone; "right" is the drawer Matchup and Players use from the md breakpoint (FAN-152, FAN-153). */
   side?: SheetSide;
   onClose: () => void;
   onPickLeague: () => void;
