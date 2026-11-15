@@ -208,7 +208,7 @@ export function StandingsTable({
       className="rounded-2xl border border-[#E2E5EA] bg-white px-3 pb-1 pt-0.5 dark:border-border dark:bg-card"
       data-testid="card-league-standings"
     >
-      {allPlay.error && !(tableFailed && allPlay.table !== null) && (
+      {allPlay.error && !tableFailed && (
         <ErrorScreen
           inline
           error={allPlay.error}

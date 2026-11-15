@@ -72,7 +72,15 @@ function stubServer({ failWeeks = false } = {}) {
 }
 
 /** The board with its view, sort and category held the way the URL would hold them. */
-function Board({ table, initial }: { table: typeof SEASON; initial: LeagueBoardState }) {
+function Board({
+  table,
+  initial,
+  tableFailed,
+}: {
+  table: typeof SEASON;
+  initial: LeagueBoardState;
+  tableFailed: boolean;
+}) {
   const [board, setBoard] = useState(initial);
   return (
     <LeagueBoard
@@ -84,17 +92,21 @@ function Board({ table, initial }: { table: typeof SEASON; initial: LeagueBoardS
       boardHref={(next) => `/league?view=${next.view}`}
       onBoard={setBoard}
       onPickLeague={() => undefined}
-      tableFailed={false}
+      tableFailed={tableFailed}
     />
   );
 }
 
-function renderBoard(table = SEASON, initial: LeagueBoardState = DEFAULT_BOARD) {
+function renderBoard(
+  table = SEASON,
+  initial: LeagueBoardState = DEFAULT_BOARD,
+  tableFailed = false
+) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <FreshnessProvider>
-        <Board table={table} initial={initial} />
+        <Board table={table} initial={initial} tableFailed={tableFailed} />
       </FreshnessProvider>
     </QueryClientProvider>
   );
@@ -138,6 +150,17 @@ describe("LeagueBoard", () => {
     const calls = fetchMock.mock.calls.length;
     await userEvent.setup().click(screen.getByRole("button", { name: "Try again" }));
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(calls));
+  });
+
+  it("leaves the weeks' failure to the table's own error when the table failed too", async () => {
+    const fetchMock = stubServer({ failWeeks: true });
+    renderBoard(SEASON, DEFAULT_BOARD, true);
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => /\/\d+$/.test(String(url)))).toBe(true)
+    );
+    await waitFor(() => expect(cellsOf("row-luck").every((text) => text === "—")).toBe(true));
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("sorts by a column header and marks it as the sort", async () => {

@@ -154,13 +154,18 @@ test("picks a category in the grid: tied teams share a rank, and a second tap cl
   await expect(page.getByTestId("row-total")).toHaveCount(14);
 });
 
-test("opens a team's ranks and roster, and closes it again", async ({ page }) => {
+test("opens a team's standing, luck, ranks and roster, and closes it again", async ({ page }) => {
   await signIn(page);
   await page.getByLabel("Period").selectOption("current");
 
   await page.getByTestId(`row-ranking-${LEAGUE}.t.9`).click();
   const popover = page.getByRole("dialog", { name: "Team 9" });
-  await expect(popover).toContainText(/Team 9\d+–\d+–\d+ · ranks for week \d+ · /);
+  await expect(popover).toContainText(/^Team 9Week \d+ · /);
+  await expect(popover.getByTestId("team-summary")).toContainText(
+    /Standing\d+(st|nd|rd|th)\d+–\d+–\d+All-play\d+(st|nd|rd|th)\d+–\d+–\d+Luck([+−]\d+\.\d|0)category wins/
+  );
+  await expect(popover.getByTestId("luck-line")).toHaveCount(3);
+  await expect(popover.getByTestId("category-all-play")).toHaveCount(0);
   await expect(
     popover.getByRole("list", { name: "Category ranks and totals" }).getByRole("listitem")
   ).toHaveCount(9);
