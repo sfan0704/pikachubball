@@ -17,7 +17,6 @@
     "client/src/features/daily-stats/ScoreCard.tsx",
     "client/src/features/daily-stats/rank-tone.ts",
     "client/src/features/league/LeagueLookup.tsx",
-    "client/src/hooks/useMobile.ts",
     "client/src/main.tsx",
     "server/http/app.ts",
     "server/http/composition-root.ts",

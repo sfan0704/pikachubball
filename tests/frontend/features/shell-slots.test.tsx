@@ -16,14 +16,14 @@ describe("the header slots", () => {
     const slot = document.createElement("div");
     document.body.append(slot);
     const { rerender } = render(
-      <ShellSlotsProvider value={{ league: null, context: null, freshness: null }}>
+      <ShellSlotsProvider value={{ league: null, nav: null, freshness: null, context: null }}>
         <ShellSlot name="freshness">Updated just now</ShellSlot>
       </ShellSlotsProvider>
     );
     expect(screen.queryByText("Updated just now")).not.toBeInTheDocument();
 
     rerender(
-      <ShellSlotsProvider value={{ league: null, context: null, freshness: slot }}>
+      <ShellSlotsProvider value={{ league: null, nav: null, freshness: slot, context: null }}>
         <ShellSlot name="freshness">Updated just now</ShellSlot>
       </ShellSlotsProvider>
     );

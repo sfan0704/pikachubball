@@ -126,7 +126,7 @@ function ScreenBody(props: LeagueScreenProps) {
   return <LeagueScreen {...props} />;
 }
 
-/** The selected league: its name in the header, the chosen screen, and the bottom tab bar. */
+/** The selected league: its name in the header, the chosen screen, and the screen tabs. */
 export function LeagueView({ league, screens, ...rest }: LeagueViewProps) {
   const { selection, leagues, onSelect } = rest;
   const query = useLeagueScope(selection.leagueKey, selection.scope);
