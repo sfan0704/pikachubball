@@ -1,15 +1,13 @@
+import { categoryRanks, rankings, type TeamRecord, type TeamTable } from "@shared/domain";
 import {
-  CATEGORIES,
-  categoryRanks,
-  rankings,
-  type CategoryKey,
-  type TeamRecord,
-  type TeamTable,
-} from "@shared/domain";
-import { CATEGORY_LABELS, formatTotal, UNAVAILABLE } from "@/features/league/categories";
+  categoryById,
+  categoryLabel,
+  formatTotal,
+  UNAVAILABLE,
+} from "@/features/league/categories";
 
-/** What the tiles select: the overall order or one category. */
-export type BoardPick = "overall" | CategoryKey;
+/** What the tiles select: the overall order or one category, by stat id. */
+export type BoardPick = "overall" | string;
 
 /** How a rank reads against the league: top three, bottom three, or neither. */
 export type RankTone = "top" | "bottom" | "none";
@@ -19,7 +17,8 @@ export type Records = ReadonlyMap<string, TeamRecord | null> | null;
 
 /** One category of a team: its rank and total. */
 export interface BoardCell {
-  readonly key: CategoryKey;
+  /** The category's stat id. */
+  readonly key: string;
   readonly label: string;
   readonly rank: number | null;
   readonly tone: RankTone;
@@ -43,7 +42,7 @@ export interface BoardRow {
   readonly tone: RankTone;
   /** The record on the Overall list, the category total otherwise. */
   readonly value: string;
-  /** The nine categories, on the Overall list only. */
+  /** The league's categories, on the Overall list only. */
   readonly cells: readonly BoardCell[] | null;
 }
 
@@ -67,23 +66,25 @@ export function recordText(records: Records, teamKey: string): string {
   return record === null ? UNAVAILABLE : `${record.wins}–${record.losses}–${record.ties}`;
 }
 
-/** A team's rank and total in each of the nine categories. */
+/** A team's rank and total in each of the league's categories. */
 export function teamCells(table: TeamTable, teamKey: string): BoardCell[] {
   const ranks = categoryRanks(table)[teamKey];
   const team = table.teams.find((row) => row.teamKey === teamKey);
-  return CATEGORIES.map((key) => {
-    const rank = ranks?.[key] ?? null;
+  return table.settings.categories.map((category) => {
+    const rank = ranks?.[category.statId] ?? null;
     return {
-      key,
-      label: CATEGORY_LABELS[key],
+      key: category.statId,
+      label: categoryLabel(category),
       rank,
       tone: rankTone(rank, table.teams.length),
-      text: team ? formatTotal(team.totals, key) : UNAVAILABLE,
+      text: team
+        ? formatTotal(category, team.categoryValues[category.statId] ?? null)
+        : UNAVAILABLE,
     };
   });
 }
 
-/** The ten tiles: the user's overall place, then their rank in each category. */
+/** The tiles: the user's overall place, then their rank in each category. */
 export function boardTiles(table: TeamTable, myTeamKey: string): BoardTile[] {
   const count = table.teams.length;
   const position = rankings(table).find((team) => team.teamKey === myTeamKey)?.position ?? null;
@@ -110,8 +111,9 @@ function overallRows(table: TeamTable, myTeamKey: string, records: Records): Boa
   }));
 }
 
-function categoryRows(table: TeamTable, myTeamKey: string, key: CategoryKey): BoardRow[] {
+function categoryRows(table: TeamTable, myTeamKey: string, key: string): BoardRow[] {
   const ranks = categoryRanks(table);
+  const category = categoryById(table.settings.categories, key);
   const byRank = (rank: number | null) => rank ?? Number.POSITIVE_INFINITY;
   return table.teams
     .map((team, index) => ({ team, index, rank: ranks[team.teamKey]?.[key] ?? null }))
@@ -122,14 +124,14 @@ function categoryRows(table: TeamTable, myTeamKey: string, key: CategoryKey): Bo
       isMine: team.teamKey === myTeamKey,
       rank,
       tone: rankTone(rank, table.teams.length),
-      value: formatTotal(team.totals, key),
+      value: category ? formatTotal(category, team.categoryValues[key] ?? null) : UNAVAILABLE,
       cells: null,
     }));
 }
 
 /**
- * The list the selected tile shows: every team by strength (sum of its nine
- * ranks) with its record and totals, or every team ranked in one category.
+ * The list the selected tile shows: every team by strength (sum of its
+ * category ranks) with its record and totals, or every team ranked in one category.
  * Tied teams share a rank; unranked teams go last.
  */
 export function boardRows(

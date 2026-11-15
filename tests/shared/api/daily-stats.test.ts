@@ -17,7 +17,7 @@ import {
 } from "../../../shared/api/daily-stats";
 import { teamTableSchema } from "../../../shared/api/team-table";
 import { measured, missing, missingLine } from "../../../shared/domain";
-import { buildStatLine, buildTeamTable } from "../../support/builders";
+import { buildStatLine, buildTeamTable, STAT } from "../../support/builders";
 
 const FETCHED_AT = "2026-11-08T21:55:00.000Z";
 const TIP_OFF = "2026-11-08T23:00:00.000Z";
@@ -102,14 +102,16 @@ describe("daily-stats response schemas", () => {
     expect(teamDayResponseSchema.parse(body)).toEqual(body);
   });
 
-  it("rejects a bare zero, more makes than attempts and a response without its fetch time", () => {
+  it("rejects a bare zero, a negative count, an unknown kind, a bad stat id and a response without its fetch time", () => {
     const row = { player, slot: "PG", isStartingSlot: true };
     const body = { fetchedAt: FETCHED_AT, teamKey: TEAM, date: "2026-11-08" };
+    const built = buildStatLine();
     const lines = [
-      { ...buildStatLine(), pts: 0 },
-      buildStatLine({ fg: measured({ makes: 5, attempts: 4 }) }),
+      { ...built, stats: { ...built.stats, [STAT.pts]: 0 } },
       buildStatLine({ reb: measured(-1) }),
-      { ...buildStatLine(), ast: { kind: "zero" } },
+      { ...built, stats: { ...built.stats, [STAT.ast]: { kind: "zero" } } },
+      { ...built, stats: { ...built.stats, PTS: measured(1) } },
+      { ...built, otherwise: "zero" },
     ];
     for (const line of lines) {
       const parsed = teamDayResponseSchema.safeParse({ ...body, players: [{ ...row, line }] });

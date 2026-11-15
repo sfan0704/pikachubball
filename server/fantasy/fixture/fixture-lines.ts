@@ -6,6 +6,7 @@ import type { NbaGame } from "../../../shared/api/daily-stats-values";
 import type { StatPeriod } from "../../../shared/api/daily-stats";
 import {
   daysBetween,
+  lineOf,
   measured,
   missing,
   missingLine,
@@ -21,6 +22,26 @@ function seedOf(player: FixturePlayer, date: string): number {
   return Math.abs(player.number * 31 + daysBetween(EPOCH, date) * 17);
 }
 
+/**
+ * Yahoo's stat ids for the counting stats the fixture plays: enough for the
+ * standard nine and for leagues that score 3PT%, A/T or personal fouls.
+ */
+const STAT_IDS = {
+  fga: "3",
+  fgm: "4",
+  fta: "6",
+  ftm: "7",
+  tpa: "9",
+  tpm: "10",
+  pts: "12",
+  reb: "15",
+  ast: "16",
+  stl: "17",
+  blk: "18",
+  to: "19",
+  pf: "21",
+} as const;
+
 /** A believable line, with makes never above attempts; `games` scales it to a period. */
 function measuredLine(seed: number, games = 1): StatLine {
   const fga = 6 + (seed % 9);
@@ -28,18 +49,25 @@ function measuredLine(seed: number, games = 1): StatLine {
   const fta = seed % 6;
   const ftm = Math.max(0, fta - (seed % 2));
   const tpm = Math.min(fgm, seed % 4);
-  const scaled = (value: number) => measured(value * games);
-  return {
-    fg: measured({ makes: fgm * games, attempts: fga * games }),
-    ft: measured({ makes: ftm * games, attempts: fta * games }),
-    tpm: scaled(tpm),
-    pts: scaled(2 * fgm + tpm + ftm),
-    reb: scaled(2 + (seed % 8)),
-    ast: scaled(1 + (seed % 7)),
-    stl: scaled(seed % 3),
-    blk: scaled((seed >> 1) % 3),
-    to: scaled(seed % 4),
+  const tpa = tpm + (seed % 3);
+  const counts: Readonly<Record<string, number>> = {
+    [STAT_IDS.fga]: fga,
+    [STAT_IDS.fgm]: fgm,
+    [STAT_IDS.fta]: fta,
+    [STAT_IDS.ftm]: ftm,
+    [STAT_IDS.tpa]: tpa,
+    [STAT_IDS.tpm]: tpm,
+    [STAT_IDS.pts]: 2 * fgm + tpm + ftm,
+    [STAT_IDS.reb]: 2 + (seed % 8),
+    [STAT_IDS.ast]: 1 + (seed % 7),
+    [STAT_IDS.stl]: seed % 3,
+    [STAT_IDS.blk]: (seed >> 1) % 3,
+    [STAT_IDS.to]: seed % 4,
+    [STAT_IDS.pf]: 1 + (seed % 5),
   };
+  return lineOf(
+    Object.fromEntries(Object.entries(counts).map(([id, value]) => [id, measured(value * games)]))
+  );
 }
 
 /** Why the player has no line that date, or null when they played. */

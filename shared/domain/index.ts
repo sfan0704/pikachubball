@@ -2,16 +2,21 @@
  * Domain models and pure fantasy rules. No I/O, clock or framework imports.
  */
 
-export type { CategoryKey } from "./stats";
-
-export { CATEGORIES } from "./stats";
+export type { CategoryEntry, CategoryValues, RatioParts, StatTotals } from "./categories";
+export {
+  categoryEntry,
+  categoryParts,
+  categoryTotal,
+  categoryTotals,
+  isPercentage,
+  partsOfAll,
+} from "./categories";
 
 export type {
   CategoryDirection,
   CategoryMakeup,
   LeagueCategory,
   LeagueSettings,
-  TeamTotals,
   TeamRecord,
   TeamRow,
   WeekGames,
@@ -20,9 +25,7 @@ export type {
   TeamTable,
 } from "./team-table";
 export {
-  CATEGORY_DIRECTIONS,
   percentage,
-  categoryValue,
   competitionRanks,
   categoryRanks,
   rankSum,
@@ -30,7 +33,7 @@ export {
   tableCompleteness,
 } from "./fantasy-rules";
 export type { CategoryRanks, ScoringSupport, TableCompleteness } from "./fantasy-rules";
-export { rankings, compareTotals, opponentOf } from "./views";
+export { rankings, compareCategories, opponentOf } from "./views";
 export type {
   RankedTeam,
   CategoryResult,
@@ -41,29 +44,29 @@ export type {
 export type {
   Appearance,
   CountValue,
-  MakesAttempts,
   Measured,
   MissingKind,
   MissingValue,
-  ShotValue,
   StatLine,
   StatValue,
 } from "./stat-value";
-export { appearance, lineWithGame, measured, missing, missingLine, sumLines } from "./stat-value";
+export {
+  appearance,
+  lineOf,
+  lineWithGame,
+  measured,
+  missing,
+  missingLine,
+  statOf,
+  sumLines,
+} from "./stat-value";
 export type { GameState, LiveProgress } from "./game-state";
 export { isLive } from "./game-state";
-export type {
-  CategoryValues,
-  GamesPlayed,
-  PeriodTotals,
-  PlayerDay,
-  VersusAverage,
-} from "./daily-stats";
+export type { GamesPlayed, PeriodTotals, PlayerDay, VersusAverage } from "./daily-stats";
 export {
   averageThreshold,
   countedGames,
   countedTotals,
-  expectedOver,
   gamesPlayed,
   perGameAverages,
   versusAverage,
@@ -89,19 +92,14 @@ export type {
   TeamMove,
 } from "./acquisition";
 export { latestAcquisition } from "./acquisition";
-export type { CategoryEntry, ColumnPlayer } from "./matchup-day";
-export {
-  categoryEntry,
-  closestLostCategory,
-  dayCallout,
-  isShootingCategory,
-  orderForCategory,
-} from "./matchup-day";
+export type { ColumnPlayer } from "./matchup-day";
+export { closestLostCategory, dayCallout, orderForCategory } from "./matchup-day";
 export type { WeekBounds, WeekGroup, WeekPlayer } from "./matchup-week";
 export {
   countedGamesLabel,
   elapsedDates,
   orderWeekPlayers,
+  weekParts,
   weekPlayers,
   weekValue,
 } from "./matchup-week";

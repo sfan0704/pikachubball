@@ -1,12 +1,10 @@
 import { z } from "zod";
-import { CATEGORIES } from "../domain/stats";
 import type { TeamTable } from "../domain/team-table";
 
 const nullableNumber = z.number().nullable();
 
 const leagueCategorySchema = z.object({
   statId: z.string(),
-  key: z.enum(CATEGORIES).nullable(),
   displayName: z.string(),
   direction: z.enum(["higher", "lower"]),
   makeup: z.discriminatedUnion("kind", [
@@ -28,25 +26,10 @@ const leagueSettingsSchema = z.object({
   isFinished: z.boolean(),
 });
 
-const teamTotalsSchema = z.object({
-  fgMakes: nullableNumber,
-  fgAttempts: nullableNumber,
-  ftMakes: nullableNumber,
-  ftAttempts: nullableNumber,
-  tpm: nullableNumber,
-  pts: nullableNumber,
-  reb: nullableNumber,
-  ast: nullableNumber,
-  stl: nullableNumber,
-  blk: nullableNumber,
-  to: nullableNumber,
-});
-
 const teamRowSchema = z.object({
   teamKey: z.string(),
   teamName: z.string(),
   managerName: z.string().nullable(),
-  totals: teamTotalsSchema,
   categoryValues: z.record(z.string(), nullableNumber),
   games: z
     .object({

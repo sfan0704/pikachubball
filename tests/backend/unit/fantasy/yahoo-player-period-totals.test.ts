@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { measured, missingLine, perGameAverages } from "../../../../shared/domain";
+import {
+  lineOf,
+  measured,
+  missing,
+  missingLine,
+  perGameAverages,
+  statOf,
+} from "../../../../shared/domain";
+import { CATEGORY, STANDARD_CATEGORIES, STAT, TEN_CATEGORIES } from "../../../support/builders";
 import { YahooDailyStatsSource } from "../../../../server/fantasy/yahoo-daily-stats-source";
 import { DailyStatsRequests } from "../../../../server/fantasy/yahoo/daily-stats-requests";
 import { fixedClock } from "../../../support/clock";
@@ -83,30 +91,35 @@ describe("YahooDailyStatsSource player totals (D4)", () => {
       ["478.p.6417", 8],
       ["478.p.6165", 9],
     ]);
-    expect(stats.players[0].line).toEqual({
-      fg: measured({ makes: 48, attempts: 103 }),
-      ft: measured({ makes: 7, attempts: 11 }),
-      tpm: measured(16),
-      pts: measured(119),
-      reb: measured(59),
-      ast: measured(26),
-      stl: measured(13),
-      blk: measured(4),
-      to: measured(11),
-    });
+    const line = stats.players[0].line;
+    expect(line.otherwise).toBe("unavailable");
+    expect(
+      [STAT.fgm, STAT.fga, STAT.ftm, STAT.fta, STAT.tpm, STAT.pts, STAT.reb, STAT.ast].map((id) =>
+        statOf(line, id)
+      )
+    ).toEqual([48, 103, 7, 11, 16, 119, 59, 26].map((value) => measured(value)));
+    expect([statOf(line, STAT.stl), statOf(line, STAT.blk), statOf(line, STAT.to)]).toEqual([
+      measured(13),
+      measured(4),
+      measured(11),
+    ]);
+    // The game context sends every NBA stat, so any league's categories can be built.
+    expect(statOf(line, STAT.tpa)).toMatchObject({ kind: "value" });
+    expect(statOf(line, STAT.pf)).toMatchObject({ kind: "value" });
   });
 
   it("reproduces Yahoo's per-game values for the recorded season", async () => {
     const { source } = sourceOver(RECORDINGS);
 
     const stats = await source.getPlayerStats(LEAGUE, "season", RECORDED);
-    const averages = perGameAverages(stats.players[1]);
+    const averages = perGameAverages(stats.players[1], STANDARD_CATEGORIES);
 
     // Yahoo's own averages for 478.p.6417 (FAN-93 average_season): 17.4 PTS, 5.8 AST, .409 FG%, .848 FT%.
-    expect(averages.pts).toBeCloseTo(139 / 8);
-    expect(averages.ast).toBeCloseTo(46 / 8);
-    expect(averages.fgPct).toBeCloseTo(0.409, 3);
-    expect(averages.ftPct).toBeCloseTo(0.848, 3);
+    expect(averages[STAT.pts]).toBeCloseTo(139 / 8);
+    expect(averages[STAT.ast]).toBeCloseTo(46 / 8);
+    expect(averages[STAT.fgPct]).toBeCloseTo(0.409, 3);
+    expect(averages[STAT.ftPct]).toBeCloseTo(0.848, 3);
+    expect(perGameAverages(stats.players[1], TEN_CATEGORIES)[STAT.tpPct]).not.toBeNull();
   });
 
   it.each([
@@ -138,8 +151,25 @@ describe("YahooDailyStatsSource player totals (D4)", () => {
       gamesPlayed: 0,
       line: missingLine("didNotPlay"),
     });
-    expect(Object.values(perGameAverages(stats.players[0]))).toEqual(Array(9).fill(null));
-    expect(perGameAverages(stats.players[1]).pts).toBe(12.5);
+    expect(Object.values(perGameAverages(stats.players[0], STANDARD_CATEGORIES))).toEqual(
+      Array(9).fill(null)
+    );
+    expect(perGameAverages(stats.players[1], STANDARD_CATEGORIES)[STAT.pts]).toBe(12.5);
+    expect(perGameAverages(stats.players[1], [CATEGORY.pf])[STAT.pf]).toBeNull();
+  });
+
+  it("reads a stat Yahoo leaves out or doesn't total as unavailable, never as zero", async () => {
+    const path = "/players;player_keys=478.p.1/stats;type=season";
+    const withoutPoints = Object.fromEntries(Object.entries(PLAYED).filter(([id]) => id !== "12"));
+    const { source } = sourceOver({
+      [path]: playersBody([["478.p.1", { ...withoutPoints, "15": "-" }]]),
+    });
+
+    const stats = await source.getPlayerStats(LEAGUE, "season", ["478.p.1"]);
+
+    expect(statOf(stats.players[0].line, STAT.pts)).toEqual(missing("unavailable"));
+    expect(statOf(stats.players[0].line, STAT.reb)).toEqual(missing("unavailable"));
+    expect(stats.players[0].line).not.toEqual(lineOf({}));
   });
 
   it("makes one call per 25 players, both Matchup teams in two", async () => {
@@ -170,11 +200,7 @@ describe("YahooDailyStatsSource player totals (D4)", () => {
 
   it.each([
     ["more makes than attempts", { ...PLAYED, "4": "21" }],
-    [
-      "a missing category",
-      Object.fromEntries(Object.entries(PLAYED).filter(([id]) => id !== "12")),
-    ],
-    ["a total that isn't a whole number", { ...PLAYED, "12": "-" }],
+    ["a total that isn't a number at all", { ...PLAYED, "12": "1.5" }],
     ["no games played", Object.fromEntries(Object.entries(PLAYED).filter(([id]) => id !== "0"))],
   ])("answers YAHOO_UNAVAILABLE for %s", async (_case, stats) => {
     const path = "/players;player_keys=478.p.1/stats;type=season";

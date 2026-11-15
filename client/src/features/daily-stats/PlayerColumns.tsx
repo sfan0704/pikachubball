@@ -4,10 +4,10 @@ import {
   categoryEntry,
   dayCallout,
   orderForCategory,
-  type CategoryKey,
+  type LeagueCategory,
   type VersusAverage,
 } from "@shared/domain";
-import { CATEGORY_LABELS } from "@/features/league/categories";
+import { categoryLabel } from "@/features/league/categories";
 import { cn } from "@/lib/utils";
 import { InjuryTag } from "./InjuryTag";
 import {
@@ -15,6 +15,7 @@ import {
   cardMeta,
   entryText,
   isOutToday,
+  rosterEntry,
   shortName,
   type PlayerCardRow,
 } from "./matchup-board";
@@ -28,7 +29,8 @@ export interface PlayerColumn {
 
 interface PlayerColumnProps {
   column: PlayerColumn;
-  category: CategoryKey;
+  /** Null while the league's categories are unknown: the cards then show who played. */
+  category: LeagueCategory | null;
   /** Whether the rows are today's: injury tags and "Out" describe today only. */
   isToday: boolean;
   /** Opens the shared player detail. */
@@ -76,20 +78,17 @@ function PlayerCard({
   onOpenPlayer,
 }: {
   row: PlayerCardRow;
-  category: CategoryKey;
+  category: LeagueCategory | null;
   isToday: boolean;
   onOpenPlayer: (player: DailyPlayer) => void;
 }) {
-  const entry = categoryEntry(row.line, category);
-  const value = entryText(entry, isOutToday(row.player, isToday));
-  const callout = dayCallout(
-    category,
-    entry,
-    row.average,
-    row.isStartingSlot,
-    row.game?.state.kind === "live"
-  );
+  const entry = category ? categoryEntry(row.line, category) : rosterEntry(row.line);
+  const value = entryText(category, entry, isOutToday(row.player, isToday));
+  const callout = category
+    ? dayCallout(category, entry, row.average, row.isStartingSlot, row.game?.state.kind === "live")
+    : "unavailable";
   const meta = cardMeta(row);
+  const shown = category ? `${categoryLabel(category)} ${value}` : value;
   return (
     <li
       className={cn(
@@ -98,7 +97,7 @@ function PlayerCard({
           "border-dashed border-[#9CA3AF] bg-[#F3F4F6] dark:border-muted-foreground dark:bg-muted"
       )}
       data-testid={`player-card-${row.player.playerKey}`}
-      aria-label={`${row.player.name}, ${CATEGORY_LABELS[category]} ${value}${CALLOUT_NAME[callout]}, ${meta}`}
+      aria-label={`${row.player.name}, ${shown}${CALLOUT_NAME[callout]}, ${meta}`}
     >
       <span className="flex min-w-0 items-center gap-1">
         <CardName player={row.player} onOpenPlayer={onOpenPlayer} />
@@ -121,7 +120,7 @@ function PlayerCard({
         {meta}
       </span>
       <span className="whitespace-nowrap text-right text-[10px] text-[#4B5563] dark:text-muted-foreground">
-        {averageText(category, entry, row.average)}
+        {category ? averageText(category, entry, row.average) : ""}
       </span>
     </li>
   );

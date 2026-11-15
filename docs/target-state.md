@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-11-14.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-11-15.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -310,11 +310,12 @@ flowchart TD
 
 ### The team table
 
-League's season and weekly category ranks are computed from one table: each team's value in each of the league's categories as Yahoo sends it, with its counting totals and field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table. Season all-play and luck need every week's totals, not the season's, so on Season totals the client also reads each week's table so far through the same scope endpoint (`useSeasonWeekTables`, FAN-141): finished weeks are Settled and the week in progress counts as it stands. If any week fails, no week tables are given, so all-play and luck show the dataset's error rather than a partial sum, while the official record still shows.
+League's season and weekly category ranks are computed from one table: each team's value in each of the league's categories, keyed by stat id, for one scope. A ratio is exact makes over attempts when Yahoo sends the makes and attempts (so rounding never makes a tie); any other category is Yahoo's own value. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table. Season all-play and luck need every week's totals, not the season's, so on Season totals the client also reads each week's table so far through the same scope endpoint (`useSeasonWeekTables`, FAN-141): finished weeks are Settled and the week in progress counts as it stands. If any week fails, no week tables are given, so all-play and luck show the dataset's error rather than a partial sum, while the official record still shows.
 
 ### Fantasy rules
 
 - **Categories are league settings.** Each league's categories, their display names and directions (higher or lower is better) come from Yahoo's league settings; display-only stats are not scored. Each category says how it is built: a counting stat, or a ratio with the stat on top and the stat on the bottom (makes over attempts, assists over turnovers). Yahoo marks its ratios but not which part is on top, so `server/fantasy` keeps a table for the four NBA ratios (FG%, FT%, 3PT%, A/T). A category whose make-up isn't known is unavailable in views the app combines itself (summing days or players); Yahoo's own totals for it still show and rank. No league is refused over its categories.
+- **Player stat lines are keyed by stat id.** A player's day, game or period is a line of Yahoo stat ids to counts, with makes and attempts as separate counts (Yahoo's combined "made/attempted" stat is split); a stat Yahoo didn't send is unknown, never 0. Views the app combines itself (Matchup Week, the per-game averages on Players and the player detail) sum the counts each of the league's categories is built from, then take a ratio as summed top over summed bottom. Matchup and Players read the league's categories from the current week's table, so they follow any number of categories; more than nine are laid out in equal rows (12 as 6 and 6, 10 as 5 and 5) to stay readable at phone width.
 - **Category ranks** are competition ranks: equal values share a rank and the next rank is skipped (1, 1, 3). A "lower is better" category (such as turnovers) ranks ascending; the others rank descending.
 - **The overall ranking** is the sum of category ranks, labelled "Category rank sum — lower is better" so it isn't mistaken for Yahoo's official standings. Tied sums stay tied.
 - **Percentages** are total makes divided by total attempts, never an average of percentages. Zero attempts means the percentage is unavailable.
@@ -382,7 +383,7 @@ erDiagram
 | A scope already viewed this session | 0 |
 | Matchup Today, first visit | 7 |
 | Matchup Week, first visit on the last day of the week | 16, in 6 API requests |
-| Players, first page / each further page | 4 to 7 / 2 (3 on Last 7 or Last 30, which also read the page's season totals) |
+| Players, first page / each further page | 4 to 8 / 2 (3 on Last 7 or Last 30, which also read the page's season totals) |
 | League Season totals (all-play and luck), first visit | Weeks so far + 1 (about 20 in a full season) |
 | League team popover, first / later | 4 / 3 |
 | Live Matchup while a shown game is in progress | About 3 a minute |

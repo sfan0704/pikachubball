@@ -2,12 +2,14 @@ import { useEffect, useId, useMemo, useState } from "react";
 import type { PlayerListQuery, PlayerListResponse, StatPeriod } from "@shared/api/daily-stats";
 import { PLAYER_PAGE_SIZE } from "@shared/api/daily-stats";
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
-import { nbaDateOf, scheduleByTeam, type TeamSchedule } from "@shared/domain";
+import { nbaDateOf, scheduleByTeam, type LeagueCategory, type TeamSchedule } from "@shared/domain";
 import { usePlayerList, usePlayerStats, useSchedule, useWeeks } from "@/api/daily-stats-hooks";
+import { useLeagueScope } from "@/api/hooks";
 import { Button } from "@/components/ui/button";
 import { useNow } from "@/features/league/useNow";
 import { DatasetState } from "./DatasetState";
 import { FreshnessLabel } from "./FreshnessLabel";
+import { NO_CATEGORIES } from "./matchup-board";
 import { PlayerDetailSheet } from "./PlayerDetailSheet";
 import { PlayerRow } from "./PlayerRow";
 import { PlayersFilters, SegmentBar } from "./PlayersFilters";
@@ -30,9 +32,9 @@ import {
   type ScheduleFilter,
 } from "./players-model";
 import {
-  PLAYER_SORTS,
-  SORT_LABELS,
-  isCategorySort,
+  playerSorts,
+  sortLabel,
+  sortedCategory,
   sortPlayers,
   type PlayerSort,
 } from "./players-sort";
@@ -100,6 +102,7 @@ interface PlayerPageProps {
   today: string;
   sort: PlayerSort;
   onSort: (sort: PlayerSort) => void;
+  categories: readonly LeagueCategory[];
   onOpenPlayer: (player: DailyPlayer) => void;
   onPage: (start: number) => void;
 }
@@ -110,13 +113,16 @@ function CountAndSort({
   period,
   sort,
   onSort,
+  categories,
 }: {
   count: number;
   period: StatPeriod;
   sort: PlayerSort;
   onSort: (sort: PlayerSort) => void;
+  categories: readonly LeagueCategory[];
 }) {
   const id = useId();
+  const sorts = playerSorts(categories);
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-[0.6875rem] text-muted-foreground" data-testid="players-count">
@@ -129,16 +135,16 @@ function CountAndSort({
         id={id}
         value={sort}
         onChange={(event) => {
-          const picked = PLAYER_SORTS.find((value) => value === event.target.value);
+          const picked = sorts.find((value) => value === event.target.value);
           if (picked !== undefined) {
             onSort(picked);
           }
         }}
         className="min-h-[34px] shrink-0 rounded-[10px] border border-input bg-background px-2 text-[0.8125rem] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {PLAYER_SORTS.map((value) => (
+        {sorts.map((value) => (
           <option key={value} value={value}>
-            {SORT_LABELS[value]}
+            {sortLabel(value, categories)}
           </option>
         ))}
       </select>
@@ -183,6 +189,7 @@ function PlayerPage({
   today,
   sort,
   onSort,
+  categories,
   onOpenPlayer,
   onPage,
 }: PlayerPageProps) {
@@ -192,10 +199,16 @@ function PlayerPage({
   const seasonStats = usePlayerStats(leagueKey, "season", keys);
   const totals = new Map(stats.data?.players.map((row) => [row.playerKey, row]));
   const season = new Map(seasonStats.data?.players.map((row) => [row.playerKey, row]));
-  const rows = sortPlayers(filteredRows(page, schedules, filters), sort, totals);
+  const rows = sortPlayers(filteredRows(page, schedules, filters), sort, totals, categories);
   return (
     <div className="flex flex-col gap-2.5">
-      <CountAndSort count={rows.length} period={period} sort={sort} onSort={onSort} />
+      <CountAndSort
+        count={rows.length}
+        period={period}
+        sort={sort}
+        onSort={onSort}
+        categories={categories}
+      />
       {rows.length === 0 ? (
         <p className="rounded-[10px] bg-muted/60 px-2 py-1.5 text-[0.6875rem] text-muted-foreground">
           No players on this page match these filters.
@@ -210,7 +223,8 @@ function PlayerPage({
               season={period === "season" ? null : (season.get(row.player.playerKey) ?? null)}
               schedule={schedules.get(row.player.nbaTeam)}
               today={today}
-              sortedCategory={isCategorySort(sort) ? sort : null}
+              sortedCategory={sortedCategory(sort, categories)}
+              categories={categories}
               onOpen={onOpenPlayer}
             />
           ))}
@@ -360,6 +374,8 @@ export function PlayersScreen({ leagueKey, onPickLeague }: PlayersScreenProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openPlayer, setOpenPlayer] = useState<DailyPlayer | null>(null);
   const page = usePlayerList(leagueKey, list.query);
+  // The current week's table names the league's categories; Matchup reads the same one.
+  const table = useLeagueScope(leagueKey, "current");
   const schedules = useTeamSchedules(leagueKey, now);
   const today = nbaDateOf(now);
   return (
@@ -376,6 +392,7 @@ export function PlayersScreen({ leagueKey, onPickLeague }: PlayersScreenProps) {
       <DatasetState query={page} onPickLeague={onPickLeague}>
         {(data) => (
           <PlayerPage
+            categories={table.data?.settings.categories ?? NO_CATEGORIES}
             leagueKey={leagueKey}
             page={data}
             period={period}

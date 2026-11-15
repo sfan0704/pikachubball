@@ -1,18 +1,4 @@
-import { CATEGORIES, type CategoryKey } from "./stats";
-import type { CategoryDirection, LeagueSettings, TeamTable, TeamTotals } from "./team-table";
-
-/** The direction of each of the nine standard categories. */
-export const CATEGORY_DIRECTIONS: Readonly<Record<CategoryKey, CategoryDirection>> = {
-  fgPct: "higher",
-  ftPct: "higher",
-  tpm: "higher",
-  pts: "higher",
-  reb: "higher",
-  ast: "higher",
-  stl: "higher",
-  blk: "higher",
-  to: "lower",
-};
+import type { CategoryDirection, LeagueSettings, TeamTable } from "./team-table";
 
 /** Total makes over total attempts; null when either is unknown or there were no attempts. */
 export function percentage(makes: number | null, attempts: number | null): number | null {
@@ -20,18 +6,6 @@ export function percentage(makes: number | null, attempts: number | null): numbe
     return null;
   }
   return makes / attempts;
-}
-
-/** A team's value in one category; null when it can't be known. */
-export function categoryValue(totals: TeamTotals, key: CategoryKey): number | null {
-  switch (key) {
-    case "fgPct":
-      return percentage(totals.fgMakes, totals.fgAttempts);
-    case "ftPct":
-      return percentage(totals.ftMakes, totals.ftAttempts);
-    default:
-      return totals[key];
-  }
 }
 
 /**
@@ -52,30 +26,29 @@ export function competitionRanks(
   });
 }
 
-/** Each team's rank in each category, keyed by team key. */
-export type CategoryRanks = Readonly<Record<string, Readonly<Record<CategoryKey, number | null>>>>;
+/** Each team's rank in each category (by stat id), keyed by team key. */
+export type CategoryRanks = Readonly<Record<string, Readonly<Record<string, number | null>>>>;
 
-/** Ranks every team in every standard category. */
+/** Ranks every team in each of the league's categories, on Yahoo's own values. */
 export function categoryRanks(table: TeamTable): CategoryRanks {
-  const ranks: Record<string, Record<CategoryKey, number | null>> = {};
+  const ranks: Record<string, Record<string, number | null>> = {};
   for (const team of table.teams) {
-    ranks[team.teamKey] = {} as Record<CategoryKey, number | null>;
+    ranks[team.teamKey] = {};
   }
-  for (const key of CATEGORIES) {
-    const values = table.teams.map((team) => categoryValue(team.totals, key));
-    const keyRanks = competitionRanks(values, CATEGORY_DIRECTIONS[key]);
+  for (const category of table.settings.categories) {
+    const values = table.teams.map((team) => team.categoryValues[category.statId] ?? null);
+    const keyRanks = competitionRanks(values, category.direction);
     table.teams.forEach((team, index) => {
-      ranks[team.teamKey][key] = keyRanks[index];
+      ranks[team.teamKey][category.statId] = keyRanks[index];
     });
   }
   return ranks;
 }
 
 /** The sum of a team's category ranks; null when any rank is unknown. Lower is better. */
-export function rankSum(ranks: Readonly<Record<CategoryKey, number | null>>): number | null {
+export function rankSum(ranks: Readonly<Record<string, number | null>>): number | null {
   let sum = 0;
-  for (const key of CATEGORIES) {
-    const rank = ranks[key];
+  for (const rank of Object.values(ranks)) {
     if (rank === null) {
       return null;
     }

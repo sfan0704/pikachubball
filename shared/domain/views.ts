@@ -1,20 +1,14 @@
-import {
-  CATEGORY_DIRECTIONS,
-  categoryRanks,
-  categoryValue,
-  competitionRanks,
-  rankSum,
-} from "./fantasy-rules";
-import { CATEGORIES, type CategoryKey } from "./stats";
-import type { MatchupPairing, TeamTable, TeamTotals } from "./team-table";
+import type { CategoryValues } from "./categories";
+import { categoryRanks, competitionRanks, rankSum } from "./fantasy-rules";
+import type { LeagueCategory, MatchupPairing, TeamTable } from "./team-table";
 
 /** One team's line in the rankings. */
 export interface RankedTeam {
   readonly teamKey: string;
   readonly teamName: string;
   readonly managerName: string | null;
-  /** Rank in each category; null where the team's value is unknown. */
-  readonly categoryRanks: Readonly<Record<CategoryKey, number | null>>;
+  /** Rank in each category, by stat id; null where the team's value is unknown. */
+  readonly categoryRanks: Readonly<Record<string, number | null>>;
   /** Sum of category ranks, lower is better; null when any rank is unknown. */
   readonly rankSum: number | null;
   /** Place by rank sum (1, 1, 3 for ties); null when the sum is unknown. */
@@ -55,7 +49,7 @@ export type CategoryResult = "win" | "loss" | "tie" | "unavailable";
 
 /** One category of a head-to-head, from my team's side. */
 export interface CategoryComparison {
-  readonly category: CategoryKey;
+  readonly category: LeagueCategory;
   readonly mine: number | null;
   readonly theirs: number | null;
   /** mine minus theirs, unoriented: for turnovers a negative number is good. */
@@ -73,14 +67,14 @@ export interface Score {
   readonly complete: boolean;
 }
 
-function compareCategory(mine: number | null, theirs: number | null, key: CategoryKey) {
+function compareCategory(mine: number | null, theirs: number | null, category: LeagueCategory) {
   if (mine === null || theirs === null) {
     return "unavailable" as const;
   }
   if (mine === theirs) {
     return "tie" as const;
   }
-  const higherIsBetter = CATEGORY_DIRECTIONS[key] === "higher";
+  const higherIsBetter = category.direction === "higher";
   return mine > theirs === higherIsBetter ? ("win" as const) : ("loss" as const);
 }
 
@@ -103,22 +97,29 @@ export interface TotalsComparison {
 }
 
 /**
- * Compares my totals with theirs. FG% and FT% compare exact makes over
- * attempts, so equal rounded percentages don't hide a winner.
+ * Compares my values with theirs in each of the league's categories. Ratios
+ * must already be exact (summed top over summed bottom), so equal rounded
+ * percentages don't hide a winner. An unknown value is never a win, loss or
+ * tie; in values the app combines itself, that includes every category it
+ * can't build.
  */
-export function compareTotals(mine: TeamTotals, theirs: TeamTotals): TotalsComparison {
-  const categories = CATEGORIES.map((key): CategoryComparison => {
-    const myValue = categoryValue(mine, key);
-    const theirValue = categoryValue(theirs, key);
+export function compareCategories(
+  categories: readonly LeagueCategory[],
+  mine: CategoryValues,
+  theirs: CategoryValues
+): TotalsComparison {
+  const compared = categories.map((category): CategoryComparison => {
+    const myValue = mine[category.statId] ?? null;
+    const theirValue = theirs[category.statId] ?? null;
     return {
-      category: key,
+      category,
       mine: myValue,
       theirs: theirValue,
       difference: myValue === null || theirValue === null ? null : myValue - theirValue,
-      result: compareCategory(myValue, theirValue, key),
+      result: compareCategory(myValue, theirValue, category),
     };
   });
-  return { categories, score: tally(categories) };
+  return { categories: compared, score: tally(compared) };
 }
 
 function pairingOf(table: TeamTable, teamKey: string): MatchupPairing | undefined {

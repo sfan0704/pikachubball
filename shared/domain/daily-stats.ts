@@ -1,13 +1,7 @@
-import { CATEGORY_DIRECTIONS, percentage } from "./fantasy-rules";
-import { CATEGORIES, type CategoryKey } from "./stats";
-import {
-  appearance,
-  COUNT_FIELDS,
-  type CountValue,
-  type ShotValue,
-  type StatLine,
-} from "./stat-value";
-import type { TeamTotals, WeekGames } from "./team-table";
+import { isPercentage, partsOfAll, type CategoryValues, type StatTotals } from "./categories";
+import { percentage } from "./fantasy-rules";
+import { appearance, statOf, type StatLine } from "./stat-value";
+import type { LeagueCategory, WeekGames } from "./team-table";
 
 /** One player on one team's roster on one date, with that date's line. */
 export interface PlayerDay {
@@ -21,61 +15,31 @@ export interface PlayerDay {
   readonly line: StatLine;
 }
 
-/** Running sum of one field; null once any counted value is unavailable. */
-type Sum = number | null;
-
-function addCount(sum: Sum, value: CountValue): Sum {
+function addStat(sum: number | null, line: StatLine, statId: string): number | null {
+  const value = statOf(line, statId);
   if (sum === null || value.kind === "unavailable") {
     return null;
   }
   return value.kind === "value" ? sum + value.value : sum;
 }
 
-function addShots(sum: readonly [Sum, Sum], value: ShotValue): readonly [Sum, Sum] {
-  const [makes, attempts] = sum;
-  if (makes === null || attempts === null || value.kind === "unavailable") {
-    return [null, null];
-  }
-  if (value.kind !== "value") {
-    return sum;
-  }
-  return [makes + value.value.makes, attempts + value.value.attempts];
-}
-
-function emptyTotals(): TeamTotals {
-  return {
-    fgMakes: 0,
-    fgAttempts: 0,
-    ftMakes: 0,
-    ftAttempts: 0,
-    tpm: 0,
-    pts: 0,
-    reb: 0,
-    ast: 0,
-    stl: 0,
-    blk: 0,
-    to: 0,
-  };
-}
-
-function addLine(totals: TeamTotals, line: StatLine): TeamTotals {
-  const [fgMakes, fgAttempts] = addShots([totals.fgMakes, totals.fgAttempts], line.fg);
-  const [ftMakes, ftAttempts] = addShots([totals.ftMakes, totals.ftAttempts], line.ft);
-  const counts = Object.fromEntries(
-    COUNT_FIELDS.map((field) => [field, addCount(totals[field], line[field])])
-  ) as Pick<TeamTotals, (typeof COUNT_FIELDS)[number]>;
-  return { ...counts, fgMakes, fgAttempts, ftMakes, ftAttempts };
-}
-
 /**
- * Totals that counted for the team: the sum of starting-slot days only. FG% and
- * FT% come from the summed makes and attempts. No game, did not play and not yet
- * played add nothing; an unavailable value makes that category's total unknown.
+ * Totals that counted for the team: the sum of starting-slot days only, for
+ * each stat the league's categories are built from (ratios come from these
+ * sums). No game, did not play and not yet played add nothing; an unavailable
+ * value makes that stat's total unknown.
  */
-export function countedTotals(days: readonly PlayerDay[]): TeamTotals {
-  return days
-    .filter((day) => day.isStartingSlot)
-    .reduce((totals, day) => addLine(totals, day.line), emptyTotals());
+export function countedTotals(
+  days: readonly PlayerDay[],
+  categories: readonly LeagueCategory[]
+): StatTotals {
+  const counted = days.filter((day) => day.isStartingSlot);
+  return Object.fromEntries(
+    partsOfAll(categories).map((statId) => [
+      statId,
+      counted.reduce<number | null>((sum, day) => addStat(sum, day.line, statId), 0),
+    ])
+  );
 }
 
 /**
@@ -96,72 +60,63 @@ export interface PeriodTotals {
   readonly line: StatLine;
 }
 
-/** A value per category; null where it can't be known. */
-export type CategoryValues = Readonly<Record<CategoryKey, number | null>>;
-
-function shotPercentage(value: ShotValue): number | null {
-  return value.kind === "value" ? percentage(value.value.makes, value.value.attempts) : null;
+function measuredStat(line: StatLine, statId: string): number | null {
+  const value = statOf(line, statId);
+  return value.kind === "value" ? value.value : null;
 }
 
-function noValues(): CategoryValues {
-  return Object.fromEntries(CATEGORIES.map((key) => [key, null])) as CategoryValues;
-}
-
-/**
- * Per-game averages: each counting total divided by games played, and FG% and
- * FT% as total makes over total attempts. No games played means no averages.
- */
-export function perGameAverages(period: PeriodTotals): CategoryValues {
-  if (period.gamesPlayed === 0) {
-    return noValues();
+function averageOf(period: PeriodTotals, category: LeagueCategory): number | null {
+  const makeup = category.makeup;
+  switch (makeup.kind) {
+    case "counting": {
+      const total = measuredStat(period.line, category.statId);
+      return total === null ? null : total / period.gamesPlayed;
+    }
+    case "ratio":
+      return percentage(
+        measuredStat(period.line, makeup.topStatId),
+        measuredStat(period.line, makeup.bottomStatId)
+      );
+    case "unavailable":
+      return null;
   }
-  const perGame = (value: CountValue) =>
-    value.kind === "value" ? value.value / period.gamesPlayed : null;
-  return {
-    fgPct: shotPercentage(period.line.fg),
-    ftPct: shotPercentage(period.line.ft),
-    tpm: perGame(period.line.tpm),
-    pts: perGame(period.line.pts),
-    reb: perGame(period.line.reb),
-    ast: perGame(period.line.ast),
-    stl: perGame(period.line.stl),
-    blk: perGame(period.line.blk),
-    to: perGame(period.line.to),
-  };
 }
 
 /**
- * What a player's averages predict over a number of games: counting stats
- * scale with games, percentages don't. One game is the daily baseline; the
- * games that counted give the week's.
+ * Per-game averages in each of the league's categories: each counting total
+ * divided by games played, and a ratio as total top over total bottom. No
+ * games played means no averages; a category the app can't build has none.
  */
-export function expectedOver(averages: CategoryValues, games: number): CategoryValues {
+export function perGameAverages(
+  period: PeriodTotals,
+  categories: readonly LeagueCategory[]
+): CategoryValues {
   return Object.fromEntries(
-    CATEGORIES.map((key) => {
-      const value = averages[key];
-      const isPercentage = key === "fgPct" || key === "ftPct";
-      return [key, value === null || isPercentage ? value : value * games];
-    })
-  ) as CategoryValues;
+    categories.map((category) => [
+      category.statId,
+      period.gamesPlayed === 0 ? null : averageOf(period, category),
+    ])
+  );
 }
 
 /** How a value compares with what the player's average predicts, already oriented for turnovers. */
 export type VersusAverage = "better" | "worse" | "usual" | "unavailable";
 
 /** How far from the baseline a value must be to count as well above or below it. */
-export function averageThreshold(key: CategoryKey, baseline: number): number {
-  if (key === "fgPct" || key === "ftPct") {
+export function averageThreshold(category: LeagueCategory, baseline: number): number {
+  if (isPercentage(category)) {
     return 0.03;
   }
-  return Math.max(0.5, Math.abs(baseline) * 0.1);
+  const floor = category.makeup.kind === "ratio" ? 0.1 : 0.5;
+  return Math.max(floor, Math.abs(baseline) * 0.1);
 }
 
 /**
  * Compares a value with its baseline: at least the threshold away is better
- * or worse, where fewer turnovers is better. Unknown either side is unavailable.
+ * or worse, in the category's direction (fewer turnovers is better). Unknown either side is unavailable.
  */
 export function versusAverage(
-  key: CategoryKey,
+  category: LeagueCategory,
   value: number | null,
   baseline: number | null
 ): VersusAverage {
@@ -170,10 +125,10 @@ export function versusAverage(
   }
   const difference = value - baseline;
   // The tolerance keeps float noise (.538 - .508) from deciding a value exactly at the threshold.
-  if (Math.abs(difference) + 1e-9 < averageThreshold(key, baseline)) {
+  if (Math.abs(difference) + 1e-9 < averageThreshold(category, baseline)) {
     return "usual";
   }
-  const higherIsBetter = CATEGORY_DIRECTIONS[key] === "higher";
+  const higherIsBetter = category.direction === "higher";
   return difference > 0 === higherIsBetter ? "better" : "worse";
 }
 

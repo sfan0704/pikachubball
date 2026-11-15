@@ -13,18 +13,33 @@ import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { PlayersScreen } from "../../../client/src/features/daily-stats/PlayersScreen";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
+import {
+  buildLeagueSettings,
+  buildTeamTable,
+  STANDARD_CATEGORIES,
+  TEN_CATEGORIES,
+} from "../../support/builders";
 
 const LEAGUE = "466.l.100000";
 // 3 pm Eastern on Wednesday, Nov 11.
 const AT = "2026-11-11T20:00:00.000Z";
 const source: DailyStatsSource = new FixtureDailyStatsSource(fixedClock(AT));
 const requests: string[] = [];
+let categories = STANDARD_CATEGORIES;
+
+/** The league's current week, which names its categories. */
+function currentTable() {
+  return buildTeamTable([{}], { settings: buildLeagueSettings({ leagueKey: LEAGUE, categories }) });
+}
 
 async function answer(url: string): Promise<object> {
   const { pathname, searchParams } = new URL(url, "http://app.test");
   const path = decodeURIComponent(pathname).replace(`/api/leagues/${LEAGUE}`, "");
   requests.push(`${path}?${searchParams.toString()}`);
   const players = searchParams.get("players")?.split(",") ?? [];
+  if (path === "/current") {
+    return currentTable();
+  }
   const stats = /^\/player-stats\/(\w+)$/.exec(path);
   const body = stats
     ? await source.getPlayerStats(LEAGUE, statPeriodSchema.parse(stats[1]), players)
@@ -56,6 +71,7 @@ async function list() {
 
 beforeEach(() => {
   requests.length = 0;
+  categories = STANDARD_CATEGORIES;
   vi.useFakeTimers({ now: Date.parse(AT), toFake: ["Date"] });
   vi.stubGlobal(
     "fetch",
@@ -211,7 +227,7 @@ describe("the Players screen", () => {
     );
     const asked = [...requests];
 
-    await user.selectOptions(screen.getByLabelText("Sort by"), "pts");
+    await user.selectOptions(screen.getByLabelText("Sort by"), "category-12");
     const points = within(await list())
       .getAllByTestId("player-averages")
       .map((cells) => Number(within(cells).getByText("PTS").nextSibling?.textContent));
@@ -224,17 +240,33 @@ describe("the Players screen", () => {
     renderScreen();
     await list();
 
-    await user.selectOptions(screen.getByLabelText("Sort by"), "pts");
+    await user.selectOptions(screen.getByLabelText("Sort by"), "category-12");
     await user.click(screen.getByRole("button", { name: "Next 25" }));
     await waitFor(() =>
       expect(screen.getByTestId("players-range")).toHaveTextContent("Players 26–44")
     );
-    expect(screen.getByLabelText("Sort by")).toHaveValue("pts");
+    expect(screen.getByLabelText("Sort by")).toHaveValue("category-12");
     await waitFor(() => {
       const points = within(screen.getByTestId("players-list"))
         .getAllByTestId("player-averages")
         .map((cells) => Number(within(cells).getByText("PTS").nextSibling?.textContent));
       expect(points).toEqual([...points].sort((a, b) => b - a));
     });
+  });
+
+  it("shows and sorts by the league's own categories", async () => {
+    categories = TEN_CATEGORIES;
+    const user = userEvent.setup();
+    renderScreen();
+    const rows = within(await list()).getAllByRole("listitem");
+    await waitFor(() => expect(within(rows[0]).getByText("PF")).toBeInTheDocument());
+    expect(within(rows[0]).getByText("3PT%")).toBeInTheDocument();
+    expect(within(rows[0]).queryByText("3PM")).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Sort by"), "category-21");
+    const fouls = within(await list())
+      .getAllByTestId("player-averages")
+      .map((cells) => Number(within(cells).getByText("PF").nextSibling?.textContent));
+    expect(fouls).toEqual([...fouls].sort((a, b) => a - b));
   });
 });

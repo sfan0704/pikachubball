@@ -2,11 +2,18 @@ import { z } from "zod";
 import { NotFoundError } from "../../../shared/api/errors";
 import type { StatPeriod } from "../../../shared/api/daily-stats";
 import { playerKeySchema } from "../../../shared/api/daily-stats-values";
-import { measured, missingLine, type CountValue, type StatLine } from "../../../shared/domain";
+import {
+  lineOf,
+  missing,
+  missingLine,
+  type CountValue,
+  type StatLine,
+} from "../../../shared/domain";
 import type { PlayerStats } from "../daily-stats-source";
 import { fragments, indexed, parseYahoo } from "../yahoo-shapes";
 import type { DailyStatsRequests } from "./daily-stats-requests";
-import { yahooCountValue } from "./stat-value-parsers";
+import { MAKES_ATTEMPTS } from "./nba-stat-makeup";
+import { yahooCountValue, yahooPeriodStats } from "./stat-value-parsers";
 
 /** Yahoo's name for each period; its last week and last month end yesterday (FAN-93). */
 const YAHOO_PERIOD: Readonly<Record<StatPeriod, string>> = {
@@ -15,91 +22,56 @@ const YAHOO_PERIOD: Readonly<Record<StatPeriod, string>> = {
   last30: "lastmonth",
 };
 
-/*
- * The game-context call (no /league prefix) sends makes and attempts as
- * separate stats (attempts first) rather than the league's combined
- * "made/attempted" stat.
- */
-const STAT_IDS = {
-  gamesPlayed: "0",
-  fgAttempts: "3",
-  fgMakes: "4",
-  ftAttempts: "6",
-  ftMakes: "7",
-  tpm: "10",
-  pts: "12",
-  reb: "15",
-  ast: "16",
-  stl: "17",
-  blk: "18",
-  to: "19",
-} as const;
-
-const wholeNumber = z.union([
-  z.number().int().nonnegative(),
-  z
-    .string()
-    .regex(/^\d+$/, "must be a whole number")
-    .transform((text) => Number(text)),
-]);
-
-const statsById = z
-  .array(z.object({ stat: z.object({ stat_id: z.coerce.string(), value: z.unknown() }) }))
-  .transform((stats) => Object.fromEntries(stats.map(({ stat }) => [stat.stat_id, stat.value])));
-
-const totals = z
-  .object({
-    [STAT_IDS.fgMakes]: wholeNumber,
-    [STAT_IDS.fgAttempts]: wholeNumber,
-    [STAT_IDS.ftMakes]: wholeNumber,
-    [STAT_IDS.ftAttempts]: wholeNumber,
-    [STAT_IDS.tpm]: wholeNumber,
-    [STAT_IDS.pts]: wholeNumber,
-    [STAT_IDS.reb]: wholeNumber,
-    [STAT_IDS.ast]: wholeNumber,
-    [STAT_IDS.stl]: wholeNumber,
-    [STAT_IDS.blk]: wholeNumber,
-    [STAT_IDS.to]: wholeNumber,
-  })
-  .refine(
-    (values) =>
-      values[STAT_IDS.fgMakes] <= values[STAT_IDS.fgAttempts] &&
-      values[STAT_IDS.ftMakes] <= values[STAT_IDS.ftAttempts],
-    "makes can't exceed attempts"
-  )
-  .transform((values): StatLine => ({
-    fg: measured({ makes: values[STAT_IDS.fgMakes], attempts: values[STAT_IDS.fgAttempts] }),
-    ft: measured({ makes: values[STAT_IDS.ftMakes], attempts: values[STAT_IDS.ftAttempts] }),
-    tpm: measured(values[STAT_IDS.tpm]),
-    pts: measured(values[STAT_IDS.pts]),
-    reb: measured(values[STAT_IDS.reb]),
-    ast: measured(values[STAT_IDS.ast]),
-    stl: measured(values[STAT_IDS.stl]),
-    blk: measured(values[STAT_IDS.blk]),
-    to: measured(values[STAT_IDS.to]),
-  }));
-
 const gamesPlayedOf = (value: CountValue): number => (value.kind === "value" ? value.value : 0);
 
 /**
- * One player's period stats as games played and totals. Yahoo writes GP 0 (or
- * `-`) with zeros and `-` percentages for a player who hasn't played in the
- * period; that is "did not play", so the screens show "—" rather than averages
- * of zero.
+ * A played period's totals: Yahoo writes `-` for a stat it doesn't total (games
+ * started, for one), which is unknown here, never a missed game.
  */
-const periodTotals = statsById
-  .pipe(z.object({ [STAT_IDS.gamesPlayed]: yahooCountValue }).passthrough())
-  .transform((values, context) => {
-    const gamesPlayed = gamesPlayedOf(values[STAT_IDS.gamesPlayed]);
-    if (gamesPlayed === 0) {
-      return { gamesPlayed, line: missingLine("didNotPlay") };
+function periodLine(stats: StatLine["stats"]): StatLine {
+  return lineOf(
+    Object.fromEntries(
+      Object.entries(stats).map(([statId, value]) => [
+        statId,
+        value.kind === "value" ? value : missing("unavailable"),
+      ])
+    )
+  );
+}
+
+/** Why a played period's totals can't be right: more makes than attempts. */
+function totalsProblem(stats: StatLine["stats"]): string | null {
+  const count = (statId: string) => {
+    const value = stats[statId];
+    return value?.kind === "value" ? value.value : null;
+  };
+  const tooMany = MAKES_ATTEMPTS.find(([makes, attempts]) => {
+    const [made, tried] = [count(makes), count(attempts)];
+    return made !== null && tried !== null && made > tried;
+  });
+  return tooMany ? "makes can't exceed attempts" : null;
+}
+
+/**
+ * One player's period stats as games played and totals. The game-context call
+ * (no /league prefix) sends every NBA stat, with makes and attempts as
+ * separate stats. Yahoo writes GP 0 (or `-`) with zeros and `-` percentages
+ * for a player who hasn't played in the period; that is "did not play", so the
+ * screens show "—" rather than averages of zero.
+ */
+const periodTotals = yahooPeriodStats
+  .pipe(z.object({ gamesPlayed: yahooCountValue, stats: z.custom<StatLine["stats"]>() }))
+  .transform(({ gamesPlayed, stats }, context) => {
+    const games = gamesPlayedOf(gamesPlayed);
+    if (games === 0) {
+      return { gamesPlayed: games, line: missingLine("didNotPlay") };
     }
-    const line = totals.safeParse(values);
-    if (!line.success) {
-      line.error.issues.forEach((issue) => context.addIssue({ ...issue, code: "custom" }));
+    const problem = totalsProblem(stats);
+    if (problem !== null) {
+      context.addIssue({ code: "custom", message: problem });
       return z.NEVER;
     }
-    return { gamesPlayed, line: line.data };
+    return { gamesPlayed: games, line: periodLine(stats) };
   });
 
 const playerStatsBody = z.object({

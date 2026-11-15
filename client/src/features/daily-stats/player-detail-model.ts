@@ -2,16 +2,15 @@ import type { GameLogsResponse, PlayerStatsResponse, WeeksResponse } from "@shar
 import {
   addDays,
   appearance,
-  CATEGORIES,
+  categoryEntry,
   missingLine,
   perGameAverages,
   sumLines,
-  type CategoryKey,
   type GameState,
-  type ShotValue,
+  type LeagueCategory,
   type StatLine,
 } from "@shared/domain";
-import { CATEGORY_LABELS, UNAVAILABLE } from "@/features/league/categories";
+import { categoryLabel, formatTotal, UNAVAILABLE } from "@/features/league/categories";
 
 /** One game of the player's team, with the player's minutes and line. */
 export type LoggedGame = GameLogsResponse["players"][number]["games"][number];
@@ -29,15 +28,16 @@ export const DETAIL_COLUMN_LABELS: Readonly<Record<DetailColumn, string>> = {
   season: "Avg",
 };
 
-/** A value as shown, with makes/attempts under FG% and FT%. */
+/** A value as shown, with a ratio's parts (makes/attempts) under it. */
 export interface DetailCell {
   readonly text: string;
-  readonly shots: string | null;
+  readonly parts: string | null;
 }
 
 /** One category across the four columns. */
 export interface DetailRow {
-  readonly key: CategoryKey;
+  /** The category's stat id. */
+  readonly key: string;
   readonly label: string;
   readonly cells: Readonly<Record<DetailColumn, DetailCell>>;
 }
@@ -48,53 +48,51 @@ export interface DetailInputs {
   readonly season: PlayerStatsResponse["players"][number] | null;
 }
 
-const SHOT_FIELD = { fgPct: "fg", ftPct: "ft" } as const;
+const NO_VALUE: DetailCell = { text: UNAVAILABLE, parts: null };
 
-function percentText(makes: number, attempts: number): string {
-  return attempts === 0 ? UNAVAILABLE : `${((makes / attempts) * 100).toFixed(1)}%`;
-}
-
-function shotCell(value: ShotValue, perGame = 1): DetailCell {
-  if (value.kind !== "value") {
-    return { text: UNAVAILABLE, shots: null };
+function lineCell(line: StatLine, category: LeagueCategory): DetailCell {
+  const entry = categoryEntry(line, category);
+  if (entry.kind !== "value") {
+    return NO_VALUE;
   }
-  const { makes, attempts } = value.value;
-  const digits = perGame === 1 ? 0 : 1;
   return {
-    text: percentText(makes, attempts),
-    shots: `${(makes / perGame).toFixed(digits)}/${(attempts / perGame).toFixed(digits)}`,
+    text: formatTotal(category, entry.value),
+    parts: entry.parts ? `${entry.parts.top}/${entry.parts.bottom}` : null,
   };
 }
 
-function lineCell(line: StatLine, key: CategoryKey): DetailCell {
-  if (key === "fgPct" || key === "ftPct") {
-    return shotCell(line[SHOT_FIELD[key]]);
-  }
-  const value = line[key];
-  return { text: value.kind === "value" ? String(value.value) : UNAVAILABLE, shots: null };
-}
-
-function seasonCell(season: DetailInputs["season"], key: CategoryKey): DetailCell {
+function seasonCell(season: DetailInputs["season"], category: LeagueCategory): DetailCell {
   if (season === null || season.gamesPlayed === 0) {
-    return { text: UNAVAILABLE, shots: null };
+    return NO_VALUE;
   }
-  if (key === "fgPct" || key === "ftPct") {
-    return shotCell(season.line[SHOT_FIELD[key]], season.gamesPlayed);
+  const value = perGameAverages(season, [category])[category.statId] ?? null;
+  const entry = categoryEntry(season.line, category);
+  if (entry.kind === "value" && entry.parts) {
+    const perGame = (total: number) => (total / season.gamesPlayed).toFixed(1);
+    return {
+      text: formatTotal(category, value),
+      parts: `${perGame(entry.parts.top)}/${perGame(entry.parts.bottom)}`,
+    };
   }
-  const value = perGameAverages(season)[key];
-  return { text: value === null ? UNAVAILABLE : value.toFixed(1), shots: null };
+  return {
+    text: value === null ? UNAVAILABLE : value.toFixed(category.makeup.kind === "ratio" ? 2 : 1),
+    parts: null,
+  };
 }
 
-/** The nine categories for today, yesterday, the week so far and the season's per-game average. */
-export function detailRows({ lines, season }: DetailInputs): DetailRow[] {
-  return CATEGORIES.map((key) => ({
-    key,
-    label: CATEGORY_LABELS[key],
+/** The league's categories for today, yesterday, the week so far and the season's per-game average. */
+export function detailRows(
+  { lines, season }: DetailInputs,
+  categories: readonly LeagueCategory[]
+): DetailRow[] {
+  return categories.map((category) => ({
+    key: category.statId,
+    label: categoryLabel(category),
     cells: {
-      today: lineCell(lines.today, key),
-      yesterday: lineCell(lines.yesterday, key),
-      week: lineCell(lines.week, key),
-      season: seasonCell(season, key),
+      today: lineCell(lines.today, category),
+      yesterday: lineCell(lines.yesterday, category),
+      week: lineCell(lines.week, category),
+      season: seasonCell(season, category),
     },
   }));
 }

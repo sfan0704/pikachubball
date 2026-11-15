@@ -82,7 +82,7 @@ test("each column's counted values add up to the grid's team totals", async ({ p
       .getByRole("button", { name: new RegExp(`^${category}`) })
       .click();
     await expect(page.getByTestId("columns-title")).toHaveText(`${category} · Week ${SWAP_WEEK}`);
-    const key = category === "3PM" ? "tpm" : category.toLowerCase();
+    const key = { PTS: "12", REB: "15", "3PM": "10" }[category];
     for (const [team, side] of [
       [MY_TEAM, "mine"],
       [opponent, "theirs"],

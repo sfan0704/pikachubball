@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { GameState } from "../domain/game-state";
-import type { MakesAttempts, MissingValue, StatLine, StatValue } from "../domain/stat-value";
+import type { MissingValue, StatLine, StatValue } from "../domain/stat-value";
 
 /** A US Eastern date, YYYY-MM-DD, as Yahoo dates fantasy days. */
 export const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must be a YYYY-MM-DD date");
@@ -28,29 +28,13 @@ const countValueSchema = z.union([
   missingValueSchema,
 ]) satisfies z.ZodType<StatValue<number>>;
 
-const makesAttemptsSchema = z
-  .object({ makes: countSchema, attempts: countSchema })
-  .refine(
-    ({ makes, attempts }) => makes <= attempts,
-    "makes can't exceed attempts"
-  ) satisfies z.ZodType<MakesAttempts>;
+/** A Yahoo stat id, for example "12" for points. */
+const statIdSchema = z.string().regex(/^\d+$/, "must be a Yahoo stat id");
 
-const shotValueSchema = z.union([
-  z.object({ kind: z.literal("value"), value: makesAttemptsSchema }),
-  missingValueSchema,
-]) satisfies z.ZodType<StatValue<MakesAttempts>>;
-
-/** A player's line for a date or period; each value is measured or tagged missing, never 0. */
+/** A player's line for a date or period: each stat by Yahoo stat id, measured or tagged missing, never 0. */
 export const statLineSchema = z.object({
-  fg: shotValueSchema,
-  ft: shotValueSchema,
-  tpm: countValueSchema,
-  pts: countValueSchema,
-  reb: countValueSchema,
-  ast: countValueSchema,
-  stl: countValueSchema,
-  blk: countValueSchema,
-  to: countValueSchema,
+  stats: z.record(statIdSchema, countValueSchema),
+  otherwise: missingValueSchema.shape.kind,
 }) satisfies z.ZodType<StatLine>;
 
 /** Minutes played in one game, tagged like any stat value. */

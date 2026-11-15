@@ -6,11 +6,12 @@ import {
   measured,
   missing,
   missingLine,
+  statOf,
   sumLines,
   type GameState,
   type MissingKind,
 } from "../../../shared/domain";
-import { buildStatLine } from "../../support/builders";
+import { buildStatLine, STAT } from "../../support/builders";
 
 describe("stat values", () => {
   it("keeps each missing kind distinct from a measured zero", () => {
@@ -22,18 +23,19 @@ describe("stat values", () => {
     expect(measured(0)).toEqual({ kind: "value", value: 0 });
   });
 
-  it("keeps both parts of a makes/attempts pair", () => {
-    expect(measured({ makes: 7, attempts: 13 })).toEqual({
-      kind: "value",
-      value: { makes: 7, attempts: 13 },
-    });
+  it("reads a stat the line doesn't list as the line's missing kind", () => {
+    expect(statOf(buildStatLine(), STAT.pts)).toEqual(measured(17));
+    expect(statOf(buildStatLine(), "27")).toEqual(missing("unavailable"));
+    expect(statOf(missingLine("didNotPlay"), STAT.pts)).toEqual(missing("didNotPlay"));
   });
 });
 
 describe("appearance", () => {
   it("is played when any value was measured, even a zero", () => {
     expect(appearance(buildStatLine())).toBe("played");
-    expect(appearance({ ...missingLine("unavailable"), pts: measured(0) })).toBe("played");
+    expect(appearance({ stats: { [STAT.pts]: measured(0) }, otherwise: "unavailable" })).toBe(
+      "played"
+    );
   });
 
   it.each(["noGame", "didNotPlay", "notYetPlayed", "unavailable"] as const)(
@@ -44,8 +46,13 @@ describe("appearance", () => {
   );
 
   it("is unavailable when missing kinds disagree", () => {
-    expect(appearance({ ...missingLine("noGame"), reb: missing("notYetPlayed") })).toBe(
-      "unavailable"
+    const line = {
+      stats: { [STAT.pts]: missing("noGame"), [STAT.reb]: missing("notYetPlayed") },
+      otherwise: "unavailable" as const,
+    };
+    expect(appearance(line)).toBe("unavailable");
+    expect(appearance({ stats: { [STAT.pts]: missing("noGame") }, otherwise: "unavailable" })).toBe(
+      "noGame"
     );
   });
 });
@@ -87,22 +94,24 @@ describe("game state", () => {
 });
 
 describe("sumLines", () => {
-  it("adds counts and makes/attempts, so percentages come from the sums", () => {
+  it("adds each stat, makes and attempts apart, so percentages come from the sums", () => {
     const total = sumLines([
-      buildStatLine({ fg: measured({ makes: 6, attempts: 13 }), pts: measured(17) }),
+      buildStatLine({ fgm: 6, fga: 13, pts: 17 }),
       missingLine("noGame"),
-      buildStatLine({ fg: measured({ makes: 3, attempts: 7 }), pts: measured(0) }),
+      buildStatLine({ fgm: 3, fga: 7, pts: 0 }),
     ]);
 
-    expect(total.fg).toEqual(measured({ makes: 9, attempts: 20 }));
-    expect(total.pts).toEqual(measured(17));
+    expect(statOf(total, STAT.fgm)).toEqual(measured(9));
+    expect(statOf(total, STAT.fga)).toEqual(measured(20));
+    expect(statOf(total, STAT.pts)).toEqual(measured(17));
+    expect(statOf(total, "27")).toEqual(missing("unavailable"));
   });
 
-  it("makes a field unavailable when any game's value is unavailable", () => {
+  it("makes a stat unavailable when any game's value is unavailable", () => {
     const total = sumLines([buildStatLine(), missingLine("unavailable")]);
 
-    expect(total.reb).toEqual(missing("unavailable"));
-    expect(total.ft).toEqual(missing("unavailable"));
+    expect(statOf(total, STAT.reb)).toEqual(missing("unavailable"));
+    expect(statOf(total, STAT.fta)).toEqual(missing("unavailable"));
   });
 
   it("keeps a week without a measured game missing, never 0", () => {

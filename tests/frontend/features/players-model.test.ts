@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { DailyPlayer } from "../../../shared/api/daily-stats-values";
 import type { TeamSchedule } from "../../../shared/domain";
-import { measured, missing, missingLine } from "../../../shared/domain";
+import { missing, missingLine } from "../../../shared/domain";
+import { buildStatLine, EIGHT_CATEGORIES, STANDARD_CATEGORIES, STAT } from "../../support/builders";
 import {
   activeFilterCount,
   averageCells,
@@ -171,20 +172,22 @@ describe("the page filters", () => {
 
 describe("the averages", () => {
   it("are per game, with FG% and FT% from total makes over attempts", () => {
-    const cells = averageCells({
+    const cells = averageCells(STANDARD_CATEGORIES, {
       playerKey: "466.p.1",
       gamesPlayed: 4,
-      line: {
-        fg: measured({ makes: 18, attempts: 40 }),
-        ft: measured({ makes: 9, attempts: 10 }),
-        tpm: measured(6),
-        pts: measured(90),
-        reb: measured(22),
-        ast: measured(10),
-        stl: measured(4),
+      line: buildStatLine({
+        fgm: 18,
+        fga: 40,
+        ftm: 9,
+        fta: 10,
+        tpm: 6,
+        pts: 90,
+        reb: 22,
+        ast: 10,
+        stl: 4,
         blk: missing("unavailable"),
-        to: measured(7),
-      },
+        to: 7,
+      }),
     });
     expect(cells.map((cell) => [cell.label, cell.text])).toEqual([
       ["FG%", ".450"],
@@ -199,9 +202,19 @@ describe("the averages", () => {
     ]);
   });
 
+  it("follow the league's own categories, with a ratio like A/T as a plain number", () => {
+    const cells = averageCells(EIGHT_CATEGORIES, {
+      playerKey: "466.p.1",
+      gamesPlayed: 2,
+      line: buildStatLine({ ast: 10, to: 4 }),
+    });
+    expect(cells.map((cell) => cell.key)).toEqual(EIGHT_CATEGORIES.map((c) => c.statId));
+    expect(cells.find((cell) => cell.key === STAT.astTo)?.text).toBe("2.50");
+  });
+
   it("are unknown, never 0, before the stats arrive or with no games played", () => {
-    expect(averageCells(null).every((cell) => cell.text === "—")).toBe(true);
-    const none = averageCells({
+    expect(averageCells(STANDARD_CATEGORIES, null).every((cell) => cell.text === "—")).toBe(true);
+    const none = averageCells(STANDARD_CATEGORIES, {
       playerKey: "466.p.1",
       gamesPlayed: 0,
       line: missingLine("noGame"),
@@ -213,34 +226,26 @@ describe("the averages", () => {
     const totals = (pts: number, to: number, fgMakes: number): PlayerTotals => ({
       playerKey: "466.p.1",
       gamesPlayed: 1,
-      line: {
-        fg: measured({ makes: fgMakes, attempts: 100 }),
-        ft: measured({ makes: 8, attempts: 10 }),
-        tpm: measured(2),
-        pts: measured(pts),
-        reb: measured(5),
-        ast: measured(5),
-        stl: measured(1),
-        blk: measured(1),
-        to: measured(to),
-      },
+      line: buildStatLine({ fgm: fgMakes, fga: 100, ftm: 8, fta: 10, pts, to, reb: 5, ast: 5 }),
     });
     const season = totals(20, 3, 45);
     const tones = (cells: ReturnType<typeof averageCells>) =>
       Object.fromEntries(cells.map((cell) => [cell.key, cell.tone]));
     // PTS +4 clears 10% of 20; TO −1 is better; FG% +2 points is too small.
-    expect(tones(averageCells(totals(24, 2, 47), season))).toMatchObject({
-      pts: "better",
-      to: "better",
-      fgPct: null,
-      reb: null,
+    expect(tones(averageCells(STANDARD_CATEGORIES, totals(24, 2, 47), season))).toMatchObject({
+      [STAT.pts]: "better",
+      [STAT.to]: "better",
+      [STAT.fgPct]: null,
+      [STAT.reb]: null,
     });
     // PTS −1.5 is under 10% of 20; FG% −5 points is clear.
-    expect(tones(averageCells(totals(18.5, 4, 40), season))).toMatchObject({
-      pts: null,
-      to: "worse",
-      fgPct: "worse",
+    expect(tones(averageCells(STANDARD_CATEGORIES, totals(18.5, 4, 40), season))).toMatchObject({
+      [STAT.pts]: null,
+      [STAT.to]: "worse",
+      [STAT.fgPct]: "worse",
     });
-    expect(averageCells(totals(30, 3, 45)).every((cell) => cell.tone === null)).toBe(true);
+    expect(
+      averageCells(STANDARD_CATEGORIES, totals(30, 3, 45)).every((cell) => cell.tone === null)
+    ).toBe(true);
   });
 });

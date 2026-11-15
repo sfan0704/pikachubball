@@ -1,5 +1,3 @@
-import type { CategoryKey } from "./stats";
-
 /** Whether a higher or a lower total wins a category. */
 export type CategoryDirection = "higher" | "lower";
 
@@ -18,11 +16,6 @@ export type CategoryMakeup =
 export interface LeagueCategory {
   /** Yahoo's stat id, for example "5" for FG%. */
   readonly statId: string;
-  /**
-   * The app's key when the category is one of the nine standard ones, else null.
-   * Views that still show the fixed nine use it; the league's own list is `categories`.
-   */
-  readonly key: CategoryKey | null;
   readonly displayName: string;
   readonly direction: CategoryDirection;
   readonly makeup: CategoryMakeup;
@@ -40,24 +33,6 @@ export interface LeagueSettings {
   readonly endWeek: number;
   readonly currentWeek: number;
   readonly isFinished: boolean;
-}
-
-/**
- * A team's totals for one scope. Null means unknown (absent or invalid in
- * Yahoo's data), which is different from a measured zero.
- */
-export interface TeamTotals {
-  readonly fgMakes: number | null;
-  readonly fgAttempts: number | null;
-  readonly ftMakes: number | null;
-  readonly ftAttempts: number | null;
-  readonly tpm: number | null;
-  readonly pts: number | null;
-  readonly reb: number | null;
-  readonly ast: number | null;
-  readonly stl: number | null;
-  readonly blk: number | null;
-  readonly to: number | null;
 }
 
 /** A team's games for a week, as Yahoo counts them for starting slots. */
@@ -79,10 +54,10 @@ export interface TeamRow {
   readonly teamKey: string;
   readonly teamName: string;
   readonly managerName: string | null;
-  readonly totals: TeamTotals;
   /**
-   * Yahoo's own value in each of the league's scoring categories, keyed by stat
-   * id; null when Yahoo sent none (for example a ratio with no attempts).
+   * The team's value in each of the league's scoring categories, keyed by stat
+   * id: Yahoo's own, except a ratio is exact makes over attempts when Yahoo
+   * sends those. Null when Yahoo sent none (for example a ratio with no attempts).
    */
   readonly categoryValues: Readonly<Record<string, number | null>>;
   /** The week's games for starting slots; null for the season, or when Yahoo's week table didn't say. */

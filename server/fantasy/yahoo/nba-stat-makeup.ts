@@ -50,3 +50,10 @@ export function nbaStatMakeup(statId: string): CategoryMakeup {
   }
   return RATIOS[statId] ?? { kind: "unavailable" };
 }
+
+/** Made and attempted shots (FGM/FGA, FTM/FTA, 3PTM/3PTA): makes can never exceed attempts. */
+export const MAKES_ATTEMPTS: readonly (readonly [string, string])[] = [
+  ["4", "3"],
+  ["7", "6"],
+  ["10", "9"],
+];

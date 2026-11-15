@@ -68,19 +68,10 @@ describe("every state of a table view", () => {
 
   it("says when a league has no stats yet instead of ranking zeros", () => {
     const zero = Object.fromEntries(
-      [
-        "fgMakes",
-        "fgAttempts",
-        "ftMakes",
-        "ftAttempts",
-        "tpm",
-        "pts",
-        "reb",
-        "ast",
-        "stl",
-        "blk",
-        "to",
-      ].map((k) => [k, 0])
+      ["fgm", "fga", "ftm", "fta", "tpm", "pts", "reb", "ast", "stl", "blk", "to"].map((k) => [
+        k,
+        0,
+      ])
     );
     show(query({ data: buildTeamTable([zero, zero]) }));
 

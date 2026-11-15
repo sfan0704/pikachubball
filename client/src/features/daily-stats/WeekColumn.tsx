@@ -1,9 +1,9 @@
-import { orderWeekPlayers, type CategoryKey } from "@shared/domain";
-import { CATEGORY_LABELS } from "@/features/league/categories";
+import { orderWeekPlayers, type LeagueCategory } from "@shared/domain";
+import { categoryLabel, UNAVAILABLE } from "@/features/league/categories";
 import { cn } from "@/lib/utils";
 import { ColumnHead, GroupHead } from "./PlayerColumns";
 import { shortName } from "./matchup-board";
-import { weekMetaText, weekShotsText, weekValueText, type WeekCard } from "./week-board";
+import { weekMetaText, weekPartsText, weekValueText, type WeekCard } from "./week-board";
 
 /** One side of the Week board: a team's label and its players' weeks. */
 export interface WeekColumn {
@@ -12,16 +12,17 @@ export interface WeekColumn {
   readonly cards: readonly WeekCard[];
 }
 
-function WeekPlayerCard({ card, category }: { card: WeekCard; category: CategoryKey }) {
-  const value = weekValueText(card, category);
-  const shots = weekShotsText(card, category);
+function WeekPlayerCard({ card, category }: { card: WeekCard; category: LeagueCategory | null }) {
+  const value = category ? weekValueText(card, category) : UNAVAILABLE;
+  const shots = category ? weekPartsText(card, category) : null;
+  const shown = category ? `${categoryLabel(category)} ${value}` : value;
   const meta = weekMetaText(card);
   const injury = card.player.injuryToday;
   return (
     <li
       className="grid min-h-[52px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-0.5 rounded-[10px] border border-[#E2E5EA] bg-white p-2 dark:border-border dark:bg-card"
       data-testid={`week-card-${card.player.playerKey}`}
-      aria-label={`${card.player.name}, ${CATEGORY_LABELS[category]} ${value}, ${meta}`}
+      aria-label={`${card.player.name}, ${shown}, ${meta}`}
     >
       <span className="flex min-w-0 items-center gap-1">
         <span className="truncate text-xs font-bold text-[#15181D] dark:text-foreground">
@@ -70,7 +71,7 @@ function Group({
   title: string | null;
   testId: string;
   cards: readonly WeekCard[];
-  category: CategoryKey;
+  category: LeagueCategory | null;
 }) {
   if (cards.length === 0) {
     return null;
@@ -96,7 +97,8 @@ export function WeekColumnView({
   category,
 }: {
   column: WeekColumn;
-  category: CategoryKey;
+  /** Null while the league's categories are unknown: the cards then keep roster order. */
+  category: LeagueCategory | null;
 }) {
   const inGroup = (group: WeekCard["group"]) => column.cards.filter((card) => card.group === group);
   return (
