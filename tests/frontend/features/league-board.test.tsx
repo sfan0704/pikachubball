@@ -72,7 +72,15 @@ function stubServer({ failWeeks = false } = {}) {
 }
 
 /** The board with its view, sort and category held the way the URL would hold them. */
-function Board({ table, initial }: { table: typeof SEASON; initial: LeagueBoardState }) {
+function Board({
+  table,
+  initial,
+  tableFailed,
+}: {
+  table: typeof SEASON;
+  initial: LeagueBoardState;
+  tableFailed: boolean;
+}) {
   const [board, setBoard] = useState(initial);
   return (
     <LeagueBoard
@@ -84,17 +92,21 @@ function Board({ table, initial }: { table: typeof SEASON; initial: LeagueBoardS
       boardHref={(next) => `/league?view=${next.view}`}
       onBoard={setBoard}
       onPickLeague={() => undefined}
-      tableFailed={false}
+      tableFailed={tableFailed}
     />
   );
 }
 
-function renderBoard(table = SEASON, initial: LeagueBoardState = DEFAULT_BOARD) {
+function renderBoard(
+  table = SEASON,
+  initial: LeagueBoardState = DEFAULT_BOARD,
+  tableFailed = false
+) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <FreshnessProvider>
-        <Board table={table} initial={initial} />
+        <Board table={table} initial={initial} tableFailed={tableFailed} />
       </FreshnessProvider>
     </QueryClientProvider>
   );
@@ -128,13 +140,27 @@ describe("LeagueBoard", () => {
   });
 
   it("keeps the record when a week fails, and says so instead of showing all-play or luck", async () => {
-    stubServer({ failWeeks: true });
+    const fetchMock = stubServer({ failWeeks: true });
     renderBoard();
 
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(cellsOf("row-all-play").every((text) => text === "—")).toBe(true);
     expect(cellsOf("row-luck").every((text) => text === "—")).toBe(true);
     expect(cellsOf("row-record")).toContain("36–27–0");
+    const calls = fetchMock.mock.calls.length;
+    await userEvent.setup().click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(calls));
+  });
+
+  it("leaves the weeks' failure to the table's own error when the table failed too", async () => {
+    const fetchMock = stubServer({ failWeeks: true });
+    renderBoard(SEASON, DEFAULT_BOARD, true);
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => /\/\d+$/.test(String(url)))).toBe(true)
+    );
+    await waitFor(() => expect(cellsOf("row-luck").every((text) => text === "—")).toBe(true));
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("sorts by a column header and marks it as the sort", async () => {
@@ -219,15 +245,81 @@ describe("LeagueBoard", () => {
     expect(screen.getByRole("columnheader", { name: "TO" })).toHaveAttribute("aria-sort", "none");
   });
 
-  it("explains how to read League", async () => {
-    render(<LeagueExplanation />);
+  it("explains how to read League with the viewer's own numbers", async () => {
+    stubServer();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <FreshnessProvider>
+          <LeagueExplanation league={{ table: SEASON, leagueKey: LEAGUE, myTeamKey: MINE }} />
+        </FreshnessProvider>
+      </QueryClientProvider>
+    );
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "How to read this" }));
 
     const dialog = screen.getByRole("dialog", { name: "How to read League" });
-    expect(dialog).toHaveTextContent(/All-play/);
+    const terms = within(dialog).getAllByTestId("explanation-term");
+    expect(terms.map((term) => term.firstChild?.textContent)).toEqual([
+      "W–L–T",
+      "All-play",
+      "Luck",
+      "Categories",
+    ]);
+    const count = SEASON.settings.categories.length;
+    expect(terms[0]).toHaveTextContent(`Each of the ${count} categories`);
+    expect(terms[0]).toHaveTextContent("You: 36–27–0 from 63 categories.");
+    await waitFor(() =>
+      expect(terms[2]).toHaveTextContent(
+        /You: 36\.0 real − \d+\.\d expected \(\d+\.\d% × 63\) = ([+−]\d+\.\d|0)\./
+      )
+    );
     expect(dialog).toHaveTextContent(/share a rank/);
+  });
+
+  it("explains the terms alone while the period's table loads", async () => {
+    render(<LeagueExplanation league={null} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "How to read this" }));
+
+    const dialog = screen.getByRole("dialog", { name: "How to read League" });
+    expect(dialog).toHaveTextContent("Each of the league's categories");
+    expect(dialog).not.toHaveTextContent("You:");
+  });
+
+  it("shows a team's standing, luck maths and all-play by category on the season", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(AT) });
+    stubServer();
+    renderBoard(SEASON, { ...DEFAULT_BOARD, view: "categories" });
+    const user = userEvent.setup();
+
+    await user.click(screen.getAllByTestId(`row-ranking-${MINE}`)[0] as HTMLElement);
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByTestId("team-summary")).toHaveTextContent(
+      /Standing\d+(st|nd|rd|th)36–27–0/
+    );
+    const math = await within(dialog).findByTestId("luck-math");
+    expect(math).toHaveTextContent("36 won + 0 ties as half36.0");
+    expect(within(dialog).getAllByTestId("luck-line")).toHaveLength(3);
+    expect(
+      within(within(dialog).getByTestId("category-all-play")).getAllByRole("listitem")
+    ).toHaveLength(SEASON.settings.categories.length);
+    vi.useRealTimers();
+  });
+
+  it("leaves out all-play by category on a single week", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(AT) });
+    stubServer();
+    renderBoard(WEEK);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId(`row-ranking-${MINE}`));
+
+    const dialog = screen.getByRole("dialog");
+    expect(await within(dialog).findByTestId("luck-math")).toBeInTheDocument();
+    expect(within(dialog).queryByTestId("category-all-play")).toBeNull();
+    vi.useRealTimers();
   });
 
   it("opens a team's ranks, totals and roster with acquisitions and season averages", async () => {

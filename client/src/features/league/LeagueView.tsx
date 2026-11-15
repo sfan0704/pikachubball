@@ -65,7 +65,14 @@ function LeagueScreen({ selection, onSelect, onPickLeague, query, myTeamKey }: L
   return (
     <div className="space-y-3">
       <ShellSlot name="context">{period.label}</ShellSlot>
-      <PeriodRow options={options} period={period} onSelect={onSelect} />
+      <PeriodRow
+        options={options}
+        period={period}
+        onSelect={onSelect}
+        explained={
+          query.data ? { table: query.data, leagueKey: selection.leagueKey, myTeamKey } : null
+        }
+      />
       <TableBoundary query={query} now={now} onPickLeague={onPickLeague}>
         {(table) => (
           <Loading>

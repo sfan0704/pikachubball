@@ -9,14 +9,14 @@ import { cn } from "@/lib/utils";
 import { teamCells } from "./league-board-model";
 import { DatasetState } from "./DatasetState";
 import { rankText, TONE_CLASS } from "./rank-tone";
+import { CategoryAllPlay, TeamStanding } from "./TeamStanding";
 import { rosterLines, type RosterLine } from "./team-roster-model";
+import { useLeagueAllPlay } from "./useLeagueAllPlay";
 
 interface TeamPopoverProps {
   table: TeamTable;
   leagueKey: string;
   teamKey: string;
-  /** The team's official record for the period as W–L–T. */
-  record: string;
   periodLabel: string;
   onClose: () => void;
   /** Puts focus back where the popover was opened from. */
@@ -123,19 +123,22 @@ function Roster({
   );
 }
 
-/** One team's rank and total in each of the league's categories for the period, and its roster today. */
+/**
+ * One team's sheet for the period: its standing, all-play and luck worked out,
+ * its rank and total in each of the league's categories, its all-play by
+ * category on longer periods, and its roster today.
+ */
 export function TeamPopover({
   table,
   leagueKey,
   teamKey,
-  record,
   periodLabel,
   onClose,
   returnFocus,
   onPickLeague,
 }: TeamPopoverProps) {
   const name = table.teams.find((team) => team.teamKey === teamKey)?.teamName ?? "Team";
-  const subtitle = `${record} · ranks for ${periodLabel.toLowerCase()}`;
+  const allPlay = useLeagueAllPlay(table, leagueKey);
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -148,10 +151,17 @@ export function TeamPopover({
         <div className="pr-10">
           <DialogTitle className="text-lg font-bold">{name}</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {subtitle}
+            {periodLabel}
           </DialogDescription>
         </div>
+        <TeamStanding
+          table={table}
+          teamKey={teamKey}
+          allPlay={allPlay}
+          onPickLeague={onPickLeague}
+        />
         <RankGrid table={table} teamKey={teamKey} />
+        <CategoryAllPlay table={table} teamKey={teamKey} allPlay={allPlay} />
         <Roster leagueKey={leagueKey} teamKey={teamKey} onPickLeague={onPickLeague} />
       </DialogContent>
     </Dialog>
