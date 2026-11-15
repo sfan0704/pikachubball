@@ -3,14 +3,29 @@ import type { CategoryKey } from "./stats";
 /** Whether a higher or a lower total wins a category. */
 export type CategoryDirection = "higher" | "lower";
 
+/**
+ * How a category is built from player stats, for views the app combines itself
+ * (summing days or players). A ratio names the stats on top and bottom, for
+ * example makes over attempts. "unavailable" means the app can't tell how the
+ * category is built, so only Yahoo's own totals can show it.
+ */
+export type CategoryMakeup =
+  | { readonly kind: "counting" }
+  | { readonly kind: "ratio"; readonly topStatId: string; readonly bottomStatId: string }
+  | { readonly kind: "unavailable" };
+
 /** A scoring category as the league's settings define it. */
 export interface LeagueCategory {
   /** Yahoo's stat id, for example "5" for FG%. */
   readonly statId: string;
-  /** The app's key, or null when the category isn't one of the nine standard ones. */
+  /**
+   * The app's key when the category is one of the nine standard ones, else null.
+   * Views that still show the fixed nine use it; the league's own list is `categories`.
+   */
   readonly key: CategoryKey | null;
   readonly displayName: string;
   readonly direction: CategoryDirection;
+  readonly makeup: CategoryMakeup;
 }
 
 /** League settings that come with every team table. */
@@ -65,6 +80,11 @@ export interface TeamRow {
   readonly teamName: string;
   readonly managerName: string | null;
   readonly totals: TeamTotals;
+  /**
+   * Yahoo's own value in each of the league's scoring categories, keyed by stat
+   * id; null when Yahoo sent none (for example a ratio with no attempts).
+   */
+  readonly categoryValues: Readonly<Record<string, number | null>>;
   /** The week's games for starting slots; null for the season, or when Yahoo's week table didn't say. */
   readonly games: WeekGames | null;
   /** Yahoo's official season record; null in week tables, which don't carry the standings. */

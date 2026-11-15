@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { teamTableSchema } from "../../../../shared/api/team-table";
-import { categoryRanks, scoringSupport } from "../../../../shared/domain";
+import { categoryRanks, scoringSupport, tableCompleteness } from "../../../../shared/domain";
 import { parseSeasonTable, parseWeekTable } from "../../../../server/fantasy/league-tables";
 import { defined } from "../../../support/defined";
 import { YahooResponseError } from "../../../../server/fantasy/yahoo-shapes";
@@ -74,6 +74,17 @@ describe("season table from the standings response", () => {
         stl: 313,
         blk: 180,
         to: 556,
+      },
+      categoryValues: {
+        "5": 0.479,
+        "8": 0.765,
+        "10": 448,
+        "12": 4763,
+        "15": 1716,
+        "16": 1023,
+        "17": 313,
+        "18": 180,
+        "19": 556,
       },
       games: null,
       record: { wins: 36, losses: 27, ties: 0 },
@@ -169,14 +180,37 @@ describe("what Yahoo leaves out", () => {
     expect(table.teams.find((row) => row.teamKey === "466.l.100000.t.11")?.managerName).toBeNull();
   });
 
-  it("flags a category that is not one of the standard nine", () => {
+  it("loads a category it can't build as unavailable, with Yahoo's own value", () => {
     const response = fixture("league-season");
     const stats = response.fantasy_content.league[1].settings[0].stat_categories.stats;
-    stats.find((entry: Fixture) => entry.stat.stat_id === 18).stat.stat_id = 99;
+    stats.find((entry: Fixture) => entry.stat.stat_id === 18).stat.stat_id = 1001;
+    const teamStats = firstSeasonTeam(response).find((part: Fixture) => part.team_stats).team_stats
+      .stats;
+    teamStats.find((entry: Fixture) => entry.stat.stat_id === "18").stat.stat_id = "1001";
 
     const table = parseSeasonTable(response, FETCHED_AT);
 
-    expect(scoringSupport(table.settings)).toMatchObject({ supported: false });
+    expect(table.settings.categories.find((category) => category.statId === "1001")).toEqual({
+      statId: "1001",
+      key: null,
+      displayName: "BLK",
+      direction: "higher",
+      makeup: { kind: "unavailable" },
+    });
+    expect(table.teams[0].categoryValues["1001"]).toBe(180);
+    expect(scoringSupport(table.settings)).toEqual({ supported: true });
+  });
+
+  it("leaves a category's value unknown when Yahoo sends none", () => {
+    const response = fixture("league-season");
+    const teamStats = firstSeasonTeam(response).find((part: Fixture) => part.team_stats).team_stats
+      .stats;
+    teamStats.find((entry: Fixture) => entry.stat.stat_id === "5").stat.value = "-";
+
+    const team = parseSeasonTable(response, FETCHED_AT).teams[0];
+
+    expect(team.categoryValues["5"]).toBeNull();
+    expect(team.categoryValues["12"]).toBe(4763);
   });
 });
 
@@ -218,5 +252,79 @@ describe("malformed responses fail instead of guessing", () => {
     matchup["0"].teams.count = 1;
 
     expect(() => parseWeekTable(response, FETCHED_AT, 1)).toThrow(YahooResponseError);
+  });
+});
+
+describe("leagues with their own categories", () => {
+  it("builds the standard categories from counting stats and makes over attempts", () => {
+    const { categories } = parseSeasonTable(fixture("league-season"), FETCHED_AT).settings;
+
+    expect(categories.find((category) => category.statId === "5")?.makeup).toEqual({
+      kind: "ratio",
+      topStatId: "4",
+      bottomStatId: "3",
+    });
+    expect(categories.find((category) => category.statId === "12")?.makeup).toEqual({
+      kind: "counting",
+    });
+    expect(categories.some((category) => category.statId === "9004003")).toBe(false);
+  });
+
+  it("loads a 12-team league with ten categories, two of them lower is better", () => {
+    const table = parseSeasonTable(fixture("league-season-12-teams-10-categories"), FETCHED_AT);
+
+    expect(scoringSupport(table.settings)).toEqual({ supported: true });
+    expect(table.teams).toHaveLength(12);
+    expect(
+      table.settings.categories.map(({ displayName, direction }) => [displayName, direction])
+    ).toEqual([
+      ["FG%", "higher"],
+      ["FT%", "higher"],
+      ["3PT%", "higher"],
+      ["PTS", "higher"],
+      ["REB", "higher"],
+      ["AST", "higher"],
+      ["ST", "higher"],
+      ["BLK", "higher"],
+      ["TO", "lower"],
+      ["PF", "lower"],
+    ]);
+    expect(table.settings.categories[2]).toMatchObject({
+      statId: "11",
+      key: null,
+      makeup: { kind: "ratio", topStatId: "10", bottomStatId: "9" },
+    });
+    expect(table.settings.categories[9]).toMatchObject({
+      statId: "21",
+      makeup: { kind: "counting" },
+    });
+    expect(table.teams[0].categoryValues).toMatchObject({ "11": 0.345, "21": 1171 });
+    expect(teamTableSchema.parse(table)).toEqual(table);
+  });
+
+  it("loads an 8-team league with eight categories and no free throws or turnovers", () => {
+    const table = parseSeasonTable(fixture("league-season-8-teams-8-categories"), FETCHED_AT);
+
+    expect(scoringSupport(table.settings)).toEqual({ supported: true });
+    expect(table.teams).toHaveLength(8);
+    expect(
+      table.settings.categories.map(({ displayName, direction }) => [displayName, direction])
+    ).toEqual([
+      ["FG%", "higher"],
+      ["3PTM", "higher"],
+      ["PTS", "higher"],
+      ["REB", "higher"],
+      ["AST", "higher"],
+      ["ST", "higher"],
+      ["BLK", "higher"],
+      ["A/T", "higher"],
+    ]);
+    expect(table.settings.categories[7].makeup).toEqual({
+      kind: "ratio",
+      topStatId: "16",
+      bottomStatId: "19",
+    });
+    expect(table.teams[0].categoryValues["20"]).toBe(1.88);
+    expect(tableCompleteness(table)).toBe("complete");
   });
 });

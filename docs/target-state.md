@@ -26,7 +26,7 @@ flowchart LR
 - A "Fantasy data provided by Yahoo Fantasy" line on every screen.
 - Phone and desktop layouts, light and dark themes.
 
-Supported leagues are Yahoo head-to-head category leagues using the standard nine categories: FG%, FT%, 3PM, PTS, REB, AST, STL, BLK and TO. Other scoring formats show an "unsupported scoring" message instead of guessed rankings. All Yahoo access is read-only. NBA schedules and game state are shown only as Yahoo returns them. Next 7 projected is out of scope until FAN-94 is decided; the design keeps a [slot for it](#daily-stats) that is off by default. Chat, AI assistance and draft tools are out of scope.
+Supported leagues are Yahoo head-to-head category leagues, with whatever categories and number of teams the league uses; the usual nine are FG%, FT%, 3PM, PTS, REB, AST, STL, BLK and TO. A category the app can't build itself still loads, marked unavailable where the app combines stats (see [Fantasy rules](#fantasy-rules)). Other scoring formats show an "unsupported scoring" message instead of guessed rankings. All Yahoo access is read-only. NBA schedules and game state are shown only as Yahoo returns them. Next 7 projected is out of scope until FAN-94 is decided; the design keeps a [slot for it](#daily-stats) that is off by default. Chat, AI assistance and draft tools are out of scope.
 
 ### Principles
 
@@ -310,12 +310,12 @@ flowchart TD
 
 ### The team table
 
-League's season and weekly category ranks are computed from one table: each team's nine category totals, with field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table.
+League's season and weekly category ranks are computed from one table: each team's value in each of the league's categories as Yahoo sends it, with its counting totals and field-goal and free-throw makes and attempts, for one scope. A scope is the season, the current week or a past week. The table comes with the league settings (categories, weeks, current week, finished flag) and the teams and managers; the season table also has each team's official W–L–T from Yahoo's standings, and a week's table has that week's matchup pairings. League shows the season record whatever period is picked, so a week view also reads the (cached) season table.
 
 ### Fantasy rules
 
-- **Categories and their directions** come from the league's settings and are checked against the supported nine-category format.
-- **Category ranks** are competition ranks: equal values share a rank and the next rank is skipped (1, 1, 3). Turnovers rank ascending; the other eight categories rank descending.
+- **Categories are league settings.** Each league's categories, their display names and directions (higher or lower is better) come from Yahoo's league settings; display-only stats are not scored. Each category says how it is built: a counting stat, or a ratio with the stat on top and the stat on the bottom (makes over attempts, assists over turnovers). Yahoo marks its ratios but not which part is on top, so `server/fantasy` keeps a table for the four NBA ratios (FG%, FT%, 3PT%, A/T). A category whose make-up isn't known is unavailable in views the app combines itself (summing days or players); Yahoo's own totals for it still show and rank. No league is refused over its categories.
+- **Category ranks** are competition ranks: equal values share a rank and the next rank is skipped (1, 1, 3). A "lower is better" category (such as turnovers) ranks ascending; the others rank descending.
 - **The overall ranking** is the sum of category ranks, labelled "Category rank sum — lower is better" so it isn't mistaken for Yahoo's official standings. Tied sums stay tied.
 - **Percentages** are total makes divided by total attempts, never an average of percentages. Zero attempts means the percentage is unavailable.
 - **Missing is not zero.** An absent or invalid value is unknown. When a value a calculation needs is unknown, that rank, total or win/loss result is shown as unavailable rather than computed from partial data.
