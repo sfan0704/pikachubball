@@ -2,7 +2,7 @@ import { lazy, Suspense, type ReactNode } from "react";
 import type { UserLeague } from "@shared/api/leagues";
 import { nbaDateOf } from "@shared/domain";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useLeagueScope } from "@/api/hooks";
+import { useLeagueScope, useRetryFailedLeagueTables } from "@/api/hooks";
 import { useWeeks } from "@/api/daily-stats-hooks";
 import { weekFor, weekLabel } from "@/features/daily-stats/week-board";
 import { ShellSlot } from "@/features/shell/shell-slots";
@@ -60,6 +60,7 @@ interface LeagueScreenProps extends Omit<LeagueViewProps, "league" | "screens"> 
 function LeagueScreen({ selection, onSelect, onPickLeague, query, myTeamKey }: LeagueScreenProps) {
   const now = useNow();
   const weeks = useWeeks(selection.leagueKey);
+  const retryFailedTables = useRetryFailedLeagueTables(selection.leagueKey);
   const options = scopeOptions(query.data?.settings.currentWeek ?? null, weeks.data?.weeks);
   const period = optionFor(selection.scope, options);
   return (
@@ -73,7 +74,12 @@ function LeagueScreen({ selection, onSelect, onPickLeague, query, myTeamKey }: L
           query.data ? { table: query.data, leagueKey: selection.leagueKey, myTeamKey } : null
         }
       />
-      <TableBoundary query={query} now={now} onPickLeague={onPickLeague}>
+      <TableBoundary
+        query={query}
+        now={now}
+        onPickLeague={onPickLeague}
+        onRetry={() => void retryFailedTables()}
+      >
         {(table) => (
           <Loading>
             <LeagueBoard

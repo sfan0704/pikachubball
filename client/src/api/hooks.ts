@@ -99,6 +99,21 @@ export function useSeasonWeekTables(
   });
 }
 
+/**
+ * Retries every league table on screen whose last fetch failed: the period's
+ * table and the season weeks behind all-play, so one "Try again" clears both.
+ * Tables that loaded are not fetched again.
+ */
+export function useRetryFailedLeagueTables(leagueKey: string) {
+  const queryClient = useQueryClient();
+  return () =>
+    queryClient.refetchQueries({
+      queryKey: queryKeys.leagueScopes(leagueKey),
+      type: "active",
+      predicate: (query) => query.state.status === "error",
+    });
+}
+
 /** Saves the user's choices and keeps the cached user in step with what is stored. */
 export function useSavePreferences() {
   const queryClient = useQueryClient();

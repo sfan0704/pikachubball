@@ -142,6 +142,10 @@ test("keeps the table on screen and offers a retry when Yahoo stops answering", 
 }) => {
   await signIn(page);
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
+  // All-play loads every week after the table; let it finish so only the refresh meets the outage.
+  await expect(page.getByTestId(`standings-row-${MY_TEAM}`).getByTestId("row-all-play")).toHaveText(
+    /^\d+(st|nd|rd|th)$/
+  );
   await setScenario("unavailable");
 
   await page.getByRole("button", { name: "Refresh from Yahoo" }).click();
