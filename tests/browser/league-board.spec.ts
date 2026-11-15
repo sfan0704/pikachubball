@@ -64,6 +64,39 @@ test("has one period row at phone width: dated weeks, the ⓘ, and no League or 
   await expect(page.getByRole("dialog", { name: "How to read League" })).toBeVisible();
 });
 
+test("keeps the ⓘ explanation on a short phone screen and closes it by button, backdrop and Escape", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 560 });
+  await signIn(page);
+  const info = page.getByRole("button", { name: "How to read this" });
+  const explanation = page.getByRole("dialog", { name: "How to read League" });
+  const close = explanation.getByRole("button", { name: "Close" });
+
+  await info.click();
+  await expect(explanation.getByTestId("explanation-term")).toHaveCount(4);
+  const box = await explanation.boundingBox();
+  expect(box && box.y).toBeGreaterThan(0);
+  expect(box && box.y + box.height).toBeLessThanOrEqual(560);
+  await explanation.getByText(/^Tied teams share a rank/).scrollIntoViewIfNeeded();
+  await expect(close).toBeInViewport();
+  await close.click();
+  await expect(explanation).toBeHidden();
+
+  await info.click();
+  await expect(explanation).toBeVisible();
+  // Radix starts listening for outside taps a tick after opening; a person is never that quick.
+  await expect(async () => {
+    await page.mouse.click(195, 10);
+    await expect(explanation).toBeHidden({ timeout: 500 });
+  }).toPass();
+
+  await info.click();
+  await expect(explanation).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(explanation).toBeHidden();
+});
+
 test("switches between Standings and Categories in the URL, and back returns", async ({ page }) => {
   await signIn(page);
   const views = page.getByRole("navigation", { name: "League view" });
