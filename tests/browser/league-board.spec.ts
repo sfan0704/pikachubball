@@ -95,7 +95,7 @@ test("tied teams share a rank and the next one is skipped", async ({ page }) => 
     "13",
     "14",
   ]);
-  await page.getByTestId("tile-to").click();
+  await page.getByTestId("tile-19").click();
   await expect(page.getByTestId("row-rank")).toHaveText([
     "1",
     "2",

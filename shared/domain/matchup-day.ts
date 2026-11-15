@@ -1,49 +1,21 @@
 /**
- * The Matchup board's player columns: what a player's line says about one
- * category, how each column is ordered, and when a value is called out against
- * the player's average. Pure; the screens only format what these return.
+ * The Matchup board's player columns: how each column is ordered for a
+ * category, and when a value is called out against the player's average.
+ * Pure; the screens only format what these return.
  */
-import { CATEGORY_DIRECTIONS, percentage } from "./fantasy-rules";
-import { appearance, type Appearance, type MakesAttempts, type StatLine } from "./stat-value";
-import { CATEGORIES, type CategoryKey } from "./stats";
-import { versusAverage, type CategoryValues, type VersusAverage } from "./daily-stats";
+import { categoryEntry, isPercentage, type CategoryEntry, type CategoryValues } from "./categories";
+import { versusAverage, type VersusAverage } from "./daily-stats";
+import { appearance, type Appearance, type StatLine } from "./stat-value";
+import type { LeagueCategory } from "./team-table";
 import type { TotalsComparison } from "./views";
-
-/** True for the two shooting categories, which are made from makes over attempts. */
-export function isShootingCategory(key: CategoryKey): key is "fgPct" | "ftPct" {
-  return key === "fgPct" || key === "ftPct";
-}
-
-/** A player's value in one category on one date. */
-export type CategoryEntry =
-  | {
-      readonly kind: "value";
-      /** The category's value: a count, or makes over attempts (null when nothing was attempted). */
-      readonly value: number | null;
-      /** Makes and attempts for FG% and FT%; null for counting categories. */
-      readonly shots: MakesAttempts | null;
-    }
-  | { readonly kind: Exclude<Appearance, "played"> };
-
-/** What a line says about one category: the measured value, or why there is none. */
-export function categoryEntry(line: StatLine, key: CategoryKey): CategoryEntry {
-  const field = isShootingCategory(key) ? (key === "fgPct" ? line.fg : line.ft) : line[key];
-  if (field.kind !== "value") {
-    return { kind: field.kind };
-  }
-  if (typeof field.value === "number") {
-    return { kind: "value", value: field.value, shots: null };
-  }
-  const shots = field.value;
-  return { kind: "value", value: percentage(shots.makes, shots.attempts), shots };
-}
 
 /**
  * The category the board opens on: the lost category closest to turning,
- * measured relative to the larger side. With no lost category, the first one.
+ * measured relative to the larger side. With no lost category, the first one;
+ * null only for a league without categories.
  */
-export function closestLostCategory(comparison: TotalsComparison): CategoryKey {
-  let best: CategoryKey = CATEGORIES[0];
+export function closestLostCategory(comparison: TotalsComparison): LeagueCategory | null {
+  let best: LeagueCategory | null = comparison.categories[0]?.category ?? null;
   let bestGap = Infinity;
   for (const { category, mine, theirs, result } of comparison.categories) {
     if (result !== "loss" || mine === null || theirs === null) {
@@ -73,34 +45,38 @@ const APPEARANCE_ORDER: Readonly<Record<Appearance, number>> = {
   didNotPlay: 4,
 };
 
-/** The number a column sorts on: attempts for shooting (volume decides the percentage), else the value. */
-function sortValue(entry: CategoryEntry): number {
+/**
+ * The number a column sorts on: attempts for a percentage (volume decides
+ * it), else the value; nothing measured sorts as 0.
+ */
+function sortValue(entry: CategoryEntry, category: LeagueCategory): number {
   if (entry.kind !== "value") {
     return 0;
   }
-  return entry.shots ? entry.shots.attempts : (entry.value ?? 0);
+  if (entry.parts && isPercentage(category)) {
+    return entry.parts.bottom;
+  }
+  return entry.value ?? 0;
 }
 
 /**
  * One team's column ordered for a category: counted slots before bench and
  * IL, players who played before the rest, then best first (fewest turnovers,
- * most attempts for FG% and FT%). Equal players keep their roster order.
+ * most attempts for a percentage). Equal players keep their roster order,
+ * which is all that orders them while the league's categories are unknown.
  */
 export function orderForCategory<T extends ColumnPlayer>(
   players: readonly T[],
-  key: CategoryKey
+  category: LeagueCategory | null
 ): T[] {
-  const lowerIsBetter = CATEGORY_DIRECTIONS[key] === "lower";
-  const keyed = players.map((player, index) => {
-    const entry = categoryEntry(player.line, key);
-    return {
-      player,
-      index,
-      group: player.isStartingSlot ? 0 : 1,
-      shown: APPEARANCE_ORDER[appearance(player.line)],
-      value: sortValue(entry),
-    };
-  });
+  const lowerIsBetter = category?.direction === "lower" && !isPercentage(category);
+  const keyed = players.map((player, index) => ({
+    player,
+    index,
+    group: player.isStartingSlot ? 0 : 1,
+    shown: APPEARANCE_ORDER[appearance(player.line)],
+    value: category ? sortValue(categoryEntry(player.line, category), category) : 0,
+  }));
   keyed.sort(
     (a, b) =>
       a.group - b.group ||
@@ -117,7 +93,7 @@ export function orderForCategory<T extends ColumnPlayer>(
  * progress is never called worse, because it may yet catch up.
  */
 export function dayCallout(
-  key: CategoryKey,
+  category: LeagueCategory,
   entry: CategoryEntry,
   average: CategoryValues | null,
   isStartingSlot: boolean,
@@ -126,6 +102,6 @@ export function dayCallout(
   if (!isStartingSlot || entry.kind !== "value" || average === null) {
     return "unavailable";
   }
-  const result = versusAverage(key, entry.value, average[key]);
+  const result = versusAverage(category, entry.value, average[category.statId] ?? null);
   return result === "worse" && gameIsLive ? "usual" : result;
 }

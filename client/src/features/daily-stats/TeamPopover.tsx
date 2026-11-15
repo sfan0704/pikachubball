@@ -123,7 +123,7 @@ function Roster({
   );
 }
 
-/** One team's nine ranks and totals for the period, and its roster today. */
+/** One team's rank and total in each category for the period, and its roster today. */
 export function TeamPopover({
   table,
   leagueKey,

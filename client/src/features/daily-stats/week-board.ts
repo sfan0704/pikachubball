@@ -9,17 +9,17 @@ import {
   addDays,
   countedGamesLabel,
   countedTotals,
-  isShootingCategory,
+  weekParts,
   weekPlayers,
   weekValue,
-  type CategoryKey,
+  type LeagueCategory,
   type PlayerDay,
-  type TeamTotals,
+  type StatTotals,
   type WeekBounds,
   type WeekPlayer,
 } from "@shared/domain";
 import type { LeagueScope } from "@shared/api/league-scope";
-import { percentText } from "./matchup-board";
+import { boardValueText } from "./matchup-board";
 
 /** One scoring week as D10 gives it. */
 export type ScoringWeek = WeeksResponse["weeks"][number];
@@ -29,10 +29,10 @@ export interface WeekCard extends WeekPlayer {
   readonly player: DailyPlayer;
 }
 
-/** One team's week: its player cards in roster order and the totals that counted. */
+/** One team's week: its player cards in roster order and the totals that counted, by stat id. */
 export interface TeamWeek {
   readonly cards: readonly WeekCard[];
-  readonly totals: TeamTotals;
+  readonly totals: StatTotals;
 }
 
 /** The week a scope names: the one holding today for "current", else that week number. */
@@ -55,7 +55,8 @@ function isOutNow(entry: TeamDayResponse["players"][number], isCurrentWeek: bool
 export function teamWeek(
   days: readonly TeamDayResponse[],
   bounds: WeekBounds,
-  isCurrentWeek: boolean
+  isCurrentWeek: boolean,
+  categories: readonly LeagueCategory[]
 ): TeamWeek {
   const playerDays: PlayerDay[] = days.flatMap((day) =>
     day.players.map(({ player, slot, isStartingSlot, line }) => ({
@@ -72,11 +73,11 @@ export function teamWeek(
   const outNow = new Set(
     last.filter((entry) => isOutNow(entry, isCurrentWeek)).map((e) => e.player.playerKey)
   );
-  const cards = weekPlayers(playerDays, bounds, outNow).flatMap((week) => {
+  const cards = weekPlayers(playerDays, bounds, outNow, categories).flatMap((week) => {
     const entry = players.get(week.playerKey);
     return entry ? [{ ...week, player: entry.player }] : [];
   });
-  return { cards, totals: countedTotals(playerDays) };
+  return { cards, totals: countedTotals(playerDays, categories) };
 }
 
 const WEEKDAY = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" });
@@ -97,24 +98,15 @@ export function weekLabel({ week, start, end }: ScoringWeek): string {
   return `Week ${week} · ${from}–${sameMonth ? to.split(" ")[1] : to}`;
 }
 
-/** The card's value: the counted total, a percentage for shooting, "–" when nothing counted. */
-export function weekValueText(card: WeekPlayer, key: CategoryKey): string {
-  const value = weekValue(card, key);
-  if (value === null) {
-    return "–";
-  }
-  return isShootingCategory(key) ? percentText(value) : String(value);
+/** The card's value: the counted total as the board prints it, "–" when nothing counted. */
+export function weekValueText(card: WeekPlayer, category: LeagueCategory): string {
+  return boardValueText(category, weekValue(card, category));
 }
 
-/** Makes/attempts under a shooting value; null for counting categories or when nothing counted. */
-export function weekShotsText(card: WeekPlayer, key: CategoryKey): string | null {
-  if (!isShootingCategory(key) || weekValue(card, key) === null) {
-    return null;
-  }
-  const { totals } = card;
-  const [makes, attempts] =
-    key === "fgPct" ? [totals.fgMakes, totals.fgAttempts] : [totals.ftMakes, totals.ftAttempts];
-  return `${makes}/${attempts}`;
+/** A ratio's counted parts under the value ("12/25"); null for counting categories or when nothing counted. */
+export function weekPartsText(card: WeekPlayer, category: LeagueCategory): string | null {
+  const parts = weekParts(card, category);
+  return parts === null ? null : `${parts.top}/${parts.bottom}`;
 }
 
 /**

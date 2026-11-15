@@ -125,7 +125,7 @@ function minutesIn(entry: GameLogEntry, state: PlayedGameState): CountValue | nu
 }
 
 /**
- * The player's nine categories in the game. Without minutes the line has the
+ * The player's stats in the game. Without minutes the line has the
  * same gap as the minutes (not yet played, or did not play), whatever Yahoo
  * wrote in the other stats; with minutes, the stats are read as a date's line.
  */

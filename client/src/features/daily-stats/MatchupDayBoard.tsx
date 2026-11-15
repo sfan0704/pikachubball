@@ -1,12 +1,18 @@
 import { useState, type ReactNode } from "react";
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
-import { CATEGORIES, closestLostCategory, compareTotals, type CategoryKey } from "@shared/domain";
+import { closestLostCategory, compareCategories, type LeagueCategory } from "@shared/domain";
 import { useLeagueScope } from "@/api/hooks";
 import { useGameLogs, usePlayerStats, useTeamDay } from "@/api/daily-stats-hooks";
-import { CATEGORY_LABELS } from "@/features/league/categories";
+import { categoryLabel } from "@/features/league/categories";
 import { DatasetState } from "./DatasetState";
 import { FreshnessLine } from "./FreshnessLine";
-import { orderHint, playerCards, shownOpponent } from "./matchup-board";
+import {
+  NO_CATEGORIES,
+  orderHint,
+  playerCards,
+  shownCategory,
+  shownOpponent,
+} from "./matchup-board";
 import { BoardCard, MatchupTop } from "./MatchupTop";
 import { PlayerColumns, PlayerColumnView } from "./PlayerColumns";
 import { ScoreCard, ScoreCardLoading } from "./ScoreCard";
@@ -36,7 +42,7 @@ function playerKeysOf(...days: ReturnType<typeof useTeamDay>[]): string[] {
 /** The board's datasets and the opponent and category on show. */
 function useMatchupDay(leagueKey: string, teamKey: string, date: string) {
   const [pickedOpponent, setPickedOpponent] = useState<string | null>(null);
-  const [pickedCategory, setPickedCategory] = useState<CategoryKey | null>(null);
+  const [pickedCategory, setPickedCategory] = useState<string | null>(null);
   const table = useLeagueScope(leagueKey, "current");
   const { opponentKey, realOpponentKey } = shownOpponent(table.data, teamKey, pickedOpponent);
   const myDay = useTeamDay(leagueKey, teamKey, date);
@@ -44,9 +50,13 @@ function useMatchupDay(leagueKey: string, teamKey: string, date: string) {
   const players = playerKeysOf(myDay, theirDay);
   const logs = useGameLogs(leagueKey, players);
   const season = usePlayerStats(leagueKey, "season", players);
+  const categories = table.data?.settings.categories ?? NO_CATEGORIES;
   const me = table.data?.teams.find((team) => team.teamKey === teamKey);
   const opponent = table.data?.teams.find((team) => team.teamKey === opponentKey);
-  const comparison = me && opponent ? compareTotals(me.totals, opponent.totals) : null;
+  const comparison =
+    me && opponent
+      ? compareCategories(categories, me.categoryValues, opponent.categoryValues)
+      : null;
   return {
     table,
     myDay,
@@ -55,9 +65,13 @@ function useMatchupDay(leagueKey: string, teamKey: string, date: string) {
     opponent,
     comparison,
     realOpponentKey,
-    category: pickedCategory ?? (comparison ? closestLostCategory(comparison) : CATEGORIES[0]),
-    myCards: myDay.data ? playerCards(myDay.data, logs.data, season.data) : [],
-    theirCards: theirDay.data ? playerCards(theirDay.data, logs.data, season.data) : [],
+    category: shownCategory(
+      categories,
+      pickedCategory,
+      comparison && closestLostCategory(comparison)
+    ),
+    myCards: myDay.data ? playerCards(myDay.data, logs.data, season.data, categories) : [],
+    theirCards: theirDay.data ? playerCards(theirDay.data, logs.data, season.data, categories) : [],
     queries: [table, myDay, theirDay, logs, season],
     pickCategory: setPickedCategory,
     pickOpponent: (key: string) => {
@@ -103,15 +117,23 @@ function ScoreSlot({
 }
 
 /** Both rosters' cards for the date, side by side, in the selected category. */
-function SideBySide({ board, props }: { board: MatchupDay; props: MatchupDayBoardProps }) {
+function SideBySide({
+  board,
+  category,
+  props,
+}: {
+  board: MatchupDay;
+  category: LeagueCategory | null;
+  props: MatchupDayBoardProps;
+}) {
   const { isToday, onPickLeague, onOpenPlayer } = props;
-  const { me, opponent, category } = board;
+  const { me, opponent } = board;
   return (
     <BoardCard
       label="Players side by side"
-      title={`${CATEGORY_LABELS[category]} · ${props.dateLabel}`}
+      title={`${category ? categoryLabel(category) : "Players"} · ${props.dateLabel}`}
       titleTestId="columns-title"
-      hint={orderHint(category)}
+      hint={category ? orderHint(category) : "roster order"}
     >
       <PlayerColumns>
         <DatasetState query={board.myDay} onPickLeague={onPickLeague}>
@@ -171,18 +193,18 @@ export function MatchupDayBoard(props: MatchupDayBoardProps) {
         <ScoreSlot board={board} teamKey={teamKey} onPickLeague={onPickLeague} />
         {dayBar}
       </MatchupTop>
-      {me && opponent && comparison && (
+      {me && opponent && comparison && board.category && (
         <BoardCard label="Team totals" title="Week to date" hint="Tap a category to compare below">
           <TotalsGrid
-            mine={{ label: "You", totals: me.totals }}
-            theirs={{ label: opponent.teamName, totals: opponent.totals }}
+            mine={{ label: "You", values: me.categoryValues }}
+            theirs={{ label: opponent.teamName, values: opponent.categoryValues }}
             comparison={comparison}
-            selected={board.category}
+            selected={board.category.statId}
             onSelect={board.pickCategory}
           />
         </BoardCard>
       )}
-      <SideBySide board={board} props={props} />
+      <SideBySide board={board} category={board.category} props={props} />
     </div>
   );
 }

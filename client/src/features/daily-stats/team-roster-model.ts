@@ -4,8 +4,10 @@ import type {
   TeamDayResponse,
   TransactionsResponse,
 } from "@shared/api/daily-stats";
-import { latestAcquisition, perGameAverages, type Acquisition } from "@shared/domain";
+import { latestAcquisition, statOf, type Acquisition } from "@shared/domain";
 import { UNAVAILABLE } from "@/features/league/categories";
+
+type PlayerTotals = PlayerStatsResponse["players"][number];
 
 /** One player in the team popover. */
 export interface RosterLine {
@@ -46,8 +48,23 @@ export function acquisitionText(acquisition: Acquisition): string {
   }
 }
 
-function perGame(value: number | null, label: string): string {
-  return `${value === null ? UNAVAILABLE : value.toFixed(1)} ${label}`;
+/**
+ * The roster's summary line: points, rebounds and assists per game by Yahoo
+ * stat id, whatever the league scores, since every NBA fan reads these three.
+ */
+const SUMMARY_STATS = [
+  { statId: "12", label: "PTS" },
+  { statId: "15", label: "REB" },
+  { statId: "16", label: "AST" },
+] as const;
+
+function perGame(totals: PlayerTotals, statId: string, label: string): string {
+  const value = statOf(totals.line, statId);
+  const text =
+    value.kind === "value" && totals.gamesPlayed > 0
+      ? (value.value / totals.gamesPlayed).toFixed(1)
+      : UNAVAILABLE;
+  return `${text} ${label}`;
 }
 
 function averagesText(stats: PlayerStatsResponse | undefined, playerKey: string): string | null {
@@ -55,12 +72,7 @@ function averagesText(stats: PlayerStatsResponse | undefined, playerKey: string)
   if (!totals) {
     return null;
   }
-  const averages = perGameAverages(totals);
-  return [
-    perGame(averages.pts, "PTS"),
-    perGame(averages.reb, "REB"),
-    perGame(averages.ast, "AST"),
-  ].join(" · ");
+  return SUMMARY_STATS.map(({ statId, label }) => perGame(totals, statId, label)).join(" · ");
 }
 
 /** The team's roster today, in lineup order, with how each player arrived and their season averages. */

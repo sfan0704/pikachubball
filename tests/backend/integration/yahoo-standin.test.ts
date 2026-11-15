@@ -151,11 +151,57 @@ describe("the Yahoo stand-in, through the real transport", () => {
     await expect(pending).rejects.toThrow();
   });
 
-  it("rejects an unknown scenario and a path it has no recording for", async () => {
+  it("serves the same league as 12 teams and 10 categories when asked, until the next scenario", async () => {
+    const { client: yahoo } = await client();
+    const source = new YahooFantasyDataSource(new YahooLeagueResources(async () => yahoo), {
+      now: () => Date.parse("2025-12-11T18:00:00Z"),
+    });
+    await fetch(`${origin}/__scenario`, {
+      method: "POST",
+      body: JSON.stringify({ scenario: "ok", league: "12x10" }),
+    });
+
+    const season = await source.getSeason(LEAGUE);
+    const current = await source.getWeek(LEAGUE, "current");
+    const week3 = await source.getWeek(LEAGUE, 3);
+
+    expect(season.settings.name).toBe("Test League");
+    expect(season.teams).toHaveLength(12);
+    expect(season.teams.every((team) => team.teamKey.startsWith(`${LEAGUE}.t.`))).toBe(true);
+    for (const table of [current, week3]) {
+      expect(table.settings.categories.map((category) => category.displayName)).toEqual([
+        "FG%",
+        "FT%",
+        "3PT%",
+        "PTS",
+        "REB",
+        "AST",
+        "ST",
+        "BLK",
+        "TO",
+        "PF",
+      ]);
+      expect(table.teams).toHaveLength(12);
+      expect(table.pairings).toHaveLength(6);
+      expect(new Set(table.pairings.flatMap((pairing) => pairing.teamKeys)).size).toBe(12);
+      const values = table.teams.flatMap((team) => Object.values(team.categoryValues));
+      expect(values.every((value) => typeof value === "number")).toBe(true);
+    }
+
+    await scenario("ok");
+    expect((await source.getWeek(LEAGUE, "current")).teams).toHaveLength(14);
+  });
+
+  it("rejects an unknown scenario or league and a path it has no recording for", async () => {
     const bad = await scenario("meltdown");
+    const badLeague = await fetch(`${origin}/__scenario`, {
+      method: "POST",
+      body: JSON.stringify({ scenario: "ok", league: "roto" }),
+    });
     const missing = await fetch(`${origin}/fantasy/v2/player/466.p.1/stats`);
 
     expect(bad.status).toBe(400);
+    expect(badLeague.status).toBe(400);
     expect(missing.status).toBe(404);
   });
 });

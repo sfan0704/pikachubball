@@ -1,19 +1,19 @@
 import { useState, type ReactNode } from "react";
 import type { LeagueScope } from "@shared/api/league-scope";
 import {
-  CATEGORIES,
+  categoryTotals,
   closestLostCategory,
-  compareTotals,
+  compareCategories,
   elapsedDates,
-  type CategoryKey,
+  type LeagueCategory,
   type Score,
 } from "@shared/domain";
 import { useLeagueScope } from "@/api/hooks";
 import { useTeamDays } from "@/api/daily-stats-hooks";
-import { CATEGORY_LABELS } from "@/features/league/categories";
+import { categoryLabel } from "@/features/league/categories";
 import { DatasetState } from "./DatasetState";
 import { FreshnessLine } from "./FreshnessLine";
-import { orderHint, shownOpponent } from "./matchup-board";
+import { NO_CATEGORIES, orderHint, shownCategory, shownOpponent } from "./matchup-board";
 import { BoardCard, MatchupTop } from "./MatchupTop";
 import { PlayerColumns } from "./PlayerColumns";
 import { ScoreCard, ScoreCardLoading } from "./ScoreCard";
@@ -44,16 +44,24 @@ const CURRENT_WEEK_GAMES: readonly [undefined] = [undefined];
 function useMatchupWeek(props: MatchupWeekBoardProps) {
   const { leagueKey, teamKey, week, isCurrentWeek, today } = props;
   const [pickedOpponent, setPickedOpponent] = useState<string | null>(null);
-  const [pickedCategory, setPickedCategory] = useState<CategoryKey | null>(null);
+  const [pickedCategory, setPickedCategory] = useState<string | null>(null);
   const scope: LeagueScope = isCurrentWeek ? "current" : week.week;
   const table = useLeagueScope(leagueKey, scope);
   const { opponentKey, realOpponentKey } = shownOpponent(table.data, teamKey, pickedOpponent);
   const dates = elapsedDates(week, today);
   const myDays = useTeamDays(leagueKey, teamKey, dates, today);
   const theirDays = useTeamDays(leagueKey, opponentKey, dates, today);
-  const mine = myDays.data ? teamWeek(myDays.data, week, isCurrentWeek) : null;
-  const theirs = theirDays.data ? teamWeek(theirDays.data, week, isCurrentWeek) : null;
-  const comparison = mine && theirs ? compareTotals(mine.totals, theirs.totals) : null;
+  const categories = table.data?.settings.categories ?? NO_CATEGORIES;
+  const mine = myDays.data ? teamWeek(myDays.data, week, isCurrentWeek, categories) : null;
+  const theirs = theirDays.data ? teamWeek(theirDays.data, week, isCurrentWeek, categories) : null;
+  const comparison =
+    mine && theirs
+      ? compareCategories(
+          categories,
+          categoryTotals(mine.totals, categories),
+          categoryTotals(theirs.totals, categories)
+        )
+      : null;
   return {
     table,
     myDays,
@@ -63,7 +71,12 @@ function useMatchupWeek(props: MatchupWeekBoardProps) {
     comparison,
     opponentKey,
     realOpponentKey,
-    category: pickedCategory ?? (comparison ? closestLostCategory(comparison) : CATEGORIES[0]),
+    categories,
+    category: shownCategory(
+      categories,
+      pickedCategory,
+      comparison && closestLostCategory(comparison)
+    ),
     pickCategory: setPickedCategory,
     pickOpponent: (key: string) => {
       setPickedOpponent(key);
@@ -75,13 +88,9 @@ function useMatchupWeek(props: MatchupWeekBoardProps) {
 type MatchupWeek = ReturnType<typeof useMatchupWeek>;
 
 /** The score before both teams' days have loaded: nothing known yet. */
-const EMPTY_SCORE: Score = {
-  wins: 0,
-  losses: 0,
-  ties: 0,
-  unavailable: CATEGORIES.length,
-  complete: false,
-};
+function emptyScore(categories: readonly LeagueCategory[]): Score {
+  return { wins: 0, losses: 0, ties: 0, unavailable: categories.length, complete: false };
+}
 
 /** The score card from counted totals, its own skeleton while the week's table loads. */
 function ScoreSlot({
@@ -111,7 +120,7 @@ function ScoreSlot({
             opponent={opponent}
             others={data.teams.filter((team) => team.teamKey !== teamKey)}
             realOpponentKey={board.realOpponentKey}
-            score={board.comparison?.score ?? EMPTY_SCORE}
+            score={board.comparison?.score ?? emptyScore(board.categories)}
             onPickOpponent={board.pickOpponent}
           />
         );
@@ -122,16 +131,19 @@ function ScoreSlot({
 
 /** Both teams' counted totals as the grid, once both teams' days have loaded. */
 function CountedGrid({ board, opponentName }: { board: MatchupWeek; opponentName: string }) {
-  if (!board.mine || !board.theirs || !board.comparison) {
+  if (!board.mine || !board.theirs || !board.comparison || !board.category) {
     return null;
   }
   return (
     <BoardCard label="Team totals" title="Counted totals" hint="Tap a category to compare below">
       <TotalsGrid
-        mine={{ label: "You", totals: board.mine.totals }}
-        theirs={{ label: opponentName, totals: board.theirs.totals }}
+        mine={{ label: "You", values: categoryTotals(board.mine.totals, board.categories) }}
+        theirs={{
+          label: opponentName,
+          values: categoryTotals(board.theirs.totals, board.categories),
+        }}
         comparison={board.comparison}
-        selected={board.category}
+        selected={board.category.statId}
         onSelect={board.pickCategory}
       />
     </BoardCard>
@@ -141,10 +153,12 @@ function CountedGrid({ board, opponentName }: { board: MatchupWeek; opponentName
 /** Each team's players' weeks side by side in the selected category. */
 function SideBySide({
   board,
+  category,
   names,
   props,
 }: {
   board: MatchupWeek;
+  category: LeagueCategory | null;
   names: ReadonlyMap<string, string>;
   props: MatchupWeekBoardProps;
 }) {
@@ -152,16 +166,16 @@ function SideBySide({
   return (
     <BoardCard
       label="Players side by side"
-      title={`${CATEGORY_LABELS[board.category]} · Week ${props.week.week}`}
+      title={`${category ? categoryLabel(category) : "Players"} · Week ${props.week.week}`}
       titleTestId="columns-title"
-      hint={orderHint(board.category)}
+      hint={category ? orderHint(category) : "roster order"}
     >
       <PlayerColumns>
         <DatasetState query={board.myDays} onPickLeague={onPickLeague}>
           {() =>
             board.mine && (
               <WeekColumnView
-                category={board.category}
+                category={category}
                 column={{
                   teamKey,
                   label: names.get(teamKey) ?? "Your team",
@@ -176,7 +190,7 @@ function SideBySide({
             board.theirs &&
             board.opponentKey && (
               <WeekColumnView
-                category={board.category}
+                category={category}
                 column={{
                   teamKey: board.opponentKey,
                   label: names.get(board.opponentKey) ?? "Opponent",
@@ -219,7 +233,7 @@ export function MatchupWeekBoard(props: MatchupWeekBoardProps) {
       </MatchupTop>
       {weekPicker}
       <CountedGrid board={board} opponentName={names.get(board.opponentKey ?? "") ?? "Opponent"} />
-      <SideBySide board={board} names={names} props={props} />
+      <SideBySide board={board} category={board.category} names={names} props={props} />
     </div>
   );
 }

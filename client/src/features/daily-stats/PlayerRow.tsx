@@ -1,4 +1,5 @@
-import type { CategoryKey, TeamSchedule } from "@shared/domain";
+import type { LeagueCategory, TeamSchedule } from "@shared/domain";
+import { categoriesPerRow } from "@/features/league/categories";
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import { cn } from "@/lib/utils";
 import { InjuryTag } from "./InjuryTag";
@@ -26,7 +27,9 @@ interface PlayerRowProps {
   /** Today's US Eastern date, for the week strip. */
   today: string;
   /** The category the list is sorted on, highlighted on every card. */
-  sortedCategory: CategoryKey | null;
+  sortedCategory: LeagueCategory | null;
+  /** The league's categories, one average each. */
+  categories: readonly LeagueCategory[];
   onOpen: (player: DailyPlayer) => void;
 }
 
@@ -126,7 +129,7 @@ const TONE_CLASS: Readonly<Record<NonNullable<AverageTone>, string>> = {
   worse: "font-bold text-red-600 dark:text-red-400",
 };
 
-/** One player card: who they are and who has them, their week, and the period's nine averages. */
+/** One player card: who they are and who has them, their week, and the period's average in each category. */
 export function PlayerRow({
   row,
   totals,
@@ -134,6 +137,7 @@ export function PlayerRow({
   schedule,
   today,
   sortedCategory,
+  categories,
   onOpen,
 }: PlayerRowProps) {
   return (
@@ -147,13 +151,19 @@ export function PlayerRow({
     >
       <CardTitle row={row} onOpen={onOpen} />
       <CardFacts row={row} schedule={schedule} today={today} />
-      <dl className="grid grid-cols-9 gap-0.5" data-testid="player-averages">
-        {averageCells(totals, season).map((cell) => (
+      <dl
+        className="grid gap-0.5"
+        style={{
+          gridTemplateColumns: `repeat(${categoriesPerRow(categories.length)}, minmax(0, 1fr))`,
+        }}
+        data-testid="player-averages"
+      >
+        {averageCells(categories, totals, season).map((cell) => (
           <div
             key={cell.key}
             className={cn(
               "flex min-w-0 flex-col items-center gap-px rounded-md py-1",
-              cell.key === sortedCategory
+              cell.key === sortedCategory?.statId
                 ? "bg-amber-100 dark:bg-amber-900/40"
                 : "bg-muted/60 dark:bg-muted/40"
             )}

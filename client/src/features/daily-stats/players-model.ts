@@ -6,13 +6,12 @@
  */
 import type { PlayerListResponse, PlayerStatsResponse, StatPeriod } from "@shared/api/daily-stats";
 import {
-  CATEGORIES,
   perGameAverages,
-  type CategoryKey,
-  type CategoryValues,
+  versusAverage,
+  type LeagueCategory,
   type TeamSchedule,
 } from "@shared/domain";
-import { CATEGORY_LABELS, UNAVAILABLE } from "@/features/league/categories";
+import { averageValueText, categoryLabel, UNAVAILABLE } from "@/features/league/categories";
 
 /** One player of the page, as Yahoo lists them. */
 export type ListedPlayer = PlayerListResponse["players"][number];
@@ -179,7 +178,8 @@ export type AverageTone = "better" | "worse" | null;
 
 /** One category's average as the row shows it. */
 export interface AverageCell {
-  readonly key: CategoryKey;
+  /** The category's stat id. */
+  readonly key: string;
   readonly label: string;
   readonly text: string;
   readonly tone: AverageTone;
@@ -188,51 +188,39 @@ export interface AverageCell {
 /** A player's period totals, as D4 sends them. */
 export type PlayerTotals = PlayerStatsResponse["players"][number];
 
-const isPercent = (key: CategoryKey) => key === "fgPct" || key === "ftPct";
-
-function averageCellText(key: CategoryKey, value: number | null): string {
-  if (value === null) {
-    return UNAVAILABLE;
-  }
-  // Fantasy players read FG% and FT% as ".478"; the column already says it is a percentage.
-  return isPercent(key) ? value.toFixed(3).replace(/^0/, "") : value.toFixed(1);
-}
-
 /**
  * Small swings aren't signal: a percentage must move 3 points, a counting stat
  * half a unit or a tenth of the season average, whichever is more.
  */
-function toneAgainst(key: CategoryKey, value: number | null, season: number | null): AverageTone {
-  if (value === null || season === null) {
-    return null;
-  }
-  const change = value - season;
-  const threshold = isPercent(key) ? 0.03 : Math.max(0.5, 0.1 * season);
-  if (Math.abs(change) < threshold) {
-    return null;
-  }
-  const higherIsBetter = key !== "to";
-  return change > 0 === higherIsBetter ? "better" : "worse";
+function toneAgainst(
+  category: LeagueCategory,
+  value: number | null,
+  season: number | null
+): AverageTone {
+  const result = versusAverage(category, value, season);
+  return result === "better" || result === "worse" ? result : null;
 }
 
 /**
- * The nine per-game averages for a player; unknown until the period's stats
- * arrive, and never 0 for missing. With the season's totals, each cell also
- * says whether the period is clearly above or below the season average.
+ * The per-game average in each of the league's categories for a player;
+ * unknown until the period's stats arrive, and never 0 for missing. With the
+ * season's totals, each cell also says whether the period is clearly above or
+ * below the season average.
  */
 export function averageCells(
+  categories: readonly LeagueCategory[],
   totals: PlayerTotals | null,
   season: PlayerTotals | null = null
 ): AverageCell[] {
-  const averages: CategoryValues | null = totals === null ? null : perGameAverages(totals);
-  const baseline: CategoryValues | null = season === null ? null : perGameAverages(season);
-  return CATEGORIES.map((key) => {
-    const value = averages?.[key] ?? null;
+  const averages = totals === null ? null : perGameAverages(totals, categories);
+  const baseline = season === null ? null : perGameAverages(season, categories);
+  return categories.map((category) => {
+    const value = averages?.[category.statId] ?? null;
     return {
-      key,
-      label: CATEGORY_LABELS[key],
-      text: averageCellText(key, value),
-      tone: toneAgainst(key, value, baseline?.[key] ?? null),
+      key: category.statId,
+      label: categoryLabel(category),
+      text: value === null ? UNAVAILABLE : averageValueText(category, value),
+      tone: toneAgainst(category, value, baseline?.[category.statId] ?? null),
     };
   });
 }

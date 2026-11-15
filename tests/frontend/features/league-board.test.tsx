@@ -113,9 +113,9 @@ describe("LeagueBoard", () => {
     renderBoard(WEEK);
     const user = userEvent.setup();
 
-    await user.click(screen.getByTestId("tile-to"));
+    await user.click(screen.getByTestId("tile-19"));
 
-    expect(screen.getByTestId("tile-to")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("tile-19")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("board-title")).toHaveTextContent("TO");
     const ranks = screen
       .getAllByTestId(/^row-ranking-/)

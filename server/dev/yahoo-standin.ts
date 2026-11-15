@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { join } from "node:path";
 import { DailyStatsRecordings } from "./yahoo-standin-daily-stats";
+import { leagueFixtures, STAND_IN_LEAGUES, type LeagueFixtures } from "./yahoo-standin-leagues";
 
 /** How the stand-in answers Fantasy API requests. */
 export type Scenario = "ok" | "timeout" | "rate-limit" | "unavailable" | "unauthorized";
@@ -61,10 +62,8 @@ function withWeek(fixture: Json, week: number): Json {
   return copy;
 }
 
-type Fixtures = Record<"season" | "current" | "week", Json>;
-
 /** The recorded response for a Fantasy API path, or null when nothing was recorded for it. */
-function recorded(path: string, fixtures: Fixtures): Json | null {
+function recorded(path: string, fixtures: LeagueFixtures): Json | null {
   const league = /^\/fantasy\/v2\/league\/[^/;]+;out=(.+)$/.exec(path)?.[1];
   if (league === "settings,standings") {
     return fixtures.season;
@@ -86,7 +85,9 @@ const FAILURES: Partial<Record<Scenario, [number, Json, Record<string, string>?]
 };
 
 class StandIn {
-  private readonly fixtures: Fixtures;
+  private readonly standard: LeagueFixtures;
+  private readonly tenCategorySeason: Json;
+  private fixtures: LeagueFixtures;
   private readonly dailyStats: DailyStatsRecordings;
   private scenario: Scenario = "ok";
   private remaining: number | null = null;
@@ -97,11 +98,13 @@ class StandIn {
   constructor(fixturesDir: string) {
     const load = (name: string): Json =>
       JSON.parse(readFileSync(join(fixturesDir, `${name}.json`), "utf8")) as Json;
-    this.fixtures = {
+    this.standard = {
       season: load("league-season"),
       current: load("league-current-week"),
       week: load("league-week-1"),
     };
+    this.tenCategorySeason = load("league-season-12-teams-10-categories");
+    this.fixtures = this.standard;
     this.dailyStats = new DailyStatsRecordings(fixturesDir);
   }
 
@@ -170,16 +173,25 @@ class StandIn {
     if (path === "/__state") {
       return send(res, 200, { scenario: this.scenario, requests: this.requests });
     }
-    const body = JSON.parse((await readBody(req)) || "{}") as { scenario?: string; times?: number };
+    const body = JSON.parse((await readBody(req)) || "{}") as {
+      scenario?: string;
+      times?: number;
+      league?: string;
+    };
     const scenario = SCENARIOS.find((candidate) => candidate === body.scenario);
     if (!scenario) {
       return send(res, 400, { error: `scenario must be one of ${SCENARIOS.join(", ")}` });
     }
+    const league = STAND_IN_LEAGUES.find((candidate) => candidate === (body.league ?? "standard"));
+    if (!league) {
+      return send(res, 400, { error: `league must be one of ${STAND_IN_LEAGUES.join(", ")}` });
+    }
+    this.fixtures = leagueFixtures(league, this.standard, this.tenCategorySeason);
     this.scenario = scenario;
     this.remaining = typeof body.times === "number" ? body.times : null;
     this.validToken = null;
     this.requests = [];
-    send(res, 200, { scenario });
+    send(res, 200, { scenario, league });
   }
 }
 

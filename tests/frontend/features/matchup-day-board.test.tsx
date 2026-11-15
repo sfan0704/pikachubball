@@ -5,7 +5,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { NbaGame } from "@shared/api/daily-stats-values";
-import { categoryEntry, compareTotals, measured, missingLine } from "@shared/domain";
+import { categoryEntry, compareCategories, missingLine, type LeagueCategory } from "@shared/domain";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
 import { YahooDailyStatsSource } from "../../../server/fantasy/yahoo-daily-stats-source";
 import { DailyStatsRequests } from "../../../server/fantasy/yahoo/daily-stats-requests";
@@ -15,9 +15,10 @@ import {
   cardMeta,
   entryText,
   gameStateText,
+  boardValueText,
   orderHint,
-  percentText,
   playerCards,
+  rosterEntry,
   shortName,
 } from "../../../client/src/features/daily-stats/matchup-board";
 import {
@@ -26,7 +27,13 @@ import {
   type PlayerColumn,
 } from "../../../client/src/features/daily-stats/PlayerColumns";
 import { TotalsGrid } from "../../../client/src/features/daily-stats/TotalsGrid";
-import { buildStatLine, buildTeamTotals } from "../../support/builders";
+import {
+  buildCategoryValues,
+  buildStatLine,
+  CATEGORY,
+  STANDARD_CATEGORIES,
+  TEN_CATEGORIES,
+} from "../../support/builders";
 import { fixedClock } from "../../support/clock";
 import { silentLogger } from "../../support/dependencies";
 import { replayYahoo } from "../../support/yahoo-recordings";
@@ -42,7 +49,7 @@ async function todaysCards(teamKey = TEAM) {
   const keys = day.players.map(({ player }) => player.playerKey);
   const logs = { ...(await source.getGameLogs(LEAGUE, keys)), fetchedAt: AT };
   const season = { ...(await source.getPlayerStats(LEAGUE, "season", keys)), fetchedAt: AT };
-  return playerCards(day, logs, season);
+  return playerCards(day, logs, season, STANDARD_CATEGORIES);
 }
 
 /** The two columns as the Matchup board lays them out. */
@@ -51,7 +58,7 @@ function Board({
   ...rest
 }: {
   columns: readonly PlayerColumn[];
-  category: "pts";
+  category: LeagueCategory | null;
   isToday: boolean;
 }) {
   return (
@@ -77,20 +84,32 @@ const game = (state: NbaGame["state"]): NbaGame => ({
 });
 
 describe("Matchup board text", () => {
-  it("shows percentages as box scores do and keeps 0/0 and measured zeros", () => {
-    expect(percentText(0.4821)).toBe(".482");
-    expect(percentText(null)).toBe("–");
-    const shots = { kind: "value", value: null, shots: { makes: 0, attempts: 0 } } as const;
-    expect(entryText(shots, false)).toBe("0/0");
-    expect(entryText({ kind: "value", value: 0, shots: null }, false)).toBe("0");
+  it("shows percentages as box scores do, other ratios to two places, and keeps 0/0 and measured zeros", () => {
+    expect(boardValueText(CATEGORY.fgPct, 0.4821)).toBe(".482");
+    expect(boardValueText(CATEGORY.astTo, 2.1666)).toBe("2.17");
+    expect(boardValueText(CATEGORY.pts, 31)).toBe("31");
+    expect(boardValueText(CATEGORY.fgPct, null)).toBe("–");
+    const shots = { kind: "value", value: null, parts: { top: 0, bottom: 0 } } as const;
+    expect(entryText(CATEGORY.ftPct, shots, false)).toBe("0/0");
+    expect(entryText(CATEGORY.blk, { kind: "value", value: 0, parts: null }, false)).toBe("0");
+    expect(entryText(CATEGORY.tpPct, { kind: "value", value: 0.4, parts: null }, false)).toBe(
+      ".400"
+    );
   });
 
   it("tells every missing value apart", () => {
-    expect(entryText({ kind: "notYetPlayed" }, false)).toBe("–");
-    expect(entryText({ kind: "unavailable" }, false)).toBe("n/a");
-    expect(entryText({ kind: "noGame" }, false)).toBe("No game");
-    expect(entryText({ kind: "didNotPlay" }, false)).toBe("DNP");
-    expect(entryText({ kind: "notYetPlayed" }, true)).toBe("Out");
+    const pts = CATEGORY.pts;
+    expect(entryText(pts, { kind: "notYetPlayed" }, false)).toBe("–");
+    expect(entryText(pts, { kind: "unavailable" }, false)).toBe("n/a");
+    expect(entryText(pts, { kind: "noGame" }, false)).toBe("No game");
+    expect(entryText(pts, { kind: "didNotPlay" }, false)).toBe("DNP");
+    expect(entryText(pts, { kind: "notYetPlayed" }, true)).toBe("Out");
+    expect(entryText(null, { kind: "value", value: 12, parts: null }, false)).toBe("—");
+  });
+
+  it("tells who played while the categories are unknown, without a value", () => {
+    expect(rosterEntry(buildStatLine())).toEqual({ kind: "unavailable" });
+    expect(rosterEntry(missingLine("didNotPlay"))).toEqual({ kind: "didNotPlay" });
   });
 
   it("states each game: tip-off in Eastern time, quarter and clock, overtime, text and final", () => {
@@ -115,18 +134,21 @@ describe("Matchup board text", () => {
   });
 
   it("adds makes/attempts to shooting averages and says when the average is unknown", () => {
-    const shots = { kind: "value", value: 0.5, shots: { makes: 5, attempts: 10 } } as const;
-    const average = { fgPct: 0.45, pts: 12.34 } as never;
-    expect(averageText("fgPct", shots, average)).toBe("5/10 · avg .450");
-    expect(averageText("pts", { kind: "noGame" }, average)).toBe("avg 12.3");
-    expect(averageText("pts", { kind: "noGame" }, null)).toBe("avg –");
+    const shots = { kind: "value", value: 0.5, parts: { top: 5, bottom: 10 } } as const;
+    const average = { "5": 0.45, "12": 12.34, "20": 2.5 };
+    expect(averageText(CATEGORY.fgPct, shots, average)).toBe("5/10 · avg .450");
+    expect(averageText(CATEGORY.pts, { kind: "noGame" }, average)).toBe("avg 12.3");
+    expect(averageText(CATEGORY.astTo, { kind: "noGame" }, average)).toBe("avg 2.50");
+    expect(averageText(CATEGORY.pts, { kind: "noGame" }, null)).toBe("avg –");
   });
 
-  it("says how each column is sorted: most first, fewest turnovers, most attempts", () => {
-    expect(orderHint("pts")).toBe("most first");
-    expect(orderHint("to")).toBe("fewest first");
-    expect(orderHint("fgPct")).toBe("most attempts first");
-    expect(orderHint("ftPct")).toBe("most attempts first");
+  it("says how each column is sorted: most first, fewest turnovers and fouls, most attempts", () => {
+    expect(orderHint(CATEGORY.pts)).toBe("most first");
+    expect(orderHint(CATEGORY.to)).toBe("fewest first");
+    expect(orderHint(CATEGORY.pf)).toBe("fewest first");
+    expect(orderHint(CATEGORY.fgPct)).toBe("most attempts first");
+    expect(orderHint(CATEGORY.tpPct)).toBe("most attempts first");
+    expect(orderHint(CATEGORY.astTo)).toBe("most first");
   });
 
   it("shortens names and leaves the game out of the meta while it is unknown", async () => {
@@ -186,13 +208,13 @@ describe("Matchup cards before tip-off", () => {
   }
 
   const pts = (cards: ReturnType<typeof playerCards>) =>
-    cards.map((card) => entryText(categoryEntry(card.line, "pts"), false));
+    cards.map((card) => entryText(CATEGORY.pts, categoryEntry(card.line, CATEGORY.pts), false));
 
   it("shows a game still to come as –, not No game, while Yahoo sends - before tip-off", async () => {
     const day = await preGameDay();
     expect(day.players.length).toBeGreaterThan(0);
     const scheduled = { kind: "scheduled", tipOff: "2026-11-08T00:00:00.000Z" } as const;
-    expect(pts(playerCards(day, logsWith(day, scheduled), undefined))).toEqual(
+    expect(pts(playerCards(day, logsWith(day, scheduled), undefined, STANDARD_CATEGORIES))).toEqual(
       day.players.map(() => "–")
     );
   });
@@ -204,7 +226,8 @@ describe("Matchup cards before tip-off", () => {
     const cards = playerCards(
       day,
       logsWith(day, scheduled, new Set([idle.player.playerKey])),
-      undefined
+      undefined,
+      STANDARD_CATEGORIES
     );
     expect(pts(cards)[0]).toBe("No game");
     expect(pts(cards).slice(1)).toEqual(cards.slice(1).map(() => "–"));
@@ -212,7 +235,9 @@ describe("Matchup cards before tip-off", () => {
 
   it("keeps Yahoo's line while game logs are still loading", async () => {
     const day = await preGameDay();
-    expect(pts(playerCards(day, undefined, undefined))).toEqual(day.players.map(() => "No game"));
+    expect(pts(playerCards(day, undefined, undefined, STANDARD_CATEGORIES))).toEqual(
+      day.players.map(() => "No game")
+    );
   });
 });
 
@@ -253,7 +278,7 @@ describe("PlayerColumns", () => {
     const [mine, theirs] = [await todaysCards(), await todaysCards(`${LEAGUE}.t.8`)];
     render(
       <Board
-        category="pts"
+        category={CATEGORY.pts}
         isToday
         columns={[
           { teamKey: TEAM, label: "Team 11", rows: mine },
@@ -276,11 +301,26 @@ describe("PlayerColumns", () => {
     expect(column.getAllByText(/W 110–104|L 104–110/).length).toBeGreaterThan(0);
   });
 
+  it("still lists both rosters, with who played, while the league's categories are unknown", async () => {
+    const cards = await todaysCards();
+    render(
+      <Board category={null} isToday columns={[{ teamKey: TEAM, label: "Team 11", rows: cards }]} />
+    );
+    const values = within(screen.getByTestId(`column-${TEAM}`))
+      .getAllByTestId("card-value")
+      .map((cell) => cell.textContent);
+    expect(values).toHaveLength(cards.length);
+    expect(values).toContain("n/a");
+    expect(values).toContain("No game");
+    expect(values).not.toContain("—");
+    expect(values.every((value) => !/^\d/.test(value ?? ""))).toBe(true);
+  });
+
   it("hides injury tags and Out on a past date", async () => {
     const cards = await todaysCards();
     render(
       <Board
-        category="pts"
+        category={CATEGORY.pts}
         isToday={false}
         columns={[
           { teamKey: TEAM, label: "Team 11", rows: cards },
@@ -294,17 +334,17 @@ describe("PlayerColumns", () => {
 
   it("colours a value against the average, but never a live game red", async () => {
     const [card] = await todaysCards();
-    const average = { pts: 30 } as never;
+    const average = { "12": 30 };
     const liveGame = game({
       kind: "live",
       tipOff: AT,
       progress: { kind: "text", text: "Halftime" },
     });
-    const row = { ...card, line: buildStatLine({ pts: measured(5) }), average };
+    const row = { ...card, line: buildStatLine({ pts: 5 }), average };
     const notPlayed = { ...card, line: missingLine("noGame"), average, isStartingSlot: false };
     render(
       <Board
-        category="pts"
+        category={CATEGORY.pts}
         isToday
         columns={[
           {
@@ -332,43 +372,69 @@ describe("PlayerColumns", () => {
 });
 
 describe("TotalsGrid", () => {
+  const compare = (mine: ReturnType<typeof buildCategoryValues>, theirs: typeof mine) =>
+    compareCategories(STANDARD_CATEGORIES, mine, theirs);
+
   it("tints each category by result, outlines the selected one and picks on tap", async () => {
-    const mine = buildTeamTotals({ pts: 400, to: 20 });
-    const theirs = buildTeamTotals({ pts: 380, to: 25 });
-    const comparison = compareTotals(mine, theirs);
+    const mine = buildCategoryValues({ pts: 400, to: 20 });
+    const theirs = buildCategoryValues({ pts: 380, to: 25 });
     const onSelect = vi.fn();
     render(
       <TotalsGrid
-        mine={{ label: "Team 11", totals: mine }}
-        theirs={{ label: "Team 8", totals: theirs }}
-        comparison={comparison}
-        selected="pts"
+        mine={{ label: "Team 11", values: mine }}
+        theirs={{ label: "Team 8", values: theirs }}
+        comparison={compare(mine, theirs)}
+        selected="12"
         onSelect={onSelect}
       />
     );
-    expect(screen.getByTestId("grid-category-pts")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("grid-category-pts")).toHaveAttribute("data-result", "win");
-    expect(screen.getByTestId("grid-category-to")).toHaveAttribute("data-result", "win");
-    expect(screen.getByTestId("grid-category-reb")).toHaveAttribute("data-result", "tie");
-    await userEvent.click(screen.getByTestId("grid-category-reb"));
-    expect(onSelect).toHaveBeenCalledWith("reb");
+    expect(screen.getByTestId("grid-category-12")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("grid-category-12")).toHaveAttribute("data-result", "win");
+    expect(screen.getByTestId("grid-category-19")).toHaveAttribute("data-result", "win");
+    expect(screen.getByTestId("grid-category-15")).toHaveAttribute("data-result", "tie");
+    expect(screen.getByRole("button", { name: "3PM, tied" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "STL, tied" })).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("grid-category-15"));
+    expect(onSelect).toHaveBeenCalledWith("15");
   });
 
   it("shows percentages only and an unknown total as a dash", () => {
-    const mine = buildTeamTotals({ fgMakes: 241, fgAttempts: 500, pts: null });
-    const comparison = compareTotals(mine, buildTeamTotals());
+    const mine = buildCategoryValues({ fgm: 241, fga: 500, pts: null });
     render(
       <TotalsGrid
-        mine={{ label: "Team 11", totals: mine }}
-        theirs={{ label: "Team 8", totals: buildTeamTotals() }}
-        comparison={comparison}
-        selected="fgPct"
+        mine={{ label: "Team 11", values: mine }}
+        theirs={{ label: "Team 8", values: buildCategoryValues() }}
+        comparison={compare(mine, buildCategoryValues())}
+        selected="5"
         onSelect={() => undefined}
       />
     );
     const grid = screen.getByTestId("totals-grid");
     expect(grid).toHaveTextContent(".482");
     expect(grid).not.toHaveTextContent("241/500");
-    expect(screen.getByTestId("grid-category-pts")).toHaveAttribute("data-result", "unavailable");
+    expect(screen.getByTestId("grid-category-12")).toHaveAttribute("data-result", "unavailable");
+  });
+
+  it("lays nine categories in one row and ten or twelve in equal rows", () => {
+    const rows = (categories: typeof STANDARD_CATEGORIES) => {
+      const values = buildCategoryValues({}, categories);
+      const { container, unmount } = render(
+        <TotalsGrid
+          mine={{ label: "Team 11", values }}
+          theirs={{ label: "Team 8", values }}
+          comparison={compareCategories(categories, values, values)}
+          selected="12"
+          onSelect={() => undefined}
+        />
+      );
+      const counts = [...container.querySelectorAll("[data-testid=totals-grid] > div")].map(
+        (row) => row.querySelectorAll("button").length
+      );
+      unmount();
+      return counts;
+    };
+    expect(rows(STANDARD_CATEGORIES)).toEqual([9]);
+    expect(rows(TEN_CATEGORIES)).toEqual([5, 5]);
+    expect(rows([...TEN_CATEGORIES, CATEGORY.tpm, CATEGORY.astTo])).toEqual([6, 6]);
   });
 });

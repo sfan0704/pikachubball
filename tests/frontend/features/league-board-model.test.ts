@@ -9,7 +9,7 @@ import {
   acquisitionText,
   rosterLines,
 } from "../../../client/src/features/daily-stats/team-roster-model";
-import { buildStatLine, buildTeamTable } from "../../support/builders";
+import { buildStatLine, buildTeamTable, STAT } from "../../support/builders";
 
 describe("rankTone", () => {
   it("marks the top three and the bottom three whatever the league's size", () => {
@@ -43,7 +43,7 @@ describe("boardRows", () => {
   it("puts a team with an unknown total last in a category and never ranks it", () => {
     const table = buildTeamTable([{ pts: null }, { pts: 500 }, { pts: 600 }]);
 
-    const rows = boardRows(table, "466.l.1.t.2", "pts", null);
+    const rows = boardRows(table, "466.l.1.t.2", STAT.pts, null);
 
     expect(rows.map((row) => [row.teamName, row.rank, row.value])).toEqual([
       ["Team 3", 1, "600"],

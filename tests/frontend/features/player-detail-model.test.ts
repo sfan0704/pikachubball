@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { measured, missing, missingLine } from "../../../shared/domain";
+import { measured, missing, missingLine, statOf } from "../../../shared/domain";
 import {
   columnStatus,
   dayStatus,
@@ -13,7 +13,7 @@ import {
   yahooPlayerUrl,
   type LoggedGame,
 } from "../../../client/src/features/daily-stats/player-detail-model";
-import { buildStatLine } from "../../support/builders";
+import { buildStatLine, STANDARD_CATEGORIES, STAT, TEN_CATEGORIES } from "../../support/builders";
 
 const TIP_OFF = "2026-11-11T23:30:00.000Z";
 
@@ -34,37 +34,52 @@ describe("player detail rows", () => {
   const season = {
     playerKey: "466.p.1",
     gamesPlayed: 10,
-    line: buildStatLine({
-      fg: measured({ makes: 94, attempts: 192 }),
-      ft: measured({ makes: 30, attempts: 40 }),
-      pts: measured(215),
-    }),
+    line: buildStatLine({ fgm: 94, fga: 192, ftm: 30, fta: 40, pts: 215 }),
   };
 
   it("shows FG% with makes/attempts, and the average's per game", () => {
-    const rows = detailRows({
-      lines: { today: buildStatLine(), yesterday: missingLine("noGame"), week: buildStatLine() },
-      season,
-    });
-    const fg = rows.find((row) => row.key === "fgPct");
-    const pts = rows.find((row) => row.key === "pts");
+    const rows = detailRows(
+      {
+        lines: { today: buildStatLine(), yesterday: missingLine("noGame"), week: buildStatLine() },
+        season,
+      },
+      STANDARD_CATEGORIES
+    );
+    const fg = rows.find((row) => row.key === STAT.fgPct);
+    const pts = rows.find((row) => row.key === STAT.pts);
 
     expect(rows).toHaveLength(9);
-    expect(fg?.cells.today).toEqual({ text: "46.2%", shots: "6/13" });
-    expect(fg?.cells.season).toEqual({ text: "49.0%", shots: "9.4/19.2" });
+    expect(fg?.cells.today).toEqual({ text: "46.2%", parts: "6/13" });
+    expect(fg?.cells.season).toEqual({ text: "49.0%", parts: "9.4/19.2" });
     expect(pts?.cells.season.text).toBe("21.5");
-    expect(pts?.cells.yesterday).toEqual({ text: "—", shots: null });
+    expect(pts?.cells.yesterday).toEqual({ text: "—", parts: null });
+  });
+
+  it("has a row for each of the league's own categories", () => {
+    const rows = detailRows(
+      {
+        lines: { today: buildStatLine(), yesterday: buildStatLine(), week: buildStatLine() },
+        season,
+      },
+      TEN_CATEGORIES
+    );
+    expect(rows.map((row) => row.key)).toEqual(TEN_CATEGORIES.map((c) => c.statId));
+    expect(rows.find((row) => row.key === STAT.pf)?.cells.today.text).toBe("3");
+    expect(rows.find((row) => row.key === STAT.tpPct)?.cells.today.parts).toBe("2/5");
   });
 
   it("never shows a missing or unplayed average as 0", () => {
-    const rows = detailRows({
-      lines: {
-        today: missingLine("didNotPlay"),
-        yesterday: missingLine("notYetPlayed"),
-        week: missingLine("unavailable"),
+    const rows = detailRows(
+      {
+        lines: {
+          today: missingLine("didNotPlay"),
+          yesterday: missingLine("notYetPlayed"),
+          week: missingLine("unavailable"),
+        },
+        season: { ...season, gamesPlayed: 0 },
       },
-      season: { ...season, gamesPlayed: 0 },
-    });
+      STANDARD_CATEGORIES
+    );
 
     for (const row of rows) {
       expect(Object.values(row.cells).map((cell) => cell.text)).toEqual(["—", "—", "—", "—"]);
@@ -99,7 +114,7 @@ describe("player detail games", () => {
   it("adds the week's games and leaves a date outside the season unavailable", () => {
     const week = weekLine(games, { start: "2026-11-09", end: "2026-11-15" });
 
-    expect(week.pts).toEqual(measured(17));
+    expect(statOf(week, STAT.pts)).toEqual(measured(17));
     expect(weekLine(games, null)).toEqual(missingLine("unavailable"));
   });
 

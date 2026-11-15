@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   categoryRanks,
-  categoryValue,
   competitionRanks,
   percentage,
   rankSum,
   scoringSupport,
   tableCompleteness,
 } from "../../../shared/domain";
-import { buildLeagueSettings, buildTeamTable, buildTeamTotals } from "../../support/builders";
+import {
+  buildLeagueSettings,
+  buildTeamTable,
+  CATEGORY,
+  EIGHT_CATEGORIES,
+  STAT,
+} from "../../support/builders";
 
 describe("percentage", () => {
   it("divides total makes by total attempts", () => {
@@ -22,19 +27,6 @@ describe("percentage", () => {
   it("is unavailable when makes or attempts are unknown", () => {
     expect(percentage(null, 100)).toBeNull();
     expect(percentage(45, null)).toBeNull();
-  });
-});
-
-describe("categoryValue", () => {
-  it("computes FG% and FT% from makes and attempts, not stored percentages", () => {
-    const totals = buildTeamTotals({ fgMakes: 50, fgAttempts: 100, ftMakes: 9, ftAttempts: 10 });
-    expect(categoryValue(totals, "fgPct")).toBe(0.5);
-    expect(categoryValue(totals, "ftPct")).toBe(0.9);
-  });
-
-  it("keeps a measured zero as zero and an unknown as null", () => {
-    expect(categoryValue(buildTeamTotals({ blk: 0 }), "blk")).toBe(0);
-    expect(categoryValue(buildTeamTotals({ blk: null }), "blk")).toBeNull();
   });
 });
 
@@ -59,33 +51,37 @@ describe("categoryRanks", () => {
       { pts: 500, to: 60 },
     ]);
     const ranks = categoryRanks(table);
-    expect(ranks["466.l.1.t.1"].pts).toBe(1);
-    expect(ranks["466.l.1.t.2"].pts).toBe(2);
-    expect(ranks["466.l.1.t.1"].to).toBe(2);
-    expect(ranks["466.l.1.t.2"].to).toBe(1);
+    expect(ranks["466.l.1.t.1"][STAT.pts]).toBe(1);
+    expect(ranks["466.l.1.t.2"][STAT.pts]).toBe(2);
+    expect(ranks["466.l.1.t.1"][STAT.to]).toBe(2);
+    expect(ranks["466.l.1.t.2"][STAT.to]).toBe(1);
   });
 
   it("ranks percentages by makes over attempts across the scope", () => {
     const table = buildTeamTable([
-      { fgMakes: 40, fgAttempts: 100 },
-      { fgMakes: 210, fgAttempts: 400 },
+      { fgm: 40, fga: 100 },
+      { fgm: 210, fga: 400 },
     ]);
     const ranks = categoryRanks(table);
-    expect(ranks["466.l.1.t.2"].fgPct).toBe(1);
-    expect(ranks["466.l.1.t.1"].fgPct).toBe(2);
+    expect(ranks["466.l.1.t.2"][STAT.fgPct]).toBe(1);
+    expect(ranks["466.l.1.t.1"][STAT.fgPct]).toBe(2);
   });
 
   it("leaves a team unranked in a category with zero attempts", () => {
-    const ranks = categoryRanks(buildTeamTable([{ ftMakes: 0, ftAttempts: 0 }, {}]));
-    expect(ranks["466.l.1.t.1"].ftPct).toBeNull();
-    expect(ranks["466.l.1.t.2"].ftPct).toBe(1);
+    const ranks = categoryRanks(buildTeamTable([{ ftm: 0, fta: 0 }, {}]));
+    expect(ranks["466.l.1.t.1"][STAT.ftPct]).toBeNull();
+    expect(ranks["466.l.1.t.2"][STAT.ftPct]).toBe(1);
   });
 });
 
 describe("rankSum", () => {
-  it("adds the nine category ranks", () => {
+  it("adds the league's category ranks, however many it has", () => {
     const ranks = categoryRanks(buildTeamTable([{}, {}]));
     expect(rankSum(ranks["466.l.1.t.1"])).toBe(9);
+    const eight = buildTeamTable([{}, {}], {
+      settings: buildLeagueSettings({ categories: EIGHT_CATEGORIES }),
+    });
+    expect(rankSum(categoryRanks(eight)["466.l.1.t.1"])).toBe(8);
   });
 
   it("is unavailable when any category rank is unknown", () => {
@@ -121,16 +117,7 @@ describe("scoringSupport", () => {
     const settings = buildLeagueSettings();
     const support = scoringSupport({
       ...settings,
-      categories: [
-        ...settings.categories.slice(0, 7),
-        {
-          statId: "26",
-          key: null,
-          displayName: "MPG",
-          direction: "higher",
-          makeup: { kind: "unavailable" },
-        },
-      ],
+      categories: [...settings.categories.slice(0, 7), CATEGORY.mpg],
     });
     expect(support).toEqual({ supported: true });
   });
@@ -140,7 +127,7 @@ describe("scoringSupport", () => {
     const support = scoringSupport({
       ...settings,
       categories: settings.categories.map((category) =>
-        category.key === "to" ? { ...category, direction: "higher" as const } : category
+        category.statId === STAT.to ? { ...category, direction: "higher" as const } : category
       ),
     });
     expect(support).toEqual({ supported: true });
@@ -149,10 +136,10 @@ describe("scoringSupport", () => {
 
 describe("tableCompleteness", () => {
   const ZERO = {
-    fgMakes: 0,
-    fgAttempts: 0,
-    ftMakes: 0,
-    ftAttempts: 0,
+    fgm: 0,
+    fga: 0,
+    ftm: 0,
+    fta: 0,
     tpm: 0,
     pts: 0,
     reb: 0,

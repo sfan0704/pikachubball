@@ -2,47 +2,54 @@
  * Sorting the Players page. Yahoo pages its list in its own rank order, so
  * these sorts reorder the 25 players shown, like the page filters.
  */
-import { perGameAverages, type CategoryKey } from "@shared/domain";
-import { CATEGORY_LABELS } from "@/features/league/categories";
+import { perGameAverages, type LeagueCategory } from "@shared/domain";
+import { categoryById, categoryLabel } from "@/features/league/categories";
 import type { ListedPlayer, PlayerTotals } from "./players-model";
 
+/** A sort on one category's average, by the category's stat id. */
+export type CategorySort = `category-${string}`;
+
 /** Yahoo's rank, rostered %, this week's add trend, or one category's average. */
-export type PlayerSort = "rank" | "rostered" | "trend" | CategoryKey;
+export type PlayerSort = "rank" | "rostered" | "trend" | CategorySort;
 
-/** The sort choices in the order the menu lists them. */
-export const PLAYER_SORTS: readonly PlayerSort[] = [
-  "rank",
-  "rostered",
-  "trend",
-  "pts",
-  "reb",
-  "ast",
-  "tpm",
-  "stl",
-  "blk",
-  "fgPct",
-  "ftPct",
-  "to",
-];
-
-/** The sort choices as the menu names them. */
-export const SORT_LABELS: Readonly<Record<PlayerSort, string>> = {
+const OTHER_SORTS = {
   rank: "Yahoo rank",
   rostered: "Rostered %",
   trend: "Add trend",
-  ...CATEGORY_LABELS,
-};
+} as const;
 
-/** Whether a sort is one of the nine categories, which the card then highlights. */
-export function isCategorySort(sort: PlayerSort): sort is CategoryKey {
-  return sort !== "rank" && sort !== "rostered" && sort !== "trend";
+/** The sort on a category. */
+export function categorySort(category: LeagueCategory): CategorySort {
+  return `category-${category.statId}`;
+}
+
+/** The sort choices in the order the menu lists them: Yahoo's, then the league's categories. */
+export function playerSorts(categories: readonly LeagueCategory[]): PlayerSort[] {
+  return [...(Object.keys(OTHER_SORTS) as PlayerSort[]), ...categories.map(categorySort)];
+}
+
+/** The category a sort is on, which the card then highlights; null for the other sorts. */
+export function sortedCategory(
+  sort: PlayerSort,
+  categories: readonly LeagueCategory[]
+): LeagueCategory | null {
+  return sort.startsWith("category-")
+    ? (categoryById(categories, sort.slice("category-".length)) ?? null)
+    : null;
+}
+
+/** A sort choice as the menu names it. */
+export function sortLabel(sort: PlayerSort, categories: readonly LeagueCategory[]): string {
+  const category = sortedCategory(sort, categories);
+  return category ? categoryLabel(category) : OTHER_SORTS[sort as keyof typeof OTHER_SORTS];
 }
 
 /** The value a row sorts on, oriented so higher is better; null sorts last. */
 function sortValue(
   row: ListedPlayer,
   sort: Exclude<PlayerSort, "rank">,
-  totals: ReadonlyMap<string, PlayerTotals>
+  totals: ReadonlyMap<string, PlayerTotals>,
+  categories: readonly LeagueCategory[]
 ): number | null {
   if (sort === "rostered") {
     // Yahoo leaves out anything under 1%, so a missing value is just below every listed one.
@@ -51,24 +58,33 @@ function sortValue(
   if (sort === "trend") {
     return row.rostered.change;
   }
+  const category = sortedCategory(sort, categories);
   const playerTotals = totals.get(row.player.playerKey);
-  const value = playerTotals === undefined ? null : perGameAverages(playerTotals)[sort];
+  if (category === null || playerTotals === undefined) {
+    return null;
+  }
+  const value = perGameAverages(playerTotals, [category])[category.statId] ?? null;
   if (value === null) {
     return null;
   }
-  return sort === "to" ? -value : value;
+  return category.direction === "lower" ? -value : value;
 }
 
 /** The rows in the chosen order; ties and Yahoo's rank keep Yahoo's order, and unknown averages go last. */
 export function sortPlayers(
   rows: readonly ListedPlayer[],
   sort: PlayerSort,
-  totals: ReadonlyMap<string, PlayerTotals>
+  totals: ReadonlyMap<string, PlayerTotals>,
+  categories: readonly LeagueCategory[]
 ): ListedPlayer[] {
   if (sort === "rank") {
     return [...rows];
   }
-  const keyed = rows.map((row, index) => ({ row, index, value: sortValue(row, sort, totals) }));
+  const keyed = rows.map((row, index) => ({
+    row,
+    index,
+    value: sortValue(row, sort, totals, categories),
+  }));
   keyed.sort((a, b) => {
     if (a.value === b.value) {
       return a.index - b.index;
