@@ -93,6 +93,7 @@ Counted per viewer, first attempts only. FAN-102 confirmed D3 and D7 work in the
 | Players, switch period | D4 1 per loaded page (Season is usually already loaded, so going back is 0) |
 | Players, NBA team, schedule, games-left filter or sort | **0**: Yahoo can't filter on these, so they apply to the page shown |
 | League, rankings | D1 or season table 1 + D10 1 (none if already read this visit) = **1 to 2** |
+| League, Season totals with all-play and luck | Season table 1 + D1 for every week so far (each finished week by number, Settled; the week in progress as the current week, its normal class) = **weeks so far + 1**: 9 for the stand-in's week 8, about 20 in a full season. Each week once per visit, and weeks already read by the week picker or Matchup are free (FAN-141) |
 | League, first team popover | D2 today 1 + D4 1 + D7 1 + D8 1 = **4**; later popovers **3**, and 2 for a team already on the Matchup screen |
 
 **Warm navigation:** 0 calls for anything still fresh under the [freshness policy](#freshness-policy). Switching between Today, Yesterday and Week, between categories, opponents or sort orders, or back to a screen already open costs nothing.

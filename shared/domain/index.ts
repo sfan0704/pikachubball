@@ -107,6 +107,8 @@ export {
 } from "./matchup-week";
 export type { ScheduleContext, ScheduledGame, TeamSchedule, WeekDay } from "./nba-schedule";
 export { localDateOf, scheduleByTeam, teamSchedule } from "./nba-schedule";
+export type { SeasonWeeks } from "./season-weeks";
+export { seasonWeekScopes } from "./season-weeks";
 export type {
   AllPlayRecord,
   AllPlayTable,
