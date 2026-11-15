@@ -246,6 +246,10 @@ describe("LeagueBoard", () => {
     expect(dialog).toHaveTextContent(/Free agent/);
     expect(dialog).toHaveTextContent(/Waivers \$4/);
     await waitFor(() => expect(players[0]).toHaveTextContent(/\d+\.\d PTS · \d+\.\d REB/));
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.getByTestId(`row-ranking-${LEAGUE}.t.9`)).toHaveFocus();
     vi.useRealTimers();
   });
 });

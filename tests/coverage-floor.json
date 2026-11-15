@@ -16,7 +16,6 @@
     "client/src/features/daily-stats/MatchupScreen.tsx",
     "client/src/features/daily-stats/PlayerDetailSheet.tsx",
     "client/src/features/daily-stats/ScoreCard.tsx",
-    "client/src/features/daily-stats/TeamPopover.tsx",
     "client/src/features/daily-stats/rank-tone.ts",
     "client/src/features/league/LeagueLookup.tsx",
     "client/src/hooks/useMobile.ts",
