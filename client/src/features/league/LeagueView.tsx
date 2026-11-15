@@ -77,6 +77,7 @@ function LeagueScreen({ selection, onSelect, onPickLeague, query, myTeamKey }: L
               board={selection.board}
               boardHref={(board) => selectionPath({ ...selection, board })}
               onBoard={(board) => onSelect({ board })}
+              tableFailed={query.error !== null}
               onPickLeague={onPickLeague}
             />
           </Loading>

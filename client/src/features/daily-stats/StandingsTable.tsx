@@ -23,6 +23,8 @@ interface StandingsTableProps {
   onSort: (sort: StandingsSort) => void;
   onOpenTeam: (teamKey: string, event: MouseEvent<HTMLButtonElement>) => void;
   onPickLeague: () => void;
+  /** Whether the period's own table already shows a failed refresh, which then speaks for the weeks too. */
+  tableFailed: boolean;
 }
 
 /** All-play for the table's period, as the columns need it: ready, still loading, or failed. */
@@ -232,6 +234,7 @@ export function StandingsTable({
   onSort,
   onOpenTeam,
   onPickLeague,
+  tableFailed,
 }: StandingsTableProps) {
   const allPlay = useAllPlay(table, leagueKey);
   const rows = useMemo(
@@ -243,7 +246,7 @@ export function StandingsTable({
       className="rounded-2xl border border-[#E2E5EA] bg-white px-3 pb-1 pt-0.5 dark:border-border dark:bg-card"
       data-testid="card-league-standings"
     >
-      {allPlay.error && (
+      {allPlay.error && !(tableFailed && allPlay.table !== null) && (
         <ErrorScreen
           inline
           error={allPlay.error}

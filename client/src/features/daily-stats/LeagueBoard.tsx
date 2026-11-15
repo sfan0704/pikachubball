@@ -20,12 +20,24 @@ interface LeagueBoardProps {
   /** Moves to another board, keeping it in the history so back restores this one. */
   onBoard: (board: LeagueBoardState) => void;
   onPickLeague: () => void;
+  /** Whether refreshing the period's table failed; its error is already on screen. */
+  tableFailed: boolean;
 }
 
 const VIEW_LABELS: Readonly<Record<LeagueView, string>> = {
   standings: "Standings",
   categories: "Categories",
 };
+
+/** The Standings | Categories links, each keeping the sort and picked category. */
+function viewLinks(board: LeagueBoardState, boardHref: (board: LeagueBoardState) => string) {
+  return (Object.keys(VIEW_LABELS) as LeagueView[]).map((view) => ({
+    key: view,
+    label: VIEW_LABELS[view],
+    href: boardHref({ ...board, view }),
+    current: view === board.view,
+  }));
+}
 
 /**
  * League for one period: the Standings | Categories bar, then the standings
@@ -40,6 +52,7 @@ export function LeagueBoard({
   boardHref,
   onBoard,
   onPickLeague,
+  tableFailed,
 }: LeagueBoardProps) {
   const [openTeam, setOpenTeam] = useState<string | null>(null);
   // The popover has no trigger of its own, so focus goes back to the row that opened it.
@@ -49,15 +62,9 @@ export function LeagueBoard({
     setOpenTeam(teamKey);
   };
   const records = useMemo(() => officialRecords(table), [table]);
-  const views = (Object.keys(VIEW_LABELS) as LeagueView[]).map((view) => ({
-    key: view,
-    label: VIEW_LABELS[view],
-    href: boardHref({ ...board, view }),
-    current: view === board.view,
-  }));
   return (
     <div className="space-y-3" data-testid="card-league-rankings">
-      <LinkBar label="League view" items={views} testId="league-view-bar" />
+      <LinkBar label="League view" items={viewLinks(board, boardHref)} testId="league-view-bar" />
       {board.view === "standings" ? (
         <StandingsTable
           table={table}
@@ -67,6 +74,7 @@ export function LeagueBoard({
           onSort={(sort) => onBoard({ ...board, sort })}
           onOpenTeam={open}
           onPickLeague={onPickLeague}
+          tableFailed={tableFailed}
         />
       ) : (
         <CategoryRankGrid

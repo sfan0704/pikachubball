@@ -84,6 +84,7 @@ function Board({ table, initial }: { table: typeof SEASON; initial: LeagueBoardS
       boardHref={(next) => `/league?view=${next.view}`}
       onBoard={setBoard}
       onPickLeague={() => undefined}
+      tableFailed={false}
     />
   );
 }
