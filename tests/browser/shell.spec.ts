@@ -13,9 +13,9 @@ test.beforeEach(async () => {
   await setScenario("ok");
 });
 
-test("every screen sits in the mockup's shell: header with league, period and freshness, tabs at the bottom", async ({
+test("every screen sits in the mockup's shell: header with league, period and freshness, and the screen tabs", async ({
   page,
-}) => {
+}, testInfo) => {
   await signIn(page, "a", "Matchup");
   const header = page.getByTestId("app-header");
   const nav = page.getByRole("navigation", { name: "Screens" });
@@ -23,9 +23,13 @@ test("every screen sits in the mockup's shell: header with league, period and fr
   await expect(header.getByRole("heading", { name: "Test League" })).toBeVisible();
   await expect(header.getByTestId("header-context")).toHaveText(/^Week \d+ · /);
   await expect(header.getByTestId("freshness")).toBeVisible();
-  const navBox = await nav.boundingBox();
-  const viewport = page.viewportSize();
-  expect(navBox && viewport && navBox.y + navBox.height).toBe(viewport?.height);
+  if (testInfo.project.name === "mobile") {
+    const navBox = await nav.boundingBox();
+    const viewport = page.viewportSize();
+    expect(navBox && viewport && navBox.y + navBox.height).toBe(viewport?.height);
+  } else {
+    await expect(header.getByRole("navigation", { name: "Screens" })).toBeVisible();
+  }
 
   await openScreen(page, "Players");
   await expect(header.getByTestId("text-freshness")).toBeVisible();
