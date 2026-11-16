@@ -94,7 +94,7 @@ export function PlayersScreen({ leagueKey, onPickLeague }: PlayersScreenProps) {
         leagueKey={leagueKey}
         player={breakpoint === "lg" ? null : picked}
         viewDate={today}
-        side={breakpoint === "md" ? "right" : "bottom"}
+        side={breakpoint === "phone" ? "bottom" : "right"}
         onClose={() => setPicked(null)}
         onPickLeague={onPickLeague}
       />

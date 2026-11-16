@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { LEAGUE, MY_TEAM, setScenario, signIn, expect, test } from "./support";
+import { sidewaysOverflow, LEAGUE, MY_TEAM, setScenario, signIn, expect, test } from "./support";
 
 test.beforeEach(async () => {
   await setScenario("ok");
@@ -12,14 +12,6 @@ async function columnValues(page: Page, teamKey: string): Promise<string[]> {
 
 async function opponentKey(page: Page): Promise<string> {
   return page.getByLabel("Opponent").inputValue();
-}
-
-async function expectNoHorizontalScroll(page: Page): Promise<void> {
-  const widths = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollWidth,
-    viewport: window.innerWidth,
-  }));
-  expect(widths.scroll).toBeLessThanOrEqual(widths.viewport);
 }
 
 test("Today shows the week's score, the grid and both rosters with every game state", async ({
@@ -42,7 +34,7 @@ test("Today shows the week's score, the grid and both rosters with every game st
   for (const state of ["n/a", "–", "No game", "DNP", "Out"]) {
     expect(values).toContain(state);
   }
-  await expectNoHorizontalScroll(page);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
 });
 
 test("picking a category re-sorts each column on its own", async ({ page }) => {
@@ -100,7 +92,7 @@ test("Yesterday shows final games, no injury tags and keeps the opponent", async
   await expect(column.getByText("GTD")).toHaveCount(0);
   await expect(column.getByText(/Q\d /)).toHaveCount(0);
   expect(await columnValues(page, MY_TEAM)).not.toContain("Out");
-  await expectNoHorizontalScroll(page);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
 });
 
 // From lg the details panel also shows the week table's error: matchup-desktop.spec.ts covers it.
@@ -140,7 +132,7 @@ for (const day of ["Today", "Week"] as const) {
     const header = await page.getByRole("banner").boundingBox();
     const top = await page.getByTestId("matchup-top").boundingBox();
     expect(top?.y).toBeGreaterThanOrEqual((header?.y ?? 0) + (header?.height ?? 0) - 1);
-    await expectNoHorizontalScroll(page);
+    expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
   });
 }
 

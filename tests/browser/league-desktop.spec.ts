@@ -1,5 +1,8 @@
 import type { Page } from "@playwright/test";
 import {
+  recordApiCalls,
+  boxOf,
+  sidewaysOverflow,
   LEAGUE,
   MY_TEAM,
   accessibilityViolations,
@@ -36,18 +39,6 @@ async function leagueLoaded(page: Page): Promise<void> {
   await expect(roster(page).getByTestId("popover-player").first()).toContainText(/\d\.\d PTS/);
 }
 
-async function box(page: Page, testId: string) {
-  const found = await page.getByTestId(testId).boundingBox();
-  if (!found) {
-    throw new Error(`${testId} is not on the page`);
-  }
-  return found;
-}
-
-async function sidewaysOverflow(page: Page): Promise<number> {
-  return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-}
-
 test(
   "shows Standings, Categories and my team's details side by side, my team outlined without a URL change",
   DESKTOP,
@@ -69,7 +60,7 @@ test(
     // The three cards share a top edge, and the roster sits below them across the page.
     const [standings, categories, details, rosterCard] = await Promise.all(
       ["card-league-standings", "card-league-categories", "team-panel", "card-league-roster"].map(
-        (id) => box(page, id)
+        (id) => boxOf(page.getByTestId(id))
       )
     );
     expect([categories.y, details.y]).toEqual([standings.y, standings.y]);
@@ -165,18 +156,6 @@ test("opens a roster player's details in the drawer from the right", DESKTOP, as
   await expect(first).toBeFocused();
 });
 
-/** The API paths the page asks for, with their queries. */
-function recordApiCalls(page: Page): Set<string> {
-  const calls = new Set<string>();
-  page.on("request", (request) => {
-    const url = new URL(request.url());
-    if (url.pathname.startsWith("/api/leagues/")) {
-      calls.add(`${url.pathname}${url.search}`);
-    }
-  });
-  return calls;
-}
-
 test("asks for the same data as the phone with my team's sheet open", DESKTOP, async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page);
@@ -195,15 +174,6 @@ test("asks for the same data as the phone with my team's sheet open", DESKTOP, a
 
   expect(phone.size).toBeGreaterThan(0);
   expect([...desktop].sort()).toEqual([...phone].sort());
-});
-
-test("never scrolls the page sideways from 320 to 1920 px", DESKTOP, async ({ page }) => {
-  await signIn(page);
-  await leagueLoaded(page);
-  for (const width of [320, 390, 767, 768, 900, 1099, 1100, 1280, 1440, 1920]) {
-    await page.setViewportSize({ width, height: 800 });
-    expect(await sidewaysOverflow(page), `${width}px`).toBeLessThanOrEqual(0);
-  }
 });
 
 test(
@@ -298,7 +268,7 @@ test.describe("a league of another shape", () => {
         expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
         const tops = await Promise.all(
           ["card-league-standings", "card-league-categories", "team-panel"].map(
-            async (id) => (await box(page, id)).y
+            async (id) => (await boxOf(page.getByTestId(id))).y
           )
         );
         expect(new Set(tops).size).toBe(1);

@@ -316,7 +316,7 @@ describe("the Players screen from md", () => {
     renderScreen();
     const first = await firstName();
     const panel = await screen.findByRole("region", { name: first.textContent ?? "" });
-    expect(panel).toHaveAttribute("data-testid", "player-detail");
+    expect(panel).toHaveAttribute("data-testid", "player-panel");
     expect(first).toHaveAttribute("aria-current", "true");
 
     const second = within(within(await list()).getAllByRole("listitem")[1]).getAllByRole(
@@ -354,7 +354,7 @@ describe("the Players screen from md", () => {
     await user.click(screen.getByRole("button", { name: "Tonight" }));
     await user.selectOptions(screen.getByLabelText("NBA team"), "PHX");
     expect(screen.getByText("No players on this page match these filters.")).toBeInTheDocument();
-    expect(screen.queryByTestId("player-detail")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("player-panel")).not.toBeInTheDocument();
   });
 
   it("opens the picked player in a drawer between md and lg, and shows no details unpicked", async () => {
@@ -375,10 +375,10 @@ describe("the Players screen from md", () => {
     renderScreen();
     await firstName();
     resizeTo(1280);
-    expect(await screen.findByTestId("player-detail")).toBeInTheDocument();
+    expect(await screen.findByTestId("player-panel")).toBeInTheDocument();
 
     resizeTo(390);
-    await waitFor(() => expect(screen.queryByTestId("player-detail")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByTestId("player-panel")).not.toBeInTheDocument());
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
