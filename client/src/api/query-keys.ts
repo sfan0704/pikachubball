@@ -12,6 +12,7 @@ const playerList = (players: readonly string[]) => [...players].sort().join(",")
 export const queryKeys = {
   me: ["me"] as const,
   leagues: ["leagues"] as const,
+  leagueScopes: (leagueKey: string) => [...league(leagueKey), "scope"] as const,
   leagueScope: (leagueKey: string, scope: LeagueScope) =>
     [...league(leagueKey), "scope", String(scope)] as const,
   teamDay: (leagueKey: string, teamKey: string, date: string) =>
