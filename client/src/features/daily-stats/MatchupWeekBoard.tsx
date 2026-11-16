@@ -14,7 +14,7 @@ import { categoryLabel } from "@/features/league/categories";
 import { DatasetState } from "./DatasetState";
 import { FreshnessLine } from "./FreshnessLine";
 import { NO_CATEGORIES, orderHint, shownCategory, shownOpponent } from "./matchup-board";
-import { BoardCard, MatchupTop } from "./MatchupTop";
+import { BoardCard, MatchupColumns, MatchupTop } from "./MatchupTop";
 import { PlayerColumns } from "./PlayerColumns";
 import { ScoreCard, ScoreCardLoading } from "./ScoreCard";
 import { TotalsGrid } from "./TotalsGrid";
@@ -231,9 +231,15 @@ export function MatchupWeekBoard(props: MatchupWeekBoardProps) {
         <ScoreSlot board={board} teamKey={teamKey} onPickLeague={onPickLeague} />
         {dayBar}
       </MatchupTop>
-      {weekPicker}
-      <CountedGrid board={board} opponentName={names.get(board.opponentKey ?? "") ?? "Opponent"} />
-      <SideBySide board={board} category={board.category} names={names} props={props} />
+      <MatchupColumns
+        players={<SideBySide board={board} category={board.category} names={names} props={props} />}
+      >
+        {weekPicker}
+        <CountedGrid
+          board={board}
+          opponentName={names.get(board.opponentKey ?? "") ?? "Opponent"}
+        />
+      </MatchupColumns>
     </div>
   );
 }

@@ -60,6 +60,7 @@ function Board({
   columns: readonly PlayerColumn[];
   category: LeagueCategory | null;
   isToday: boolean;
+  pickedKey?: string;
 }) {
   return (
     <PlayerColumns>
@@ -68,6 +69,7 @@ function Board({
           key={column.teamKey}
           column={column}
           onOpenPlayer={() => undefined}
+          pickedKey={null}
           {...rest}
         />
       ))}
@@ -314,6 +316,26 @@ describe("PlayerColumns", () => {
     expect(values).toContain("No game");
     expect(values).not.toContain("—");
     expect(values.every((value) => !/^\d/.test(value ?? ""))).toBe(true);
+  });
+
+  it("marks the player the details panel shows as current, and no one else", async () => {
+    const cards = await todaysCards();
+    const picked = cards[1].player;
+    render(
+      <Board
+        category={CATEGORY.pts}
+        isToday
+        pickedKey={picked.playerKey}
+        columns={[{ teamKey: TEAM, label: "Team 11", rows: cards }]}
+      />
+    );
+    const current = screen
+      .getAllByRole("button", { name: /open player detail/ })
+      .filter((button) => button.getAttribute("aria-current") === "true");
+    expect(current).toEqual([
+      screen.getByRole("button", { name: `${picked.name}: open player detail` }),
+    ]);
+    expect(screen.getByTestId(`player-card-${picked.playerKey}`)).toHaveClass("border-2");
   });
 
   it("hides injury tags and Out on a past date", async () => {

@@ -117,26 +117,31 @@ test("a failed week table shows its error and retry while the rosters still load
   await expect(page.getByTestId("totals-grid")).toBeVisible();
 });
 
-for (const day of ["Today", "Week"] as const) {
-  test(`${day}: the score card and day bar stay in view while the players scroll`, async ({
-    page,
-  }) => {
-    await signIn(page, "a", "Matchup");
-    const days = page.getByRole("navigation", { name: "Day" });
-    await days.getByRole("link", { name: day }).click();
-    await expect(page.getByTestId("totals-grid")).toBeVisible();
-    await expect(page.getByTestId(`column-${MY_TEAM}`)).toBeVisible();
+// From lg the top block scrolls with the page: the columns sit beside the totals.
+const PHONE = { tag: "@phone" };
 
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(page.getByTestId("totals-grid")).not.toBeInViewport();
-    await expect(page.getByTestId("matchup-header")).toBeInViewport();
-    await expect(days).toBeInViewport();
-    // The block sits under the app header, not behind it.
-    const header = await page.getByRole("banner").boundingBox();
-    const top = await page.getByTestId("matchup-top").boundingBox();
-    expect(top?.y).toBeGreaterThanOrEqual((header?.y ?? 0) + (header?.height ?? 0) - 1);
-    await expectNoHorizontalScroll(page);
-  });
+for (const day of ["Today", "Week"] as const) {
+  test(
+    `${day}: the score card and day bar stay in view while the players scroll`,
+    PHONE,
+    async ({ page }) => {
+      await signIn(page, "a", "Matchup");
+      const days = page.getByRole("navigation", { name: "Day" });
+      await days.getByRole("link", { name: day }).click();
+      await expect(page.getByTestId("totals-grid")).toBeVisible();
+      await expect(page.getByTestId(`column-${MY_TEAM}`)).toBeVisible();
+
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await expect(page.getByTestId("totals-grid")).not.toBeInViewport();
+      await expect(page.getByTestId("matchup-header")).toBeInViewport();
+      await expect(days).toBeInViewport();
+      // The block sits under the app header, not behind it.
+      const header = await page.getByRole("banner").boundingBox();
+      const top = await page.getByTestId("matchup-top").boundingBox();
+      expect(top?.y).toBeGreaterThanOrEqual((header?.y ?? 0) + (header?.height ?? 0) - 1);
+      await expectNoHorizontalScroll(page);
+    }
+  );
 }
 
 test("the games-played ⓘ explains the numbers and closes again", async ({ page }) => {

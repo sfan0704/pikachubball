@@ -1,10 +1,16 @@
 import { useState, type ReactNode } from "react";
 import type { DailyPlayer } from "@shared/api/daily-stats-values";
-import { closestLostCategory, compareCategories, type LeagueCategory } from "@shared/domain";
+import {
+  closestLostCategory,
+  compareCategories,
+  orderForCategory,
+  type LeagueCategory,
+} from "@shared/domain";
 import { useLeagueScope } from "@/api/hooks";
 import { useGameLogs, usePlayerStats, useTeamDay } from "@/api/daily-stats-hooks";
 import { categoryLabel } from "@/features/league/categories";
 import { DatasetState } from "./DatasetState";
+import { DetailsPanel } from "./DetailsPanel";
 import { FreshnessLine } from "./FreshnessLine";
 import {
   NO_CATEGORIES,
@@ -12,9 +18,11 @@ import {
   playerCards,
   shownCategory,
   shownOpponent,
+  type PlayerCardRow,
 } from "./matchup-board";
-import { BoardCard, MatchupTop } from "./MatchupTop";
+import { BoardCard, MatchupColumns, MatchupTop } from "./MatchupTop";
 import { PlayerColumns, PlayerColumnView } from "./PlayerColumns";
+import { PlayerDetails } from "./PlayerDetails";
 import { ScoreCard, ScoreCardLoading } from "./ScoreCard";
 import { TotalsGrid } from "./TotalsGrid";
 
@@ -30,6 +38,10 @@ interface MatchupDayBoardProps {
   onPickLeague: () => void;
   /** Opens the shared player detail. */
   onOpenPlayer: (player: DailyPlayer) => void;
+  /** The player last opened, or null; the panel shows them while they are on either roster. */
+  openPlayer: DailyPlayer | null;
+  /** Whether the player details stay open in a panel beside the columns (lg) rather than a sheet. */
+  showPanel: boolean;
   /** The Yesterday / Today / Week bar, which sticks with the score card. */
   dayBar: ReactNode;
 }
@@ -120,10 +132,12 @@ function ScoreSlot({
 function SideBySide({
   board,
   category,
+  pickedKey,
   props,
 }: {
   board: MatchupDay;
   category: LeagueCategory | null;
+  pickedKey: string | null;
   props: MatchupDayBoardProps;
 }) {
   const { isToday, onPickLeague, onOpenPlayer } = props;
@@ -142,6 +156,7 @@ function SideBySide({
               category={category}
               isToday={isToday}
               onOpenPlayer={onOpenPlayer}
+              pickedKey={pickedKey}
               column={{
                 teamKey: mine.teamKey,
                 label: me?.teamName ?? "Your team",
@@ -156,6 +171,7 @@ function SideBySide({
               category={category}
               isToday={isToday}
               onOpenPlayer={onOpenPlayer}
+              pickedKey={pickedKey}
               column={{
                 teamKey: theirs.teamKey,
                 label: opponent?.teamName ?? "Opponent",
@@ -174,14 +190,31 @@ function SideBySide({
 }
 
 /**
+ * The player the panel shows: the one last opened while on either roster,
+ * else the top counted player in the category (yours first), else anyone listed.
+ */
+function panelPlayer(
+  board: MatchupDay,
+  openPlayer: DailyPlayer | null,
+  category: LeagueCategory | null
+): DailyPlayer | null {
+  const rows = [...board.myCards, ...board.theirCards];
+  const opened = rows.find((row) => row.player.playerKey === openPlayer?.playerKey);
+  const top = (cards: readonly PlayerCardRow[]) =>
+    orderForCategory(cards, category).find((row) => row.isStartingSlot);
+  return (opened ?? top(board.myCards) ?? top(board.theirCards) ?? rows.at(0))?.player ?? null;
+}
+
+/**
  * Matchup on one day: the sticky score card and day bar, the week's totals
  * grid against the chosen opponent, then both rosters' cards for the date in
  * the selected category. Each dataset loads and fails on its own.
  */
 export function MatchupDayBoard(props: MatchupDayBoardProps) {
-  const { leagueKey, teamKey, date, now, onPickLeague, dayBar } = props;
+  const { leagueKey, teamKey, date, now, onPickLeague, dayBar, showPanel } = props;
   const board = useMatchupDay(leagueKey, teamKey, date);
   const { me, opponent, comparison } = board;
+  const picked = showPanel ? panelPlayer(board, props.openPlayer, board.category) : null;
   return (
     <div className="space-y-5">
       <FreshnessLine
@@ -193,18 +226,42 @@ export function MatchupDayBoard(props: MatchupDayBoardProps) {
         <ScoreSlot board={board} teamKey={teamKey} onPickLeague={onPickLeague} />
         {dayBar}
       </MatchupTop>
-      {me && opponent && comparison && board.category && (
-        <BoardCard label="Team totals" title="Week to date" hint="Tap a category to compare below">
-          <TotalsGrid
-            mine={{ label: "You", values: me.categoryValues }}
-            theirs={{ label: opponent.teamName, values: opponent.categoryValues }}
-            comparison={comparison}
-            selected={board.category.statId}
-            onSelect={board.pickCategory}
+      <MatchupColumns
+        players={
+          <SideBySide
+            board={board}
+            category={board.category}
+            pickedKey={picked?.playerKey ?? null}
+            props={props}
           />
-        </BoardCard>
-      )}
-      <SideBySide board={board} category={board.category} props={props} />
+        }
+      >
+        {me && opponent && comparison && board.category && (
+          <BoardCard
+            label="Team totals"
+            title="Week to date"
+            hint="Tap a category to compare below"
+          >
+            <TotalsGrid
+              mine={{ label: "You", values: me.categoryValues }}
+              theirs={{ label: opponent.teamName, values: opponent.categoryValues }}
+              comparison={comparison}
+              selected={board.category.statId}
+              onSelect={board.pickCategory}
+            />
+          </BoardCard>
+        )}
+        {picked && (
+          <DetailsPanel testId="player-panel">
+            <PlayerDetails
+              leagueKey={leagueKey}
+              player={picked}
+              viewDate={date}
+              onPickLeague={onPickLeague}
+            />
+          </DetailsPanel>
+        )}
+      </MatchupColumns>
     </div>
   );
 }
