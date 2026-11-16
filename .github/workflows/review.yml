@@ -38,7 +38,7 @@ jobs:
           fi
 
       - name: Start the review environment
-        run: npm run review:start | tee review.json
+        run: npm run review:start -- --test-time | tee review.json
 
       - name: Check it answers for this commit and signs in a synthetic manager
         run: |

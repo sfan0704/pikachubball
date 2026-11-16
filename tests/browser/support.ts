@@ -7,9 +7,17 @@ import {
   type Locator,
   type Page,
 } from "@playwright/test";
-import { BROWSER_TEST_TIME } from "./fixed-time";
 
 export { expect };
+
+/** The browser tests' fixed moment (tests/browser/fixed-time.mts); playwright.config.mts sets it. */
+function testTime(): string {
+  const time = process.env.E2E_FIXED_TIME;
+  if (!time) {
+    throw new Error("E2E_FIXED_TIME is unset; run the browser tests through playwright.config.mts");
+  }
+  return time;
+}
 
 /**
  * Every browser test, at the moment the server's clock is fixed to (the page's
@@ -20,7 +28,7 @@ export { expect };
 export const test = base.extend<{ fixedTime: void; browserErrors: void }>({
   fixedTime: [
     async ({ page }, use) => {
-      await page.clock.install({ time: BROWSER_TEST_TIME });
+      await page.clock.install({ time: testTime() });
       await use();
     },
     { auto: true },
@@ -61,7 +69,7 @@ export async function newPageAtTestTime(
   options: BrowserContextOptions
 ): Promise<Page> {
   const page = await browser.newPage(options);
-  await page.clock.install({ time: BROWSER_TEST_TIME });
+  await page.clock.install({ time: testTime() });
   return page;
 }
 

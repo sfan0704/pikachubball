@@ -10,6 +10,8 @@ export interface ReviewRecord {
   readonly expiresAt: string;
   /** The process group running the stand-in and the app; only this group is ever stopped. */
   readonly pid: number;
+  /** The moment the app's clock is fixed at (`review:start -- --test-time`), or null for the real clock. */
+  readonly fixedTime: string | null;
 }
 
 const LOOPBACK = /^(https?|postgres(ql)?):\/\/([^@/]*@)?(127\.0\.0\.1|localhost)(:\d+)?(\/|$)/;
@@ -57,6 +59,7 @@ export function newRecord(input: {
   pid: number;
   now: number;
   lifetimeMinutes: number;
+  fixedTime: string | null;
 }): ReviewRecord {
   return {
     url: input.url,
@@ -65,12 +68,17 @@ export function newRecord(input: {
     pid: input.pid,
     startedAt: new Date(input.now).toISOString(),
     expiresAt: new Date(input.now + input.lifetimeMinutes * 60_000).toISOString(),
+    fixedTime: input.fixedTime,
   };
 }
 
 /** Whether a review has outlived its lifetime. */
 export function expired(record: ReviewRecord, now: number): boolean {
   return now >= Date.parse(record.expiresAt);
+}
+
+function isFixedTime(value: unknown): boolean {
+  return value === null || (typeof value === "string" && !Number.isNaN(Date.parse(value)));
 }
 
 /** Reads a record, refusing anything that isn't one (a hand-edited or foreign file). */
@@ -81,7 +89,8 @@ export function parseRecord(text: string): ReviewRecord {
     typeof value !== "object" ||
     value === null ||
     !fields.every((field) => typeof (value as Record<string, unknown>)[field] === "string") ||
-    !Number.isInteger((value as Record<string, unknown>).pid)
+    !Number.isInteger((value as Record<string, unknown>).pid) ||
+    !isFixedTime((value as Record<string, unknown>).fixedTime)
   ) {
     throw new Error(
       "The review record is not one this tool wrote; remove .workspace/review.json by hand"

@@ -38,9 +38,10 @@ It prints which checks passed, failed, were unavailable or didn't run because a 
 The [review environment](target-state.md#review-environment) runs the exact commit, signed in as synthetic managers, on this checkout's own stack:
 
 ```text
-npm run review:start   # refuses hosted configuration or uncommitted tracked changes; builds, starts, prints {url, commit, workspace, startedAt, expiresAt}
+npm run review:start   # refuses hosted configuration or uncommitted tracked changes; builds, starts, prints {url, commit, workspace, startedAt, expiresAt, fixedTime}
+npm run review:start -- --test-time # the same, with the app's clock fixed at the browser tests' moment, which review:evidence needs
 npm run review:status  # that record, plus running, healthy and expired; exits nonzero unless healthy
-npm run review:evidence # browser evidence against it: refuses another commit or checkout; writes .workspace/evidence/
+npm run review:evidence # browser evidence against it: refuses another commit or checkout, or a review on the real clock; writes .workspace/evidence/
 npm run review:stop    # stops this checkout's review, its stack and its expiry watcher; safe to repeat
 ```
 
