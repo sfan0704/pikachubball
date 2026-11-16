@@ -4,6 +4,7 @@ import {
   sidewaysOverflow,
   MY_TEAM,
   accessibilityViolations,
+  newPageAtTestTime,
   setScenario,
   signIn,
   useTheme,
@@ -210,7 +211,7 @@ test(
 test(
   "requests the same data at 1280 px as a phone showing the same player",
   DESKTOP,
-  async ({ page }) => {
+  async ({ page, browser }) => {
     // Each endpoint with every player it was asked about. While the opponent's
     // roster loads, a page may first ask for your players alone and then for
     // both teams; whether that first request happens depends on timing, so
@@ -239,16 +240,10 @@ test(
     const shown = await panelName(page).textContent();
     await page.waitForLoadState("networkidle");
 
-    const phonePage = await page
-      .context()
-      .browser()
-      ?.newPage({
-        viewport: { width: 390, height: 844 },
-        hasTouch: true,
-      });
-    if (!phonePage) {
-      throw new Error("could not open a second page");
-    }
+    const phonePage = await newPageAtTestTime(browser, {
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+    });
     const phone = requested(phonePage);
     await signIn(phonePage, "a", "Matchup");
     await phonePage

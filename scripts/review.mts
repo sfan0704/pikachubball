@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } 
 import { join } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
 import { workspace } from "./workspace.mts";
+import { BROWSER_TEST_TIME } from "../tests/browser/fixed-time.mts";
 import {
   expired,
   hostedConfiguration,
@@ -122,11 +123,26 @@ function preflight(): string {
   return git(["rev-parse", "HEAD"]);
 }
 
-async function start(): Promise<void> {
+/**
+ * Starts the review. With `--test-time` its clock stays at the browser tests'
+ * moment, which `review:evidence` needs; without it, the app runs on the real
+ * clock for looking at by hand.
+ */
+async function start(option?: string): Promise<void> {
+  if (option !== undefined && option !== "--test-time") {
+    throw new Error(`Unknown option ${option}; the only one is --test-time`);
+  }
+  const fixedTime = option === "--test-time" ? BROWSER_TEST_TIME : null;
   const commit = preflight();
   const minutes = lifetimeMinutes(process.env);
   const existing = readRecord();
-  if (existing && ours(existing) && !expired(existing, Date.now()) && existing.commit === commit) {
+  if (
+    existing &&
+    ours(existing) &&
+    !expired(existing, Date.now()) &&
+    existing.commit === commit &&
+    existing.fixedTime === fixedTime
+  ) {
     console.log(JSON.stringify(existing, null, 2));
     return;
   }
@@ -146,6 +162,7 @@ async function start(): Promise<void> {
       PORT: String(ws.ports.review),
       STANDIN_PORT: String(ws.ports.reviewStandIn),
       DEPLOYED_COMMIT: commit,
+      ...(fixedTime === null ? {} : { LOCAL_FIXED_TIME: fixedTime }),
     }),
   });
   child.unref();
@@ -157,6 +174,7 @@ async function start(): Promise<void> {
       pid: child.pid ?? -1,
       now,
       lifetimeMinutes: minutes,
+      fixedTime,
     });
   // Written now so `review:stop` can find the process while it starts.
   writeFileSync(RECORD, `${JSON.stringify(recordAt(Date.now()), null, 2)}\n`);
@@ -206,14 +224,14 @@ async function expire(startedAt: string): Promise<void> {
 
 const [command, argument] = process.argv.slice(2);
 const commands: Record<string, () => Promise<void>> = {
-  start,
+  start: () => start(argument),
   status,
   stop,
   expire: () => expire(argument ?? ""),
 };
 const run = command ? commands[command] : undefined;
 if (!run) {
-  console.error("Usage: node scripts/review.mts start|status|stop");
+  console.error("Usage: node scripts/review.mts start [--test-time]|status|stop");
   process.exitCode = 2;
 } else {
   try {

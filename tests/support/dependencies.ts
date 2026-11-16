@@ -41,6 +41,7 @@ export function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     },
     localStack: false,
     localDailyStats: null,
+    localFixedTime: null,
     ...overrides,
   };
 }

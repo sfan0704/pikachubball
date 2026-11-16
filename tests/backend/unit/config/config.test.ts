@@ -164,6 +164,19 @@ describe("loadConfig", () => {
         /LOCAL_DAILY_STATS can only be set with LOCAL_STACK=true/
       );
     });
+
+    it("fixes the local server's clock only when asked, and only in local mode", () => {
+      expect(loadConfig(local()).localFixedTime).toBeNull();
+      expect(
+        loadConfig(local({ LOCAL_FIXED_TIME: "2026-11-11T20:00:00.000Z" })).localFixedTime
+      ).toBe(Date.parse("2026-11-11T20:00:00.000Z"));
+      expect(() => loadConfig(local({ LOCAL_FIXED_TIME: "Wednesday" }))).toThrow(
+        /LOCAL_FIXED_TIME/
+      );
+      expect(() =>
+        loadConfig(minimalEnvironment({ LOCAL_FIXED_TIME: "2026-11-11T20:00:00.000Z" }))
+      ).toThrow(/LOCAL_FIXED_TIME can only be set with LOCAL_STACK=true/);
+    });
   });
 
   describe("origins", () => {

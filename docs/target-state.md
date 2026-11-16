@@ -304,7 +304,7 @@ flowchart TD
 - **Contracts.** Recorded Yahoo responses must pass the parsers and the `shared/api` schemas, and client tests use responses that pass the same schemas, so server and client can't drift apart.
 - **Security.** Cross-user reads and writes, forged league and team keys, a replayed sign-in callback, and disconnect during a token refresh all fail as intended.
 - **Failures.** Yahoo timeouts, 429s, 403s, 5xx errors and malformed responses each produce the expected state and error code.
-- **Browser.** Playwright runs the main flows against the production build with the Yahoo stand-in, at 390 px and desktop widths, with automated accessibility checks (axe).
+- **Browser.** Playwright runs the main flows against the production build with the Yahoo stand-in, at 390 px and desktop widths, with automated accessibility checks (axe). They run at one fixed moment, a Wednesday afternoon: the server's clock stays there (`LOCAL_FIXED_TIME`, local mode only) and the page's clock starts there, so the fixture league's dates are the same whatever day the tests run. The review environment's browser evidence runs the same way (`review:start -- --test-time`).
 - **No flaky tests.** A failing test is never retried automatically, skipped or quarantined; the test or the code is fixed.
 - **Before each release,** a load test of 14 simultaneous users against the Yahoo stand-in checks the speed target and the Yahoo call count per view. The daily-stats views read the stand-in through the real Yahoo source (`LOCAL_DAILY_STATS=standin`), which answers any team, date and player list from relabelled recordings, so their calls are counted against [Call budgets](reference/daily-stats-retrieval.md#call-budgets).
 
