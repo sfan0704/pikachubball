@@ -4,18 +4,18 @@
 import React from "react";
 import { readFileSync } from "node:fs";
 import axe from "axe-core";
-import { act, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Window as HappyWindow } from "happy-dom";
 import { parseWeekTable } from "../../../server/fantasy/league-tables";
 import { AuthProvider } from "../../../client/src/lib/auth";
 import LeaguePage from "../../../client/src/pages/LeaguePage";
 import { jsonResponse } from "../../support/fetch";
+import { resizeTo, START_WIDTH } from "../../support/viewport";
 
 const LEAGUE_KEY = "466.l.100000";
 const MY_TEAM = `${LEAGUE_KEY}.t.11`;
@@ -60,14 +60,6 @@ function stubApi() {
 async function violations(container: HTMLElement) {
   const result = await axe.run(container, { rules: { "color-contrast": { enabled: false } } });
   return result.violations.map((violation) => `${violation.id}: ${violation.help}`);
-}
-
-const START_WIDTH = window.innerWidth;
-
-function resizeTo(width: number) {
-  act(() => {
-    (window as unknown as HappyWindow).happyDOM.setViewport({ width });
-  });
 }
 
 // The phone layout; the wide League, with its roster data, is checked in the browser tests.

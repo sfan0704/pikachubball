@@ -9,13 +9,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseSeasonTable, parseWeekTable } from "../../../server/fantasy/league-tables";
 import { AuthProvider } from "../../../client/src/lib/auth";
 import LeaguePage from "../../../client/src/pages/LeaguePage";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
 import { jsonResponse } from "../../support/fetch";
+import { resizeTo, START_WIDTH } from "../../support/viewport";
 
 function fixture(name: string): unknown {
   return JSON.parse(readFileSync(`tests/backend/fixtures/yahoo/${name}.json`, "utf8"));
@@ -122,7 +123,12 @@ function renderPage(path: string) {
   return location;
 }
 
-afterEach(() => vi.unstubAllGlobals());
+// The phone layout; League on a wider screen is tested in league-board.test and the browser tests.
+beforeEach(() => resizeTo(390));
+afterEach(() => {
+  vi.unstubAllGlobals();
+  resizeTo(START_WIDTH);
+});
 
 describe("LeaguePage", () => {
   it("shows no screen navigation while daily stats aren't wired", async () => {
