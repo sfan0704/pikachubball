@@ -53,7 +53,11 @@ const CALLOUT_NAME: Readonly<Record<VersusAverage, string>> = {
   unavailable: "",
 };
 
-/** The card's player name, which opens the shared player detail. */
+/**
+ * The card's player name, which opens the shared player detail. Its hit area
+ * stretches over the whole card, so clicking anywhere on the card picks the
+ * player while the card keeps one control.
+ */
 function CardName({
   player,
   picked,
@@ -69,7 +73,7 @@ function CardName({
       onClick={() => onOpenPlayer(player)}
       aria-label={`${player.name}: open player detail`}
       aria-current={picked ? "true" : undefined}
-      className="truncate rounded-md text-left text-xs font-bold text-[#15181D] dark:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+      className="truncate rounded-md text-left text-xs font-bold after:absolute after:inset-0 after:rounded-[10px] text-[#15181D] dark:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
       {shortName(player.name)}
     </button>
@@ -99,7 +103,7 @@ function PlayerCard({
   return (
     <li
       className={cn(
-        "grid min-h-[52px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-0.5 rounded-[10px] border border-[#E2E5EA] bg-white p-2 dark:border-border dark:bg-card",
+        "relative grid min-h-[52px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-0.5 rounded-[10px] border border-[#E2E5EA] bg-white p-2 dark:border-border dark:bg-card",
         !row.isStartingSlot &&
           "border-dashed border-[#9CA3AF] bg-[#F3F4F6] dark:border-muted-foreground dark:bg-muted",
         picked && "border-2 border-solid border-[#15181D] p-[7px] dark:border-foreground"
