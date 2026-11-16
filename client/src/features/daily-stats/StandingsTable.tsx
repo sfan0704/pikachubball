@@ -1,10 +1,11 @@
-import { useMemo, type MouseEvent } from "react";
+import { useMemo, useRef, type MouseEvent, type Ref } from "react";
 import type { TeamTable } from "@shared/domain";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorScreen } from "@/features/league/ErrorScreen";
 import type { StandingsSort } from "@/features/league/league-board-state";
 import { cn } from "@/lib/utils";
 import { luckText, ordinal, standingsRows, type StandingsRow } from "./league-standings-model";
+import { CARD_HEADING_CLASS, PICKED_ROW_CLASS, pickedState, useKeepInView } from "./league-wide";
 import { BADGE_TONE_CLASS, rankText } from "./rank-tone";
 import { useLeagueAllPlay, type AllPlayState } from "./useLeagueAllPlay";
 
@@ -13,6 +14,10 @@ interface StandingsTableProps {
   leagueKey: string;
   myTeamKey: string;
   sort: StandingsSort;
+  /** The team outlined as picked on a wide screen; null on a phone. */
+  pickedTeamKey: string | null;
+  /** The card's heading where no Standings | Categories bar names it; null on a phone. */
+  heading: string | null;
   onSort: (sort: StandingsSort) => void;
   onOpenTeam: (teamKey: string, event: MouseEvent<HTMLButtonElement>) => void;
   onPickLeague: () => void;
@@ -105,17 +110,24 @@ function AllPlayCells({ row, allPlay }: { row: StandingsRow; allPlay: AllPlaySta
 function Row({
   row,
   allPlay,
+  picked,
+  rowRef,
   onOpen,
 }: {
   row: StandingsRow;
   allPlay: AllPlayState;
+  picked: boolean | undefined;
+  rowRef: Ref<HTMLTableRowElement> | undefined;
   onOpen: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
     <tr
+      ref={rowRef}
+      aria-selected={picked}
       className={cn(
         "border-t border-[#F1F2F4] dark:border-border",
-        row.isMine && "bg-[#FFFBEB] dark:bg-amber-950/40"
+        row.isMine && "bg-[#FFFBEB] dark:bg-amber-950/40",
+        picked && PICKED_ROW_CLASS
       )}
       data-testid={`standings-row-${row.teamKey}`}
     >
@@ -135,6 +147,7 @@ function Row({
           type="button"
           onClick={onOpen}
           data-testid={`row-ranking-${row.teamKey}`}
+          title={row.teamName}
           className="block min-h-11 w-full truncate rounded-[6px] px-1 text-left text-[13px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           {row.teamName}
@@ -193,11 +206,15 @@ export function StandingsTable({
   leagueKey,
   myTeamKey,
   sort,
+  pickedTeamKey,
+  heading,
   onSort,
   onOpenTeam,
   onPickLeague,
   tableFailed,
 }: StandingsTableProps) {
+  const pickedRow = useRef<HTMLTableRowElement>(null);
+  useKeepInView(pickedRow, sort);
   const allPlay = useLeagueAllPlay(table, leagueKey);
   const rows = useMemo(
     () => standingsRows(table, myTeamKey, allPlay.table, sort),
@@ -208,6 +225,7 @@ export function StandingsTable({
       className="rounded-2xl border border-[#E2E5EA] bg-white px-3 pb-1 pt-0.5 dark:border-border dark:bg-card"
       data-testid="card-league-standings"
     >
+      {heading !== null && <h2 className={CARD_HEADING_CLASS}>{heading}</h2>}
       {allPlay.error && !tableFailed && (
         <ErrorScreen
           inline
@@ -224,6 +242,8 @@ export function StandingsTable({
               key={row.teamKey}
               row={row}
               allPlay={allPlay}
+              picked={pickedState(pickedTeamKey, row.teamKey)}
+              rowRef={row.teamKey === pickedTeamKey ? pickedRow : undefined}
               onOpen={(event) => onOpenTeam(row.teamKey, event)}
             />
           ))}

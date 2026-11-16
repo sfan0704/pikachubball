@@ -10,11 +10,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseWeekTable } from "../../../server/fantasy/league-tables";
 import { AuthProvider } from "../../../client/src/lib/auth";
 import LeaguePage from "../../../client/src/pages/LeaguePage";
 import { jsonResponse } from "../../support/fetch";
+import { resizeTo, START_WIDTH } from "../../support/viewport";
 
 const LEAGUE_KEY = "466.l.100000";
 const MY_TEAM = `${LEAGUE_KEY}.t.11`;
@@ -61,7 +62,12 @@ async function violations(container: HTMLElement) {
   return result.violations.map((violation) => `${violation.id}: ${violation.help}`);
 }
 
-afterEach(() => vi.unstubAllGlobals());
+// The phone layout; the wide League, with its roster data, is checked in the browser tests.
+beforeEach(() => resizeTo(390));
+afterEach(() => {
+  vi.unstubAllGlobals();
+  resizeTo(START_WIDTH);
+});
 
 function renderPage() {
   stubApi();

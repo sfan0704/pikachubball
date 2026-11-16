@@ -12,11 +12,17 @@ interface TeamStandingProps {
   table: TeamTable;
   teamKey: string;
   allPlay: AllPlayState;
+  /** Whether the page already shows all-play's failure (the Standings beside a panel), so it isn't said twice. */
+  allPlayErrorShown: boolean;
   onPickLeague: () => void;
 }
 
 /** Standing, All-play and Luck side by side, each with the record or unit behind it. */
-function SummaryStrip({ table, teamKey, allPlay }: Omit<TeamStandingProps, "onPickLeague">) {
+function SummaryStrip({
+  table,
+  teamKey,
+  allPlay,
+}: Pick<TeamStandingProps, "table" | "teamKey" | "allPlay">) {
   return (
     <dl className="grid grid-cols-3 gap-1.5" data-testid="team-summary">
       {teamSummary(table, allPlay.table, teamKey).map((item) => (
@@ -34,7 +40,11 @@ function SummaryStrip({ table, teamKey, allPlay }: Omit<TeamStandingProps, "onPi
 }
 
 /** The luck sum with the team's own numbers; left out until all-play is known. */
-function LuckMath({ table, teamKey, allPlay }: Omit<TeamStandingProps, "onPickLeague">) {
+function LuckMath({
+  table,
+  teamKey,
+  allPlay,
+}: Pick<TeamStandingProps, "table" | "teamKey" | "allPlay">) {
   const lines = luckLines(table, allPlay.table, teamKey);
   if (lines === null) {
     return null;
@@ -65,10 +75,16 @@ function LuckMath({ table, teamKey, allPlay }: Omit<TeamStandingProps, "onPickLe
  * The top of a team sheet: the Standing | All-play | Luck strip and the luck
  * worked out step by step. A failed all-play load says so here with a retry.
  */
-export function TeamStanding({ table, teamKey, allPlay, onPickLeague }: TeamStandingProps) {
+export function TeamStanding({
+  table,
+  teamKey,
+  allPlay,
+  allPlayErrorShown,
+  onPickLeague,
+}: TeamStandingProps) {
   return (
     <>
-      {allPlay.error && (
+      {allPlay.error && !allPlayErrorShown && (
         <ErrorScreen
           inline
           error={allPlay.error}
@@ -90,7 +106,7 @@ export function CategoryAllPlay({
   table,
   teamKey,
   allPlay,
-}: Omit<TeamStandingProps, "onPickLeague">) {
+}: Pick<TeamStandingProps, "table" | "teamKey" | "allPlay">) {
   if (!showsCategoryAllPlay(table) || allPlay.table === null) {
     return null;
   }

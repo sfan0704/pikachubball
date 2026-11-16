@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
 import { parseSeasonTable, parseWeekTable } from "../../../server/fantasy/league-tables";
@@ -19,6 +19,7 @@ import {
 } from "../../../client/src/features/league/league-board-state";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
+import { resizeTo, START_WIDTH } from "../../support/viewport";
 import { defined } from "../../support/defined";
 
 const LEAGUE = "466.l.100000";
@@ -119,7 +120,11 @@ const cellsOf = (testId: string) =>
     .getAllByTestId(/^standings-row-/)
     .map((row) => within(row).getByTestId(testId).textContent);
 
+afterEach(() => resizeTo(START_WIDTH));
+
 describe("LeagueBoard", () => {
+  beforeEach(() => resizeTo(390));
+
   it("shows Season standings by Yahoo's record, then all-play and luck from every week", async () => {
     const fetchMock = stubServer();
     renderBoard();
@@ -293,7 +298,7 @@ describe("LeagueBoard", () => {
     renderBoard(SEASON, { ...DEFAULT_BOARD, view: "categories" });
     const user = userEvent.setup();
 
-    await user.click(screen.getAllByTestId(`row-ranking-${MINE}`)[0] as HTMLElement);
+    await user.click(screen.getByTestId(`grid-team-${MINE}`));
 
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByTestId("team-summary")).toHaveTextContent(
@@ -343,5 +348,134 @@ describe("LeagueBoard", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getByTestId(`row-ranking-${LEAGUE}.t.9`)).toHaveFocus();
     vi.useRealTimers();
+  });
+});
+
+/** The numbers a team's details show: luck worked out, category ranks and all-play by category. */
+async function teamNumbers(container: HTMLElement) {
+  const math = await within(container).findByTestId("luck-math");
+  return {
+    summary: within(container).getByTestId("team-summary").textContent,
+    luck: math.textContent,
+    ranks: within(container).getByRole("list", { name: "Category ranks and totals" }).textContent,
+    allPlay: within(container).getByTestId("category-all-play").textContent,
+  };
+}
+
+const selectedRows = () =>
+  screen.getAllByRole("row", { selected: true }).map((row) => row.dataset.testid);
+
+describe("LeagueBoard on a wide screen", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(AT) });
+    resizeTo(1280);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("shows both tables and my team's details with no view bar, whatever view the URL names", async () => {
+    stubServer();
+    renderBoard(SEASON, { ...DEFAULT_BOARD, view: "categories" });
+
+    expect(screen.queryByRole("navigation", { name: "League view" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Standings" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Categories" })).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "Standings" })).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "Category ranks" })).toBeInTheDocument();
+    expect(selectedRows()).toEqual([`standings-row-${MINE}`, `grid-row-${MINE}`]);
+    const panel = screen.getByTestId("team-panel");
+    expect(panel).toHaveAttribute("aria-labelledby");
+    expect(await within(panel).findByTestId("luck-math")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(
+      await within(screen.getByTestId("card-league-roster")).findAllByTestId("popover-player")
+    ).toHaveLength(13);
+  });
+
+  it("picks a team from either table: outlined in both, its details and roster on the page, the board unchanged", async () => {
+    stubServer();
+    const onBoard = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <FreshnessProvider>
+          <LeagueBoard
+            table={SEASON}
+            leagueKey={LEAGUE}
+            myTeamKey={MINE}
+            periodLabel="Season to date"
+            board={DEFAULT_BOARD}
+            boardHref={() => "/league"}
+            onBoard={onBoard}
+            onPickLeague={() => undefined}
+            tableFailed={false}
+          />
+        </FreshnessProvider>
+      </QueryClientProvider>
+    );
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId(`grid-team-${LEAGUE}.t.9`));
+    expect(selectedRows()).toEqual([`standings-row-${LEAGUE}.t.9`, `grid-row-${LEAGUE}.t.9`]);
+    expect(screen.getByRole("region", { name: "Team 9" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Roster · Team 9" })).toBeInTheDocument();
+    // A long name truncates in its column; the full name stays on hover and for screen readers.
+    expect(screen.getByTestId(`row-ranking-${LEAGUE}.t.9`)).toHaveAttribute("title", "Team 9");
+    expect(screen.getByTestId(`grid-team-${LEAGUE}.t.9`)).toHaveAttribute("title", "Team 9");
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    await user.click(screen.getByTestId(`row-ranking-${MINE}`));
+    expect(selectedRows()).toEqual([`standings-row-${MINE}`, `grid-row-${MINE}`]);
+    expect(onBoard).not.toHaveBeenCalled();
+  });
+
+  it("shows the same luck maths, ranks and all-play in the panel as in the phone's team sheet", async () => {
+    stubServer();
+    resizeTo(390);
+    const phone = renderBoard();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId(`row-ranking-${LEAGUE}.t.9`));
+    const inSheet = await teamNumbers(screen.getByRole("dialog", { name: "Team 9" }));
+    phone.unmount();
+
+    resizeTo(1280);
+    renderBoard();
+    await user.click(screen.getByTestId(`row-ranking-${LEAGUE}.t.9`));
+    const inPanel = await teamNumbers(screen.getByRole("region", { name: "Team 9" }));
+
+    expect(inPanel).toEqual(inSheet);
+  });
+
+  it("opens the picked team's sheet on narrowing to a phone, and no sheet for the default pick", async () => {
+    stubServer();
+    // happy-dom reports no change for a media query that matched when it was made, so start narrow.
+    resizeTo(390);
+    renderBoard();
+    const user = userEvent.setup();
+    resizeTo(1280);
+    expect(screen.getByTestId("team-panel")).toBeInTheDocument();
+
+    resizeTo(390);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("navigation", { name: "League view" })).toBeInTheDocument();
+
+    resizeTo(1280);
+    await user.click(screen.getByTestId(`row-ranking-${LEAGUE}.t.9`));
+    resizeTo(390);
+    expect(screen.getByRole("dialog", { name: "Team 9" })).toBeInTheDocument();
+  });
+
+  it("opens a roster player's details in the drawer and closes it again", async () => {
+    stubServer();
+    renderBoard();
+    const user = userEvent.setup();
+    const roster = screen.getByTestId("card-league-roster");
+    const [first] = await within(roster).findAllByRole("button");
+
+    await user.click(defined(first));
+    const drawer = await screen.findByTestId("player-detail");
+    expect(drawer).toHaveAttribute("role", "dialog");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByTestId("player-detail")).toBeNull());
+    expect(first).toHaveFocus();
   });
 });
