@@ -103,19 +103,24 @@ test("Yesterday shows final games, no injury tags and keeps the opponent", async
   await expectNoHorizontalScroll(page);
 });
 
-test("a failed week table shows its error and retry while the rosters still load", async ({
-  page,
-}) => {
-  await signIn(page, "a", "Matchup");
-  await setScenario("unavailable");
-  await page.reload();
-  await expect(page.getByRole("alert")).toBeVisible();
-  await expect(page.getByTestId(`column-${MY_TEAM}`)).toBeVisible();
+// From lg the details panel also shows the week table's error: matchup-desktop.spec.ts covers it.
+test(
+  "a failed week table shows its error and retry while the rosters still load",
+  {
+    tag: "@phone",
+  },
+  async ({ page }) => {
+    await signIn(page, "a", "Matchup");
+    await setScenario("unavailable");
+    await page.reload();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.getByTestId(`column-${MY_TEAM}`)).toBeVisible();
 
-  await setScenario("ok");
-  await page.getByRole("button", { name: "Try again" }).click();
-  await expect(page.getByTestId("totals-grid")).toBeVisible();
-});
+    await setScenario("ok");
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page.getByTestId("totals-grid")).toBeVisible();
+  }
+);
 
 for (const day of ["Today", "Week"] as const) {
   test(`${day}: the score card and day bar stay in view while the players scroll`, async ({
