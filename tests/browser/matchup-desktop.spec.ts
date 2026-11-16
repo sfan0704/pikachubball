@@ -253,6 +253,25 @@ test(
   }
 );
 
+test(
+  "a failed week table shows its error above the score and in the panel, and one retry clears both",
+  DESKTOP,
+  async ({ page }) => {
+    await signIn(page, "a", "Matchup");
+    await setScenario("unavailable");
+    await page.reload();
+    await expect(page.getByTestId("matchup-top").getByRole("alert")).toBeVisible();
+    await expect(panel(page).getByRole("alert")).toBeVisible();
+    await expect(page.getByTestId(MY_COLUMN)).toBeVisible();
+
+    await setScenario("ok");
+    await page.getByTestId("matchup-top").getByRole("button", { name: "Try again" }).click();
+    await expect(page.getByTestId("totals-grid")).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(panel(page).getByTestId("player-detail-stats")).toBeVisible();
+  }
+);
+
 test("has no sideways page scroll from 320 to 1920 px", DESKTOP, async ({ page }) => {
   await signIn(page, "a", "Matchup");
   await expect(page.getByTestId(MY_COLUMN)).toBeVisible();

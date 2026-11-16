@@ -1,14 +1,13 @@
 import type { ReactNode } from "react";
 
 /**
- * Matchup's top block: the score card and the day bar. On a phone and from md
- * it sticks under the app header so the score stays in view while the players
- * scroll; from lg everything fits beside it, so it scrolls with the page.
+ * Matchup's top block: the score card and the day bar. It sticks under the
+ * app header so the score stays in view while the players scroll.
  */
 export function MatchupTop({ children }: { children: ReactNode }) {
   return (
     <div
-      className="sticky top-[var(--app-header-height)] z-[5] -mx-4 flex flex-col gap-2.5 border-b border-[#E2E5EA] bg-background px-4 pb-2.5 pt-3 md:-mx-8 md:px-8 lg:static lg:mx-0 lg:gap-5 lg:border-b-0 lg:p-0 dark:border-border"
+      className="sticky top-[var(--app-header-height)] z-[5] -mx-4 flex flex-col gap-2.5 border-b border-[#E2E5EA] bg-background px-4 pb-2.5 pt-3 md:-mx-8 md:px-8 dark:border-border"
       data-testid="matchup-top"
     >
       {children}
