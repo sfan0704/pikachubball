@@ -212,16 +212,27 @@ test(
   "requests the same data at 1280 px as a phone showing the same player",
   DESKTOP,
   async ({ page }) => {
+    // Each endpoint with every player it was asked about. While the opponent's
+    // roster loads, a page may first ask for your players alone and then for
+    // both teams; whether that first request happens depends on timing, so
+    // requests are compared by endpoint and players, not one by one.
     const requested = (target: Page) => {
-      const paths = new Set<string>();
+      const endpoints = new Map<string, Set<string>>();
       target.on("request", (request) => {
         const url = new URL(request.url());
         if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/dev/")) {
-          paths.add(`${request.method()} ${url.pathname}${url.search}`);
+          const players = url.searchParams.get("players")?.split(",") ?? [];
+          url.searchParams.delete("players");
+          const endpoint = `${request.method()} ${url.pathname}${url.search}`;
+          const asked = endpoints.get(endpoint) ?? new Set<string>();
+          players.forEach((player) => asked.add(player));
+          endpoints.set(endpoint, asked);
         }
       });
-      return paths;
+      return endpoints;
     };
+    const sorted = (endpoints: Map<string, Set<string>>) =>
+      [...endpoints].map(([endpoint, players]) => [endpoint, [...players].sort()]).sort();
 
     const desktop = requested(page);
     await signIn(page, "a", "Matchup");
@@ -249,7 +260,7 @@ test(
     await phonePage.waitForLoadState("networkidle");
     await phonePage.close();
 
-    expect([...desktop].sort()).toEqual([...phone].sort());
+    expect(sorted(desktop)).toEqual(sorted(phone));
   }
 );
 
