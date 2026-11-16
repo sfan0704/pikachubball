@@ -2,11 +2,12 @@
  * @vitest-environment happy-dom
  */
 import React from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playerListQuerySchema, statPeriodSchema } from "../../../shared/api/daily-stats";
+import type { Window as HappyWindow } from "happy-dom";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
@@ -50,7 +51,9 @@ async function answer(url: string): Promise<object> {
         )
       : path === "/schedule"
         ? await source.getSchedule(LEAGUE)
-        : await source.getWeeks(LEAGUE);
+        : path === "/games"
+          ? await source.getGameLogs(LEAGUE, players)
+          : await source.getWeeks(LEAGUE);
   return { ...body, fetchedAt: AT };
 }
 
@@ -69,7 +72,17 @@ async function list() {
   return screen.findByTestId("players-list");
 }
 
+const START_WIDTH = window.innerWidth;
+
+/** Sets the window's width: 390 for a phone, 900 for md's one column, 1280 for lg's desktop layout. */
+function resizeTo(width: number) {
+  act(() => {
+    (window as unknown as HappyWindow).happyDOM.setViewport({ width });
+  });
+}
+
 beforeEach(() => {
+  resizeTo(390);
   requests.length = 0;
   categories = STANDARD_CATEGORIES;
   vi.useFakeTimers({ now: Date.parse(AT), toFake: ["Date"] });
@@ -80,6 +93,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  resizeTo(START_WIDTH);
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -268,5 +282,112 @@ describe("the Players screen", () => {
       .getAllByTestId("player-averages")
       .map((cells) => Number(within(cells).getByText("PF").nextSibling?.textContent));
     expect(fouls).toEqual([...fouls].sort((a, b) => a - b));
+  });
+});
+
+describe("the Players screen from md", () => {
+  /** The first row's name button, once the page and its averages are in. */
+  async function firstName(): Promise<HTMLElement> {
+    const rows = within(await list()).getAllByRole("listitem");
+    await waitFor(() =>
+      expect(within(rows[0]).getByTestId("player-averages")).not.toHaveTextContent("—")
+    );
+    return within(rows[0]).getAllByRole("button")[0];
+  }
+
+  it("puts position, NBA team, games left and Clear in the toolbar, with no Filters sheet", async () => {
+    resizeTo(1280);
+    const user = userEvent.setup();
+    renderScreen();
+    await firstName();
+    await waitFor(() =>
+      expect(within(screen.getByLabelText("NBA team")).getAllByRole("option")).toHaveLength(9)
+    );
+    await screen.findByTestId("player-detail-stats");
+    const asked = [...requests];
+
+    await user.selectOptions(screen.getByLabelText("NBA team"), "PHX");
+    const phx = within(await list()).getAllByRole("listitem");
+    expect(phx.every((row) => within(row).getByText(/· PHX$/))).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.getByLabelText("NBA team")).toHaveValue("");
+    expect(within(await list()).getAllByRole("listitem")).toHaveLength(25);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // The list asks for nothing more; only the panel follows its new first player.
+    const listRequests = (all: readonly string[]) =>
+      all.filter((request) => !request.startsWith("/games?") && !/players=[^,]+$/.test(request));
+    expect(listRequests(requests)).toEqual(listRequests(asked));
+  });
+
+  it("shows the first player in the panel until one is picked, marking the picked row", async () => {
+    resizeTo(1280);
+    const user = userEvent.setup();
+    renderScreen();
+    const first = await firstName();
+    const panel = await screen.findByRole("region", { name: first.textContent ?? "" });
+    expect(panel).toHaveAttribute("data-testid", "player-detail");
+    expect(first).toHaveAttribute("aria-current", "true");
+
+    const second = within(within(await list()).getAllByRole("listitem")[1]).getAllByRole(
+      "button"
+    )[0];
+    await user.click(second);
+    expect(screen.getByRole("region", { name: second.textContent ?? "" })).toBeInTheDocument();
+    expect(second).toHaveAttribute("aria-current", "true");
+    expect(first).not.toHaveAttribute("aria-current");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("falls back to the new first player when the picked one leaves the list, and drops the panel when none are left", async () => {
+    resizeTo(1280);
+    const user = userEvent.setup();
+    renderScreen();
+    await firstName();
+    const rows = within(await list()).getAllByRole("listitem");
+    const teamOf = (row: HTMLElement) =>
+      /· (\w+)$/.exec(within(row).getByText(/· \w+$/).textContent ?? "")?.[1];
+    const firstTeam = teamOf(rows[0]);
+    const elsewhere = rows.find((row) => teamOf(row) !== firstTeam);
+    if (firstTeam === undefined || elsewhere === undefined) {
+      throw new Error("the fixture's first page should hold players of more than one team");
+    }
+    await user.click(within(elsewhere).getAllByRole("button")[0]);
+    expect(within(elsewhere).getAllByRole("button")[0]).toHaveAttribute("aria-current", "true");
+
+    await user.selectOptions(screen.getByLabelText("NBA team"), firstTeam);
+    const kept = within(await list()).getAllByRole("listitem");
+    const name = within(kept[0]).getAllByRole("button")[0].textContent ?? "";
+    expect(screen.getByRole("region", { name })).toBeInTheDocument();
+    expect(within(kept[0]).getAllByRole("button")[0]).toHaveAttribute("aria-current", "true");
+
+    await user.click(screen.getByRole("button", { name: "Tonight" }));
+    await user.selectOptions(screen.getByLabelText("NBA team"), "PHX");
+    expect(screen.getByText("No players on this page match these filters.")).toBeInTheDocument();
+    expect(screen.queryByTestId("player-detail")).not.toBeInTheDocument();
+  });
+
+  it("opens the picked player in a drawer between md and lg, and shows no details unpicked", async () => {
+    resizeTo(900);
+    const user = userEvent.setup();
+    renderScreen();
+    const first = await firstName();
+    expect(screen.queryByTestId("player-detail")).not.toBeInTheDocument();
+    expect(requests.some((request) => request.startsWith("/games?"))).toBe(false);
+
+    await user.click(first);
+    expect(
+      await screen.findByRole("dialog", { name: first.textContent ?? "" })
+    ).toBeInTheDocument();
+  });
+
+  it("leaves the default pick out of the sheet when the window narrows to a phone", async () => {
+    renderScreen();
+    await firstName();
+    resizeTo(1280);
+    expect(await screen.findByTestId("player-detail")).toBeInTheDocument();
+
+    resizeTo(390);
+    await waitFor(() => expect(screen.queryByTestId("player-detail")).not.toBeInTheDocument());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
