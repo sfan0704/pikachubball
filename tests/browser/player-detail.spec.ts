@@ -84,7 +84,7 @@ test("never shows the injury tag on yesterday's view", PHONE, async ({ page }) =
   await expect(sheet.getByTestId("injury-tag")).toHaveCount(0);
 });
 
-test("opens an available player from Players", async ({ page }) => {
+test("opens an available player from Players", { tag: "@phone" }, async ({ page }) => {
   await signIn(page, "a", "Players");
 
   const first = page.getByTestId("players-list").getByRole("button").first();
@@ -109,11 +109,15 @@ for (const theme of ["light", "dark"] as const) {
   );
 }
 
-test("Players with the detail open has no WCAG 2.1 AA violations", async ({ page }) => {
-  await signIn(page, "a", "Matchup");
-  await openScreen(page, "Players");
-  await page.getByTestId("players-list").getByRole("button").first().click();
-  await expect(page.getByTestId("player-detail-stats")).toBeVisible();
+test(
+  "Players with the detail open has no WCAG 2.1 AA violations",
+  { tag: "@phone" },
+  async ({ page }) => {
+    await signIn(page, "a", "Matchup");
+    await openScreen(page, "Players");
+    await page.getByTestId("players-list").getByRole("button").first().click();
+    await expect(page.getByTestId("player-detail-stats")).toBeVisible();
 
-  expect(await accessibilityViolations(page)).toEqual([]);
-});
+    expect(await accessibilityViolations(page)).toEqual([]);
+  }
+);
