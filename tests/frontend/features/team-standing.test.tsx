@@ -52,13 +52,14 @@ function ready(table: TeamTable): AllPlayState {
   return { table: weekAllPlay(table), error: null, retry: () => undefined };
 }
 
-function sheet(table: TeamTable, allPlay: AllPlayState, teamKey = T(4)) {
+function sheet(table: TeamTable, allPlay: AllPlayState, teamKey = T(4), allPlayErrorShown = false) {
   return render(
     <>
       <TeamStanding
         table={table}
         teamKey={teamKey}
         allPlay={allPlay}
+        allPlayErrorShown={allPlayErrorShown}
         onPickLeague={() => undefined}
       />
       <CategoryAllPlay table={table} teamKey={teamKey} allPlay={allPlay} />
@@ -122,5 +123,12 @@ describe("TeamStanding", () => {
     sheet(week(), { table: null, error, retry });
     await userEvent.setup().click(screen.getByRole("button", { name: /try again/i }));
     expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it("leaves all-play's failure to the Standings beside a panel, so it isn't said twice", () => {
+    const error = new Error("Yahoo is down");
+    sheet(week(), { table: null, error, retry: vi.fn() }, T(4), true);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByTestId("team-summary")).toBeInTheDocument();
   });
 });
