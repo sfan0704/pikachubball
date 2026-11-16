@@ -49,6 +49,12 @@ export interface AppConfig {
    * Yahoo source (the load test, which counts Yahoo calls). Null outside it.
    */
   readonly localDailyStats: "fixture" | "standin" | null;
+  /**
+   * In local mode, a time the server's clock stays at (epoch milliseconds), so
+   * the browser tests see the same fixture dates on every day of the week.
+   * Null means the real clock.
+   */
+  readonly localFixedTime: number | null;
 }
 
 const hexKey = z
@@ -80,6 +86,7 @@ const environmentSchema = z.object({
     .optional()
     .transform((value) => value === "true"),
   LOCAL_DAILY_STATS: z.enum(["fixture", "standin"]).optional(),
+  LOCAL_FIXED_TIME: z.iso.datetime().optional(),
   YAHOO_API_BASE_URL: optionalTrimmed,
   YAHOO_OAUTH_BASE_URL: optionalTrimmed,
   YAHOO_CLIENT_ID: optionalTrimmed,
@@ -117,20 +124,20 @@ const LOOPBACK = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
 /**
  * Local mode swaps in the stand-in for Yahoo and a throwaway Supabase stack. It
  * must never reach production, never point at a hosted project, and the Yahoo
- * addresses can't be changed at all outside it.
+ * addresses and local-only settings can't be set at all outside it.
  */
 function checkLocalStack(values: z.infer<typeof environmentSchema>, production: boolean): void {
   const overrides = {
     YAHOO_API_BASE_URL: values.YAHOO_API_BASE_URL,
     YAHOO_OAUTH_BASE_URL: values.YAHOO_OAUTH_BASE_URL,
   };
-  if (!values.LOCAL_STACK && values.LOCAL_DAILY_STATS) {
-    throw new Error(
-      "Invalid configuration: LOCAL_DAILY_STATS can only be set with LOCAL_STACK=true"
-    );
-  }
   if (!values.LOCAL_STACK) {
-    for (const [name, value] of Object.entries(overrides)) {
+    const localOnly = {
+      ...overrides,
+      LOCAL_DAILY_STATS: values.LOCAL_DAILY_STATS,
+      LOCAL_FIXED_TIME: values.LOCAL_FIXED_TIME,
+    };
+    for (const [name, value] of Object.entries(localOnly)) {
       if (value) {
         throw new Error(`Invalid configuration: ${name} can only be set with LOCAL_STACK=true`);
       }
@@ -170,6 +177,11 @@ function localDailyStats(values: z.infer<typeof environmentSchema>): AppConfig["
     return null;
   }
   return values.LOCAL_DAILY_STATS ?? "fixture";
+}
+
+/** The time local mode fixes the server's clock at, if any. */
+function localFixedTime(values: z.infer<typeof environmentSchema>): number | null {
+  return values.LOCAL_FIXED_TIME ? Date.parse(values.LOCAL_FIXED_TIME) : null;
 }
 
 /**
@@ -218,5 +230,6 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
     },
     localStack: values.LOCAL_STACK,
     localDailyStats: localDailyStats(values),
+    localFixedTime: localFixedTime(values),
   };
 }

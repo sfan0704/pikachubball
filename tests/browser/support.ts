@@ -1,14 +1,38 @@
 import AxeBuilder from "@axe-core/playwright";
-import { test as base, expect, type Locator, type Page } from "@playwright/test";
+import {
+  test as base,
+  expect,
+  type Browser,
+  type BrowserContextOptions,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 
 export { expect };
 
+/** The browser tests' fixed moment (tests/browser/fixed-time.mts); playwright.config.mts sets it. */
+function testTime(): string {
+  const time = process.env.E2E_FIXED_TIME;
+  if (!time) {
+    throw new Error("E2E_FIXED_TIME is unset; run the browser tests through playwright.config.mts");
+  }
+  return time;
+}
+
 /**
- * Every browser test, with the page's console errors, uncaught exceptions and
+ * Every browser test, at the moment the server's clock is fixed to (the page's
+ * clock starts there and runs on), with the page's console errors, uncaught exceptions and
  * failed or 5xx requests attached as "browser-errors" when there are any. Only
  * the message, method, path and status are kept: never headers, cookies or bodies.
  */
-export const test = base.extend<{ browserErrors: void }>({
+export const test = base.extend<{ fixedTime: void; browserErrors: void }>({
+  fixedTime: [
+    async ({ page }, use) => {
+      await page.clock.install({ time: testTime() });
+      await use();
+    },
+    { auto: true },
+  ],
   browserErrors: [
     async ({ page }, use, testInfo) => {
       const errors: string[] = [];
@@ -38,6 +62,16 @@ export const test = base.extend<{ browserErrors: void }>({
     { auto: true },
   ],
 });
+
+/** A second page in a new context, its clock set like every test's page. */
+export async function newPageAtTestTime(
+  browser: Browser,
+  options: BrowserContextOptions
+): Promise<Page> {
+  const page = await browser.newPage(options);
+  await page.clock.install({ time: testTime() });
+  return page;
+}
 
 export const LEAGUE = "466.l.100000";
 export const MY_TEAM = `${LEAGUE}.t.11`;

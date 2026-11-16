@@ -1,5 +1,13 @@
 import type { Locator, Page } from "@playwright/test";
-import { accessibilityViolations, setScenario, signIn, useTheme, expect, test } from "./support";
+import {
+  accessibilityViolations,
+  newPageAtTestTime,
+  setScenario,
+  signIn,
+  useTheme,
+  expect,
+  test,
+} from "./support";
 
 /**
  * Players from md and lg (FAN-153): the filters in a toolbar, the cards as
@@ -183,7 +191,7 @@ test(
   TAG,
   async ({ browser }) => {
     const callsAt = async (viewport: typeof PHONE) => {
-      const page = await browser.newPage({ viewport, timezoneId: "America/New_York" });
+      const page = await newPageAtTestTime(browser, { viewport, timezoneId: "America/New_York" });
       await signIn(page, "a", "Players");
       // Count only Players' calls: sign-in passes through Matchup, whose desktop panel reads its own player.
       const calls = recordApiCalls(page);

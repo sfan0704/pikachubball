@@ -15,6 +15,7 @@ import { AuthProvider } from "../../../client/src/lib/auth";
 import LeaguePage from "../../../client/src/pages/LeaguePage";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
+import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
 import { resizeTo, START_WIDTH } from "../../support/viewport";
 
@@ -22,6 +23,7 @@ function fixture(name: string): unknown {
   return JSON.parse(readFileSync(`tests/backend/fixtures/yahoo/${name}.json`, "utf8"));
 }
 
+// A Thursday: the fixture league's week, and so the Week view, depends on the weekday.
 const AT = "2025-12-11T18:00:00.000Z";
 const SEASON = parseSeasonTable(fixture("league-season"), AT);
 const CURRENT = parseWeekTable(fixture("league-current-week"), AT);
@@ -51,7 +53,7 @@ interface Backend {
   down?: { matches: (url: string) => boolean };
 }
 
-const fixtureSource: DailyStatsSource = new FixtureDailyStatsSource({ now: () => Date.now() });
+const fixtureSource: DailyStatsSource = new FixtureDailyStatsSource(fixedClock(AT));
 
 /** The fixture source's answer for a daily-stats path, stamped like the server stamps it. */
 async function dailyStatsAnswer(url: string): Promise<Response | null> {
@@ -124,8 +126,12 @@ function renderPage(path: string) {
 }
 
 // The phone layout; League on a wider screen is tested in league-board.test and the browser tests.
-beforeEach(() => resizeTo(390));
+beforeEach(() => {
+  vi.useFakeTimers({ now: Date.parse(AT), toFake: ["Date"] });
+  resizeTo(390);
+});
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   resizeTo(START_WIDTH);
 });

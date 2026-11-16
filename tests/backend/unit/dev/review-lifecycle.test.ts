@@ -51,6 +51,7 @@ describe("the review record", () => {
     pid: 4242,
     now: Date.parse("2026-10-12T10:00:00Z"),
     lifetimeMinutes: 120,
+    fixedTime: "2026-11-11T20:00:00.000Z",
   });
 
   it("expires after its lifetime and not before", () => {
@@ -65,6 +66,12 @@ describe("the review record", () => {
     expect(() => parseRecord(JSON.stringify({ ...record, pid: "4242" }))).toThrow(
       /not one this tool wrote/
     );
+    expect(parseRecord(JSON.stringify({ ...record, fixedTime: null })).fixedTime).toBeNull();
+    for (const fixedTime of [undefined, "Wednesday", 1]) {
+      expect(() => parseRecord(JSON.stringify({ ...record, fixedTime }))).toThrow(
+        /not one this tool wrote/
+      );
+    }
   });
 });
 

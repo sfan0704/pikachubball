@@ -1,10 +1,12 @@
 // Playwright global setup for `npm run review:evidence`: the evidence counts only
 // if the review environment is this checkout's and serves the expected commit
-// (EXPECTED_COMMIT, or HEAD). Anything else fails before a single test runs.
+// (EXPECTED_COMMIT, or HEAD), at the browser tests' fixed time. Anything else
+// fails before a single test runs.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { workspace } from "../workspace.mts";
+import { BROWSER_TEST_TIME } from "../../tests/browser/fixed-time.mts";
 import { parseRecord } from "./lifecycle.mts";
 
 /** Refuses a review that isn't this checkout's or isn't at the expected commit. */
@@ -24,6 +26,11 @@ export default async function verifyTarget(): Promise<void> {
   if (record.commit !== expected) {
     throw new Error(
       `The review is at ${record.commit.slice(0, 7)}, expected ${expected.slice(0, 7)}`
+    );
+  }
+  if (record.fixedTime !== BROWSER_TEST_TIME) {
+    throw new Error(
+      "The review runs on the real clock, but the browser tests run at a fixed time; start it with npm run review:start -- --test-time"
     );
   }
   const response = await fetch(`${record.url}/api/health`, { signal: AbortSignal.timeout(5000) });
