@@ -61,7 +61,7 @@ function OpponentPicker({
         id="matchup-opponent"
         value={opponent.teamKey}
         onChange={(event) => onPickOpponent(event.target.value)}
-        className="min-h-8 w-full max-w-full truncate rounded-[10px] border border-[#D1D5DB] bg-white px-1.5 text-right text-[13px] font-bold text-[#15181D] [text-align-last:right]"
+        className="min-h-8 w-full max-w-full truncate rounded-[10px] lg:w-auto lg:max-w-[260px] border border-[#D1D5DB] bg-white px-1.5 text-right text-[13px] font-bold text-[#15181D] [text-align-last:right]"
       >
         {others.map((team) => (
           <option key={team.teamKey} value={team.teamKey}>
