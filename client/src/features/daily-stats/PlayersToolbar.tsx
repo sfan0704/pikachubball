@@ -33,7 +33,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (value: strin
   );
 }
 
-/** The Filters button: an icon with a count badge while any sheet filter is on. */
+/** The Filters button: an icon with a count badge while any sheet filter is on. From md the filters are in the toolbar instead. */
 function FiltersButton({ count, onOpen }: { count: number; onOpen: () => void }) {
   return (
     <button
@@ -41,7 +41,7 @@ function FiltersButton({ count, onOpen }: { count: number; onOpen: () => void })
       onClick={onOpen}
       aria-label={count === 0 ? "Filters" : `Filters, ${count} on`}
       className={cn(
-        "relative flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] bg-background",
+        "relative flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] bg-background md:hidden",
         "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
         count === 0 ? "border border-input" : "border-2 border-foreground"
       )}
@@ -80,7 +80,7 @@ interface PlayersToolbarProps {
   onOpenFilters: () => void;
 }
 
-/** The top row of Players: search, then the Filters button. */
+/** The top row of Players on a phone: search, then the Filters button; from md, search leads the toolbar. */
 export function PlayersToolbar({
   searchText,
   onSearch,
@@ -88,7 +88,7 @@ export function PlayersToolbar({
   onOpenFilters,
 }: PlayersToolbarProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 md:min-w-60 md:flex-1">
       <SearchBox value={searchText} onChange={onSearch} />
       <FiltersButton count={filterCount} onOpen={onOpenFilters} />
     </div>
