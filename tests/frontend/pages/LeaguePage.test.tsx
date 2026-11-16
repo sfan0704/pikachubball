@@ -46,6 +46,8 @@ interface Backend {
   connected?: boolean;
   tableError?: { code: string; status: number };
   dailyStats?: boolean;
+  /** Which league table paths Yahoo isn't answering right now; read on every request. */
+  down?: { matches: (url: string) => boolean };
 }
 
 const fixtureSource: DailyStatsSource = new FixtureDailyStatsSource({ now: () => Date.now() });
@@ -83,6 +85,9 @@ function startBackend(options: Backend = {}) {
       if (dailyStats) return dailyStats;
       if (url === "/api/leagues") return jsonResponse({ leagues: stored });
       if (url === "/api/leagues?refresh=true") return jsonResponse({ leagues: [LEAGUE] });
+      if (options.down?.matches(url)) {
+        return jsonResponse({ code: "YAHOO_UNAVAILABLE", message: "x", requestId: "r" }, 503);
+      }
       if (options.tableError) {
         return jsonResponse(
           { code: options.tableError.code, message: "x", requestId: "req-1" },
@@ -91,7 +96,7 @@ function startBackend(options: Backend = {}) {
       }
       if (url.endsWith("/season")) return jsonResponse(SEASON);
       if (url.endsWith("/current")) return jsonResponse(CURRENT);
-      if (url.endsWith("/1")) return jsonResponse(WEEK_1);
+      if (/\/\d+$/.test(url)) return jsonResponse(WEEK_1);
       return jsonResponse({ code: "NOT_FOUND", message: "x", requestId: "r" }, 404);
     })
   );
@@ -215,6 +220,33 @@ describe("LeaguePage", () => {
     expect(await screen.findByTestId("card-league-rankings")).toBeInTheDocument();
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+  });
+
+  it("retries the season weeks that failed with the table, so one Try again clears the error", async () => {
+    let failing: RegExp | null = /\/\d+$/;
+    const requests = startBackend({
+      dailyStats: true,
+      down: { matches: (url) => failing?.test(url) ?? false },
+    });
+    renderPage(`/leagues/${LEAGUE_KEY}/teams/${MY_TEAM}/season`);
+    // The season table loads; the weeks behind all-play fail.
+    expect(await screen.findByRole("alert")).toHaveTextContent("Yahoo isn't responding");
+
+    failing = /\/(season|\d+)$/;
+    const refresh = screen.getByRole("button", { name: "Refresh from Yahoo" });
+    await userEvent.click(refresh);
+    await waitFor(() => expect(refresh).toBeEnabled());
+    // The table's error stands in for the weeks' one.
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    const weekCalls = () => requests.filter((url) => url === `/api/leagues/${LEAGUE_KEY}/1`).length;
+    const before = weekCalls();
+
+    failing = null;
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(weekCalls()).toBe(before + 1);
+    expect(screen.getByTestId(`standings-row-${MY_TEAM}`)).toBeInTheDocument();
   });
 
   it("loads another period when it is chosen and records it in the URL", async () => {
