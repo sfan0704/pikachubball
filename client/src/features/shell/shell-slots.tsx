@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-/** The places in the app header that a screen fills: the league, the period it shows, and how fresh it is. */
-export type ShellSlotName = "league" | "context" | "freshness";
+/** The places in the app header that a screen fills: the league, the screen tabs, how fresh it is, and the period it shows. */
+export type ShellSlotName = "league" | "nav" | "freshness" | "context";
 
 /** The header's slot elements; null until the header has mounted. */
 export type ShellSlotElements = Readonly<Record<ShellSlotName, HTMLElement | null>>;

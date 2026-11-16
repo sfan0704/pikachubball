@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { SCREEN_LABELS, type Screen } from "@/features/league/screens";
 import { openScreen, selectionPath, type Selection } from "@/features/league/selection";
+import { ShellSlot } from "@/features/shell/shell-slots";
 import { cn } from "@/lib/utils";
 
 /** The tab icons, drawn as in the FAN-88 mockup. */
@@ -13,8 +14,7 @@ const ICON_PATHS: Readonly<Record<Screen, readonly string[]>> = {
 function TabIcon({ screen }: { screen: Screen }) {
   return (
     <svg
-      width="22"
-      height="22"
+      className="size-[22px] md:size-[18px]"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -32,9 +32,10 @@ function TabIcon({ screen }: { screen: Screen }) {
 }
 
 /**
- * The bottom tab bar: Matchup, Players and League, for the screens the server
- * has wired. Links, not tabs, because each screen is a URL: refresh, back and
- * shared links keep it.
+ * The screen tabs: Matchup, Players and League, for the screens the server has
+ * wired. One list placed by CSS: a bar fixed to the bottom on a phone, tabs in
+ * the header's bar from the md breakpoint. Links, not tabs, because each
+ * screen is a URL: refresh, back and shared links keep it.
  */
 export function ScreenNav({
   selection,
@@ -44,39 +45,46 @@ export function ScreenNav({
   screens: readonly Screen[];
 }) {
   return (
-    <nav
-      aria-label="Screens"
-      data-testid="screen-nav"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[max(18px,env(safe-area-inset-bottom))]"
-    >
-      <ul
-        className="container mx-auto grid px-2 pt-1.5"
-        style={{ gridTemplateColumns: `repeat(${screens.length}, minmax(0, 1fr))` }}
+    <ShellSlot name="nav">
+      <nav
+        aria-label="Screens"
+        data-testid="screen-nav"
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[max(18px,env(safe-area-inset-bottom))]",
+          "md:static md:shrink-0 md:self-stretch md:border-0 md:bg-transparent md:pb-0"
+        )}
       >
-        {screens.map((screen) => {
-          const current = selection.screen === screen;
-          return (
-            <li key={screen}>
-              <Link
-                href={selectionPath(openScreen(selection, screen))}
-                aria-current={current ? "page" : undefined}
-                className={cn(
-                  "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] font-semibold",
-                  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
-                  current ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn("h-[3px] w-[22px] rounded-full", current && "bg-[#F5C518]")}
-                />
-                <TabIcon screen={screen} />
-                {SCREEN_LABELS[screen]}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+        <ul className="grid auto-cols-[minmax(0,1fr)] grid-flow-col px-2 pt-1.5 md:h-full md:auto-cols-auto md:gap-1 md:p-0">
+          {screens.map((screen) => {
+            const current = selection.screen === screen;
+            return (
+              <li key={screen}>
+                <Link
+                  href={selectionPath(openScreen(selection, screen))}
+                  aria-current={current ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] font-semibold",
+                    "md:relative md:h-full md:flex-row md:gap-2 md:px-2 md:text-sm lg:px-3.5 md:hover:text-foreground",
+                    "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+                    current ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "h-[3px] w-[22px] rounded-full",
+                      "md:absolute md:inset-x-0 md:bottom-0 md:w-auto md:rounded-none",
+                      current && "bg-[#F5C518]"
+                    )}
+                  />
+                  <TabIcon screen={screen} />
+                  {SCREEN_LABELS[screen]}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </ShellSlot>
   );
 }
