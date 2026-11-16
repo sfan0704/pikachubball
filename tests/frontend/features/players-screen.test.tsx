@@ -2,18 +2,18 @@
  * @vitest-environment happy-dom
  */
 import React from "react";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playerListQuerySchema, statPeriodSchema } from "../../../shared/api/daily-stats";
-import type { Window as HappyWindow } from "happy-dom";
 import type { DailyStatsSource } from "../../../server/fantasy/daily-stats-source";
 import { FixtureDailyStatsSource } from "../../../server/fantasy/fixture/fixture-daily-stats-source";
 import { FreshnessProvider } from "../../../client/src/api/freshness";
 import { PlayersScreen } from "../../../client/src/features/daily-stats/PlayersScreen";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
+import { resizeTo, START_WIDTH } from "../../support/viewport";
 import {
   buildLeagueSettings,
   buildTeamTable,
@@ -70,15 +70,6 @@ function renderScreen() {
 
 async function list() {
   return screen.findByTestId("players-list");
-}
-
-const START_WIDTH = window.innerWidth;
-
-/** Sets the window's width: 390 for a phone, 900 for md's one column, 1280 for lg's desktop layout. */
-function resizeTo(width: number) {
-  act(() => {
-    (window as unknown as HappyWindow).happyDOM.setViewport({ width });
-  });
 }
 
 beforeEach(() => {
