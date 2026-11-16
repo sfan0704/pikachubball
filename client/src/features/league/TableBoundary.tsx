@@ -22,6 +22,8 @@ interface TableBoundaryProps {
   /** The current time, so the "updated" label can be tested. */
   now: number;
   onPickLeague: () => void;
+  /** What "Try again" retries: the table, and anything else on screen that failed with it. */
+  onRetry: () => void;
   /** Renders the loaded table. Only called when the table can be ranked. */
   children: (table: TeamTable) => ReactNode;
 }
@@ -86,11 +88,10 @@ function Loaded({
  * the app can't rank or one that hasn't started, and otherwise the table with
  * its age and a refresh button in the header's freshness line. Nothing incomplete or old passes as current.
  */
-export function TableBoundary({ query, now, onPickLeague, children }: TableBoundaryProps) {
-  const retry = () => query.refetch();
+export function TableBoundary({ query, now, onPickLeague, onRetry, children }: TableBoundaryProps) {
   if (query.data === undefined) {
     if (query.error) {
-      return <ErrorScreen error={query.error} onRetry={retry} onPickLeague={onPickLeague} />;
+      return <ErrorScreen error={query.error} onRetry={onRetry} onPickLeague={onPickLeague} />;
     }
     return (
       <div className="space-y-3" role="status" aria-label="Loading">
@@ -116,7 +117,7 @@ export function TableBoundary({ query, now, onPickLeague, children }: TableBound
   return (
     <>
       {query.error ? (
-        <ErrorScreen error={query.error} onRetry={retry} onPickLeague={onPickLeague} inline />
+        <ErrorScreen error={query.error} onRetry={onRetry} onPickLeague={onPickLeague} inline />
       ) : null}
       <Loaded query={{ ...query, data: query.data }} now={now}>
         {children}

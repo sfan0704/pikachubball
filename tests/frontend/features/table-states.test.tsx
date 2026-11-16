@@ -29,16 +29,16 @@ function query(overrides: Partial<TableQuery> = {}): TableQuery {
   };
 }
 
-function show(tableQuery: TableQuery, onPickLeague = vi.fn()) {
+function show(tableQuery: TableQuery, onPickLeague = vi.fn(), onRetry = vi.fn()) {
   const location = memoryLocation({ path: "/leagues/x", record: true });
   render(
     <Router hook={location.hook}>
-      <TableBoundary query={tableQuery} now={NOW} onPickLeague={onPickLeague}>
+      <TableBoundary query={tableQuery} now={NOW} onPickLeague={onPickLeague} onRetry={onRetry}>
         {(table) => <p>{table.teams.length} teams shown</p>}
       </TableBoundary>
     </Router>
   );
-  return { location, onPickLeague };
+  return { location, onPickLeague, onRetry };
 }
 
 const API_ERROR = (code: ApiErrorCode) => new ApiError(code, "server words", 500, "req-42");
@@ -149,9 +149,10 @@ describe("the screen for each error code", () => {
     await userEvent.click(screen.getByRole("button", { name: "Choose a league" }));
     expect(onPickLeague).toHaveBeenCalledOnce();
 
-    show(query({ error: API_ERROR("YAHOO_UNAVAILABLE"), refetch }));
+    const { onRetry } = show(query({ error: API_ERROR("YAHOO_UNAVAILABLE"), refetch }));
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalledOnce();
+    expect(onRetry).toHaveBeenCalledOnce();
+    expect(refetch).not.toHaveBeenCalled();
   });
 
   it("treats a non-API error as a generic failure without a reference", () => {
