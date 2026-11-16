@@ -1,14 +1,30 @@
 import AxeBuilder from "@axe-core/playwright";
-import { test as base, expect, type Locator, type Page } from "@playwright/test";
+import {
+  test as base,
+  expect,
+  type Browser,
+  type BrowserContextOptions,
+  type Locator,
+  type Page,
+} from "@playwright/test";
+import { BROWSER_TEST_TIME } from "./fixed-time";
 
 export { expect };
 
 /**
- * Every browser test, with the page's console errors, uncaught exceptions and
+ * Every browser test, at the moment the server's clock is fixed to (the page's
+ * clock starts there and runs on), with the page's console errors, uncaught exceptions and
  * failed or 5xx requests attached as "browser-errors" when there are any. Only
  * the message, method, path and status are kept: never headers, cookies or bodies.
  */
-export const test = base.extend<{ browserErrors: void }>({
+export const test = base.extend<{ fixedTime: void; browserErrors: void }>({
+  fixedTime: [
+    async ({ page }, use) => {
+      await page.clock.install({ time: BROWSER_TEST_TIME });
+      await use();
+    },
+    { auto: true },
+  ],
   browserErrors: [
     async ({ page }, use, testInfo) => {
       const errors: string[] = [];
@@ -38,6 +54,16 @@ export const test = base.extend<{ browserErrors: void }>({
     { auto: true },
   ],
 });
+
+/** A second page in a new context, its clock set like every test's page. */
+export async function newPageAtTestTime(
+  browser: Browser,
+  options: BrowserContextOptions
+): Promise<Page> {
+  const page = await browser.newPage(options);
+  await page.clock.install({ time: BROWSER_TEST_TIME });
+  return page;
+}
 
 export const LEAGUE = "466.l.100000";
 export const MY_TEAM = `${LEAGUE}.t.11`;

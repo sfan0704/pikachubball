@@ -18,6 +18,19 @@ describe("createServerDependencies", () => {
     expect(typeof dependencies.createYahooClient).toBe("function");
   });
 
+  it("reads the real clock unless local mode fixes the time", () => {
+    const fixed = Date.parse("2026-11-11T20:00:00.000Z");
+
+    const real = createServerDependencies(buildTestConfig()).clock.now();
+    const local = createServerDependencies(
+      buildTestConfig({ localStack: true, localDailyStats: "fixture", localFixedTime: fixed })
+    );
+
+    expect(Math.abs(real - Date.now())).toBeLessThan(60_000);
+    expect(local.clock.now()).toBe(fixed);
+    expect(local.clock.now()).toBe(fixed);
+  });
+
   it("builds owner-scoped storage with the configured encryption key", () => {
     const dependencies = createServerDependencies(buildTestConfig());
     const client = {} as never;

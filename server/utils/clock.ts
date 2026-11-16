@@ -5,3 +5,8 @@ export interface Clock {
 
 /** The real clock. */
 export const systemClock: Clock = { now: () => Date.now() };
+
+/** A clock that always reads `time`, for local runs whose dates must not follow the calendar. */
+export function frozenClock(time: number): Clock {
+  return { now: () => time };
+}

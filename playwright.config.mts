@@ -1,5 +1,6 @@
 import { defineConfig } from "@playwright/test";
 import { workspace } from "./scripts/workspace.mts";
+import { BROWSER_TEST_TIME } from "./tests/browser/fixed-time";
 
 // This checkout's own ports (scripts/workspace.mts), so two workspaces can run
 // browser tests at once. Set here so the test workers inherit them.
@@ -41,6 +42,11 @@ export default defineConfig({
     // Never reuse a running server: it could be another commit's build. A busy
     // port fails the run instead of testing the wrong thing.
     reuseExistingServer: false,
-    env: { PORT: String(PORT), STANDIN_PORT: String(STANDIN_PORT) },
+    // The server's clock stays at the tests' moment; tests/browser/support.ts sets the page's.
+    env: {
+      PORT: String(PORT),
+      STANDIN_PORT: String(STANDIN_PORT),
+      LOCAL_FIXED_TIME: BROWSER_TEST_TIME,
+    },
   },
 });

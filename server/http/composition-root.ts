@@ -11,7 +11,7 @@ import { YahooLeagueResources } from "../fantasy/league-resources";
 import { refreshAccessToken, revokeYahooToken } from "../fantasy/yahoo/yahoo-auth";
 import { AesGcmOwnerTokenCipher } from "../storage/owner-token-cipher";
 import { createSupabaseOwnerStorage } from "../storage/supabase-owner-storage";
-import { systemClock, type Clock } from "../utils/clock";
+import { frozenClock, systemClock, type Clock } from "../utils/clock";
 import { createLogger } from "../utils/logger";
 import { FixtureDailyStatsSource } from "../fantasy/fixture/fixture-daily-stats-source";
 import { YahooDailyStatsSource } from "../fantasy/yahoo-daily-stats-source";
@@ -67,7 +67,7 @@ function dailyStatsWiring(config: AppConfig, clock: Clock) {
  */
 export function createServerDependencies(
   config: AppConfig,
-  clock: Clock = systemClock
+  clock: Clock = config.localFixedTime === null ? systemClock : frozenClock(config.localFixedTime)
 ): ServerDependencies {
   const logger = createLogger({ debug: config.nodeEnv === "development" });
   const cipher = AesGcmOwnerTokenCipher.fromKeyring({
