@@ -184,8 +184,10 @@ test(
   async ({ browser }) => {
     const callsAt = async (viewport: typeof PHONE) => {
       const page = await browser.newPage({ viewport, timezoneId: "America/New_York" });
-      const calls = recordApiCalls(page);
       await signIn(page, "a", "Players");
+      // Count only Players' calls: sign-in passes through Matchup, whose desktop panel reads its own player.
+      const calls = recordApiCalls(page);
+      await page.reload();
       await expect(rows(page)).toHaveCount(25);
       if (viewport === PHONE) {
         // The phone shows the first player's details once they are tapped; the panel shows them unasked.
