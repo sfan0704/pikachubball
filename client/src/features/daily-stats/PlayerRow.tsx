@@ -30,21 +30,25 @@ interface PlayerRowProps {
   sortedCategory: LeagueCategory | null;
   /** The league's categories, one average each. */
   categories: readonly LeagueCategory[];
+  /** The player whose details the panel beside the list shows, from lg. */
+  selected: boolean;
   onOpen: (player: DailyPlayer) => void;
 }
 
 const TAG = "shrink-0 whitespace-nowrap rounded-md px-1.5 py-px text-[0.625rem] font-bold";
 
 /** The first line: name (opening the detail), injury tag, positions and team, then who has them. */
-function CardTitle({ row, onOpen }: Pick<PlayerRowProps, "row" | "onOpen">) {
+function CardTitle({ row, selected, onOpen }: Pick<PlayerRowProps, "row" | "selected" | "onOpen">) {
   const { player, ownership } = row;
   const owner = ownershipText(ownership);
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-[5px] gap-y-1">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-[5px] gap-y-1 md:col-start-1">
       {/* The name's hit area stretches over the whole card, as in the mockup; the injury tag sits above it. */}
       <button
         type="button"
         onClick={() => onOpen(player)}
+        title={player.name}
+        aria-current={selected || undefined}
         className={cn(
           "max-w-[150px] truncate text-left text-[0.8125rem] font-semibold underline decoration-border underline-offset-[3px]",
           "after:absolute after:inset-0 after:rounded-2xl after:content-['']",
@@ -84,9 +88,9 @@ function CardTitle({ row, onOpen }: Pick<PlayerRowProps, "row" | "onOpen">) {
 function CardFacts({ row, schedule, today }: Pick<PlayerRowProps, "row" | "schedule" | "today">) {
   const change = row.rostered.change;
   return (
-    <div className="flex min-w-0 items-center gap-2 text-[0.6875rem]">
+    <div className="flex min-w-0 items-center gap-2 text-[0.6875rem] md:contents">
       {schedule && (
-        <>
+        <span className="contents md:col-start-2 md:flex md:flex-col md:items-start md:gap-0.5">
           <span className="flex gap-0.5" data-testid="week-strip">
             {weekStrip(schedule, today).map((day) => (
               <span
@@ -106,10 +110,12 @@ function CardFacts({ row, schedule, today }: Pick<PlayerRowProps, "row" | "sched
           <span className="whitespace-nowrap text-muted-foreground" data-testid="games-left">
             {gamesLeftText(schedule)}
           </span>
-        </>
+        </span>
       )}
-      <span className="ml-auto whitespace-nowrap text-right" data-testid="rostered">
-        <b className="font-semibold">{rosteredText(row.rostered)}</b> rostered{" "}
+      <span className="ml-auto whitespace-nowrap text-right md:col-start-3" data-testid="rostered">
+        <b className="font-semibold">{rosteredText(row.rostered)}</b>
+        {/* From md the column header says "Rostered". */}
+        <span className="md:sr-only"> rostered</span>{" "}
         <span
           className={cn(
             "font-bold",
@@ -138,21 +144,24 @@ export function PlayerRow({
   today,
   sortedCategory,
   categories,
+  selected,
   onOpen,
 }: PlayerRowProps) {
   return (
     <li
       className={cn(
         "relative flex min-w-0 flex-col gap-[5px] rounded-2xl border bg-card px-3 py-2.5",
+        "md:grid md:grid-cols-(--player-columns) md:items-center md:gap-x-1.5 md:rounded-xl md:py-2",
         row.ownership.kind === "waivers" &&
-          "border-amber-300 bg-amber-50 dark:border-amber-400/50 dark:bg-amber-950/30"
+          "border-amber-300 bg-amber-50 dark:border-amber-400/50 dark:bg-amber-950/30",
+        selected && "outline-2 outline-foreground"
       )}
       data-testid={`player-row-${row.player.playerKey}`}
     >
-      <CardTitle row={row} onOpen={onOpen} />
+      <CardTitle row={row} selected={selected} onOpen={onOpen} />
       <CardFacts row={row} schedule={schedule} today={today} />
       <dl
-        className="grid gap-0.5"
+        className="grid gap-0.5 md:contents"
         style={{
           gridTemplateColumns: `repeat(${categoriesPerRow(categories.length)}, minmax(0, 1fr))`,
         }}
@@ -168,7 +177,7 @@ export function PlayerRow({
                 : "bg-muted/60 dark:bg-muted/40"
             )}
           >
-            <dt className="text-[0.53125rem] font-bold tracking-[0.2px] text-muted-foreground">
+            <dt className="text-[0.53125rem] font-bold tracking-[0.2px] text-muted-foreground md:sr-only">
               {cell.label}
             </dt>
             <dd
