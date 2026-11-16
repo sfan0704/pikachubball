@@ -15,6 +15,20 @@ export function MatchupTop({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Everything under the top block. One column in the phone's order below lg;
+ * from lg, two: the totals (and the details panel) beside the players.
+ */
+export function MatchupColumns({ players, children }: { players: ReactNode; children: ReactNode }) {
+  return (
+    <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start lg:gap-5 lg:space-y-0">
+      {/* Hidden while empty, so a loading board keeps the phone's spacing. */}
+      <div className="space-y-5 empty:hidden">{children}</div>
+      {players}
+    </div>
+  );
+}
+
 /** A white board section with an uppercase title and a short hint on the right. */
 export function BoardCard({
   title,

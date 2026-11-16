@@ -4,6 +4,7 @@ import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import { addDays, nbaDateOf } from "@shared/domain";
 import { useLocation } from "wouter";
 import { useWeeks } from "@/api/daily-stats-hooks";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { DAY_LABELS, type MatchupDay } from "@/features/league/screens";
 import { selectionPath, type Selection } from "@/features/league/selection";
 import { useNow } from "@/features/league/useNow";
@@ -132,6 +133,24 @@ function WeekView({ selection, weeks, today, now, onPickLeague, dayBar }: WeekVi
   );
 }
 
+/** Yesterday, Today and Week as links; as wide as the screen on a phone, a fixed width from lg. */
+function DayBar({ selection }: { selection: Selection }) {
+  return (
+    <div className="lg:w-[420px]">
+      <LinkBar
+        label="Day"
+        testId="matchup-days"
+        items={DAY_ORDER.map((item) => ({
+          key: item,
+          label: DAY_LABELS[item],
+          href: selectionPath({ ...selection, day: item }),
+          current: item === selection.day,
+        }))}
+      />
+    </div>
+  );
+}
+
 /** Matchup: the board for Today or Yesterday, or the week, each with the day bar in its sticky top. */
 export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
   const now = useNow();
@@ -140,18 +159,8 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
   const weeks = useWeeks(day === "week" ? leagueKey : null);
   const date = day === "today" ? today : addDays(today, -1);
   const [openPlayer, setOpenPlayer] = useState<DailyPlayer | null>(null);
-  const dayBar = (
-    <LinkBar
-      label="Day"
-      testId="matchup-days"
-      items={DAY_ORDER.map((item) => ({
-        key: item,
-        label: DAY_LABELS[item],
-        href: selectionPath({ ...selection, day: item }),
-        current: item === day,
-      }))}
-    />
-  );
+  const breakpoint = useBreakpoint();
+  const dayBar = <DayBar selection={selection} />;
   return (
     <div>
       {day !== "week" ? (
@@ -164,6 +173,8 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
           now={now}
           onPickLeague={onPickLeague}
           onOpenPlayer={setOpenPlayer}
+          openPlayer={openPlayer}
+          showPanel={breakpoint === "lg"}
           dayBar={dayBar}
         />
       ) : weeks.data ? (
@@ -183,9 +194,11 @@ export function MatchupScreen({ selection, onPickLeague }: MatchupScreenProps) {
           </DatasetState>
         </div>
       )}
+      {/* From lg the day board shows the details in its panel instead. */}
       <PlayerDetailSheet
         leagueKey={leagueKey}
-        player={openPlayer}
+        player={breakpoint === "lg" ? null : openPlayer}
+        side={breakpoint === "phone" ? "bottom" : "right"}
         viewDate={day === "week" ? today : date}
         onClose={() => setOpenPlayer(null)}
         onPickLeague={onPickLeague}

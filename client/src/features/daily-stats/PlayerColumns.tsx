@@ -35,6 +35,8 @@ interface PlayerColumnProps {
   isToday: boolean;
   /** Opens the shared player detail. */
   onOpenPlayer: (player: DailyPlayer) => void;
+  /** The player the details panel shows beside the columns, outlined; null when there is no panel. */
+  pickedKey: string | null;
 }
 
 const CALLOUT_TEXT: Readonly<Record<VersusAverage, string>> = {
@@ -54,9 +56,11 @@ const CALLOUT_NAME: Readonly<Record<VersusAverage, string>> = {
 /** The card's player name, which opens the shared player detail. */
 function CardName({
   player,
+  picked,
   onOpenPlayer,
 }: {
   player: DailyPlayer;
+  picked: boolean;
   onOpenPlayer: (player: DailyPlayer) => void;
 }) {
   return (
@@ -64,6 +68,7 @@ function CardName({
       type="button"
       onClick={() => onOpenPlayer(player)}
       aria-label={`${player.name}: open player detail`}
+      aria-current={picked ? "true" : undefined}
       className="truncate rounded-md text-left text-xs font-bold text-[#15181D] dark:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
       {shortName(player.name)}
@@ -75,11 +80,13 @@ function PlayerCard({
   row,
   category,
   isToday,
+  picked,
   onOpenPlayer,
 }: {
   row: PlayerCardRow;
   category: LeagueCategory | null;
   isToday: boolean;
+  picked: boolean;
   onOpenPlayer: (player: DailyPlayer) => void;
 }) {
   const entry = category ? categoryEntry(row.line, category) : rosterEntry(row.line);
@@ -94,13 +101,14 @@ function PlayerCard({
       className={cn(
         "grid min-h-[52px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-0.5 rounded-[10px] border border-[#E2E5EA] bg-white p-2 dark:border-border dark:bg-card",
         !row.isStartingSlot &&
-          "border-dashed border-[#9CA3AF] bg-[#F3F4F6] dark:border-muted-foreground dark:bg-muted"
+          "border-dashed border-[#9CA3AF] bg-[#F3F4F6] dark:border-muted-foreground dark:bg-muted",
+        picked && "border-2 border-solid border-[#15181D] p-[7px] dark:border-foreground"
       )}
       data-testid={`player-card-${row.player.playerKey}`}
       aria-label={`${row.player.name}, ${shown}${CALLOUT_NAME[callout]}, ${meta}`}
     >
       <span className="flex min-w-0 items-center gap-1">
-        <CardName player={row.player} onOpenPlayer={onOpenPlayer} />
+        <CardName player={row.player} picked={picked} onOpenPlayer={onOpenPlayer} />
         {isToday && <InjuryTag player={row.player} compact />}
       </span>
       <span
@@ -146,7 +154,13 @@ export function GroupHead({ children }: { children: ReactNode }) {
 }
 
 /** One team's column: counted players, then bench and IL set apart. */
-export function PlayerColumnView({ column, category, isToday, onOpenPlayer }: PlayerColumnProps) {
+export function PlayerColumnView({
+  column,
+  category,
+  isToday,
+  onOpenPlayer,
+  pickedKey,
+}: PlayerColumnProps) {
   const ordered = orderForCategory(column.rows, category);
   const counted = ordered.filter((row) => row.isStartingSlot);
   const bench = ordered.filter((row) => !row.isStartingSlot);
@@ -156,6 +170,7 @@ export function PlayerColumnView({ column, category, isToday, onOpenPlayer }: Pl
       row={row}
       category={category}
       isToday={isToday}
+      picked={row.player.playerKey === pickedKey}
       onOpenPlayer={onOpenPlayer}
     />
   );
