@@ -10,7 +10,7 @@ test.beforeEach(async () => {
   await setScenario("ok");
 });
 
-test("clicking a card away from the name opens that player", async ({ page }) => {
+test("clicking a card away from the name opens that player", async ({ page }, testInfo) => {
   await signIn(page, "a", "Matchup");
   const card = page
     .getByTestId(MY_COLUMN)
@@ -25,7 +25,8 @@ test("clicking a card away from the name opens that player", async ({ page }) =>
   }
   await card.click({ position: { x: box.width - 12, y: box.height / 2 } });
 
-  const wide = (page.viewportSize()?.width ?? 0) >= 1100;
+  // The desktop project is wide enough for the panel; the phone opens the sheet.
+  const wide = testInfo.project.name === "desktop";
   const details = wide
     ? page.getByTestId("player-panel")
     : page.getByRole("dialog", { name: "Jordan Knoll" });

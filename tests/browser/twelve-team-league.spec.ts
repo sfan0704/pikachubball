@@ -1,5 +1,13 @@
 import type { Locator, Page } from "@playwright/test";
-import { MY_TEAM, accessibilityViolations, setScenario, signIn, expect, test } from "./support";
+import {
+  sidewaysOverflow,
+  MY_TEAM,
+  accessibilityViolations,
+  setScenario,
+  signIn,
+  expect,
+  test,
+} from "./support";
 
 /**
  * Matchup and Players for a league that isn't the standard nine: twelve teams
@@ -16,14 +24,6 @@ test.beforeEach(async () => {
 test.afterEach(async () => {
   await setScenario("ok");
 });
-
-async function expectNoHorizontalScroll(page: Page): Promise<void> {
-  const widths = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollWidth,
-    viewport: window.innerWidth,
-  }));
-  expect(widths.scroll).toBeLessThanOrEqual(widths.viewport);
-}
 
 /** How many separate rows the elements sit in, by their top edge. */
 async function rowCount(items: Locator): Promise<number> {
@@ -63,7 +63,7 @@ test("Matchup Today follows the league's ten categories at phone width", async (
   // Fewer fouls is better, so the counted players run fewest first.
   expect(fouls).toEqual([...fouls].sort((a, b) => a - b));
 
-  await expectNoHorizontalScroll(page);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
   expect(await accessibilityViolations(page)).toEqual([]);
 });
 
@@ -76,7 +76,7 @@ test("Matchup Week follows the league's ten categories at phone width", async ({
   await grid.getByRole("button", { name: /^3PT%,/ }).click();
   await expect(page.getByTestId("columns-title")).toHaveText(/^3PT%/);
 
-  await expectNoHorizontalScroll(page);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
   expect(await accessibilityViolations(page)).toEqual([]);
 });
 
@@ -97,6 +97,6 @@ test("Players shows and sorts by the league's ten categories at phone width", as
     );
   expect(fouls).toEqual([...fouls].sort((a, b) => a - b));
 
-  await expectNoHorizontalScroll(page);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
   expect(await accessibilityViolations(page)).toEqual([]);
 });

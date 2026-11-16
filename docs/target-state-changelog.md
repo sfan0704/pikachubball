@@ -46,3 +46,4 @@ One line per change to [the target state](target-state.md): the date, what chang
 - 2026-11-14 · Season totals read every week's table so far (one scope request a week, finished weeks Settled) for all-play and luck; any failed week withholds them all · FAN-141
 - 2026-11-15 · League is a Standings | Categories bar: standings by the official record with all-play and luck, a rank grid over the league's own categories, and the view, sort and category in the URL; the rank tiles and the rank-sum Overall order are gone · FAN-142
 - 2026-11-15 · The breakpoints are also CSS variables (`@theme static`), and one `useBreakpoint` hook reads them for the choices CSS can't make, such as a sheet or a panel · FAN-152
+- 2026-11-16 · Screens at every width: one component per part, details content shown as a sheet, drawer or panel by width, a default pick that isn't written anywhere, and the same requests at every width, as built by FAN-150 to FAN-154 · FAN-155

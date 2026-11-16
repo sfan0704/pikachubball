@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import {
   accessibilityViolations,
   openScreen,
+  sidewaysOverflow,
   setScenario,
   signIn,
   useTheme,
@@ -104,21 +105,23 @@ for (const width of [1280, 1440]) {
   });
 }
 
-test("no width from 320 to 1920px scrolls the page sideways, on any screen", async ({ page }) => {
-  await signIn(page, "a", "Matchup");
-  for (const screen of SCREENS) {
-    await openScreen(page, screen);
-    await expect(page.getByRole("status", { name: "Loading" })).toHaveCount(0);
-    for (const width of [320, 390, MD - 1, MD, 900, LG - 1, LG, 1280, 1440, 1920]) {
-      await page.setViewportSize({ width, height: HEIGHT });
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - window.innerWidth
-      );
-      expect(overflow, `${screen} at ${width}px`).toBeLessThanOrEqual(0);
+// It sets every width itself, so it runs once, in the desktop project.
+test(
+  "no width from 320 to 1920px scrolls the page sideways, on any screen",
+  { tag: "@desktop" },
+  async ({ page }) => {
+    await signIn(page, "a", "Matchup");
+    for (const screen of SCREENS) {
+      await openScreen(page, screen);
+      await expect(page.getByRole("status", { name: "Loading" })).toHaveCount(0);
+      for (const width of [320, 390, MD - 1, MD, 900, LG - 1, LG, 1280, 1440, 1920]) {
+        await page.setViewportSize({ width, height: HEIGHT });
+        expect(await sidewaysOverflow(page), `${screen} at ${width}px`).toBeLessThanOrEqual(0);
+      }
+      await page.setViewportSize({ width: 1280, height: HEIGHT });
     }
-    await page.setViewportSize({ width: 1280, height: HEIGHT });
   }
-});
+);
 
 for (const width of [390, 1280]) {
   test(`at ${width}px Matchup's sticky block stays flush under the header`, async ({ page }) => {

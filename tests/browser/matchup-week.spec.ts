@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import {
+  sidewaysOverflow,
   LEAGUE,
   MY_TEAM,
   accessibilityViolations,
@@ -44,14 +45,6 @@ async function columnSum(column: Locator): Promise<number> {
   return values.filter((value) => value !== "–").reduce((sum, value) => sum + Number(value), 0);
 }
 
-async function expectNoHorizontalScroll(page: Page): Promise<void> {
-  const widths = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollWidth,
-    viewport: window.innerWidth,
-  }));
-  expect(widths.scroll).toBeLessThanOrEqual(widths.viewport);
-}
-
 test("a past week labels the added, dropped, partly and fully benched players", async ({
   page,
 }) => {
@@ -70,7 +63,7 @@ test("a past week labels the added, dropped, partly and fully benched players", 
   // No bench in a week: only the player on IL is set apart.
   await expect(column.getByTestId("week-out").getByRole("listitem")).toHaveCount(1);
   await expect(card(column.getByTestId("week-out"), playerKey(13))).toBeVisible();
-  await expectNoHorizontalScroll(page);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
 });
 
 test("each column's counted values add up to the grid's team totals", async ({ page }) => {

@@ -283,7 +283,7 @@ export function PlayerPage(props: PlayerPageProps) {
         </p>
       </div>
       {shown !== undefined && (
-        <DetailsPanel testId="player-detail">
+        <DetailsPanel testId="player-panel">
           <PlayerDetails
             leagueKey={leagueKey}
             player={shown}

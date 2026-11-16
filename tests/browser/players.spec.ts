@@ -1,5 +1,13 @@
 import type { Page } from "@playwright/test";
-import { accessibilityViolations, setScenario, signIn, useTheme, expect, test } from "./support";
+import {
+  sidewaysOverflow,
+  accessibilityViolations,
+  setScenario,
+  signIn,
+  useTheme,
+  expect,
+  test,
+} from "./support";
 
 // Tonight and tomorrow follow the viewer's time zone; the fixture's games tip off at 6:30 pm Eastern.
 test.use({ timezoneId: "America/New_York" });
@@ -10,10 +18,6 @@ test.beforeEach(async () => {
 
 function rows(page: Page) {
   return page.getByTestId("players-list").getByRole("listitem");
-}
-
-async function sidewaysOverflow(page: Page): Promise<number> {
-  return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 }
 
 /** Opens Players and waits for the page and its averages. */

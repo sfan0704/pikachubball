@@ -155,3 +155,29 @@ export async function accessibilityViolations(page: Page): Promise<string[]> {
     return `${violation.id} (${violation.nodes.length}): ${violation.help}\n    ${examples.join("\n    ")}`;
   });
 }
+
+/** How far the page reaches past the window sideways; 0 or less when nothing scrolls sideways. */
+export async function sidewaysOverflow(page: Page): Promise<number> {
+  return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+}
+
+/** Collects the league API paths the page asks for from now on, with their queries. */
+export function recordApiCalls(page: Page): Set<string> {
+  const calls = new Set<string>();
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname.startsWith("/api/leagues/")) {
+      calls.add(`${url.pathname}${url.search}`);
+    }
+  });
+  return calls;
+}
+
+/** The element's box on the page; fails the test when it has none. */
+export async function boxOf(locator: Locator) {
+  const found = await locator.boundingBox();
+  if (!found) {
+    throw new Error(`${locator.toString()} is not on the page`);
+  }
+  return found;
+}

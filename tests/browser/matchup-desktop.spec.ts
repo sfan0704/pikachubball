@@ -1,5 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import {
+  boxOf,
+  sidewaysOverflow,
   MY_TEAM,
   accessibilityViolations,
   newPageAtTestTime,
@@ -54,22 +56,6 @@ async function expectPanelShows(page: Page, name: string): Promise<void> {
   await expect(pickedRows(page)).toHaveAccessibleName(`${name}: open player detail`);
 }
 
-async function expectNoHorizontalScroll(page: Page): Promise<void> {
-  const widths = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollWidth,
-    viewport: window.innerWidth,
-  }));
-  expect(widths.scroll).toBeLessThanOrEqual(widths.viewport);
-}
-
-async function box(locator: Locator) {
-  const found = await locator.boundingBox();
-  if (!found) {
-    throw new Error("the element is not on the page");
-  }
-  return found;
-}
-
 test(
   "lays out the score and days on top, totals and details on the left, players on the right",
   DESKTOP,
@@ -81,11 +67,11 @@ test(
     await expect(panel(page)).toBeVisible();
 
     const [score, days, grid, details, columns] = await Promise.all([
-      box(page.getByTestId("matchup-header")),
-      box(page.getByRole("navigation", { name: "Day" })),
-      box(totals),
-      box(panel(page)),
-      box(players),
+      boxOf(page.getByTestId("matchup-header")),
+      boxOf(page.getByRole("navigation", { name: "Day" })),
+      boxOf(totals),
+      boxOf(panel(page)),
+      boxOf(players),
     ]);
     expect(days.y).toBeGreaterThan(score.y + score.height - 1);
     expect(grid.y).toBeGreaterThan(days.y + days.height - 1);
@@ -95,8 +81,8 @@ test(
     expect(columns.y).toBe(grid.y);
     // Both teams side by side inside the right-hand card.
     const [mine, theirs] = await Promise.all([
-      box(page.getByTestId(MY_COLUMN)),
-      box(players.locator('[data-testid^="column-"]').nth(1)),
+      boxOf(page.getByTestId(MY_COLUMN)),
+      boxOf(players.locator('[data-testid^="column-"]').nth(1)),
     ]);
     expect(theirs.x).toBeGreaterThan(mine.x);
     expect(theirs.y).toBe(mine.y);
@@ -177,8 +163,8 @@ test("changing the day keeps the panel in step with the board", DESKTOP, async (
   await expect(panel(page)).toHaveCount(0);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const [grid, columns] = await Promise.all([
-    box(page.getByRole("region", { name: "Team totals" })),
-    box(page.getByRole("region", { name: "Players side by side" })),
+    boxOf(page.getByRole("region", { name: "Team totals" })),
+    boxOf(page.getByRole("region", { name: "Players side by side" })),
   ]);
   expect(columns.x).toBeGreaterThan(grid.x + grid.width);
 });
@@ -204,8 +190,21 @@ test(
     await expect(drawer.getByTestId("player-detail-stats")).toBeVisible();
     // Once it has slid in, it sits against the window's right edge.
     await expect
-      .poll(async () => Math.round((await box(drawer)).x + (await box(drawer)).width))
+      .poll(async () => Math.round((await boxOf(drawer)).x + (await boxOf(drawer)).width))
       .toBe(900);
+  }
+);
+
+test(
+  "from md the opponent picker keeps its own width instead of filling the score card",
+  DESKTOP,
+  async ({ page }) => {
+    await signIn(page, "a", "Matchup");
+    for (const width of [900, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      const picker = await boxOf(page.getByLabel("Opponent"));
+      expect(picker.width, `at ${width}px`).toBeLessThanOrEqual(260);
+    }
   }
 );
 
@@ -278,16 +277,6 @@ test(
   }
 );
 
-test("has no sideways page scroll from 320 to 1920 px", DESKTOP, async ({ page }) => {
-  await signIn(page, "a", "Matchup");
-  await expect(page.getByTestId(MY_COLUMN)).toBeVisible();
-  for (const width of [320, 390, 768, 900, 1099, 1100, 1280, 1440, 1920]) {
-    await page.setViewportSize({ width, height: 900 });
-    await expect(page.getByTestId("totals-grid")).toBeVisible();
-    await expectNoHorizontalScroll(page);
-  }
-});
-
 test(
   "every row and control is reachable by keyboard, with a visible focus ring",
   DESKTOP,
@@ -338,7 +327,7 @@ test(
       await expect(page.getByTestId("columns-title")).toHaveText("PF · Today");
       await expectPanelShows(page, await topOfMyColumn(page));
       await expect(panel(page).getByRole("rowheader")).toHaveCount(10);
-      await expectNoHorizontalScroll(page);
+      expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
     } finally {
       await setScenario("ok");
     }

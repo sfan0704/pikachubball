@@ -1,5 +1,5 @@
-import type { Page } from "@playwright/test";
 import {
+  sidewaysOverflow,
   LEAGUE,
   MY_TEAM,
   accessibilityViolations,
@@ -13,10 +13,6 @@ import {
 test.beforeEach(async () => {
   await setScenario("ok");
 });
-
-async function sidewaysOverflow(page: Page): Promise<number> {
-  return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-}
 
 const ORDINAL = /^\d+(st|nd|rd|th)$/;
 const LUCK = /^([+−]\d+\.\d|0)$/;

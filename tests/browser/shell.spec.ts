@@ -2,6 +2,7 @@ import {
   accessibilityViolations,
   openAccount,
   openScreen,
+  sidewaysOverflow,
   setScenario,
   signIn,
   useTheme,
@@ -37,9 +38,7 @@ test("every screen sits in the mockup's shell: header with league, period and fr
   await openScreen(page, "League");
   await expect(header.getByTestId("text-updated")).toBeVisible();
   await expect(header.getByTestId("header-context")).toHaveText("Season totals");
-  expect(
-    await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-  ).toBeLessThanOrEqual(0);
+  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
 
   await page.reload();
   await expect(nav.getByRole("link", { name: "League" })).toHaveAttribute("aria-current", "page");

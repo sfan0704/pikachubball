@@ -1,5 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import {
+  recordApiCalls,
+  sidewaysOverflow,
   accessibilityViolations,
   newPageAtTestTime,
   setScenario,
@@ -33,7 +35,7 @@ function toolbarGroup(page: Page, name: string): Locator {
 
 /** The panel beside the list: a region named by the player it shows. */
 function panel(page: Page): Locator {
-  return page.locator("section[data-testid=player-detail]");
+  return page.getByTestId("player-panel");
 }
 
 /** Opens Players and waits for the page, its averages and the panel's stats. */
@@ -46,22 +48,6 @@ async function openPlayers(page: Page) {
 
 function nameButton(row: Locator): Locator {
   return row.getByRole("button").first();
-}
-
-async function sidewaysOverflow(page: Page): Promise<number> {
-  return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-}
-
-/** The API calls the page made, without the host, sorted and deduplicated. */
-function recordApiCalls(page: Page): () => string[] {
-  const calls = new Set<string>();
-  page.on("request", (request) => {
-    const url = new URL(request.url());
-    if (url.pathname.startsWith("/api/leagues/")) {
-      calls.add(`${url.pathname}${url.search}`);
-    }
-  });
-  return () => [...calls].sort();
 }
 
 test(
@@ -214,7 +200,7 @@ test(
       }
       await expect(page.getByTestId("player-detail-stats")).toBeVisible();
       await expect(page.getByRole("status", { name: "Loading" })).toHaveCount(0);
-      const made = calls();
+      const made = [...calls].sort();
       await page.close();
       return made;
     };
@@ -250,25 +236,16 @@ test("between md and lg a picked player opens in the right-hand drawer", TAG, as
     .toBe(900);
 });
 
-test(
-  "long names truncate with the full name kept, and the page never scrolls sideways from 320 to 1920",
-  TAG,
-  async ({ page }) => {
-    await openPlayers(page);
-    for (const name of await rows(page)
-      .getByRole("button")
-      .evaluateAll((buttons) =>
-        buttons.map((button) => [button.textContent, button.getAttribute("title")])
-      )) {
-      expect(name[1]).toBe(name[0]);
-    }
-    for (const width of [320, 390, 768, 900, 1099, 1100, 1280, 1440, 1920]) {
-      await page.setViewportSize({ width, height: 800 });
-      await expect(rows(page)).toHaveCount(25);
-      expect(await sidewaysOverflow(page), `at ${width}px`).toBeLessThanOrEqual(0);
-    }
+test("long names truncate with the full name kept", TAG, async ({ page }) => {
+  await openPlayers(page);
+  for (const name of await rows(page)
+    .getByRole("button")
+    .evaluateAll((buttons) =>
+      buttons.map((button) => [button.textContent, button.getAttribute("title")])
+    )) {
+    expect(name[1]).toBe(name[0]);
   }
-);
+});
 
 test(
   "keyboard reaches the toolbar, sort and rows in reading order with a focus ring",

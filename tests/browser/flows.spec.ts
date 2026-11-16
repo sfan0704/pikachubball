@@ -165,21 +165,3 @@ test("refreshes an expired Yahoo token on its own", async ({ page }) => {
 
   await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
 });
-
-test("never scrolls the page sideways; only the stat tables do", async ({ page }) => {
-  await signIn(page);
-
-  await expect(page.getByTestId(/^row-ranking-/)).toHaveCount(14);
-  const leagueOverflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - window.innerWidth
-  );
-  expect(leagueOverflow, "page overflows sideways on League").toBeLessThanOrEqual(0);
-  for (const screen of ["Matchup", "Players"] as const) {
-    await openScreen(page, screen);
-    await expect(page.getByRole("status", { name: "Loading" })).toHaveCount(0);
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - window.innerWidth
-    );
-    expect(overflow, `page overflows sideways on ${screen}`).toBeLessThanOrEqual(0);
-  }
-});
