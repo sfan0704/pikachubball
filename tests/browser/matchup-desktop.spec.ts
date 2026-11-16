@@ -195,6 +195,19 @@ test(
 );
 
 test(
+  "from md the opponent picker keeps its own width instead of filling the score card",
+  DESKTOP,
+  async ({ page }) => {
+    await signIn(page, "a", "Matchup");
+    for (const width of [900, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      const picker = await boxOf(page.getByLabel("Opponent"));
+      expect(picker.width, `at ${width}px`).toBeLessThanOrEqual(260);
+    }
+  }
+);
+
+test(
   "requests the same data at 1280 px as a phone showing the same player",
   DESKTOP,
   async ({ page }) => {
