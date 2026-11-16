@@ -1,4 +1,4 @@
-import { useMemo, type MouseEvent } from "react";
+import { useMemo, useRef, type MouseEvent, type Ref } from "react";
 import type { TeamTable } from "@shared/domain";
 import { categoryLabel } from "@/features/league/categories";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import {
   type GridCell,
   type GridRow,
 } from "./league-categories-model";
+import { CARD_HEADING_CLASS, PICKED_ROW_CLASS, pickedState, useKeepInView } from "./league-wide";
 import { rankText, TONE_CLASS } from "./rank-tone";
 
 interface CategoryRankGridProps {
@@ -15,6 +16,10 @@ interface CategoryRankGridProps {
   myTeamKey: string;
   /** The stat id of the picked category, or null. */
   category: string | null;
+  /** The team outlined as picked on a wide screen; null on a phone. */
+  pickedTeamKey: string | null;
+  /** The card's heading where no Standings | Categories bar names it; null on a phone. */
+  heading: string | null;
   onPick: (category: string | null) => void;
   onOpenTeam: (teamKey: string, event: MouseEvent<HTMLButtonElement>) => void;
 }
@@ -41,16 +46,23 @@ function Cell({ cell }: { cell: GridCell }) {
 
 function Row({
   row,
+  picked,
+  rowRef,
   onOpen,
 }: {
   row: GridRow;
+  picked: boolean | undefined;
+  rowRef: Ref<HTMLTableRowElement> | undefined;
   onOpen: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
     <tr
+      ref={rowRef}
+      aria-selected={picked}
       className={cn(
         "border-t border-[#F1F2F4] dark:border-border",
-        row.isMine && "bg-[#FFFBEB] dark:bg-[#2A2210]"
+        row.isMine && "bg-[#FFFBEB] dark:bg-[#2A2210]",
+        picked && PICKED_ROW_CLASS
       )}
       data-testid={`grid-row-${row.teamKey}`}
     >
@@ -58,7 +70,8 @@ function Row({
         <button
           type="button"
           onClick={onOpen}
-          data-testid={`row-ranking-${row.teamKey}`}
+          data-testid={`grid-team-${row.teamKey}`}
+          title={row.teamName}
           className="flex min-h-11 w-full min-w-0 flex-col justify-center rounded-[6px] px-1 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="w-full truncate text-xs font-semibold">
@@ -134,9 +147,13 @@ export function CategoryRankGrid({
   table,
   myTeamKey,
   category,
+  pickedTeamKey,
+  heading,
   onPick,
   onOpenTeam,
 }: CategoryRankGridProps) {
+  const pickedRow = useRef<HTMLTableRowElement>(null);
+  useKeepInView(pickedRow, category ?? "");
   const grid = useMemo(
     () => categoryGrid(table, myTeamKey, category),
     [table, myTeamKey, category]
@@ -146,6 +163,7 @@ export function CategoryRankGrid({
       className="overflow-x-auto rounded-2xl border border-[#E2E5EA] bg-white px-2 pb-1 pt-0.5 dark:border-border dark:bg-card"
       data-testid="card-league-categories"
     >
+      {heading !== null && <h2 className={cn(CARD_HEADING_CLASS, "sticky left-0")}>{heading}</h2>}
       <table
         className="w-full border-collapse"
         style={{ minWidth: `${96 + grid.categories.length * 28}px` }}
@@ -154,7 +172,13 @@ export function CategoryRankGrid({
         <Head grid={grid} onPick={onPick} />
         <tbody>
           {grid.rows.map((row) => (
-            <Row key={row.teamKey} row={row} onOpen={(event) => onOpenTeam(row.teamKey, event)} />
+            <Row
+              key={row.teamKey}
+              row={row}
+              picked={pickedState(pickedTeamKey, row.teamKey)}
+              rowRef={row.teamKey === pickedTeamKey ? pickedRow : undefined}
+              onOpen={(event) => onOpenTeam(row.teamKey, event)}
+            />
           ))}
         </tbody>
       </table>

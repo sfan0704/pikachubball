@@ -1,6 +1,6 @@
 import type { TeamTable } from "@shared/domain";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { TeamDetails } from "./TeamDetails";
+import { TeamDetails, TeamRoster } from "./TeamDetails";
 
 interface TeamPopoverProps {
   table: TeamTable;
@@ -24,7 +24,13 @@ export function TeamPopover({ onClose, returnFocus, ...details }: TeamPopoverPro
           returnFocus();
         }}
       >
-        <TeamDetails {...details} />
+        <TeamDetails {...details} allPlayErrorShown={false}>
+          <TeamRoster
+            leagueKey={details.leagueKey}
+            teamKey={details.teamKey}
+            onPickLeague={details.onPickLeague}
+          />
+        </TeamDetails>
       </DialogContent>
     </Dialog>
   );

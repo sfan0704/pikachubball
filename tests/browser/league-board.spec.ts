@@ -97,29 +97,33 @@ test("keeps the ⓘ explanation on a short phone screen and closes it by button,
   await expect(explanation).toBeHidden();
 });
 
-test("switches between Standings and Categories in the URL, and back returns", async ({ page }) => {
-  await signIn(page);
-  const views = page.getByRole("navigation", { name: "League view" });
-  await expect(views.getByRole("link", { name: "Standings" })).toHaveAttribute(
-    "aria-current",
-    "page"
-  );
+test(
+  "switches between Standings and Categories in the URL, and back returns",
+  { tag: "@phone" },
+  async ({ page }) => {
+    await signIn(page);
+    const views = page.getByRole("navigation", { name: "League view" });
+    await expect(views.getByRole("link", { name: "Standings" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
 
-  await views.getByRole("link", { name: "Categories" }).click();
-  await expect(page).toHaveURL(/\/season\?view=categories$/);
-  const grid = page.getByRole("table", { name: "Category ranks" });
-  await expect(grid.getByRole("columnheader")).toHaveCount(10);
-  await expect(page.getByTestId(/^grid-row-/)).toHaveCount(14);
-  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
+    await views.getByRole("link", { name: "Categories" }).click();
+    await expect(page).toHaveURL(/\/season\?view=categories$/);
+    const grid = page.getByRole("table", { name: "Category ranks" });
+    await expect(grid.getByRole("columnheader")).toHaveCount(10);
+    await expect(page.getByTestId(/^grid-row-/)).toHaveCount(14);
+    expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
 
-  await page.getByLabel("Period").selectOption("current");
-  await expect(page).toHaveURL(/\/current\?view=categories$/);
+    await page.getByLabel("Period").selectOption("current");
+    await expect(page).toHaveURL(/\/current\?view=categories$/);
 
-  await page.goBack();
-  await page.goBack();
-  await expect(page).toHaveURL(/\/season$/);
-  await expect(page.getByTestId(/^standings-row-/)).toHaveCount(14);
-});
+    await page.goBack();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/season$/);
+    await expect(page.getByTestId(/^standings-row-/)).toHaveCount(14);
+  }
+);
 
 test("sorts Standings by a column header, kept in the URL", async ({ page }) => {
   await signIn(page);
@@ -148,99 +152,107 @@ test("sorts Standings by a column header, kept in the URL", async ({ page }) => 
   );
 });
 
-test("picks a category in the grid: tied teams share a rank, and a second tap clears it", async ({
-  page,
-}) => {
-  await signIn(page);
-  await page.getByLabel("Period").selectOption("current");
-  await page
-    .getByRole("navigation", { name: "League view" })
-    .getByRole("link", { name: "Categories" })
-    .click();
-
-  await page.getByRole("button", { name: "TO", exact: true }).click();
-  await expect(page).toHaveURL(/\/current\?view=categories&category=19$/);
-  await expect(page.getByTestId("row-total")).toHaveCount(14);
-  // Three teams share 11th in turnovers this week; the next rank is skipped.
-  const column = page.getByTestId(/^grid-row-/).locator("td:last-child");
-  await expect(column).toHaveText([
-    "1",
-    "2",
-    "3",
-    "4",
-    "4",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "11",
-    "11",
-    "14",
-  ]);
-
-  await page.getByRole("button", { name: "TO", exact: true }).click();
-  await expect(page).toHaveURL(/\/current\?view=categories$/);
-  await expect(page.getByTestId("row-total")).toHaveCount(0);
-  await page.goBack();
-  await expect(page.getByTestId("row-total")).toHaveCount(14);
-});
-
-test("opens a team's standing, luck, ranks and roster, and closes it again", async ({ page }) => {
-  await signIn(page);
-  await page.getByLabel("Period").selectOption("current");
-
-  await page.getByTestId(`row-ranking-${LEAGUE}.t.9`).click();
-  const popover = page.getByRole("dialog", { name: "Team 9" });
-  await expect(popover).toContainText(/^Team 9Week \d+ · /);
-  await expect(popover.getByTestId("team-summary")).toContainText(
-    /Standing\d+(st|nd|rd|th)\d+–\d+–\d+All-play\d+(st|nd|rd|th)\d+–\d+–\d+Luck([+−]\d+\.\d|0)category wins/
-  );
-  await expect(popover.getByTestId("luck-line")).toHaveCount(3);
-  await expect(popover.getByTestId("category-all-play")).toHaveCount(0);
-  await expect(
-    popover.getByRole("list", { name: "Category ranks and totals" }).getByRole("listitem")
-  ).toHaveCount(9);
-  await expect(popover.getByTestId("popover-player")).toHaveCount(13);
-  await expect(popover.getByTestId("popover-player").first()).toContainText("Round 1");
-  await expect(popover).toContainText("Waivers $4");
-  await expect(popover).toContainText("Free agent");
-  await expect(popover.getByTestId("popover-player").first()).toContainText(/\d\.\d PTS/);
-  expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
-
-  await page.keyboard.press("Escape");
-  await expect(popover).toHaveCount(0);
-  await expect(page.getByTestId(`row-ranking-${LEAGUE}.t.9`)).toBeFocused();
-});
-
-for (const theme of ["light", "dark"] as const) {
-  test(`both views, the explanation and the team popover pass accessibility checks (${theme})`, async ({
-    page,
-  }) => {
-    await useTheme(page, theme);
+test(
+  "picks a category in the grid: tied teams share a rank, and a second tap clears it",
+  { tag: "@phone" },
+  async ({ page }) => {
     await signIn(page);
-    await expect(page.getByTestId(`standings-row-${MY_TEAM}`).getByTestId("row-luck")).toHaveText(
-      LUCK
-    );
-    expect(await accessibilityViolations(page)).toEqual([]);
-
-    await page.getByRole("button", { name: "How to read this" }).click();
-    await expect(page.getByRole("dialog", { name: "How to read League" })).toBeVisible();
-    expect(await accessibilityViolations(page)).toEqual([]);
-    await page.keyboard.press("Escape");
-
-    await page.getByTestId(`row-ranking-${MY_TEAM}`).click();
-    await expect(page.getByTestId("popover-player").first()).toContainText(/\d\.\d PTS/);
-    expect(await accessibilityViolations(page)).toEqual([]);
-    await page.keyboard.press("Escape");
-
+    await page.getByLabel("Period").selectOption("current");
     await page
       .getByRole("navigation", { name: "League view" })
       .getByRole("link", { name: "Categories" })
       .click();
-    await page.getByRole("button", { name: "PTS", exact: true }).click();
+
+    await page.getByRole("button", { name: "TO", exact: true }).click();
+    await expect(page).toHaveURL(/\/current\?view=categories&category=19$/);
     await expect(page.getByTestId("row-total")).toHaveCount(14);
-    expect(await accessibilityViolations(page)).toEqual([]);
-  });
+    // Three teams share 11th in turnovers this week; the next rank is skipped.
+    const column = page.getByTestId(/^grid-row-/).locator("td:last-child");
+    await expect(column).toHaveText([
+      "1",
+      "2",
+      "3",
+      "4",
+      "4",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "11",
+      "11",
+      "14",
+    ]);
+
+    await page.getByRole("button", { name: "TO", exact: true }).click();
+    await expect(page).toHaveURL(/\/current\?view=categories$/);
+    await expect(page.getByTestId("row-total")).toHaveCount(0);
+    await page.goBack();
+    await expect(page.getByTestId("row-total")).toHaveCount(14);
+  }
+);
+
+test(
+  "opens a team's standing, luck, ranks and roster, and closes it again",
+  { tag: "@phone" },
+  async ({ page }) => {
+    await signIn(page);
+    await page.getByLabel("Period").selectOption("current");
+
+    await page.getByTestId(`row-ranking-${LEAGUE}.t.9`).click();
+    const popover = page.getByRole("dialog", { name: "Team 9" });
+    await expect(popover).toContainText(/^Team 9Week \d+ · /);
+    await expect(popover.getByTestId("team-summary")).toContainText(
+      /Standing\d+(st|nd|rd|th)\d+–\d+–\d+All-play\d+(st|nd|rd|th)\d+–\d+–\d+Luck([+−]\d+\.\d|0)category wins/
+    );
+    await expect(popover.getByTestId("luck-line")).toHaveCount(3);
+    await expect(popover.getByTestId("category-all-play")).toHaveCount(0);
+    await expect(
+      popover.getByRole("list", { name: "Category ranks and totals" }).getByRole("listitem")
+    ).toHaveCount(9);
+    await expect(popover.getByTestId("popover-player")).toHaveCount(13);
+    await expect(popover.getByTestId("popover-player").first()).toContainText("Round 1");
+    await expect(popover).toContainText("Waivers $4");
+    await expect(popover).toContainText("Free agent");
+    await expect(popover.getByTestId("popover-player").first()).toContainText(/\d\.\d PTS/);
+    expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0);
+
+    await page.keyboard.press("Escape");
+    await expect(popover).toHaveCount(0);
+    await expect(page.getByTestId(`row-ranking-${LEAGUE}.t.9`)).toBeFocused();
+  }
+);
+
+for (const theme of ["light", "dark"] as const) {
+  test(
+    `both views, the explanation and the team popover pass accessibility checks (${theme})`,
+    { tag: "@phone" },
+    async ({ page }) => {
+      await useTheme(page, theme);
+      await signIn(page);
+      await expect(page.getByTestId(`standings-row-${MY_TEAM}`).getByTestId("row-luck")).toHaveText(
+        LUCK
+      );
+      expect(await accessibilityViolations(page)).toEqual([]);
+
+      await page.getByRole("button", { name: "How to read this" }).click();
+      await expect(page.getByRole("dialog", { name: "How to read League" })).toBeVisible();
+      expect(await accessibilityViolations(page)).toEqual([]);
+      await page.keyboard.press("Escape");
+
+      await page.getByTestId(`row-ranking-${MY_TEAM}`).click();
+      await expect(page.getByTestId("popover-player").first()).toContainText(/\d\.\d PTS/);
+      expect(await accessibilityViolations(page)).toEqual([]);
+      await page.keyboard.press("Escape");
+
+      await page
+        .getByRole("navigation", { name: "League view" })
+        .getByRole("link", { name: "Categories" })
+        .click();
+      await page.getByRole("button", { name: "PTS", exact: true }).click();
+      await expect(page.getByTestId("row-total")).toHaveCount(14);
+      expect(await accessibilityViolations(page)).toEqual([]);
+    }
+  );
 }

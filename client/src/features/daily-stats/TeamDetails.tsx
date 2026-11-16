@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { TeamDayResponse } from "@shared/api/daily-stats";
+import type { DailyPlayer } from "@shared/api/daily-stats-values";
 import { nbaDateOf, type TeamTable } from "@shared/domain";
 import { useDraft, usePlayerStats, useTeamDay, useTransactions } from "@/api/daily-stats-hooks";
 import { ErrorScreen } from "@/features/league/ErrorScreen";
@@ -18,12 +19,18 @@ interface TeamDetailsProps {
   leagueKey: string;
   teamKey: string;
   periodLabel: string;
+  /** Whether the page already shows all-play's failure, as the Standings beside a panel do. */
+  allPlayErrorShown: boolean;
   onPickLeague: () => void;
 }
 
 function RankGrid({ table, teamKey }: { table: TeamTable; teamKey: string }) {
+  // Three to a row in a sheet; on the page as many as fit with their totals readable.
   return (
-    <ul className="grid grid-cols-3 gap-1.5" aria-label="Category ranks and totals">
+    <ul
+      className="grid grid-cols-3 gap-1.5 md:grid-cols-[repeat(auto-fit,minmax(2.5rem,1fr))]"
+      aria-label="Category ranks and totals"
+    >
       {teamCells(table, teamKey).map((cell) => (
         <li
           key={cell.statId}
@@ -41,10 +48,13 @@ function RankGrid({ table, teamKey }: { table: TeamTable; teamKey: string }) {
   );
 }
 
-function PlayerRow({ line }: { line: RosterLine }) {
+/** Opens a roster player's details; without it the roster is a plain list, as in the phone sheet. */
+type OpenPlayer = (player: DailyPlayer) => void;
+
+function PlayerLine({ line }: { line: RosterLine }) {
   const meta = [line.nbaTeam, line.acquired].filter((part) => part !== null).join(" · ");
   return (
-    <li className="flex items-start justify-between gap-3 py-2" data-testid="popover-player">
+    <>
       <span className="min-w-0">
         <span className="block text-sm font-semibold">
           {line.name}
@@ -61,6 +71,32 @@ function PlayerRow({ line }: { line: RosterLine }) {
           {line.averages}
         </span>
       )}
+    </>
+  );
+}
+
+const LINE_CLASS = "flex items-start justify-between gap-3 py-2";
+
+function PlayerRow({ line, onOpen }: { line: RosterLine; onOpen: (() => void) | null }) {
+  if (onOpen === null) {
+    return (
+      <li className={LINE_CLASS} data-testid="popover-player">
+        <PlayerLine line={line} />
+      </li>
+    );
+  }
+  return (
+    <li data-testid="popover-player">
+      <button
+        type="button"
+        onClick={onOpen}
+        className={cn(
+          LINE_CLASS,
+          "w-full rounded-[6px] text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+        )}
+      >
+        <PlayerLine line={line} />
+      </button>
     </li>
   );
 }
@@ -70,10 +106,12 @@ function RosterList({
   leagueKey,
   roster,
   onPickLeague,
+  onOpenPlayer,
 }: {
   leagueKey: string;
   roster: TeamDayResponse;
   onPickLeague: () => void;
+  onOpenPlayer: OpenPlayer | undefined;
 }) {
   const keys = useMemo(() => roster.players.map(({ player }) => player.playerKey), [roster]);
   const seasonStats = usePlayerStats(leagueKey, "season", keys);
@@ -86,6 +124,10 @@ function RosterList({
     transactions: transactions.data,
     draft: draft.data,
   });
+  const opener = (index: number) => {
+    const player = roster.players[index]?.player;
+    return onOpenPlayer && player ? () => onOpenPlayer(player) : null;
+  };
   return (
     <>
       {failed && (
@@ -96,9 +138,13 @@ function RosterList({
           inline
         />
       )}
-      <ul className="divide-y divide-border" aria-label="Roster">
-        {lines.map((line) => (
-          <PlayerRow key={line.playerKey} line={line} />
+      {/* Three columns only where the roster has a card of its own across the page. */}
+      <ul
+        className="divide-y divide-border lg:grid lg:grid-cols-3 lg:gap-x-8 lg:divide-y-0 lg:[&>li]:border-t lg:[&>li]:border-border"
+        aria-label="Roster"
+      >
+        {lines.map((line, index) => (
+          <PlayerRow key={line.playerKey} line={line} onOpen={opener(index)} />
         ))}
       </ul>
       <p className="text-xs text-muted-foreground">Season per-game averages.</p>
@@ -106,47 +152,69 @@ function RosterList({
   );
 }
 
-function Roster({
-  leagueKey,
-  teamKey,
-  onPickLeague,
-}: Pick<TeamDetailsProps, "leagueKey" | "teamKey" | "onPickLeague">) {
+interface TeamRosterProps extends Pick<TeamDetailsProps, "leagueKey" | "teamKey" | "onPickLeague"> {
+  /** Makes each player a button that opens their details. */
+  onOpenPlayer?: OpenPlayer;
+}
+
+/** A team's roster today, under its details in a sheet or in a card of its own. */
+export function TeamRoster({ leagueKey, teamKey, onPickLeague, onOpenPlayer }: TeamRosterProps) {
   const today = nbaDateOf(useNow());
   const roster = useTeamDay(leagueKey, teamKey, today);
   return (
     <DatasetState query={roster} onPickLeague={onPickLeague}>
-      {(data) => <RosterList leagueKey={leagueKey} roster={data} onPickLeague={onPickLeague} />}
+      {(data) => (
+        <RosterList
+          leagueKey={leagueKey}
+          roster={data}
+          onPickLeague={onPickLeague}
+          onOpenPlayer={onOpenPlayer}
+        />
+      )}
     </DatasetState>
   );
 }
 
+/** The team's name as the table has it. */
+export function teamName(table: TeamTable, teamKey: string): string {
+  return table.teams.find((team) => team.teamKey === teamKey)?.teamName ?? "Team";
+}
+
 /**
  * One team for the period, in a dialog or a panel: its standing, all-play and
- * luck worked out, its rank and total in each of the league's categories, its
- * all-play by category on longer periods, and its roster today.
+ * luck worked out, its rank and total in each of the league's categories, and
+ * its all-play by category on longer periods. The roster follows as children
+ * in a sheet; on a wide screen it has a card of its own.
  */
 export function TeamDetails({
   table,
   leagueKey,
   teamKey,
   periodLabel,
+  allPlayErrorShown,
   onPickLeague,
-}: TeamDetailsProps) {
-  const name = table.teams.find((team) => team.teamKey === teamKey)?.teamName ?? "Team";
+  children,
+}: TeamDetailsProps & { children?: ReactNode }) {
   const allPlay = useLeagueAllPlay(table, leagueKey);
   return (
     <div className="flex flex-col gap-3">
       {/* Right padding keeps the name clear of a dialog's close button. */}
       <div className="pr-10">
-        <DetailsTitle className="text-lg font-bold">{name}</DetailsTitle>
+        <DetailsTitle className="text-lg font-bold">{teamName(table, teamKey)}</DetailsTitle>
         <DetailsDescription className="text-sm text-muted-foreground">
           {periodLabel}
         </DetailsDescription>
       </div>
-      <TeamStanding table={table} teamKey={teamKey} allPlay={allPlay} onPickLeague={onPickLeague} />
+      <TeamStanding
+        table={table}
+        teamKey={teamKey}
+        allPlay={allPlay}
+        allPlayErrorShown={allPlayErrorShown}
+        onPickLeague={onPickLeague}
+      />
       <RankGrid table={table} teamKey={teamKey} />
       <CategoryAllPlay table={table} teamKey={teamKey} allPlay={allPlay} />
-      <Roster leagueKey={leagueKey} teamKey={teamKey} onPickLeague={onPickLeague} />
+      {children}
     </div>
   );
 }

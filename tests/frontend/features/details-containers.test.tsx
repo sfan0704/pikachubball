@@ -16,7 +16,7 @@ import { DetailsPanel } from "../../../client/src/features/daily-stats/DetailsPa
 import { PlayerButton } from "../../../client/src/features/daily-stats/PlayerButton";
 import { PlayerDetails } from "../../../client/src/features/daily-stats/PlayerDetails";
 import { PlayerDetailSheet } from "../../../client/src/features/daily-stats/PlayerDetailSheet";
-import { TeamDetails } from "../../../client/src/features/daily-stats/TeamDetails";
+import { TeamDetails, TeamRoster } from "../../../client/src/features/daily-stats/TeamDetails";
 import { TeamPopover } from "../../../client/src/features/daily-stats/TeamPopover";
 import { fixedClock } from "../../support/clock";
 import { jsonResponse } from "../../support/fetch";
@@ -254,7 +254,7 @@ async function teamContent(container: HTMLElement) {
 const TEAM_9 = `${LEAGUE}.t.9`;
 
 describe("the team details", () => {
-  it("shows the same content in the League dialog and the panel", async () => {
+  it("shows the same content in the League dialog as in the panel with the roster card beside it", async () => {
     stubServer();
     const { unmount } = renderWithData(
       <TeamPopover
@@ -270,41 +270,44 @@ describe("the team details", () => {
     const inDialog = await teamContent(screen.getByRole("dialog", { name: "Team 9" }));
     unmount();
     renderWithData(
-      <DetailsPanel testId="team-panel">
-        <TeamDetails
-          table={SEASON}
-          leagueKey={LEAGUE}
-          teamKey={TEAM_9}
-          periodLabel="Season to date"
-          onPickLeague={vi.fn()}
-        />
-      </DetailsPanel>
+      <>
+        <DetailsPanel testId="team-panel">
+          <TeamDetails
+            table={SEASON}
+            leagueKey={LEAGUE}
+            teamKey={TEAM_9}
+            periodLabel="Season to date"
+            allPlayErrorShown={false}
+            onPickLeague={vi.fn()}
+          />
+        </DetailsPanel>
+        <section data-testid="roster-card">
+          <TeamRoster leagueKey={LEAGUE} teamKey={TEAM_9} onPickLeague={vi.fn()} />
+        </section>
+      </>
     );
     const panel = screen.getByRole("region", { name: "Team 9" });
-    const inPanel = await teamContent(panel);
+    const { roster: inPanel, ...summary } = await teamContent(document.body);
+    const { roster: inSheet, ...sheetSummary } = inDialog;
 
-    expect(inDialog.roster).toHaveLength(13);
-    expect(inPanel).toEqual(inDialog);
+    expect(inSheet).toHaveLength(13);
+    expect(summary).toEqual(sheetSummary);
+    expect(inPanel).toEqual(inSheet);
+    expect(within(panel).queryByTestId("popover-player")).toBeNull();
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(within(panel).queryByRole("button", { name: "Close" })).toBeNull();
   });
 
-  it("shows the roster's error with a retry inside the panel", async () => {
+  it("shows the roster's error with a retry in the roster card", async () => {
     stubServer(/\/days\//);
     renderWithData(
-      <DetailsPanel testId="team-panel">
-        <TeamDetails
-          table={SEASON}
-          leagueKey={LEAGUE}
-          teamKey={TEAM_9}
-          periodLabel="Season to date"
-          onPickLeague={vi.fn()}
-        />
-      </DetailsPanel>
+      <section data-testid="roster-card">
+        <TeamRoster leagueKey={LEAGUE} teamKey={TEAM_9} onPickLeague={vi.fn()} />
+      </section>
     );
-    const panel = screen.getByRole("region", { name: "Team 9" });
+    const card = screen.getByTestId("roster-card");
 
-    expect(await within(panel).findByRole("button", { name: /retry|try again/i })).toBeTruthy();
-    expect(within(panel).queryByTestId("popover-player")).toBeNull();
+    expect(await within(card).findByRole("button", { name: /retry|try again/i })).toBeTruthy();
+    expect(within(card).queryByTestId("popover-player")).toBeNull();
   });
 });
