@@ -183,7 +183,10 @@ function GameList({ title, games }: { title: string; games: readonly LoggedGame[
             <li key={game.gameId} className="flex justify-between gap-2 py-1.5">
               <span className="w-24 shrink-0">{formatGameDate(game.date)}</span>
               <span className="w-16 shrink-0">{opponentText(game)}</span>
-              <span className="flex-1 text-right tabular-nums">{gameStateText(game.state)}</span>
+              {/* min-w-0 lets a long live state wrap instead of pushing the row past the sheet. */}
+              <span className="min-w-0 flex-1 text-right tabular-nums">
+                {gameStateText(game.state)}
+              </span>
               <span className="w-14 shrink-0 text-right text-muted-foreground">
                 {minutesText(game)}
               </span>

@@ -158,6 +158,12 @@ describe("player detail games", () => {
     expect(minutesText(games[0])).toBe("30 min");
     expect(minutesText(games[1])).toBe("DNP");
     expect(minutesText(games[3])).toBe("");
+  });
+
+  it("rounds minutes from Yahoo's mm:ss to whole minutes", () => {
+    // 34:23 and 7:55 as the game-log parser reads them.
+    expect(minutesText(game("2026-11-05", { minutes: measured(34 + 23 / 60) }))).toBe("34 min");
+    expect(minutesText(game("2026-11-05", { minutes: measured(7 + 55 / 60) }))).toBe("8 min");
     expect(yahooPlayerUrl("466.p.6014")).toBe("https://sports.yahoo.com/nba/players/6014/");
   });
 });

@@ -180,11 +180,15 @@ export function opponentText(game: { opponent: string; isHome: boolean }): strin
   return `${game.isHome ? "vs" : "@"} ${game.opponent}`;
 }
 
-/** The player's minutes in a game, or why there are none. */
+/**
+ * The player's minutes in a game, or why there are none. Yahoo's game logs
+ * write minutes as mm:ss, which arrive as fractions (7:55 is 7.9166…), so they
+ * show as whole minutes the way box scores print them.
+ */
 export function minutesText(game: LoggedGame): string {
   switch (game.minutes.kind) {
     case "value":
-      return `${game.minutes.value} min`;
+      return `${Math.round(game.minutes.value)} min`;
     case "didNotPlay":
       return "DNP";
     default:
