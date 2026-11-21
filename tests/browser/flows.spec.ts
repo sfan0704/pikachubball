@@ -99,13 +99,17 @@ test("asks before disconnecting Yahoo from the header, and disconnects once conf
   await dialog.getByRole("button", { name: "Disconnect Yahoo" }).click();
   const confirmation = dialog.getByRole("alertdialog");
   await expect(confirmation).toContainText("revokes this app's access at Yahoo");
+  await expect(confirmation).toContainText("signs you out");
   await confirmation.getByRole("button", { name: "Cancel" }).click();
   await expect(confirmation).toBeHidden();
   expect(removals).toEqual([]);
 
   await dialog.getByRole("button", { name: "Disconnect Yahoo" }).click();
+  // Disconnecting signs out, so the page leaves for the sign-in page with the result.
+  const leaving = page.waitForRequest((request) => new URL(request.url()).pathname === "/auth");
   await confirmation.getByRole("button", { name: "Disconnect Yahoo" }).click();
-  await expect(dialog.getByRole("status")).toContainText("Yahoo disconnected.");
+  const destination = new URL((await leaving).url());
+  expect(destination.searchParams.get("removed")).toBe("disconnect");
   expect(removals).toEqual(["DELETE"]);
 });
 

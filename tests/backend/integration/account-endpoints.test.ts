@@ -46,8 +46,8 @@ function buildApp(options: { revoked?: boolean; token?: boolean; signOutError?: 
 }
 
 describe("DELETE /api/me/yahoo", () => {
-  it("revokes the grant at Yahoo, then deletes the stored tokens and leagues", async () => {
-    const { app, revokeYahooGrant, calls } = buildApp();
+  it("revokes the grant at Yahoo, deletes the stored tokens and leagues, and signs the session out", async () => {
+    const { app, revokeYahooGrant, signOut, calls } = buildApp();
 
     const response = await request(app).delete("/api/me/yahoo").set("Origin", APP_ORIGIN);
 
@@ -55,6 +55,26 @@ describe("DELETE /api/me/yahoo", () => {
     expect(response.body).toEqual({ revokedAtYahoo: true });
     expect(revokeYahooGrant).toHaveBeenCalledWith("refresh-1");
     expect(calls).toEqual(["read-token", "revoke", "disconnect"]);
+    expect(signOut).toHaveBeenCalledWith({ scope: "local" });
+  });
+
+  it("still succeeds when clearing the session fails", async () => {
+    const { app, storage } = buildApp({ signOutError: true });
+
+    const response = await request(app).delete("/api/me/yahoo").set("Origin", APP_ORIGIN);
+
+    expect(response.status).toBe(200);
+    expect(storage.disconnectYahoo).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the session when the disconnect fails", async () => {
+    const { app, storage, signOut } = buildApp();
+    vi.mocked(storage.disconnectYahoo).mockRejectedValue(new Error("rpc failed"));
+
+    const response = await request(app).delete("/api/me/yahoo").set("Origin", APP_ORIGIN);
+
+    expect(response.status).toBe(500);
+    expect(signOut).not.toHaveBeenCalled();
   });
 
   it("still deletes locally and says so when Yahoo does not confirm", async () => {

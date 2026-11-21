@@ -2,6 +2,7 @@
 
 One line per change to [the target state](target-state.md): the date, what changed, and the pull request. The reasoning is in the pull request.
 
+- 2026-11-21 · Leaving doesn't sign back in as the same Yahoo account: sign-in sends `prompt=login`, and disconnect ends the session like account deletion; both removals report their result on the sign-in page · FAN-160 (PR pending)
 - 2026-11-16 · Browser tests run at a fixed moment: the local server's clock is fixed by `LOCAL_FIXED_TIME` and the page's clock starts at the same time, so results no longer depend on the weekday · FAN-159 (PR pending)
 - 2026-11-15 · Responsive layout: two breakpoints (768 and 1100 px) declared once in the Tailwind theme; from 768 px the screen tabs move into a one-bar header and content is centred at most 1280 px wide; one `ScreenNav`, placed by CSS · FAN-150 (PR pending)
 - 2026-11-15 · Matchup and Players follow the league's categories: player stat lines are keyed by Yahoo stat id with makes and attempts apart, team tables carry each category's value by stat id instead of fixed nine-category totals, more than nine categories lay out in equal rows, and Players' first page reads the current week's table (D1) for the categories · FAN-146 (PR pending)
