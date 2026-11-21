@@ -99,8 +99,10 @@ export function createSupabaseAuthController(dependencies: AuthControllerDepende
           redirectTo: `${config.appOrigin}/api/auth/callback`,
           skipBrowserRedirect: true,
           scopes: "openid profile email fspt-r",
+          // Yahoo keeps its own browser sign-in after the user leaves this app;
+          // without this it would hand back the same account without asking.
           queryParams: {
-            prompt: "consent",
+            prompt: "login",
           },
         },
       });

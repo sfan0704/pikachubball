@@ -1,6 +1,6 @@
 # Pikachu Basketball target state
 
-**As of 2026-11-16.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
+**As of 2026-11-21.** The agreed end state for how Pikachu Basketball is built, run and delivered. It is the single source of truth for the architecture: other docs, `AGENTS.md` and new code follow it. Parts of today's code predate it. Changes to it are made by pull request, with a line added to [the changelog](target-state-changelog.md).
 
 Constraints: React/Vite and Express, Vercel and Supabase, Yahoo-only sign-in, at most 14 concurrent users, free plans.
 
@@ -94,12 +94,12 @@ sequenceDiagram
     F-->>B: Session cookie, redirect to the app
 ```
 
-- **One sign-in.** Signing in with Yahoo through Supabase both creates the app session and grants Fantasy read access (`fspt-r`); there is no separate "connect Yahoo" step.
+- **One sign-in.** Signing in with Yahoo through Supabase both creates the app session and grants Fantasy read access (`fspt-r`); there is no separate "connect Yahoo" step. The authorize request sends `prompt=login`, so Yahoo asks who is signing in even when the browser is still signed in to Yahoo itself; the app can't sign the browser out of Yahoo.
 - **Identity** is the verified Yahoo subject from the `custom:yahoo` provider with issuer `https://api.login.yahoo.com`, never an email match. The stored Yahoo identity must belong to the signed-in Supabase user.
 - **League sync never blocks sign-in.** If reading the user's leagues fails during the callback, sign-in still completes and the leagues are fetched on the first request for them.
 - **Refresh.** Within a minute of expiry, the server refreshes the Yahoo access token with the client secret and saves it with a version check. If another instance refreshed first, the server uses that token. A rejected refresh means `YAHOO_RECONNECT_REQUIRED`, and the user signs in again.
 - **Sign-out** ends the Supabase session. Every protected request checks the signed JWT session identifier against a caller-owned row in `auth.sessions`; a copied pre-logout cookie is rejected even before JWT expiry, and unavailable checks fail closed. Deploy the additive migration before the code that requires it.
-- **One database call per request.** A protected request verifies the access token's signature locally (`getClaims`) and makes no auth-server lookup. It then makes one authenticated-only RPC, `load_request_access`, that takes no user id: it checks the session above, reads the caller's Yahoo identity from `auth.identities`, and reads ahead whether the route's league is theirs and their encrypted Yahoo tokens. A session that has ended gets nothing back. Storage serves the read-ahead league check and the first token read; later token reads (a refresh race) go to the database. **Disconnect** also revokes the grant at Yahoo and deletes the stored tokens and leagues; a refresh already in flight can't write them back. **Account deletion** goes through a database function a signed-in user can run only on their own account; it removes their Supabase user and, through cascading deletes, every row they own.
+- **One database call per request.** A protected request verifies the access token's signature locally (`getClaims`) and makes no auth-server lookup. It then makes one authenticated-only RPC, `load_request_access`, that takes no user id: it checks the session above, reads the caller's Yahoo identity from `auth.identities`, and reads ahead whether the route's league is theirs and their encrypted Yahoo tokens. A session that has ended gets nothing back. Storage serves the read-ahead league check and the first token read; later token reads (a refresh race) go to the database. **Disconnect** also revokes the grant at Yahoo and deletes the stored tokens and leagues; a refresh already in flight can't write them back. Disconnect and account deletion both end the session and leave for the sign-in page, which says what was removed and whether Yahoo confirmed the revocation. **Account deletion** goes through a database function a signed-in user can run only on their own account; it removes their Supabase user and, through cascading deletes, every row they own.
 
 ### Configuration
 
@@ -441,7 +441,7 @@ flowchart LR
 |---|---|
 | `GET /api/auth/yahoo`, `GET /api/auth/callback`, `POST /api/auth/logout` | Sign-in and sign-out |
 | `GET /api/me` | The user, whether their Yahoo connection works, their preferences, and which features the server has wired (daily stats, projections) |
-| `DELETE /api/me/yahoo` | Disconnects Yahoo and deletes stored tokens and leagues |
+| `DELETE /api/me/yahoo` | Disconnects Yahoo, deletes stored tokens and leagues, and ends the session |
 | `DELETE /api/me` | Deletes the account and everything stored for it |
 | `GET /api/leagues` | The user's leagues and teams, optionally refreshed from Yahoo |
 | `PUT /api/me/preferences` | Saves the selected league, team and display choices |

@@ -207,7 +207,7 @@ describe("Supabase Yahoo auth boundary", () => {
     await expect(readSignedClaims(noEmail)).resolves.toEqual({ userId: USER_ID, email: null });
   });
 
-  it("starts only the custom Yahoo provider at the exact app callback", async () => {
+  it("starts only the custom Yahoo provider at the exact app callback, asking Yahoo to sign in again", async () => {
     const signInWithOAuth = vi.fn().mockResolvedValue({
       data: {
         url: "https://basketball-project.supabase.co/auth/v1/authorize?provider=custom%3Ayahoo",
@@ -228,7 +228,7 @@ describe("Supabase Yahoo auth boundary", () => {
         skipBrowserRedirect: true,
         scopes: "openid profile email fspt-r",
         queryParams: {
-          prompt: "consent",
+          prompt: "login",
         },
       },
     });

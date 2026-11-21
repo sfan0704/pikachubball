@@ -27,23 +27,33 @@ describe("useAccountActions", () => {
     vi.clearAllMocks();
   });
 
-  it("disconnects Yahoo through the mutation and returns its result", async () => {
+  it("disconnects Yahoo and then leaves for the sign-in page with the result", async () => {
     const { result } = renderHook(() => useAccountActions());
 
     const returned = await result.current.disconnectYahoo();
 
     expect(disconnectMutate).toHaveBeenCalledOnce();
     expect(returned).toEqual({ revokedAtYahoo: true });
-    expect(window.location.assign).not.toHaveBeenCalled();
+    expect(window.location.assign).toHaveBeenCalledWith("/auth?removed=disconnect&revoked=true");
   });
 
-  it("deletes the account and then leaves for the auth page", async () => {
+  it("deletes the account and then leaves for the sign-in page with the result", async () => {
+    deleteMutate.mockResolvedValue({ revokedAtYahoo: false });
     const { result } = renderHook(() => useAccountActions());
 
     const returned = await result.current.deleteAccount();
 
     expect(deleteMutate).toHaveBeenCalledOnce();
-    expect(returned).toEqual({ revokedAtYahoo: true });
-    expect(window.location.assign).toHaveBeenCalledWith("/auth");
+    expect(returned).toEqual({ revokedAtYahoo: false });
+    expect(window.location.assign).toHaveBeenCalledWith("/auth?removed=delete&revoked=false");
+  });
+
+  it("stays on the page when the disconnect fails", async () => {
+    disconnectMutate.mockRejectedValue(new Error("offline"));
+    const { result } = renderHook(() => useAccountActions());
+
+    await expect(result.current.disconnectYahoo()).rejects.toThrow("offline");
+
+    expect(window.location.assign).not.toHaveBeenCalled();
   });
 });

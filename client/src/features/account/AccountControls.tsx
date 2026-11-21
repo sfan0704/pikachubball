@@ -2,11 +2,7 @@ import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { describeError } from "@/features/league/error-screens";
-
-/** What removing something does at Yahoo, as reported by the API. */
-export interface RemovalResult {
-  revokedAtYahoo: boolean;
-}
+import { removalMessage, type RemovalKind, type RemovalResult } from "./removal";
 
 /** What the account controls can do; each removal reports what Yahoo confirmed. */
 export interface AccountActions {
@@ -14,12 +10,12 @@ export interface AccountActions {
   deleteAccount(): Promise<RemovalResult>;
 }
 
-type Pending = "disconnect" | "delete" | null;
+type Pending = RemovalKind | null;
 
 const CONFIRMATIONS = {
   disconnect: {
     title: "Disconnect Yahoo?",
-    body: "This revokes this app's access at Yahoo and deletes your stored Yahoo connection and your league list from Pikachu Basketball. Your account stays, and you can connect Yahoo again by signing in.",
+    body: "This revokes this app's access at Yahoo, deletes your stored Yahoo connection and your league list from Pikachu Basketball, and signs you out. Your account stays, and you can connect Yahoo again by signing in.",
     confirm: "Disconnect Yahoo",
   },
   delete: {
@@ -29,20 +25,13 @@ const CONFIRMATIONS = {
   },
 } as const;
 
-function removalMessage(kind: "disconnect" | "delete", result: RemovalResult): string {
-  const done = kind === "disconnect" ? "Yahoo disconnected." : "Account deleted.";
-  return result.revokedAtYahoo
-    ? `${done} Access was revoked at Yahoo.`
-    : `${done} Yahoo did not confirm the revocation; to be sure, remove Pikachu Basketball from your Yahoo account's connected apps.`;
-}
-
 function ConfirmationPanel({
   kind,
   busy,
   onConfirm,
   onCancel,
 }: {
-  kind: "disconnect" | "delete";
+  kind: RemovalKind;
   busy: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -81,7 +70,7 @@ export function AccountControls({ actions }: { actions: AccountActions }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const run = async (kind: "disconnect" | "delete") => {
+  const run = async (kind: RemovalKind) => {
     setBusy(true);
     setError(null);
     try {
